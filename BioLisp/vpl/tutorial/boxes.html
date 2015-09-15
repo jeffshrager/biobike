@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head> <title> Boxes </title> </head>
+<body>
+<center><h5>
+&nbsp;&nbsp;&nbsp;<a href="vpl2-tutorial.html">Main menu</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="palette.html">The Palette</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp; Function and data boxes &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="workspace.html">The Workspace</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="resultsarea.html">The Results Area</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="errors.html">When Things Go Wrong</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="define.html">Define and Define-function</a> &nbsp;&nbsp;&nbsp; 
+
+<br/></h5></center>
+<br/><center><h2>Boxes</h2></center> 
+
+<b>In the VPL, functions are represented by boxes in the workspace.</b>
+<br/> <br/>
+Here's what <b>ABS</b>, <b>+</b>, and <b>FIRST</b> look like:<br/>
+<img src="threefunctionboxes.jpg" alt="3fb" /> <br/><br/>
+
+The things common to all function boxes are:<br/>
+<img src="function-box-parts.jpg" alt="fbp" /> <br/>
+
+<ol>
+<li> The Pulldown Menu -- Revealed by mousing over the green arrow in the
+upper left corner.  <br/>
+ <img src="pulldown.jpg" alt="pd" /> <br/>
+Clicking 'Help' will open a popup to that function's documentation.<br/>
+Clicking 'Execute' will execute the function; the return value appears in the
+<a href="resultsarea.html">results area</a>. <br/><br/></li>
+
+<li> The Delete Icon -- Deletes the box from the workspace
+<img src="delete-function.jpg" alt="df"/><br/><br/></li>
+  
+<li> Holes -- Where you pass arguments to the function.  All holes are
+grey and are initially empty.  An <i>empty hole</i> is signified 
+by a dashed border and does not contain an argument.  Executing a
+function with an empty hole results in an error telling you to fill 
+it in, since, e.g., calling the ABS (absolute value) function without
+passing a number makes no sense.</li>
+</ol>
+There are three basic ways to fill in a hole: 
+(See <a href="workspace.html">The Workspace</a> for more)<br/><br/>
+A - Click the hole, turning it into a text input box, type in a value
+and hit Enter. <br/>
+Notice that once a hole is filled in, its border becomes solid. <br/>
+<img src="fill-hole-type.jpg" alt="fht"/><br/><br/>
+B- When the hole is too small for what you want to type in, 
+select 'Multiline input' from the hole's menu.
+This brings up a larger input box that will resize as necessary
+for whatever you type in.  When you are done, click the Enter button
+(not the Enter key on your keyboard of course, because that will just
+insert a new line into your multiline input box).<br/><br/>
+<img src="multiline.jpg" alt="ml" /> <br/><br/>
+
+<br/>
+C - Click the hole, then select another function from the palette.
+<img src="fill-hole-nest.jpg" alt="fhn" /><br/><br/>
+<br/>
+To clear the hole back to its empty state, click the Clear icon in the hole's
+upper right corner. <br/> The Clear icon is there whether the filled-in hole 
+is a simple value <br/>
+<img src="clearholetype.jpg" alt="cht" /><br/><br/>
+or another function call. <br/> 
+<img src="clearholenest.jpg" alt="chn" />
+<br/><br/>
+For simple values, you may also select 'Edit' from the hole's pulldown menu
+to turn the hole back into a text-input box. 
+<img src="edit-hole.jpg" alt="eh" />
+
+<br/><br/>
+There are two other kinds of menus found in some function boxes.
+Options menus are small green boxes containing white arrows with an 
+"Options" label beneath.  These serve 2 purposes:
+<br/><br/>
+
+<b>A</b> - Adding more regular arguments <br/>
+<img src="plus-options-menu.jpg" alt="pom"/>
+<br/><br/>
+The <b>+</b> function normally has two empty holes, but the options menu
+lets us add more with the 'Add one more' and 'Add two more' choices.
+These new holes are the normal grey and have pulldown menus which include 
+the options 'Add left' and 'Add right', allowing you to add arguments
+in precise locations, either before or after a specific argument.<br/><br/><br/>
+<img src="plus-add-leftright.jpg" alt="pal" /><br/><br/>
+To remove a specific argument, first click the clear icon, then click the 
+delete icon.<br/>
+<img src="plus-clear-delete.jpg" alt="pcd" />
+<br/>Clicking 'Clear' from the Options menu removes all new arguments
+(the Clear option only appears after you have selected at least one optional 
+argument).
+<img src="plus-clear.jpg" alt="pc" />
+<br/><br/>
+
+<b>B</b> - Adding optional arguments.<br/>
+<img src="seqof-options-menu.jpg" alt="som" />
+<br/><br/>
+There are two kinds of optional arguments; those that require you to 
+fill in a value associated with the name of the argument, and those that
+are simply the named argument (you can't tell the difference just
+by looking at the menu; you would need to consult the documentation
+via the Help option in the pulldown menu).<br/>
+Optional arguments are blue and you can have as many of them as you like,
+but you can only have one of each.<br/>
+Selecting the 'PROTEIN' optional argument (one that has no
+value associated with it) in the function <b>SEQUENCE-OF</b>,
+for example, will check that the result contains only legal protein
+characters.  <br/>
+<img src="seqof-options-protein.jpg" alt="pc" />
+<br/>
+Two optional arguments that do have values associated with them are
+are  'To' and 'From',
+found in <b>SEQUENCE-OF</b>'s Options menu.  Filling these in appropriately
+will cause the function to act only on a particular subsequence.<br/>
+<img src="fromtox.jpg" alt="ignore" />
+<br/><br/>Clicking 'Clear' from the Options menu removes all optional arguments
+(the Clear option only appears after you have selected at least one optional 
+argument).
+<br/>
+Arrow menus are small green boxes containing a white arrow above a 
+lowercase label.  Unlike Options menus, generally at most one choice can be selected. 
+<br/><img src="backfreq-arrow.jpg" alt="ignore" />><br/><br/>
+The function <b>BACKGROUND-FREQUENCIES-OF</b> has two choices in its 'dna' 
+arrow menu: 'dna' or 'protein'.  Whichever is selected governs the alphabet
+used in determining frequency.
+<br/>
+The function <b>FIRST</b> has two arrow menus, the first of which is labeled
+'number'.<br/>
+<img src="first-arrow-number.jpg" alt="ignore" />> <br/> Selecting 'number' from this
+arrow menu brings up a new hole. <br/>
+<img src="first-arrow-number-hole.jpg" alt="ignore" /> <br/>
+Choosing 'Clear' from the 'number' arrow menu will remove the hole.
+<br/><br/>
+VPL variables are also represented with boxes, called <i>data boxes</i>.
+The major difference between these and function boxes is that they have
+no holes to fill in.  By selecting a variable from the data menu ...<br/> <img src="data.jpg"  alt="ignore" /> <br/>
+<br/>it can be brought down from the palette into the workspace... <br/> 
+<img src="data-toplevel.jpg" alt="ignore" /> <br/>
+or as an argument to a function. <br/> 
+<img src="data-as-argument.jpg" alt="ignore" /> <br/> <br/>
+<!--
+It is possible to bring down an empty data box which is nothing 
+more than a normal empty hole, except it is not being passed as the argument
+to a function.<br/> 
+<img src="new-data-box.jpg"> <br/> 
+-->
+
+<center>
+<h5>
+&nbsp;&nbsp;&nbsp;<a href="vpl2-tutorial.html">Main menu</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="palette.html">The Palette</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp; Function and data boxes &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="workspace.html">The Workspace</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="resultsarea.html">The Results Area</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="errors.html">When Things Go Wrong</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="define.html">Define and Define-function</a> &nbsp;&nbsp;&nbsp; 
+
+<br/>
+</h5>
+</center>
+</body></html>
+

@@ -1,0 +1,730 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :bbi)
+
+; ========= LEVEL V ===========
+
+;;; Some of the code that used to be in this file is now in 
+;;; aux5level.lisp -- JP
+
+; ============= ALIGN-BLAST-RESULT ====================
+
+(DEFINE-FUNCTION Align-Blast-Result
+  REQUIRED blast-result
+  KEYWORD from = *unprovided+*
+  KEYWORD to = *unprovided+*
+    TYPE (from to) = Positive-number
+    CONVERT (from to) FROM Number TO Integer
+  KEYWORD items
+    TYPE items = (OR Positive-number List)
+  KEYWORD line-length = 50
+  KEYWORD group-length = 10
+  FLAG no-gapped-columns
+  FLAG label-with-organism
+  INITIALIZE number-of-results = (LENGTH (LABELS-OF blast-result DIMENSION 1))
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE from items)
+    (ERROR-IF-MORE-THAN-ONE to items)
+    (IF-FALSE items
+        THEN (SETF from (UNLESS-PROVIDED from 1))
+             (SETF to (UNLESS-PROVIDED to number-of-results))
+             (SETF items (FROM from TO to)))
+    (LET ((sequences
+           (FOR-EACH 
+            result IN items
+            AS start = blast-result[result "T-START"]
+            AS end = blast-result[result "T-END"]
+            AS t-from = (MIN start end)
+            AS t-to = (MAX start end)
+            AS invert? = (> start end)
+            AS target-name = blast-result[result "TARGET"]
+            AS organism-name = (IF label-with-organism blast-result[result "T-ORGANISM"])
+            AS org = 
+            (IF label-with-organism 
+                (COND
+                 ((AND (> (LENGTH organism-name) 3) (SEARCH " " organism-name))
+                  (JOIN (bbl::FIRST 3 organism-name) 
+                        "-" 
+                        (bbl::LAST (SPLIT organism-name EVERY " "))))
+                 ((> (LENGTH organism-name) 3) organism-name)))
+            AS target 
+            = (IF (IS-FRAME? target-name)
+                  target-name
+                (FRAME-FNAMED target-name))
+            AS sequence = (IF blast-result[result "T-SEQ"] 
+                            (SEQUENCE-OF blast-result[result "T-SEQ"])
+                            (SEQUENCE-OF target FROM t-from TO t-to))
+            AS name = 
+               (IF label-with-organism
+                   (JOIN org ":" t-from "-" t-to)
+                   (JOIN target-name ":" t-from "-" t-to))
+            DO 
+            (unless sequence 
+              (error 
+               (one-string-nl
+                "Sorry!  No sequence associated with target ~A"
+                "from the blast results table."
+                "This functionality has not yet been implemented."
+                "Please report this to the system administrators."
+                )
+               target-name
+               ))
+            (WHEN invert? 
+              (SETF name (JOIN name "R"))
+              (SETF sequence (INVERSION-OF sequence)))
+            COLLECT (MAKE-LABELED-SEQUENCE 
+                     :LABEL name :SEQUENCE sequence))))
+      (IF no-gapped-columns
+          (ALIGNMENT-OF sequences LINE-LENGTH line-length GROUP-LENGTH group-length NO-GAPPED-COLUMNS)
+          (ALIGNMENT-OF sequences LINE-LENGTH line-length GROUP-LENGTH group-length)))))
+
+; ================= BLAST ====================
+
+; ------------------ DISPLAY-BLAST -----------------
+
+(DEFINE-FUNCTION Display-blast
+  SUMMARY "Takes output from BLAST and presents it as a table (optionally sorted)"
+  REQUIRED blast-table
+    TYPE blast-table = Table
+  KEYWORD labels = '("QUERY" "Q-START" "Q-END" "TARGET" "T-START"
+                                "T-END" "E-VALUE" "%ID" "T-ORGANISM" "T-DESCRIPTION")
+    TYPE labels = (OR List String Symbol)
+  KEYWORD sort-by = NIL
+    TYPE sort-by = (OR String Symbol NULL)
+  FLAG full
+  BODY
+    (SETF labels 
+      (FOR-EACH label IN (ENSURE-LIST labels)
+           COLLECT (STRING-OF label)))    
+    (DISPLAY-BLAST-aux blast-table labels sort-by full)
+  )
+
+(DEFUN Maybe-display-blast-table (blast-table no-display return-targets
+                                     &KEY suppress-message)
+  (UNLESS (OR no-display (NOT blast-table)) 
+    (DISPLAY-BLAST blast-table))
+  (UNLESS (OR no-display (NOT blast-table) suppress-message) 
+    (DISPLAY
+     *newline* *newline*
+     "These results are stored in the table returned by the function."
+     *newline*
+     "You can access the results by using the BLAST-VALUE function, using the"
+     *newline*
+     "number(s) of the line as the first index and the label(s) on the column"
+     *newline*
+     "(in quotes) as the second. For example:"
+     *newline* *newline*
+     "     (DEFINE blast-result AS (SEQUENCE-SIMILAR-TO p-all4312 IN *filamentous-cyanobacteria))"
+     *newline*
+     "     (BLAST-VALUE blast-result LINE# 2 COLUMN-LABELED \"TARGET\")"
+     *newline* *newline*
+     "gives you the target of the second best hit."
+     *newline* *newline*     
+     "     (BLAST-VALUE blast-result LINE# (FROM 1 TO 5) COLUMN-LABELED (T-START T-END))"
+     *newline* *newline*
+     "gives you the start and end coordinates of the targets of the first five hits."       
+     ))
+  (IF (AND blast-table return-targets)
+      (VALUES-LIST
+	    (LIST
+          (FOR-EACH line IN (LABELS-OF blast-table DIMENSION 1)
+               COLLECT blast-table[line "TARGET"])
+	      blast-table))
+      blast-table)
+)
+
+ 
+; ------------------ BLAST-aux -----------------
+
+(DEFINE-FUNCTION Move-blast-files
+  SUMMARY "Moves temp blast files to data directory, renaming them"
+  REQUIRED (old-name (RENAMED) new-name)
+  INITIALIZE blast-dir = (cl-user::TRANSLATE-SIMPLE-LP "biol:data;blast;")
+  BODY
+  (without-code-walker
+    (formatt "mbf: old-name = ~S~%" old-name)
+    (formatt "mbf: new-name = ~S~%" new-name)
+    (formatt "mbf: blast-dir = ~S~%" blast-dir)
+    
+    (ENSURE-DIRECTORIES-EXIST blast-dir)
+    (LOOP FOR ext IN '(".phr" ".pin" ".psq" ".nhr" ".nin" ".nsq")
+          AS old-path = (MERGE-PATHNAMES (JOIN old-name ext)
+                                         cl-user::*tmp-directory*)
+          AS new-path = (MERGE-PATHNAMES (JOIN new-name ext)
+                                         blast-dir)
+          AS move-command = (FORMAT NIL "mv ~A ~A" old-path new-path)
+          DO 
+          (formatt "mbf: old-path = ~S~%" old-path)
+          (formatt "mbf: new-path = ~S~%" new-path)
+          (formatt "mbf: move-command = ~S~%" move-command)
+          (IF (PROBE-FILE old-path)
+              (progn
+                (formatt "Mbf: actually doing move of ~S~%" old-path)
+                (PROTECTED-SHELL-COMMAND 
+                 move-command
+                 :ACTION-ON-INVALID-RETURN :error))))))
+
+          
+(DEFUN Blast-with 
+       (query-info target-info program threshold word-size 
+                   &key (delete-outfile t))
+  "Runs a blast with a given database"
+  (without-code-walker
+    (LET* ((prefix1 (FIRST query-info))
+           (fapath1 (SECOND query-info))
+           (master-list1 (THIRD query-info))
+           (fapath2 (SECOND target-info))
+           (master-list2 (THIRD target-info))
+           (numeric-keys (NUMBERP (FIRST (FIRST master-list2))))
+           (outfile (FORMAT NIL "~A.out" prefix1))
+           (outpath (merge-pathnames  user:*tmp-directory* outfile))
+           (blastall-command
+            (FORMAT 
+             NIL 
+             "~Ablastall -p ~a -d ~a -i ~a -o ~a -e ~a -m 8 -W ~A -FF >& /dev/null"
+             cl-user::*blast-executable-toplevel-dir* program
+             fapath2 fapath1 outpath threshold word-size)))
+      
+      (when *debug-blast-aux*
+        (formatt "blastall-command = ~S~%" blastall-command))
+
+      (CASE (PROTECTED-SHELL-COMMAND blastall-command
+                                     :ACTION-ON-INVALID-RETURN :error)
+        (:Timeout (ERROR "***** Blast failed due to timeout! *****"))
+        (OTHERWISE NIL))
+
+      (let ((results 
+             (WITH-OPEN-FILE (i outpath)
+               (FOR-EACH 
+                line = (read-line i nil nil) UNTIL (NULL line)
+                AS (from to pid all nm ng sq eq ss es eval bits) 
+                = (CL-PPCRE::SPLIT "\\s+" line)
+                AS target 
+                = (IF numeric-keys
+                      (SECOND (ASSOC (READ-FROM-STRING to) master-list2))
+                    (SECOND (ASSOC  to master-list2 :TEST 'EQUAL)))
+                AS query = (SECOND (ASSOC (READ-FROM-STRING from) master-list1))
+                AS hit = (NEW-TABLE {$})
+                DO (ASSIGN hit [ "QUERY" ]        = query)
+                (ASSIGN hit [ "TARGET" ]       = target)
+                (ASSIGN hit [ "%ID" ]          = (READ-FROM-STRING pid))
+                (ASSIGN hit [ "ALIGN-LENGTH" ] = (READ-FROM-STRING all))
+                (ASSIGN hit [ "N-MISMATCHES" ] = (READ-FROM-STRING nm))
+                (ASSIGN hit [ "GAPS" ]       = (READ-FROM-STRING ng))
+                (ASSIGN hit [ "Q-START" ]      = (READ-FROM-STRING sq))
+                (ASSIGN hit [ "Q-END" ]        = (READ-FROM-STRING eq))
+                (ASSIGN hit [ "T-START" ]      = (READ-FROM-STRING ss))
+                (ASSIGN hit [ "T-END" ]        = (READ-FROM-STRING es))
+                (ASSIGN hit [ "E-VALUE" ] 
+                        = (READ-FROM-STRING (SUBSTITUTE #\d #\e eval)))
+                (ASSIGN hit [ "BIT-SCORE" ]    = (READ-FROM-STRING bits))
+                COLLECT hit))))
+        (when delete-outfile (when (probe-file outpath) (delete-file outpath)))
+        results
+        ))))
+
+(defun blast-aux (queries targets given-program threshold given-word-size 
+                          translate remake-database &KEY use-database)
+  (if *use-new-blast-aux* 
+      (new-blast-aux 
+       queries targets given-program threshold given-word-size 
+       translate remake-database :use-database use-database)
+    (old-blast-aux 
+     queries targets given-program threshold given-word-size 
+     translate remake-database :use-database use-database)
+    ))
+    
+
+(DEFUN old-blast-aux (queries targets given-program threshold given-word-size 
+                          translate remake-database &KEY use-database)
+  (DECLARE (SPECIAL *organism-subsets*))
+  (when *debug-blast-aux*
+    (formatt "Queries = ~S~%" queries)
+    (formatt "targets = ~S~%" targets)
+    (formatt "given-program = ~S~%" given-program)
+    (formatt "threshold = ~S~%" threshold)
+    (formatt "given-word-size = ~S~%" given-word-size)
+    (formatt "translate = ~S~%" translate)
+    (formatt "remake-database  = ~S~%" remake-database )
+    (formatt "use-database = ~S~%" use-database))
+  (without-code-walker
+    (LET* ((blast-list) (e-sort-list) (master-list2)
+           (safe? T)(query-info)(target-info)
+           (q-type (LIST-TYPE-FOR-BLAST given-program queries "Q"))
+           (t-type (LIST-TYPE-FOR-BLAST given-program targets "T"))
+           (targets-are-proteins? (IF (EQUAL t-type 'AA) "T" "F"))
+           (program
+            (UNLESS-PROVIDED given-program 
+                             (INFERRED-PROGRAM q-type t-type translate)))
+           (DNA-word-size-default 11)
+           (AA-word-size-default 3)
+           (word-size
+            (UNLESS-PROVIDED given-word-size
+                             (IF (EQUAL program "blastn") 
+                                 DNA-word-size-default
+                               AA-word-size-default)))
+           (t-database-name
+            (COND
+             (use-database
+              (STRING-DOWNCASE (JOIN use-database "-" t-type)))
+             ((AND (= (LENGTH targets) 1) (TYPEP (FIRST targets) 'Organism))
+              (STRING-DOWNCASE 
+               (JOIN (SLOTV (FIRST targets) #$Fname) "-" t-type)))
+             ((TYPEP targets 'Organism-List)
+              (LOOP FOR subset-name IN *organism-subsets*
+                    AS subset = (EVAL subset-name)
+                    DO (IF (SET-EQUAL subset targets)
+                           (RETURN 
+                            (REMOVE #\*
+                                    (STRING-DOWNCASE 
+                                     (JOIN subset-name "-" t-type)))))))
+             ))
+           (blast-dir 
+            (IF use-database
+                (bio::PATHNAME-IN-DIRECTORY-FORM
+                 (FORMAT Nil "~a~a" 
+                         (wb::VISITOR-DIRECTORY *username*) "blast-databases"))
+              (cl-user::TRANSLATE-SIMPLE-LP "biol:data;blast;")))
+           (t-database-list-file 
+            (MERGE-PATHNAMES (JOIN t-database-name ".txt") blast-dir))
+           (t-database-exists? 
+            (IF (AND t-database-name (NOT remake-database))
+                (PROBE-FILE t-database-list-file)))
+           (q-seqs (SEQUENCE-LIST-of queries 
+                                     :SEQ-TYPE q-type))
+           (t-seqs (IF (OR remake-database (NOT t-database-exists?))
+                       (SEQUENCE-LIST-of targets 
+                                         :SEQ-TYPE t-type)))
+           )
+
+      (when *debug-blast-aux*
+        (formatt "q-type = ~S~%" q-type)
+        (formatt "t-type = ~S~%" t-type)
+        (formatt "targets-are-proteins? = ~S~%" targets-are-proteins?)
+        (formatt "program = ~S~%" program)
+        (formatt "word-size = ~S~%" word-size)
+        (formatt "t-database-name = ~S~%" t-database-name)
+        (formatt "blast-dir = ~S~%" blast-dir)
+        (formatt "t-database-list-file = ~S~%" t-database-list-file)
+        (formatt "t-database-exists? = ~S~%" t-database-exists?))
+      ;; (formatt "qseqs = ~S~%" q-seqs)
+      ;; (formatt "tseqs = ~S~%" t-seqs)
+    
+      ;; We always create a fasta file (.fa) for use by BLAST for
+      ;; the query sequences.
+
+      (BIOLISP::WITH-TEMPORARY-FASTA-FILE 
+          (prefix1 fapath1 fafile1 master-list1 :safe? safe?) q-seqs
+        (SETF query-info (LIST prefix1 fapath1 master-list1))
+
+        (when *debug-blast-aux*
+          (formatt "prefix1 = ~S~%" prefix1)
+          (formatt "fapath1 = ~S~%" fapath1)
+          (formatt "fafile1 = ~S~%" fafile1)
+          (formatt "master-list1 = ~S~%" master-list1))
+
+        ;; If a database (a set of files) called USE-DATABASE 
+        ;; (created by formatdb) exists already, we will use it.
+        ;; We will not have to run formatdb (MAKE-BLAST-DATABASE).
+        ;; The database contains, beyond the files created by formatdb,
+        ;; a .txt file, which we created previously and which contains
+        ;; information we need to pass to BLAST-WITH to allow it use
+        ;; the existing database.
+
+        ;; The database (including the .txt file) is stored
+        ;; in its own directory, named USE-DATABASE
+
+        (IF-TRUE 
+         t-database-exists?
+         THEN 
+         (SETF master-list2 
+               (BBL::READ t-database-list-file :TABBED :CONVERT-NUMBERS))
+         (SETF target-info (LIST NIL 
+                                 (MERGE-PATHNAMES t-database-name blast-dir)
+                                 master-list2))
+         (SETF blast-list (BLAST-WITH query-info target-info
+                                      program threshold word-size))
+         ELSE 
+
+         ;; If no database currently exists, if the user specified
+         ;; a USE-DATABASE argument, he wants us to create one for
+         ;; later use, as well as run the current BLAST.  If no
+         ;; USE-DATABASE argument was provided, he doesn't want us
+         ;; to create one (but we might anyway, because we create
+         ;; databases in the sytem blast directory for certain
+         ;; sets of organisms the first time those sets are used).
+
+         ;; Regardless, if no database exists, we must create one
+         ;; using formatdb (MAKE-BLAST-DATABASE) to be used by
+         ;; the actual blast command (BLAST-WITH).  If we want
+         ;; it to be saved, then after we've run the BLAST, we'll
+         ;; copy the files (and add a .txt file) into the directory
+         ;; where we want it to be saved to.
+
+         (BIOLISP::WITH-TEMPORARY-FASTA-FILE 
+             (prefix2 fapath2 fafile2 master-list2 :safe? safe?) 
+             t-seqs
+
+           (when *debug-blast-aux*
+             (formatt "prefix2 = ~S~%" prefix2)
+             (formatt "fapath2 = ~S~%" fapath2)
+             (formatt "fafile2 = ~S~%" fafile2)
+             (formatt "master-list2 = ~S~%" (mapcar 'second master-list2)))
+
+           (SETF target-info (LIST prefix2 fapath2 master-list2))
+           (MAKE-BLAST-DATABASE fapath2 targets-are-proteins?)
+           (SETF blast-list (BLAST-WITH query-info target-info  
+                                        program threshold word-size))
+           (IF-TRUE t-database-name
+                    THEN 
+                    (MOVE-BLAST-FILES fapath2 RENAMED t-database-name)
+                    (let ((textfile 
+                           (merge-pathnames
+                            (join t-database-name ".txt") blast-dir
+                            )))
+                      (when *debug-blast-aux*
+                        (formatt "textfile = ~S" textfile))
+                      (BBL::WRITE :FROM master-list2 :TO textfile :tabbed)
+                      ))))
+
+        (SETF e-sort-list
+              (STABLE-SORT 
+               blast-list 
+               #'(lambda (x y) (< x [ "E-VALUE" ] y [ "E-VALUE" ]))))
+        (FOR-EACH 
+         hit-info IN e-sort-list
+         INITIALIZE hit-table = 
+         (IF e-sort-list (NEW-TABLE (LIST (LENGTH e-sort-list) $)))
+         FOR-EACH hit FROM 1
+         DO (FOR-EACH label IN (LABELS-OF hit-info DIMENSION 1)
+                      AS item = hit-info[label]
+                      DO (IF (MEMBER label {"QUERY" "TARGET" "T-ORGANISM"}
+                                     :TEST 'EQUAL)
+                             (SETF item (OR (FRAME-FNAMED item) item)))
+                      (ASSIGN hit-table[hit label] = item))
+         FINALLY (RETURN hit-table)))))
+
+  )
+
+; ------------------ BLAST -----------------
+
+(DEFINE-FUNCTION Blast-value
+  SUMMARY "Extracts one or more cells from a blast table"
+  REQUIRED (blast-table (LINE#) line (COLUMN-LABELED) column)
+    TYPE blast-table = Table
+    TYPE line = Positive-number
+      CONVERT line FROM Number TO Positive-integer
+    TYPE column = (OR String Symbol List)
+      CONVERT column FROM Symbol TO String
+  KEYWORD Truncate-at = *unprovided+*
+    TYPE truncate-at = Positive-Number
+    CONVERT truncate-at FROM Number TO Positive-Integer
+  MAP line
+  INITIALIZE result = NIL
+  INITIALIZE truncate-length = (UNLESS-PROVIDED truncate-at NIL)
+  BODY  
+    (IF-TRUE (LISTP column)
+        THEN (LOOP FOR item IN column
+                   COLLECT (FORWARD-FUNCALL 'DF-FUNCTION-FOR-BLAST-VALUE 
+                             blast-Table line item NIL NIL 
+                             :TRUNCATE-AT truncate-at))
+        ELSE (ASSIGN result = blast-table[line (STRING-UPCASE column)])
+             (IF (AND truncate-length (STRINGP result))
+                 (BBL::FIRST truncate-length IN result)
+                 result)))
+
+(DEFINE-FUNCTION Blast-values
+  SUMMARY "Extracts one or more cells from a blast table"
+  REQUIRED blast-table 
+    TYPE blast-table = Table
+  KEYWORD from-line = *unprovided+*
+     TYPE from-line = Positive-number
+     CONVERT from-line FROM Number TO Positive-integer 
+  KEYWORD to-line = *unprovided+*
+     TYPE to-line = Positive-number
+     CONVERT to-line FROM Number TO Positive-integer 
+  KEYWORD line/s = *unprovided+*
+     TYPE line/s = (OR List Positive-number)
+     CONVERT line/s FROM Number TO Positive-integer
+  KEYWORD column/s = '("QUERY" "Q-START" "Q-END" "TARGET" "T-START" "T-END" "E-VALUE" "%ID")
+     TYPE column/s = (OR String Symbol List)
+     CONVERT column/s FROM Symbol TO String
+  FLAG -display
+  INITIALIZE result = NIL
+  INITIALIZE single-line 
+     = (OR (AND (PROVIDED line/s) (NUMBERP line/s))
+           (AND (PROVIDED from-line) (= from-line to-line)))
+  INITIALIZE single-column = (NOT (LISTP column/s))
+  INITIALIZE lines 
+     = (OR (ENSURE-LIST (PROVIDED line/s))
+           (FROM (OR (PROVIDED from-line) 1)
+              TO (OR (PROVIDED to-line) 
+                 (LENGTH (LABELS-OF blast-table DIMENSION 1)))
+              LIMIT 10000000))
+  BODY
+    (SETF column/s
+        (FOR-EACH column IN (ENSURE-LIST column/s)
+             AS new-column =
+                (COND
+                   ((STRINGP column) (STRING-UPCASE column))
+                   ((SYMBOLP column) (STRING-OF column))
+                   (T (ERROR "Column (~A) given to BLAST-VALUE must be a string or symbol" 
+                             column)))
+             COLLECT new-column))
+    (SETF result    
+      (FOR-EACH line IN lines
+           AS line-result = 
+              (IF single-column
+                  (REF blast-table line (FIRST column/s))
+                  (MAPCAR (LAMBDA (col) (REF blast-table line col)) column/s))
+          COLLECT line-result))
+    (IF single-line
+        (SETF result (FIRST result)))
+    (IF (AND (BBL-TOPLEVEL?) (NOT single-line) (NOT -display))
+        (DISPLAY-LIST EACH (JOIN (LIST column/s) result)))
+    result
+)
+    
+(DEFUN Parse-genbank-description (full-descr)
+   (LET* ((matches (MATCH-OF-PATTERN-aux NIL "(.*?)\\[(.*?)\\](.*)" full-descr
+                       '(NIL NIL NIL T)))
+          (descr (POP matches))
+          (org (POP matches))
+          (rest (POP matches)))
+     (COND
+        ((NOT descr)
+            (ASSIGN descr = full-descr))
+        ((EQUAL descr "") 
+            (ASSIGN descr = rest)
+            (ASSIGN rest = NIL)))
+     (LIST descr org rest)))
+
+
+(DEFUN Blast-Genbank (query threshold given-word-size given-return given-program 
+                       translate no-display &KEY return-targets)
+  (COND
+     ((LISTP query) 
+        (ERROR "At present, Blasts of GenBank cannot be done with lists of sequences"))
+     ((TYPEP query 'Organism) 
+        (LET ((replicons (REPLICONS-OF query)))
+           (COND 
+              ((NOT (LISTP replicons)) 
+                  (SETF query replicons))
+              ((= (LENGTH replicons) 1)
+                  (SETF query (FIRST replicons)))	
+              ((< (LENGTH replicons) 10)
+                  (SETF query (FIRST replicons))
+                  (WARN "Only largest replicon, ~A, used in Blast"
+                        (FIRST replicons)))
+             (T (ERROR (S+ "At present, Blasts of GenBank cannot be done with multiple "
+                           "sequences, for example the ~A sequences of ~A")
+                       (LENGTH replicons) query))))))
+
+  (LET* ((default-return 10)
+         (return (UNLESS-PROVIDED given-return default-return))
+         (q-type (LIST-TYPE-FOR-BLAST given-program query "Q"))
+         (program
+            (UNLESS-PROVIDED given-program 
+                (INFERRED-PROGRAM q-type q-type translate)))
+         (DNA-word-size-default 11)
+         (AA-word-size-default 3)
+         (word-size
+            (UNLESS-PROVIDED given-word-size
+                (IF (EQUAL program "blastn") 
+                    DNA-word-size-default
+                    AA-word-size-default)))
+         (q-seqs (SEQUENCE-LIST-of query 
+               ;     :SEQ-TYPE (OR (PROVIDED confine-to) q-type)))
+                     :SEQ-TYPE q-type))
+         (database "nr")
+         (query-name (FIRST q-seqs))
+         (query-seq (SECOND q-seqs))
+         (blast-query-string
+           (FORMAT NIL (S+ "QUERY=~a" 
+                           "&DATABASE=~a"
+                           "&HITLIST_SIZE=~a"
+                           "&FORMAT_TYPE=HTML"
+                           "&FILTER=L"
+                           "&EXPECT=~a"
+                           "&WORD-SIZE=~a"
+                           "&PROGRAM=~a"
+                           "&CLIENT=web"
+                           "&SERVICE=plain"
+                           "&NCBI_GI=on"
+                           "&PAGE=Nucleotides"
+                           "&CMD=Put")
+                       query-seq database return threshold word-size program))
+         (pre-blast-list (bio::SUBMIT-BLAST-QUERY-XML blast-query-string :FULL T))
+         (blast-list 
+           (IF pre-blast-list
+               (NEW-TABLE { (MIN return (LENGTH pre-blast-list)) $ } )))
+		 (result)
+        )
+    (FOR-EACH info-list IN pre-blast-list
+     FOR-EACH line FROM 1
+         (DEFINE blast-list[line "QUERY"] = query-name)
+         (FOR-EACH (label value) IN info-list
+              (DEFINE blast-list[line label] = value))
+         (WHEN (AND blast-list[line "T-FRAME"] 
+                    (< blast-list[line "T-FRAME"] 0)
+                    (< blast-list[line "T-START"] blast-list[line "T-END"]))
+               (LET ((temp blast-list[line "T-START"]))
+                  (SETF blast-list[line "T-START"] blast-list[line "T-END"])
+                  (SETF blast-list[line "T-END"] temp)))
+         (ASSIGN blast-list[line "%ID"]
+            = (BBL::ROUND (* 100 (/ blast-list[line "%ID"] blast-list[line "ALIGN-LENGTH"]))
+                   TO .01))
+         (ASSIGN blast-list[line "T-SEQ"] 
+            = (SEQUENCE-OF blast-list[line "T-SEQ"] WITH-LABEL blast-list[line "TARGET"]))
+         (DEFINE (blast-list[line "T-DESCRIPTION"] 
+                  blast-list[line "T-ORGANISM"]
+                  blast-list[line "T-DESCRIPTION-ext"])
+              AS (PARSE-GENBANK-DESCRIPTION blast-list[line "TDEF"]))
+         )
+    (SETQ result (MAYBE-DISPLAY-BLAST-TABLE blast-list no-display return-targets))
+	(IF (AND return-targets (OR (EQUAL program "blastp") (EQUAL program "blastx")))
+	    (FOR-EACH target IN result
+		     COLLECT
+		      (SEQUENCES-OF target FROM-GENBANK WITH-LABEL target))
+	  ; (SEQUENCES-OF result FROM-GENBANK LABELED)
+		result)
+))
+
+
+(DEFINE-FUNCTION Blast
+  SUMMARY "Access to Blast sequence alignment tool, in its various flavors"
+  REQUIRED (set1 (AGAINST BY) Set2)
+  KEYWORD (threshold cutoff cut-off) = *unprovided+*
+  KEYWORD (word-size wordsize) = *unprovided+*
+  KEYWORD return = *unprovided+*
+    TYPE (threshold word-size return) = Positive-number
+    CONVERT (word-size return) FROM Number TO Integer
+  KEYWORD program = *unprovided-string*
+    TYPE program = (OR String Symbol)
+    CONVERT program FROM Symbol TO String
+  KEYWORD confine-to = *unprovided-string*
+    TYPE confine-to = (OR Symbol String)
+  KEYWORD use-database
+    TYPE use-database = (OR String Null)
+  FLAG translate
+  FLAG no-display
+  FLAG remake-database
+  INITIALIZE threshold-default = 0.001
+  INITIALIZE blast-flavors = '("blastn" "blastp" "blastx" "tblastn" "tblastx")
+  INITIALIZE query = (IF against set1 set2)
+  INITIALIZE target = (IF against set2 set1)
+  BODY
+  (without-code-walker
+    (IF (EQUALP program "NIL") (SETF program NIL))
+    (IF (AND (PROVIDED program)
+             (NOT (MEMBER program blast-flavors :TEST 'EQUAL)))
+        (ERROR "Program must be one of the following: ~A not ~A"
+               blast-flavors program))
+    (SETF program (AND program (STRING-DOWNCASE program)))
+    (SETF threshold (UNLESS-PROVIDED threshold threshold-default))
+
+    (IF (OR (BB-SAME target *GenBank*)
+            (BB-SAME use-database *GenBank*))
+        (BLAST-GENBANK query threshold word-size return program translate no-display)
+        (BLAST-LOCAL query target threshold word-size return program confine-to 
+                          translate no-display remake-database :USE-DATABASE use-database))))
+
+						  
+(DEFUN Blast-function 
+       (set1 set2 
+             &KEY 
+             against by
+             (threshold *unprovided+*)
+             (word-size *unprovided+*)
+             (return *unprovided+*)
+             (program *unprovided-string*)		 
+	     (confine-to *unprovided-string*)		 
+             use-database translate no-display remake-database return-targets) 
+  "Access to Blast sequence alignment tool, in its various flavors"
+  (LET* ((word-size (CONVERT word-size TO Integer))
+         (return (CONVERT return TO Integer))
+         (program 
+          (IF (SYMBOLP program)
+              (CONVERT program to String) 
+            program))
+         (threshold-default 0.001)
+         (blast-flavors 
+          '("blastn" "blastp" "blastx" "tblastn" "tblastx"))
+         (against (OR against (NOT by)))
+         (query (IF against set1 set2))
+         (target (IF against set2 set1))
+         )
+  (without-code-walker
+    (IF (EQUALP program "NIL") (SETF program NIL))
+    (IF (AND (PROVIDED program)
+             (NOT (MEMBER program blast-flavors :TEST 'EQUAL)))
+        (ERROR "Program must be one of the following: ~A not ~A"
+               blast-flavors program))
+    (SETF program (AND program (STRING-DOWNCASE program)))
+    (SETF threshold (UNLESS-PROVIDED threshold threshold-default))
+
+    (IF (OR (BB-SAME target *GenBank*)
+            (BB-SAME use-database *GenBank*))
+        (BLAST-GENBANK 
+         query threshold word-size return program translate no-display
+         :RETURN-TARGETS return-targets)
+        (BLAST-LOCAL query target threshold word-size return program confine-to 
+               translate no-display remake-database :USE-DATABASE use-database
+		      :RETURN-TARGETS return-targets))
+    )))
+
+; ============= DOMAINS-OF ====================
+
+(DEFINE-FUNCTION Domains-of 
+  SUMMARY "Distant call to SMART to obtain protein domains"
+  REQUIRED gene-or-protein
+    TYPE gene-or-protein = (OR Gene Protein list String Labeled-sequence)
+    CONVERT gene-or-protein FROM Gene TO Protein
+  KEYWORD threshold = 0.001
+    TYPE threshold = Positive-number
+  KEYWORD return = *unprovided+*
+  FLAG Coordinates
+  FLAG Pfam-only
+  FLAG domain-description
+  FLAG domain-name
+  FLAG e-value
+  FLAG protein-name
+  FLAG gene-description
+  INITIALIZE submit-url 
+    = (JOIN "http://smart.embl.de/smart/show_motifs.pl"
+            "?Content_Type=form-data"
+            "&DO_PFAM=DO_PFAM"
+            "&INCLUDE_SIGNALP=INCLUDE_SIGNALP"
+            "&DO_PROSPERO=DO_PROSPERO"
+            "&SEQUENCE=")
+  INITIALIZE results = NIL
+  INITIALIZE filtered-results = NIL
+  BODY
+    (ASSIGN results =
+       (FOR-EACH entity IN (ENSURE-LIST gene-or-protein)
+	        AS protein = 
+			   (TYPECASE entity
+			      (Protein entity)
+			      (Gene (PROTEIN-OF entity))
+                  ((OR String Labeled-sequence)
+                   (IF (IS-PROTEIN-SEQUENCE? entity)
+                       entity
+                     (ERR+ PROBLEM "Domain search requires a protein "
+                           INDENT  "sequence, not '~A'." 
+                           ADVICE  "Putting p- before the name of a gene "
+                           INDENT  "converts it to a protein."
+                           FORMAT-ARGS 
+                           (JOIN (bbl::FIRST 10 entity) "...'" AS-STRING))))
+				  (OTHERWISE (ERROR "'~A' is not a gene or a protein!" entity)))
+		    AS url = (JOIN submit-url (SEQUENCE-OF protein) AS-STRING)
+		    AS SMART-page = (GET-SMART-RESULT url)
+            COLLECT (JOIN protein (PARSE-SMART SMART-page) AS-LIST)))
+   	(ASSIGN (results filtered-results) =
+	  (PROCESS-DOMAINS-OF-RESULTS
+	      results threshold 
+          return Coordinates Pfam-only domain-description
+          domain-name e-value protein-name gene-description))
+    (IF filtered-results (DISPLAY-SMART-RESULTS filtered-results submit-url))
+	results
+)

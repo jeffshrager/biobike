@@ -1,0 +1,92 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001, 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+</pre>
+
+<p align="left">Back to <a href=index.html>BioBike Documentation Contents</a></p>
+
+<html><head><title>BioBike: Notes on being a BioBike Organism Curator</title></head>
+<body><center>
+
+</b><p>
+<h2><b>BioBike: Notes on being a BioBike Organism Curator</h2>
+</b></p><p>
+</p></center>
+
+
+<p align="right">Copyright (c) 2003-2004 by The BioBike Team (contact <a
+href="http://aracyc.stanford.edu/~jshrager/personal/index.html">Jeff
+Shrager</a> for more information)</p>
+
+<p><hr><p>
+
+<pre>
+>1e. Run this by me again... My postload file changes affects everyone's
+>database (so long as they load-organism :RELOAD? T after my changes), but
+>not the underlying database, true?
+
+It's not your postload file.  It's the universal postload file for the organism
+and it is loaded when the organism gets loaded.
+
+As long as one person (presumably you, after you change the postload file)
+does a :RELOAD? T then everyone will see the revised data.  In fact, if
+someone happens to be running a program, they'll see it in the middle of
+their computation!
+
+You are misusing the term 'database'.  Each person does not have a database.
+There is only one database, the MYSQL database of organism data.  The
+database data lives out on disk.  Nothing you or anyone else does will
+change it unless you do things like run SQL queries.  The data from the
+database gets loaded (copied) into the Lisp process and stored in frames.
+(That's what LOAD-ORGANISM does)
+It's this copy of the data inside of Lisp (in the frame system) that you are
+potentially modifying with instructions in the postload file.
+Everyone sees this one copy of the data, but again, it has nothing
+to do with the database data in the sense of possibly changing it.
+
+The database data itself only gets changed when you give me a new .zip
+file and I run the code that uploads that new data into the database files.
+
+
+1.  ZIP FILE   (via upload procedure) --> DATABASE DATA
+
+2.  DATABASE DATA (via LOAD-ORGANISM) -> Organism data in Lisp/frames
+
+3.  Organism data in Lisp/frames (via postload processing) -> Transformed 
+organism data in frames
+
+Of course steps 2 & 3 are on a per-organism basis.
+
+The trick is that LOAD-ORGANISM invokes the postload processing (Step 3) 
+automatically
+after it is done moving the data from the database into Lisp/frames.
+
+One could theoretically run the postload processing independently of 
+LOAD-ORGANISM
+but that's not done.  (Although you probably could do it via the keyword 
+arguments
+to LOAD-ORGANISM).
+</pre>
+
+<p><hr><p>

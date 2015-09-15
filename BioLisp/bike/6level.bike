@@ -1,0 +1,479 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :bbi)
+
+
+; =================== SEQUENCES-SIMILAR-TO and similar ===============
+
+#| How SEQUENCE-SIMILAR-TO works
+  
+   SEQUENCES-SIMILAR-TO (6level) calls
+     SEQUENCES-SIMILAR-TO-aux (6level) which calls
+          SEQUENCES-SIMILAR-TO-WITH-MISMATCHES
+       or MATCH-OF
+       or BLAST-function (5level) which calls
+               BLAST-GENBANK (5level)
+            or BLAST-LOCAL (aux5level) which calls
+                 BLAST-aux (5level) which calls
+                   old-BLAST-aux (5level) [obsolete?]
+                   new-BLAST-aux (blast-aux)
+       or SEED-X-BLAST (postaux5level)
+       or SEQUENCES-SIMILAR-TO-WITH-LOOKUP (aux5level)
+ |#
+
+; -------------- SEQUENCES-SIMILAR-TO-aux -----------
+
+(DEFUN Sequences-similar-to-aux
+       (query target program mismatches word-size threshold return seq-type
+          &KEY no-display remake-database one-strand no-label use-database
+		       return-targets bypass-lookup)
+  (DECLARE (SPECIAL cl-user::*blast-lookup-database*))
+  (without-code-walker
+    (LET* ((target (OR target *all-organisms*))
+	       )
+
+      #+obsolete
+      (print (list '*** (EQUAL program "blastp") (NOT program)
+                   (OR (TYPEP query 'Protein) (TYPEP query 'Gene))
+                   (EXISTS cl-user::*blast-lookup-database*)
+                   (NOT target)
+                   (ORTHOLOGS-KNOWN? target)
+                   (AND (LISTP target)
+                        (EVERY (LAMBDA (i) (ORTHOLOGS-KNOWN? i))
+                               target))))
+    
+      (COND
+       ((PROVIDED mismatches)
+          (SEQUENCES-SIMILAR-TO-WITH-MISMATCHES         
+             query target (PROVIDED mismatches) return seq-type 
+             :ONE-STRAND one-strand :NO-LABEL no-label))
+
+       ((OR bypass-lookup (PROVIDED threshold) (PROVIDED word-size))
+          (BLAST-function 
+           query target :AGAINST T :PROGRAM program 
+           :THRESHOLD threshold :WORD-SIZE word-size :RETURN return
+           :CONFINE-TO seq-type :NO-DISPLAY no-display 
+           :REMAKE-DATABASE remake-database :USE-DATABASE use-database
+           :RETURN-TARGETS return-targets))
+
+       ((AND (OR (EQUAL program "blastp") (NOT program))
+             (OR (TYPEP query 'Protein) (TYPEP query 'Gene))
+             (EXISTS cl-user::*blast-lookup-database*)
+ 	         (ORTHOLOGS-KNOWN? query)			 
+             (OR (NOT target)
+                 (ORTHOLOGS-KNOWN? target)
+                 (AND (LISTP target)
+                      (EVERY (LAMBDA (i) (ORTHOLOGS-KNOWN? i))
+                             target)))) 
+        ;; (print '****and****)
+        (CASE cl-user::*blast-lookup-database*
+          (:SEED
+           ;; (print 'seed)
+           (SEED-X-BLAST query target return no-display
+                         return-targets))
+          (:CROSS-BLAST
+           ;; (print 'cb)
+           (LOOP FOR org-or-contig IN (ENSURE-LIST target)
+                 APPEND (SEQUENCES-SIMILAR-TO-WITH-LOOKUP
+                         query org-or-contig threshold return)))
+          (:OTHERWISE 
+           (ERROR "INTERNAL ERROR! Illegal blast-lookup-database: ~S"
+                  cl-user::*blast-lookup-database*))))
+
+       (T 
+        ;; (print '******default*****)
+        (BLAST-function 
+         query target :AGAINST T :PROGRAM program 
+         :RETURN return :CONFINE-TO seq-type :NO-DISPLAY no-display 
+         :REMAKE-DATABASE remake-database :USE-DATABASE use-database
+         :RETURN-TARGETS return-targets
+         )))
+
+      )))
+	   
+; -------------- SEQUENCES-SIMILAR-TO -----------
+
+(DEFINE-DF-SYNTACTIC-TOKENS Sequence-similar-to in)
+(DEFINE-FUNCTION 
+    (sequence/s-similar-to Sequence-similar-to Sequences-similar-to)
+  SUMMARY "Finds sequences similar to others, by E-value or mismatches"
+  REQUIRED ((EACH PATTERN) query)
+  TYPE (query target) = 
+  (OR Gene Protein Contiguous-sequence Organism 
+      ;; metagenome metagenome-read 
+      Labeled-Sequence String List)
+  KEYWORD in
+  KEYWORD mismatches = *unprovided+*
+  KEYWORD threshold = *unprovided+*  
+  KEYWORD (word-size wordsize) = *unprovided+*
+  KEYWORD return = *unprovided+*
+    TYPE (mismatches word-size threshold return) = Positive-number
+    CONVERT mismatches FROM Number TO Integer
+    CONVERT return FROM Number TO Integer
+    CONVERT word-size FROM Number TO Integer
+  KEYWORD use-database
+    TYPE use-database = (OR String NULL)
+  FLAG protein-vs-protein
+  FLAG DNA-vs-DNA
+  FLAG protein-vs-translated-DNA
+  FLAG translated-DNA-vs-protein
+  FLAG translated-DNA-vs-translated-DNA
+  FLAG case-sensitive
+  FLAG no-display
+  FLAG remake-database
+  FLAG no-label
+  FLAG one-strand
+; FLAG return-targets
+  FLAG return-table
+  FLAG bypass-lookup
+  FLAG %%multivalue%%
+  INITIALIZE target = in
+  INITIALIZE program 
+  = (COND
+     (protein-vs-protein "blastp")
+     (DNA-vs-DNA "blastn")
+     (protein-vs-translated-DNA "tblastn")
+     (translated-DNA-vs-protein "blastx")
+     (translated-DNA-vs-translated-DNA "tblastx"))
+  INITIALIZE search-genbank = (SAME target *Genbank*)
+  INITIALIZE return-targets = (NOT return-table)
+    
+  BODY
+  (without-code-walker
+    (IF (AND pattern (PROVIDED mismatches))
+        (ERROR 
+         (ERR+ problem "The MISMATCHES option is not currently available"
+               indent "for pattern searches."
+               advice  "Try a regular (non-pattern) search with MISMATCHES"
+               ))
+      )
+    (ERROR-IF-MORE-THAN-ONE 
+     mismatches protein-vs-protein
+     DNA-vs-DNA protein-vs-translated-DNA
+     translated-DNA-vs-protein translated-DNA-vs-translated-DNA)
+    (ERROR-IF-MORE-THAN-ONE mismatches threshold)
+    (ERROR-IF-MORE-THAN-ONE mismatches word-size)
+    (ERROR-IF-MORE-THAN-ONE mismatches search-genbank)
+    (ERROR-IF-MORE-THAN-ONE pattern search-genbank)
+    (ERROR-IF-MORE-THAN-ONE remake-database search-genbank pattern mismatches)
+
+  ;  (IF (LISTP query) (SETF each T)) ;; TEMP FIX!!! *****************
+    (COND
+     (each
+      (LOOP FOR item IN query
+            COLLECT 
+            (SEQUENCES-SIMILAR-TO-aux 
+             item target program
+             mismatches word-size threshold return NIL
+             :ONE-STRAND one-strand :NO-LABEL no-label
+             :REMAKE-DATABASE remake-database :USE-DATABASE use-database
+             :RETURN-TARGETS return-targets :BYPASS-LOOKUP bypass-lookup)))
+     (pattern
+      (MATCH-OF-AUX-aux T 'PATTERN query T NIL target return case-sensitive))
+     (T (SEQUENCES-SIMILAR-TO-aux 
+         query target program
+         mismatches word-size threshold return NIL
+         :NO-DISPLAY no-display
+         :ONE-STRAND one-strand :NO-LABEL no-label
+         :remake-database remake-database
+         :USE-DATABASE use-database
+         :RETURN-TARGETS return-targets
+         :BYPASS-LOOKUP bypass-lookup)))))
+
+; -------------- GENES-SIMILAR-TO -----------
+
+(DEFINE-FUNCTION (gene/s-similar-to Genes-similar-to Gene-similar-to)
+  SUMMARY "Finds sequences similar to others, by E-value or mismatches"
+  ;; Not tested with unexpected input (e.g. protein instead of gene)
+  REQUIRED ((EACH PATTERN) query)
+     TYPE query = (OR Gene Protein Contiguous-sequence Organism 
+                      Labeled-Sequence String List)
+     CONVERT query FROM Protein TO Gene
+  KEYWORD in	 
+     TYPE in = (OR Gene Protein Contiguous-sequence Organism 
+	                Labeled-sequence String List)
+	 CONVERT in FROM Protein TO Gene
+  KEYWORD mismatches = *unprovided+*
+  KEYWORD threshold = *unprovided+*  
+  KEYWORD (word-size wordsize) = *unprovided+*
+  KEYWORD return = *unprovided+*
+     TYPE (mismatches word-size threshold return) = Positive-number
+     CONVERT mismatches FROM Number TO Integer
+     CONVERT return FROM Number TO Integer
+     CONVERT word-size FROM Number TO Integer
+  FLAG Return-table
+  FLAG No-display
+  INITIALIZE target = in
+  INITIALIZE program = "blastn"
+    
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE mismatches threshold)
+    (ERROR-IF-MORE-THAN-ONE mismatches word-size)
+
+    (IF each
+        (LOOP FOR item IN query
+              COLLECT (SEQUENCES-SIMILAR-TO-aux item target program
+                           mismatches word-size threshold return 'Gene
+						   :RETURN-TARGETS (NOT return-table)
+                           :NO-DISPLAY no-display))
+      (SEQUENCES-SIMILAR-TO-aux query target program
+                                mismatches word-size threshold return 'Gene
+								:RETURN-TARGETS (NOT return-table)
+                                :NO-DISPLAY no-display))))
+
+; -------------- PROTEINS-SIMILAR-TO -----------
+
+(DEFINE-FUNCTION (protein/s-similar-to Proteins-similar-to Protein-similar-to)
+  SUMMARY "Finds sequences similar to others, by E-value or mismatches"
+  ;; Not tested with unexpected input (e.g. gene instead of protein)
+  REQUIRED ((EACH PATTERN) query)
+    TYPE query = (OR Gene Protein Contiguous-sequence Organism 
+                   Labeled-Sequence String List)
+    CONVERT query FROM Gene TO Protein
+  KEYWORD in
+    TYPE in = (OR Gene Protein Contiguous-sequence Organism 
+	                Labeled-sequence String List)
+    CONVERT in FROM Protein TO Gene
+  KEYWORD mismatches = *unprovided+*
+  KEYWORD threshold = *unprovided+*  
+  KEYWORD (word-size wordsize) = *unprovided+*
+  KEYWORD return = *unprovided+*
+    TYPE (mismatches word-size threshold return) = Positive-number
+    CONVERT mismatches FROM Number TO Integer
+    CONVERT return FROM Number TO Integer
+    CONVERT word-size FROM Number TO Integer
+  FLAG Return-table
+  FLAG Bypass-lookup
+  FLAG No-display
+  INITIALIZE target = in
+  INITIALIZE program = "blastp"
+    
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE mismatches threshold)
+    (ERROR-IF-MORE-THAN-ONE mismatches word-size)
+
+    (IF each
+        (LOOP 
+         FOR item IN query
+         COLLECT 
+         (SEQUENCES-SIMILAR-TO-aux 
+          item target program
+          mismatches word-size threshold return 'Protein
+          :RETURN-TARGETS (NOT return-table)
+		  :BYPASS-LOOKUP bypass-lookup :NO-DISPLAY no-display))
+      (SEQUENCES-SIMILAR-TO-aux query target program
+                                mismatches word-size threshold return 'Protein
+                                :RETURN-TARGETS (NOT return-table)
+								:BYPASS-LOOKUP bypass-lookup
+                                :NO-DISPLAY no-display))))
+
+; ================= AMINO-ACID-COUNTS-OF ====================
+
+(DEFINE-FUNCTION Amino-acid-counts-of
+  SUMMARY "Returns a list, with each number corresponding to the count of 
+the 20 amino acids in the concatenation of all the sequences (in alphabetical order by amino acid)."
+  REQUIRED entity
+  TYPE entity = (OR String Labeled-sequence gene protein organism 
+                    contiguous-sequence List)
+  CONVERT entity FROM Gene TO Protein
+  FLAG translate
+  INITIALIZE sequences = ""
+  INITIALIZE total-aa-sequence = ""
+  BODY
+  (without-code-walker
+    (SETF sequences 
+          (BBL::SECOND IN-EACH 
+            (SEQUENCE-LIST-OF (ENSURE-LIST entity) :SEQ-TYPE 'Protein
+                              :TRANSLATE translate)))
+    (SETF total-aa-sequence (JOIN sequences))
+    (COUNTS-OF *amino-acids* IN total-aa-sequence)))
+
+; ================= AMINO-ACID-FREQUENCIES-OF ====================
+
+(DEFINE-FUNCTION Amino-acid-frequencies-of
+  SUMMARY "Returns a list, with each number corresponding to the frequency ofthe 20 amino acids in the concatenation of all the sequences (in alphabetical order by amino acid)."
+  REQUIRED entity
+  FLAG translate
+  INITIALIZE aa-counts 
+    = (IF translate
+          (AMINO-ACID-COUNTS-OF entity TRANSLATE)
+          (AMINO-ACID-COUNTS-OF entity))
+  BODY
+  (DIVIDE aa-counts BY (SUM-OF aa-counts)))
+
+; ================= DINUCLEOTIDE-BIASES-OF ====================
+
+
+#| (DEFINE-FUNCTION Dinucleotide-bias-of
+  SUMMARY "Calculates dinucleotide biases of a sequence"
+  REQUIRED ((EACH) entity)
+  REQUIRED entity
+    TYPE entity = (OR String Labeled-sequence gene organism contiguous-sequence)
+  FLAG labeled
+  FLAG label-biases
+  FLAG one-strand
+  BODY
+    (IF each
+        (FOR-EACH ent IN entity
+             COLLECT 
+                (DINUCLEOTIDE-BIAS-AUX ent :LABELED labeled :LABEL-BIASES label-biases
+                   :ONE-STRAND one-strand))
+        (DINUCLEOTIDE-BIAS-AUX entity :LABELED labeled :LABEL-BIASES label-biases
+              :ONE-STRAND one-strand)))
+|#
+
+(DEFINE-FUNCTION Dinucleotide-biases-of
+  SUMMARY "Calculates dinucleotide biases of a sequence"
+  REQUIRED entity
+    TYPE entity = (OR String Labeled-sequence gene organism contiguous-sequence)
+  FLAG labeled
+  FLAG label-biases
+  FLAG one-strand
+  MAP entity
+  BODY
+    (DINUCLEOTIDE-BIAS-AUX entity :LABELED labeled :LABEL-BIASES label-biases
+              :ONE-STRAND one-strand))
+
+; ================= DINUCLEOTIDE-COMPARISON ====================
+
+(DEFINE-FUNCTION Dinucleotide-comparison
+  SUMMARY "Calculates dinucleotide biases of a sequence and compares it to those of another sequence"
+  REQUIRED ((EACH) entity1 (TO-EACH TO-AGGREGATED) entity2)
+    TYPE entity1 = (OR String Labeled-sequence gene organism contiguous-sequence list)
+    TYPE entity2 = (OR String Labeled-sequence gene organism
+                             contiguous-sequence list)
+  FLAG Labeled
+  FLAG one-strand
+  INITIALIZE results = NIL
+  BODY
+   (SETF to-each (NOT to-aggregated))
+   (SETF results
+     (COND
+        ((AND each to-each)
+          (ERROR "EACH and TO-EACH options are currently incompatible within DINUCLEOTIDE-COMPARISON"))
+        (each
+          (LET* ((t-bias (DINUCLEOTIDE-BIAS-aux entity2 :ONE-STRAND one-strand)))
+             (FOR-EACH query IN (ENSURE-LIST entity1)
+                  AS q-name = (NAME-OF query SHORT)
+                  AS q-bias = (DINUCLEOTIDE-BIAS-aux query :ONE-STRAND one-strand)
+                  AS result = (DINUCLEOTIDE-COMPARISON-aux q-bias t-bias)
+                  COLLECT (IF labeled (LIST q-name result) result))))
+        (to-each
+          (LET* ((q-bias (DINUCLEOTIDE-BIAS-aux entity1)))
+             (FOR-EACH target IN (ENSURE-LIST entity2)
+                  AS t-info = (DINUCLEOTIDE-BIAS-aux target :ONE-STRAND one-strand
+                                   :LABELED labeled)
+                  AS t-name = (IF labeled (FIRST t-info))
+                  AS t-bias = (IF labeled (SECOND t-info) t-info)
+                  AS result = (DINUCLEOTIDE-COMPARISON-aux q-bias t-bias)
+                  COLLECT (IF labeled (LIST t-name result) result))))
+        (T 
+          (LET* ((q-bias (DINUCLEOTIDE-BIAS-aux entity1 :ONE-STRAND one-strand))
+                 (t-bias (DINUCLEOTIDE-BIAS-aux entity2 :ONE-STRAND one-strand))
+                 (t-name (NAME-OF entity2 SHORT))
+                 (result (DINUCLEOTIDE-COMPARISON-aux q-bias t-bias)))
+            (IF labeled (LIST t-name result) result)))))
+     (IF labeled
+         (BBL::SORT results BY-POSITION 2)
+         results)
+ )
+
+
+; ================= CODON-FREQUENCIES-OF ====================
+   
+;;; cfo
+
+(DEFINE-FUNCTION Codon-frequencies-of
+  SUMMARY "Calculates codon frequencies of a sequence, per Karlin"
+  REQUIRED ((EACH) entity)
+    TYPE entity = (OR String Labeled-sequence gene protein 
+                      organism contiguous-sequence List)
+    CONVERT entity FROM Protein TO Gene
+  FLAG absolute
+  FLAG labeled
+  FLAG Label-frequencies
+  FLAG sort-by-codon
+  BODY
+  ; Quick hack:
+  ; Remove viruses that have transplicing, which breaks SEQUENCE-OF
+  (IF-TRUE (LISTP entity)
+      THEN (SETF entity
+             (REMOVE #$ranid_herpesvirus_1 entity :TEST 'EQUAL))
+           (SETF entity
+             (REMOVE #$ranid_herpesvirus_2 entity :TEST 'EQUAL)))
+
+  (without-code-walker
+    (IF each
+        (IF (LISTP entity)
+            (MAPCAR (LAMBDA (item)
+                (CODON-FREQUENCIES-OF-aux 
+                     item absolute labeled 
+                     label-frequencies sort-by-codon))
+                entity)
+            (ERROR "In CODON-FREQUENCIES-OF, EACH must be followed by a list, not ~A" entity))
+        (CODON-FREQUENCIES-OF-aux entity absolute labeled
+             label-frequencies sort-by-codon))))
+     
+; ================= CODON-FREQUENCY-COMPARISON ====================
+;;; cfc
+
+(DEFINE-DF-SYNTACTIC-TOKENS Codon-frequency-comparison to)
+(DEFINE-FUNCTION Codon-frequency-comparison
+  SUMMARY "Calculates codon frequencies of a sequence and compares it to a set frequencies"
+  REQUIRED (entity1 (TO) entity2)
+  TYPE entity1 = (OR String Labeled-sequence gene protein organism 
+                     contiguous-sequence List)
+  TYPE entity2 = (OR String Labeled-sequence gene protein organism 
+                     contiguous-sequence List)
+  CONVERT entity1 FROM Protein TO Gene
+  CONVERT entity2 FROM Protein TO Gene
+  FLAG labeled
+  INITIALIZE query-freqs = NIL
+  INITIALIZE aa-freqs = NIL
+  INITIALIZE results = NIL
+  BODY
+  (without-code-walker
+    (SETF query-freqs (CODON-FREQUENCIES-OF entity1))
+    (SETF aa-freqs 
+          (AMINO-ACID-FREQUENCIES-OF 
+            (IF (OR (TYPEP entity1 'Organism)
+                    (TYPEP entity1 'Contiguous-sequence))
+                entity1     
+              (TRANSLATION-OF entity1))))
+    (COND
+     ((NOT (LISTP entity2))
+      (SETF results 
+            (CODON-FREQUENCY-COMPARISON-aux 
+             query-freqs
+             (CODON-FREQUENCIES-OF entity2) aa-freqs))  
+      (IF labeled
+          (LIST entity2 results)
+        results))
+     (T 
+      (SETF
+       results
+       (LOOP FOR target-info IN entity2
+             AS (target target-freqs)
+             = (COND
+                ((AND (LISTP target-info)
+                      (= (LENGTH target-info) 2)
+                      (OR (STRINGP (FIRST target-info))
+                          (IS-FRAME? (FIRST target-info))))
+                 target-info)
+                ((LISTP target-info)
+                 (ERROR (S+ "Problem in CODON-FREQUENCY-COMPARISON: "
+                            "Each argument must be either a sequence "
+                            "or a list of the form "       
+                            "(name (set of frequencies)). "
+                            "You gave '~A'")
+                        target-info))
+                (T (LIST target-info 
+                         (CODON-FREQUENCIES-OF target-info))))
+             AS result = (CODON-FREQUENCY-COMPARISON-aux query-freqs
+                                                         target-freqs aa-freqs)
+             COLLECT (IF labeled (LIST target result) result)))
+        (IF labeled
+            (BBL::SORT results BY-POSITION 2)
+          results)))))

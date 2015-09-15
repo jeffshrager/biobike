@@ -1,0 +1,6 @@
+((:P "This as a pargraph followed by a numbered list.")
+ (:NUMBERED (:ITEM (:P "item 1"))
+  (:ITEM (:P "item 2")
+   (:BULLETS (:ITEM (:P "foo")) (:ITEM (:P "bar"))))
+  (:ITEM (:P "item 3")))
+ (:P "Another paragraph."))

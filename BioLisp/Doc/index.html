@@ -1,0 +1,439 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2012 The BioBike Team                                |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>BioBike Documentation Index</title></head>
+<body>
+</b><p>
+<Table>
+<TR>
+<TD>
+<h2><image src=wliconnew.jpg><b></td>
+<TD><i><h2>BioBike</i></h2></td>
+</tr>
+<tr><td>All contents Copyright 2002-2012 The BioBike Team</td></tr>
+</Table>
+<p><hr><p>
+<a href=http://biobike.csbc.vcu.edu/>
+<h3>You've reached an outdated page. Click here to be redirected to the new BioBike home page, including:</h3>
+<p />
+<ul>
+<li>CyanoBIKE (cyanobacteria)
+<li>GunneraBIKE (Gunnera transcriptome)
+<li>PhAnToMe/BioBIKE (bacteria and their phages)
+<li>StreptoBIKE (Streptococcus)
+<li>StaphyloBIKE (Staphylococcus)
+<li>ViroBIKE (viruses)
+</ul></a>
+<p>
+</b></p><p>
+
+<p><hr><p>
+
+<p id=about>
+<h3>About BioBike:</h3>
+<p>
+<ul>
+<li><a href=faq.html>The BioBike FAQ</a>
+
+<li>Until recently, BioBike was called "<a href=http://nostoc.stanford.edu:8002/biologin>BioLingua</a>".  <a target=_blank href=CandD.html>Here is an explanation of the name change</a>.
+<li><a href=intro.html>Introduction: <em>The BioBike Vision</em><small> (What is this thing?)</small></a>
+<li><a href=biobike-languages.html>Programming the BioBike system</a>
+<li>The original BioBike paper in <i>Bioinformatics</i> <a target="_blank" href=http://bioinformatics.oxfordjournals.org/content/21/2/199.abstract>[link out to Oxford U. Press site].</a>
+<li><i>The (Re)Birth of the Knowledge Operating System</i> <a target=_blank href=http://nostoc.stanford.edu/jeff/personal/vita/pubs/2005ILCKnowOS.pdf>[PDF]</a> (appearing at the International Lisp Conference, Stanford, June, 2005)
+
+
+<li><a href="whylisp.html">Why Lisp?</a> 
+</ul>
+
+<p><hr><p>
+<h3>News!</h3>
+<ul>
+
+<li>20090511: A new BioBike paper, entitled "BioBIKE: A Web-based,
+Programmable, Integrated Biological Knowledge Base" (by Jeff Elhai,
+Arnaud Taton, and others) appears in a special issue of
+<i>Nucleic Acids Research</i> (NAR) on biocomputational web
+servers. This paper focuses on the VPL and other accomplishments since
+the last major paper (the 2005 BioInformatics paper). <a href="http://nar.oxfordjournals.org/content/37/suppl_2/W28" target=blank>Click here to
+access this Open Source paper.</a>
+
+<li>20080302: A new <a target=_blank,
+href=http://groups.google.com/group/biobike>BioBike Google Group</a>
+has been created. Anyone can join it. Click <a target=_blank,
+href=http://groups.google.com/group/biobike>[here]</a> to visit the
+new group.
+
+<li>20071205: The paper "The Evolution of BioBike: Community
+Adaptation of a Biocomputing Platform " has just appeared in
+<i>Studies in History and Philosophy of Science</i> (v38,
+pp642-656). Ask <a href=mailto:jshrager@stanford.edu>Jeff
+Shrager</a> for a PDF of the final version that appeared in the
+journal.
+
+<li>20071025: A new tutorial on <a target=_blank
+href=livetutorials/macros.html>Lisp Macros</a> has been added to the
+<a href="#livetutorials"><font color="green">Live Tutorials
+set</font></a>. You can see it by <a target=_blank
+href=livetutorials/macros.html>[clicking here]</a>, but it's really
+supposed to be run <i>live</i> from inside BioBike. (See <a href="#livetutorials">instructions
+below</a> on how to do this.)
+
+<li>20070404: <a target=_blank
+href=http://www.plosone.org/article/fetchArticle.action?articleURI=info%3Adoi%2F10.1371%2Fjournal.pone.0000339>The
+latest BioBike paper just appeared in the Open Source journal PLoS
+One; <i>Deductive BioComputing</i> (Shrager, Waldinger, Stickel, and
+Massar)</a> describes the way that SRI's SNARK theorem prover can be
+used inside the BioBike platform to do complex biological reasoning.
+
+<li>20061215: A <a target=_blank
+href=http://nostoc.stanford.edu/jeff/etc/bblvpl/bblvpl.html>walk
+through tour and engineering-level description of the new BBL visual
+programming language (vBBL)</a> has been posted. This is more-or-less
+a teaser as vBBL hasn't been released yet, but it gives you some idea
+of how it looks and works.</a>
+
+<li>20060904: A <a target=_blank
+href=http://www.lispworks.com/success-stories/biobike.html>new
+"success story" about BioBike</a> just appeared on the 
+<a target=_blank href=http://www.lispworks.com/>LispWorks web
+site</a>
+
+<li>20060830: I've just completed yet another BioBike paper, this one for
+a special issue of the <i>Journal of the History and Philosophy of
+Science</i>. <a target=_blank
+href=http://nostoc.stanford.edu/jeff/temp/jhps20060830.pdf>Here's a preprint in
+PDF.</a>
+
+<li>20060815: Richard Waldinger, Mark Stickel, JP Massar and I just
+completed a new paper on "Deductive Biocomputing". This describes
+using SNARK, SRI's First Order theorem prover, combined with BioBike
+to enable "intelligent" (deduction-based) biological computation. <a target=_blank href=http://www.ai.sri.com/pubs/files/1315.pdf>Here's a preprint in PDF.</a>
+
+<li>20060606: Richard Waldinger (SRI) presented a paper entitled
+"Deductive Discovery and Composition of Resources" which describes
+BioDeducta (BioBike + Snark). The paper appears in the proceedings of
+the conference: Reasoning on the Web 2006 (RoW06). <a target=_blank
+href=http://www.aifb.uni-karlsruhe.de/WBS/phi/RoW06/procs/waldinger.pdf>Here's
+a link to the conference proceedings pdf for that paper.</a>
+
+<li>20060228: Numerous biobike <u><a
+href="#examples">tutorials</a></u> are now available! Many of these
+are <a href="#livetutorials"><i>Live</i> Tutorials</a>, which are
+intended to be run live from within BioBike.
+
+<li>20050523: A paper describing the greater "KnowOS" (a knowledge
+operating system) vision (of which BioBike is the main instance) was
+delivered at the <a target=_blank
+href=http://international-lisp-conference.org/>International Lisp
+Conference</a> at Stanford in June.  See <a href="#about">About
+BioBike</a> above for a link to the paper.
+
+<li>20050606: A commentary appearing in the <a target=_blank
+href=http://www.the-scientist.com/2005/06/6>June 6, 2005 issue of The
+Scientist</a> describes our collaboration with the <a target=_blank
+href=http://www.hybrow.org>HyBrow</a> team at Penn State. <font color=red>(This content is no longer online at The Scientist.)</font>
+
+<li>20050523: A paper describing the greater "KnowOS" vision (of which
+BioBike is the main instance) will be delivered at the <a
+target=_blank
+href=http://international-lisp-conference.org/>International Lisp
+Conference</a> at Stanford in June.  See <a href="#about">About
+BioBike</a> below for a link to the paper.
+
+<li>20050112: The BioBike paper has appeared in BioInformatics!  <a
+target="_blank"
+href=http://bioinformatics.oxfordjournals.org/content/21/2/199.abstract>Click
+here to access the paper at the OUP site.</a>
+
+</ul>
+
+<p><hr><p>
+
+<a NAME="BIOLISP">
+<p id=intro><p id=examples>
+<h3>Introductory BioLisp Materials and Tutorial Examples:</h3>
+
+<p>
+
+<h5><i>The Introductory Materials and Tutorial Examples are slowly being
+merged. Many of the tutorials are being turned into Live Tutorials
+(described below).</i></h5>
+
+<p>
+
+<font color=brown><a href=tour.html>A Tour of BioBike</a> Users
+interested in a demo will want to begin here. <font color=green
+size=-2><br>(Also available as a Live Tutorial, see below.)</font></font>
+
+<p>
+<ul>
+<li><a target=_blank href=lispintro.html>Introduction BioLisp programming language</a>
+<li><a target=_blank href=interacting.html>Simple BioBike Interaction</a>
+<li><a target=_blank href=usinghelp.html>Using the HELP command</a>
+<li><a target=_blank href=frames.html>An Introduction to Frames</a>
+<li><a target=_blank href=moreintro.html>Somewhat more interesting BioBike</a>
+<li><a target=_blank href=iteration.html>Basic Data Structures and Iteration in BioLisp</a>
+<li><a target=_blank href=usingtables.html>Manipulating Data Tables, Simple Data Plotting</a>
+<li><a target=_blank href=progdev.html>Program Development and Debugging</a>
+<li><a target=_blank href=share.html>Collaboration and code-sharing</a> 
+<li><a target=_blank href=xdbs.html>Interacting with External Knowledgebases (like PubMed)</a>
+<li><a target=_blank href=workspaces.txt>Saving your Work using Workspaces</a>
+<li><a target=_blank href=advinteract.html>Tips for Advanced Interaction with BioBike</a>
+</ul>
+<p>
+
+</ul>
+
+<p id=livetutorials>
+<h3><i>Live</i> Tutorials:</h3>
+
+<p>
+
+<font color=brown><h5><i>These are intended to be run live from within
+BioBike. To get to the Live versions of Live Tutorials, log into
+BioBike demo server and select "Help...", then "Live Tutorials", and
+choose from the list list of live tutorials that appears. Outside a
+running BioBike, these are just normal HTML pages, but they may not
+fully work if you just read them straight from here; for example some
+images might not appear correctly. Also, please note that some of
+these are still under construction.</i></h5></font>
+
+<ul>
+
+<li><a target=_blank href=livetutorials/tour.html>A Tour of BioBike</a>: Getting one's feet wet with BioLisp and the BioBike Listener
+
+<li><a target=_blank href=livetutorials/lispintro.html>Lisp I: Evaluation</a>: The basics of Lisp evaluation.
+
+<li><a target=_blank href=livetutorials/iteration.html>Lisp II: Data and Iteration</a>: Lisp data structures and iteration (loops).
+
+<li><a target=_blank href=livetutorials/MBCSmatch.html>How Blast Works</a>: How sequence alignment (i.e., Blast) works.
+
+<li><a target=_blank href=livetutorials/functions.html>Functions</a>: This is what makes Lisp Special!
+
+<li><a target=_blank href=livetutorials/macros.html>Lisp Macros</a>: How to Define Entirely New Languages in Lisp
+
+<li><a target=_blank href=livetutorials/tables.html>Tables</a>: Working with data tables
+
+<li><a target=_blank href=livetutorials/elhaiproblem1.html>Biocomputing I</a>: Comapring gene function across organisms using annotation and microarrays
+
+<li><a target=_blank href=livetutorials/graphsearch.html>Graph R&R</a>: Representation and Reasoning about Graphs
+
+<li><a target=_blank href=livetutorials/GO1.html>GO Analysis I</a>: Simple symbolic biocomputing based on the Gene Ontology
+
+<li><a target=_blank href=livetutorials/arrayclustering.html>Microarray Analysis</a>: Simple microarray data clustering
+
+<li><a target=_blank href=livetutorials/MBCSmeta1.html>Metabolic Simulation I</a>: Introduction to dynamic analysis of metabolic pathways
+
+<li><a target=_blank href=livetutorials/GO3.html>Metabolic Simulation II</a>: Dynamic pathway analysis using the Gene Ontology knowledge base
+
+<li><a target=_blank href=livetutorials/jssymbiolietal.html>Regulation Simulation</a>: Simulating the cell cycle (based upon a 2004 PNAS publication)
+
+<li><a target=_blank href=livetutorials/bionlp.html>Natural Language I</a>: Extracting biological relationships from PubMed I
+
+<li><a target=_blank href=livetutorials/phylotops.html>Functional Phylogeny</a>: Exploring phylogeny based upon gene function
+
+<li><a target=_blank href=livetutorials/regdiscovery.html>Model Discovery I</a>: Reverse engineering of regulatory networks
+
+<li><a target=_blank href=livetutorials/reasoning1.html>Reasoning Intro</a>: Introduction to automated reasoning using Snark
+
+<li><a target=_blank href=livetutorials/snarkelhai.html>Basic BioReasoning</a>: Re-understanding the Elhai problem as a reasoning
+
+<li><a target=_blank href=livetutorials/regsim2.html>Regulatory Reasoning</a>: Using Snark to reason about the cell cycle (not done!)
+
+</ul>
+
+<p><hr><p>
+
+<p id=advanced>
+<h3>Advanced Materials:</h3>
+
+<p>
+
+<ul>
+
+<li><a target=_blank href=bbl-description.html> A brief description of the BBL language </a>
+<li><a target=_blank href=defprotocol.txt>Defining your own Functions and Protocols</a>
+<li><a target=_blank href=crossmetrics.html>Creating and Clustering by CrossMetrics</a>
+<li><a target=_blank href=process-info.txt>How to handle timeouts, batch and multiple-processes</a>
+<li><a target=_blank href=table-data.txt>Table Reading Tools</a>
+<li><a target=_blank href=http://www.weitz.de/cl-ppcre/>CL-PPCRE - portable Perl-compatible regular expressions for Common Lisp</a>
+<li><a target=_blank href=web-widgets.txt>Using Web Widgets</a>
+<li><a target=_blank href=garrays.txt>Generalized Arrays -- a tool to combine and extend Lisp arrays and Lisp hash tables.</a>
+<li><a target=_blank href=snark.html>Using SRI's SNARK Theorem Prover</a>
+</ul>
+
+<p><hr><p>
+
+<a NAME="COMMONLISP">
+
+<p id=lisp>
+<p><h3>Common Lisp Resources:</h3>
+<ul>
+
+<li>
+Wikipedia entries for <a
+target=_blank href=http://en.wikipedia.org/wiki/Common_Lisp>"Common Lisp"</a>, and
+<a target=_blank href="http://en.wikipedia.org/wiki/Lisp_programming_language">"The
+Lisp Programming Language"</a>
+
+<li><a target=_blank  href=http://www.gigamonkeys.com/book>
+Peter Seibel's <i>"Practical Common Lisp"</i>; An introduction to Lisp for programmers</a>
+
+<li><a target=_blank href=http://www.cs.sfu.ca/CC/310/pwfong/Lisp/>A very good set of intro lessons from Simon Fraser University</a>
+
+<li><a target=_blank href=http://cl-cookbook.sourceforge.net/>
+ The Common Lisp Cookbook: A collection of open Lisp software</a>
+
+<li><a target=_blank href=http://docs.mandragor.org/files/Programming_languages/Lisp/Pascal_Costanzas_Highly_Opinionated_Guide_to_Lisp_en/guide.html>Pascal Costanza's Highly Opinionated Guide to Lisp (with lots of reference points)</a>
+</ul>
+
+<p><hr><p>
+
+<p id=core>
+<h3>Core Documentation:</h3>
+
+<p>
+
+<ul>
+
+<li><a target=_blank href=install-steps.txt>Installation Procedures 
+for BioBike</a>
+
+<li><a target=_blank href=how-to.html>How to...A basic manual/FAQ
+for system developers</a>
+
+<li><a target=_blank href=kdbs.html>BioBike Knowledge Bases: Procedures 
+and Info</a>
+
+<li><a target=_blank href=organism-submission-format.txt>Organism 
+Submission Format</a>
+
+<li><a target=_blank href=define-function.txt>Syntax and semantics 
+for BBL's define-function definition facility </a>
+
+<li><a target=_blank href=fastaapi.txt>How to Use the FASTA indexer</a>
+
+<li><a target=_blank href=curatornotes.html>Notes on being an organism
+curator</a>
+
+<li><a target=_blank href=process-priorities.txt>Notes on process 
+priority algorithm for weblistener threads</a>
+
+<li><a target=_blank href=external-interfaces.txt>Documentation
+on how to install, run, and interface to programs like BLAST, MEME, etc.
+(Barely started)</a>
+
+<li><a target=_blank href=libhowto.txt>How to create libraries (OBSOLETE)</a>
+
+<li><a target=_blank href=technicaloverview.html>BioBike Technical Overview
+(OBSOLETE)</a>
+
+<li><a target=_blank href=sysarch.txt>Startup and Initialization, 
+File System Structure (EXTREMELY OBSOLETE)</a>
+
+</ul>
+
+<p><hr><p>
+
+<p id=ack>
+<h3>Acknowledgments:</h3>
+
+<p>
+
+The biologists, students, and engineers who have contributed to this
+project so far include: <a target=_blank
+href=http://nostoc.stanford.edu/jeff/personal/>Jeff Shrager</a> (PI),
+JP Massar (core engineering lead), Mike Travers (knowledge framework
+and interface engineering lead), 
+Jeff Elhai, Mark Slupesky, Julian
+Brooke, Devaki Bhaya, <a href=demointro.html>Dora Demo</a>, Arthur Grossman, Bob Haxo, Monica Jain, Ashvin
+Kumar, Pat Langley, <a href=http://nostoc.stanford.edu:8002/biologin>Mike Main</a>, Andrew Pohorille, Marc Santoro, Karl Schweighofer,
+Dan Siroker, Colin Smith, Arnaud Taton, Serdar Uckun, and Sumudu Watugala.
+
+<br><p>
+
+Thanks to <a target=_blank href=http://www.franz.com>Franz Inc.</a>
+and <a target=_blank href=http://www.lispworks.com>LispWorks</a> for
+software contributions.
+
+<br><br>
+
+This work has been supported by NASA'S program in Astrobiology and
+Fundamental Biology through a Biological Science Research Program
+grant, and by grant BDI-0516378 from the NSF Biological Databases and
+Informatics program, and by grant EEC-0234104 from the NSF/NIH
+Bioinformatics and Bioengineering Summer Institute program.
+
+<p><hr><p>
+<center>
+<image src=wlasleepnew.jpg>
+<h5><i>Wisp Lizard (by Rebecca Agin)</i></h5>
+</center>
+
+<p><hr><p>
+
+<p id=contacts>
+<h3>Email contacts:</h3>
+
+<ul>
+<li>Principal Investigator: <a href=mailto:jshrager@stanford.edu>Jeff Shrager</a>
+
+<li>Questions and issues are posted on <a target=_blank,
+href=http://groups.google.com/group/biobike>the BioBike Google
+Group</a>, which anyone can join it. Click <a target=_blank,
+href=http://groups.google.com/group/biobike>[here]</a> to visit this
+group.
+
+</ul>
+
+<p><hr><p>
+
+All contents Copyright 2002-2012 The BioBike Team
+
+<p><hr><p>
+
+
+</body>
+</html>
+<!--WEBBOT bot="HTMLMarkup" startspan ALT="Site Meter" -->
+<script type="text/javascript" language="JavaScript">var site="s22biobike"</script>
+<script type="text/javascript" language="JavaScript1.2" src="http://s22.sitemeter.com/js/counter.js?site=s22biobike">
+</script>
+<noscript>
+<a href="http://s22.sitemeter.com/stats.asp?site=s22biobike" target="_top">
+<img src="http://s22.sitemeter.com/meter.asp?site=s22biobike" alt="Site Meter" border="0"/></a>
+</noscript>
+<!-- Copyright (c)2005 Site Meter -->
+<!--WEBBOT bot="HTMLMarkup" Endspan -->
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-4236044-2");
+pageTracker._trackPageview();
+} catch(err) {}</script>

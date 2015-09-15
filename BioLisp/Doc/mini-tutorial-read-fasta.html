@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+body,td,th {
+	font-family: Courier New, Courier, mono;
+	font-size: medium;
+}
+.style1 {
+	color: #0000CC;
+	font-weight: bold;
+}
+-->
+</style>
+</head>
+
+<body>
+<p class="style1">Function READ-FASTA-FILE example &amp; mini-tutorial &quot;how-to-upload files to BioBIKE&quot;</p>
+<p>Suppose you want to export this example file to BioBIKE.</p>
+<blockquote>
+  <p><img src="http://nostoc.stanford.edu:8002/Topdir3/humphreymk/test/images/seq.jpg">
+  </p>
+</blockquote>
+<OL>
+<li>Save this FASTA file as "example-seq.txt"</li><br>
+<li>Go to WebListener --> Tools --> Upload File</li><br>
+<li>Browse/select the file you want to upload</li><br><br>
+<img src="http://nostoc.stanford.edu:8002/Topdir3/humphreymk/test/images/upload-facility.jpg"><br>
+<br><li>Enter the directory where you want to put the file in. If you don't specify the directory, the file will go into the default directory. Examples:<br>
+  <OL type=a>
+      <li>Type "example-seq.txt" in the box -> will upload the file in the default directory</li>
+        <li>Type "/home/visitors/shared-files/example-seq.txt" -> will upload the file in the specified directory</li>
+  </OL><br>
+<li>Hit [Upload it] button, and you'll see this screen</li>
+<br><br>
+<img src="http://nostoc.stanford.edu:8002/Topdir3/humphreymk/test/images/upload.jpg"><br><br>
+<li>Go back to WebListener, and type in the box
+<br><font align=center>(READ-FASTA-FILE "example-seq.txt")</font><br><br>
+<li>If the file is in the shared directory, type:<br>
+(READ-FASTA-FILE "example-seq.txt" shared)</li>
+</OL>
+<p></body>
+</html>

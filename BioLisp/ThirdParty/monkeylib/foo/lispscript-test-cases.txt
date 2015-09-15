@@ -1,0 +1,483 @@
+true
+true
+
+false
+false
+
+;;; LET
+
+(let ())
+undefined
+
+(let ((x 10)) x)
+10
+
+(let () this)
+window
+
+(let ((x 1)) this)
+window
+
+(let ((x 10) (y 20)) (+ x y))
+30
+
+;;; LET*
+
+(let* ())
+undefined
+
+(let* ((x 10)) x)
+10
+
+(let* ((x 10) (y x)) y)
+10
+
+(let* ((x 10) (y x)) (set y 20) y)
+20
+
+(let* ((x 10) (y x)) (set y 20) x)
+10
+
+(let ((x 10)) (let* ((y x) (x 20)) (+ x y)))
+30
+
+;;; LAMBDA 
+
+((lambda () 1))
+1
+
+((lambda (x) (* 2 x)) 10)
+20
+
+((lambda (x) (* 2 x) x) 10)
+10
+
+((lambda (x) (if (= x 10) "yes" "no")) 10)
+"yes"
+
+((lambda (x) (if (= x 10) "yes" "no")) 20)
+"no"
+
+((lambda (x) (if (= x 10) "yes" "no") "this") 10)
+"this"
+
+((lambda (x) (if (= x 10) "yes" "no") "this") 20)
+"this"
+
+((lambda () this))
+window
+
+;;; PROGN
+
+(progn 10)
+10
+
+(progn 10 20)
+20
+
+(progn (if true 10 20))
+10
+
+(progn (if true 10 20)  30)
+30
+
+(progn this)
+window
+
+;;; BLOCK
+
+(block x 10)
+10
+
+(block x (block y 10))
+10
+
+(block x (block y 10) 20)
+20
+
+(block x (return-from x 10))
+10
+
+(block x (return-from x 10) 20)
+10
+
+(block x (block y (return-from y 10)))
+10
+
+(block x (block y (return-from y 10)) 20)
+20
+
+(block x (block y (return-from x 5) 10) 20)
+5
+
+(block x (block x (return-from x 10)) 20)
+20
+
+(block nil (return 10))
+10
+
+(block nil (block y (return 10) 20))
+10
+
+;;; DEFUN
+
+;; CL style defuns
+(defun foo (x) (* x 10))
+window.foo
+
+(progn (defun x () 10) (x))
+10
+
+(progn (defun x () (return-from x 10) 20) (x))
+10
+
+(progn (defun x (fn) (fn) 20) (block x (x (lambda () (return-from x 10)))))
+10
+
+(progn (defun x (fn) (fn)) (block x (+ 10 (x (lambda () (return-from x 10))))))
+10
+
+(progn (defun x () (return-from x 10)) (block x (x) 20))
+20
+
+(defun factorial (n) (if (= 0 n) 1 (* n (factorial (1- n)))))
+factorial
+
+(factorial 10)
+3628800
+
+;;; DEFVAR
+
+(defvar x 10)
+window.x
+
+(let () (defvar x 10))
+window.x
+
+;;; IF
+
+(if true "yes" "no")
+"yes"
+
+(if false "yes" "no")
+"no"
+
+(+ (if true 10 20) (if false 20 30))
+40
+
+;;; COND
+
+(cond (true 10))
+10
+
+(+ (cond (true 10)) 20)
+30
+
+(+ (cond (false 10) (true 20)) 30)
+50
+
+;;; WHEN
+
+(when true 10)
+10
+
+(when false 10)
+undefined
+
+(when true 10 20)
+20
+
+(when false 10 20)
+undefined
+
+
+;;; UNLESS
+
+(unless false 10)
+10
+
+(unless true 10)
+undefined
+
+(unless false 10 20)
+20
+
+(unless true 10 20)
+undefined
+
+;;; AND
+
+(and 1)
+1
+
+(and 1 2)
+2
+
+(and false)
+false
+
+(and true)
+true
+
+(let ((x 0)) (and false (++ x)) x)
+0
+
+(let ((x 0)) (and true (++ x)) x)
+1
+
+;;; OR
+
+(or true)
+true
+
+(or false)
+false
+
+(or true false)
+true
+
+(or false true)
+true
+
+(or false false)
+false
+
+(let ((x 0)) (or true (++ x)) x)
+0
+
+(let ((x 0)) (or false (++ x)) x)
+1
+
+;;; NOT
+
+(not true)
+false
+
+(not false)
+true
+
+;;; DO
+
+(do () (true))
+undefined
+
+(do () (true 10))
+10
+
+(do () (true this))
+window
+
+(do ((i 0)) ((= i 10)) (++ i))
+undefined
+
+(do ((i 0 (++ i))) ((= i 10)))
+undefined
+
+(do ((i 0)) ((= i 10) "done") (++ i))
+"done"
+
+(do ((i 0 (1+ i))) ((= i 10) "done"))
+"done"
+
+(let ((x 0)) (do ((i 0 (1+ i)) (j 10 (1- j))) ((= i 10)) (set x (+ x i j))) x)
+100
+
+(+ 10 (do () (true 10)))
+20
+
+;;; DO*
+
+(let ((x 0)) (do* ((i 0 (1+ i)) (j i i)) ((= i 10)) (set x (+ x i j))) x)
+90
+
+;;; DOTIMES
+
+(dotimes (i 10) (return i))
+0
+
+(dotimes (i 10) (when (= i 5) (return i)))
+5
+
+(dotimes (i 10) (dotimes (j 10) (* i j)))
+undefined
+
+(dotimes (i 10) (return (dotimes (j 10) (return (* i j)))))
+0
+
+;;; WHILE
+
+(let ((x 0)) (while (< x 10) (++ x)) x)
+10
+
+;;; UNTIL
+
+(let ((x 0)) (until (= x 10) (++ x)) x)
+10
+
+;;; NEW
+
+(@ (new Array) constructor)
+Array
+
+;;; REF
+
+(let ((a (new Array 3))) (set (ref a 0) 10) (ref a 0))
+10
+
+(let ((a (new Array 3))) (set (ref a 0) 10) (set (ref a 1) 20) (+ (ref a 0) (ref a 1)))
+30
+
+;; EQ
+
+(eq 1 1)
+true
+
+(eq 1 2)
+false
+
+(eq 2 (+ 1 1))
+true
+
+(eq 1 "1")
+false
+
+(eq true 1)
+false
+
+(eq false 0)
+false
+
+(eq null undefined)
+false
+
+(eq (new Object) (new Object))
+false
+
+;; due to semantics of Javascript's ===
+(eq "foo" (+ "f" "oo"))
+true
+
+(equal "foo" (+ "f" "oo"))
+true
+
+;; EQUAL
+
+(equal 1 1)
+true
+
+(equal 1 2)
+false
+
+(equal 2 (+ 1 1))
+true
+
+(equal 1 "1")
+true
+
+(equal "1" 1)
+true
+
+(equal true 1)
+true
+
+(equal false 0)
+true
+
+(equal null undefined)
+true
+
+;; =
+
+(= 1 1)
+true
+
+(= 1 2)
+false
+
+(= 2 (+ 1 1))
+true
+
+(= 1 "1")
+true
+
+;;; STRING=
+
+(string= "abc" "abc")
+true
+
+(string= "abc" "def")
+false
+
+(string= "abc" 123)
+false
+
+(string= "123" 123)
+true
+
+(let ((x "abc")) (string= x "abc"))
+true
+
+
+(+ 1 2)
+1 + 2
+
+(+ 2 2)
+2 + 2
+
+(+ 1 2 3)
+1 + 2 + 3
+
+(* 2 2)
+2 * 2
+
+(+ (* 2 3) 4)
+(2 * 3) + 4
+
+(let ((x 1)) x)
+1
+
+
+(let ((x 0)) (dotimes (i 10) (++ x)) x)
+10
+
+
+
+(@ window document)
+window.document
+
+(.get-element-by-id document "passes")
+document.getElementById("passes")
+
+
+(factorial 11)
+39916800
+
+(factorial 12)
+479001600
+
+(factorial 13)
+6227020800
+
+(factorial 14)
+87178291200
+
+(factorial 15)
+1307674368000
+
+(factorial 21)
+51090942171709440000
+
+(factorial 22)
+1124000727777607680000
+
+(factorial 26)
+403291461126605635584000000
+
+(factorial 27)
+10888869450418352160768000000
+
+
+
+(ignore-errors do-not-define-this-variable)
+false
+

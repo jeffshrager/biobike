@@ -1,0 +1,145 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<Html><head><title>Why Lisp?</title></head>
+
+<center></b><p>
+<h2><b>Why Lisp?</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2006 by The BioBike Team (contact <a
+href="http://nostoc.stanford.edu/jeff/personal/index.html">Jeff
+Shrager</a> for more information)</p>
+
+<p><p>
+
+The question that we are most frequently asked by engineers and computer scientists is: <i>"Why did you base
+BioBike on Lisp, instead of some 'modern' programming language, like
+C/C++, Java, PERL, or Python; Isn't Lisp an archaic, dead, and anyway
+impossibly complex programming language?"</i> 
+
+<p>
+
+First, Lisp is far from archaic or dead!  Although it is one of the
+oldest programming languages (invented in the early 1960s, along with
+Fortran!), it is still widely used in the Artificial Intelligence
+community, and is the first programming language taught in intro
+computer science courses at many top universities, including MIT and
+Berkeley. (Actually, what's taught is usually Scheme, a dialect of
+Lisp; Common Lisp can be thought of as an industrial form of Scheme.)
+
+<p>
+
+Lisp is also the <i>only</i> programming language with certain very
+useful features, such as true macros, that are
+<i>critical</i> when you are inventing a new programming language,
+like BioBike, because they enable you to extend Lisp's syntax<sup>1</sup>.  Lisp
+is the most natural language in which to write complex 'symbolic
+reasoning' programs, which are the heart of BioBike's novel
+capabilities.  Symbolic reasoning involves manipulating conceptual
+objects, such as 'genes', 'ontologies', 'pathway models', and the
+like, and Lisp was built specifically for this sort of manipulation
+(although not specifically for biology at the time).  This is why it
+has remained popular in the most advanced computing circles, esp. in
+Artificial Intelligence.
+
+<p>  
+
+As for being impossibly complex, it's not any more complex than any
+other programming language.  (Those who don't know Chinese think it's
+hard too, but the Chinese don't!)  Many other 'modern' programming
+languages have been based directly on Lisp; Python, for example, is
+just a near approximation to Lisp.  (See Peter Norvig's comparison <a
+href=http://www.norvig.com/python-lisp.html>here</a>.)  One of us
+(Shrager) teaches Lisp to both programmers and non-programmers
+regularly.  Lisp is often taught to non-programmers because it has
+very simple syntax (requiring only the balancing of parentheses), and
+deals naturally with complex symbolic computations (as above), so
+musicians, writers, and others who want to write programs that deal
+with complex structured knowledge find Lisp easy and powerful.  We
+think that biologists will as well.
+
+<p>
+
+As for C/C++/Java, those languages are of a very different sort than
+Lisp and Python (and to a large extent PERL). Lisp, et al., are
+essentially interactive programming languages; You write small concise
+programs that do small concise things, and test them in small concise
+ways.  C and friends are designed for writing large,
+industrial-strength programs, and have lots of features -- such as
+required type declarations -- that make them
+run FAST, but which at the same time make them difficult to use for
+small, concise applications.  (Lisp, by the way, is no slouch in the
+area of speed! It has decades of excellent compiler development
+underneath that makes well-written Lisp code run at nearly the speed
+of C (better than half as fast, in many cases).  Of course,
+you can write a slow program in <i>any</i> programming language!
+Also, as pattern matching is a big thing these days, it's interesting
+to note that a PERL-compatible pattern matcher written entirely in
+Lisp is as fast as, and in some cases <i>faster</i> than, the PERL
+pattern matcher itself!  Code and comparisons <a
+href=http://www.weitz.de/cl-ppcre/>here</a>.)  We use this pattern
+matcher.
+
+<p>
+
+Bottom line: Why Lisp?  <i>Because it's the right language for the
+job!</i>
+
+<p>
+Other essays along similar lines:
+<ul>
+<li>
+<a href=http://www.norvig.com/paip-preface.html#whylisp>
+'Why Lisp? Why Common Lisp? </a> by 
+<a href=http://www.norvig.com/index.html> Peter Norvig</a> (currently at Google)
+<li>
+<a href=http://www.norvig.com/python-lisp.html>
+Python for Lisp Programmers</a> by
+<a href=http://www.norvig.com/index.html> Peter Norvig</a> 
+<li>
+<a href=http://www.paulgraham.com/lisp.html>
+Various essays about Lisp and related links</a> by
+<a href=http://www.paulgraham.com/index.html>Paul Graham</a> (developer of Yahoo Stores). <br> He has written extensively comparing Lisp with other programming languages.
+<p>
+</ul>
+
+<p><hr><p>
+
+Notes:
+
+<p>
+
+1. Python, which is more-or-less lisp w/o the parens, is missing
+several critical features to do what we do in BioBike, esp. true
+macros, which enable you to manipulate expressions, create sub
+langauages, and engage in applicative programming. Someday the Python
+crowd will realize that uniform syntax is a good thing, and will
+re-adopt parens (or something like them), and then Python will just be
+Lisp again, and much the better for it!
+
+</blockquote>
+
+

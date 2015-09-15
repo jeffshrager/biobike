@@ -1,0 +1,450 @@
+
+
+                        TO DO LIST (NOT SEED) AND DISCUSSION
+
+
+I.  SUMMARY TASK LIST
+
+Johnny non-VPL3 tasks:
+
+  -- Menu/submenu that allows multiple selection
+  -- Modify JBML to allow arbitrary HTML (for links, etc)
+  -- How to take a pictoral representation of entire workspace and save it,
+     even if workspace has areas that are scrolled off?
+
+Jeff Elhai non-VPL3 tasks:
+
+  -- Documentation strings for obscure functions (Mark list)
+  -- Useful VPL tutorials (link on first screen)
+  -- TYPECASE verification
+  -- Removal of Lisp ERROR calls in BioBike code, replacement with ERR+
+  -- SEQUENCE-OF bugs; any other reported bugs
+
+Possible Mark tasks:
+  -- Icons for Redo/Undo
+  -- error messages (error --> err+)
+
+
+II. THINGS TO POSSIBLY DO FOR VPL2  (NOT INCLUDING SEED-RELATED STUFF)
+
+A.
+
+  -- Make sure all VPL functions have some kind of documentation
+string and perhaps at least one example. (Jeff E, Mark)
+
+  -- Go through all Bike code and fix TYPECASE problems, if any more.
+(Jeff E)
+
+  -- Add mechanism to allow multiple selections from a menu for a new
+kind of token construct (Johnny, then JP)
+
+  -- Reduce wait to zero seconds for drag possibility to kick in.
+Ghost box should appear only when dragging actually begins.
+(Johnny)
+
+B.
+
+  -- Output/Workspace may contain links, e.g. to frames, as with
+Weblistener.  Currently output is straight text; cannot insert HTML.
+(JP, Johnny)
+
+  -- Change Redo/Undo (curly arrows) to match that in MS Office and 
+Open Office (JP, Mark)
+
+  -- Systematically go through all BioBIKE functions attempting to greatly
+reduce incidence of Lisp-generated error messages.  Also make sure that
+the error messages produced by err+ are sensible, given context.   
+(Jeff E, Mark)
+
+  -- Store large history items on disk and not in memory (JP)
+
+  -- Review process priority algorithm, try to make it actually work (JP)
+
+  -- Keep unreferenced documentation on disk, not in memory (JP)
+
+  -- Make HELP-ME-PROGRAM-THIS have more useful information. (JP)
+
+
+C.
+
+-- Menu issues (could be VPL3)
+
+  + Option to have any menu/submenu provided 'on demand' (Johnny, JP)
+
+  + Hierarchical, scrollable menus of:
+       Organisms --> List of organisms and subsets
+       Genes --> List of organisms --> List of genes and subsets
+       Proteins --> List of organisms --> List of proteins and subsets
+       Functional categories --> {KEGG GO EC COG}
+          --> Major categories --> subcategories
+       Molecular types
+          --> {amino acids nucleotides ...}
+       Microarray data --> List of organisms --> List of experiments
+     >>> Scrollable menus with multilevel hierarchy essential for 
+         genes and proteins. We can live without this but would definitely
+         be a nice touch.
+     >>> Scrollable menus alone are essential for functional categories.
+         There are other, less elegant ways of getting categories.
+     >>> These capabilities will definitely change the VPL for the better, 
+         but we can live without them if necessary as we have in the past.
+
+  -- To save a bit of workspace area, we could make the bike image
+just a little smaller vertically and move the workspace area up,
+allowing only three lines of palette items.
+
+  -- REPORT PROBLEM facility to be VPL specific
+
+III. THINGS TO EXPLORE AND/OR DISCUSS BEFORE DOING
+
+  -- Internal errors automatically generate a mark in the log and send
+a message to BioLangSupport?  (That would clog the mail!)
+
+
+IV.  SAVE FOR LATER
+
+  -- Redo/Undo grey out appropriately (JP, Johnny)
+
+  -- Simple formatting of lists to promote comprehension of structure
+     (see data editor below)
+
+  -- VPL-specific HELP pages
+
+  -- Preferences item for how printed output is displayed in VPL.
+(what are the options?)
+
+
+===========================
+Things to consider for VPL3
+===========================
+
+Summary:
+  Alternative view(s) of workspace/results area
+  Graphical pattern matching (look at agent ransack)
+  Conditional syntax
+  Multiple selection of boxes, menu items
+  Additional Drag n Drop semantics (e.g., to palette toplevel boxes)
+  Help improvements (balloons, levels of sophistication)
+  Consistent semantics for Biobike (e.g., display at toplevel)
+  Table reference dynamic number of indices sophistication 
+    (knowing dimensionality) (associated with Conditional syntax)
+  Trace facility
+  PRINT workspace 
+  Generalized palette creation (internal)
+  Make VPL work on other browsers
+  Type-ahead completion
+  Try to prevent multisecond hangs due (?) to GC (not specific to VPL)
+  Better frame system (not specific to VPL)
+
+  -- Generalize to Internet Explorer, Safari, and ...?
+
+* Greatly revised way to look at variables
+  + Clicking on variable opens it for display/editing
+     - List: brings up simple Excel-like viewer/editor
+         (by "Excel-like" I refer only to its format,
+             not its functionality, except in how cells
+             are selected)
+         Simple list represented as column of elements
+         List of lists represented in 2-D:
+               ((a b) (c d)...)
+            --> a b
+                c d
+                ...
+        Lists within lists of lists evokes recursive call
+           to list displayer, when such an element is clicked
+     - Table: (1D or 2D tables) brings up same Excel-like editor
+              (3D or higher) user must specify all but 2 dimensions
+                  --> 2D slice displayed in Excel-like editor
+     - Sequences: brings up sequence editor
+     - Strings: brings up simple Notepad-like viewer-editor
+     - frame: brings up frame viewer/[editor]. Editing possible
+           when frame not locked.
+         [Need mechanism to help user create frames?]
+     - scalar: usual variable box, opened for editing
+
+  -- Click list or table variable for Excel-like display of lists and tables
+allowing immediate selection/modification of items
+Selection of Table slices and sub-lists
+
+* Graphical pattern matching facility
+
+Alternate views of results, in separate window?
+  + Separate (optional) window (or pseudo window), interleaving of 
+graphical boxes and results
+  + Drag from that window to work-space (making it less costly to keep 
+workspace clean)
+
+* Conditional syntax
+  + Fewer functions. 
+  + Branches in creation of boxes. Construction dependent on user choices.
+
+* Multiple selection of boxes at level of client
+  + Cut,delete in one call to server
+  + Limited wiring: visible connections between boxes to imply logical
+      connection
+
+* Drag box(es) to buttons
+  + To function --> DEFINE-FUNCTION (body)
+  + To (new) ITERATE button --> FOR-EACH (body), REPEAT-FUNCTION, 
+or APPLY-FUNCTION
+  + To FAVORITES --> new favorites
+  + (result boxes) To VARIABLE --> DEFINE
+
+* Type ahead and type correction
+
+* EXPORT
+
+  + Exporting (off of FILE button?) functions and variables causes
+      them to be placed in files within a special directory
+  + Exporting begins with a form the user fills out:
+        name of file (default: name of function or variable)
+        name of author (default: user name)
+        short description
+        documentation
+  + If multiple entities are selected when Export clicked, then
+        user specifies in form which entities are to be exported.
+        It may be that some functions/variables are auxiliary and
+        not to be exported
+  + File is written that includes at end a call to 
+          ADD-DF-SYMBOL-TO-VPL-PALLETTE or
+          ADD-VARIABLE-SYMBOL-TO-VPL-PALLETTE 
+        that affects functions/variables to be exported
+  + Import (off of FILE button?) that brings up a clickable list of
+        available functions and variables in the special directory.
+        The list includes the name and short description for each
+        item.
+
+* Regularize BioBIKE functions with regards to DISPLAY
+  (Many functions, e.g. CONTEXT-OF, potentially produce 
+   display as well as result)  
+  + Default generally is:
+       - to display when function is executed at top level
+       - not to display when function is executed within another
+             function
+  + To specify otherwise, use DISPLAY or DISPLAY-OFF flag
+
+* HELP
+  + Configurable levels of help/functions, e.g. novice level
+  + Mouse over function -> help balloons
+  + Connection to forum
+
+- Reduce multisecond hangs
+  * Currently, the system frequently freezes for a period ranging 
+    from several seconds to several minutes, presumably while it 
+    collects garbage
+  * New system with more memory may reduce the frequency of garbage 
+    collection (but may increase the time lag when it occurs?)
+  * Perhaps garbage collection can be induced at more frequent 
+    intervals to avoid long outages
+  * Perhaps we should consider ways of reducing demand on memory and 
+    reducing need for garbage 
+
+- Table index sensing
+  * Currently, any function that calls for a table element as an 
+    argument generates a hole for the name of the table and a hole 
+    for a single index
+  * It would be nice if the [] function asked for the table symbol
+    first and then created a number of holes equal to the number
+    of dimensions.
+
+  -- Trace facility
+  * It would be nice to be able to turn on a window so that execution logs 
+    all changes of local and global variables. 
+  * This would make it easier to debug
+  * More important, it would make it easier for new users to comprehend what 
+    a loop does
+
+  -- Ajaxy DWIM (DYRM -- Do You Really Mean?) 
+     rewriting (beyond completion!) -- I type: synecococus -> synechococcus
+     (if possible as you type!)
+     (JP, some John)
+
+==================================================
+
+
+OTHER STUFF, perhaps not well defined or perhaps well-thought-out
+
+  -- Print workspace button
+
+  -- Variable sidebar with continuously updated values? (Impossible
+in general)
+
+  -- Conditional appearance of local variables in VARIABLE menu, depending on 
+  position of cursor
+
+  -- Go back to old sessions directly, without need to click UnDo
+
+  -- Pull down choices
+
+  -- More autonomy for client regarding deletion
+  * Currently, there is a high cost in doing simple operations. For example, 
+    to delete seven of ten functions on a screen can take a long time, as 
+    each deletion requires communication with the server.
+  * Similarly, it is painful to cut and paste several functions into a loop, 
+    but this may be a separate matter
+  * Since the client has control over how boxes are rendered on the screen, 
+    it might have more autonomy in deletions, redrawing the screen 
+    immediately and sending word to the server that a deletion has taken 
+    place
+  * Are there synchrony problems? Does it matter that the server may learn 
+    of a later deletion before learning of an earlier deletion?
+
+  This is partly a general problem of response time / lag between client
+and server.
+
+  This is partly a semantic problem in the the VPL is designed to have one 
+thing selected at a time.
+
+
+========================================================
+
+V.  TEST CODES for VPL
+
+
+This is test code we use 
+
+(loop
+ init binsize = 25
+ init max-gene-length = 5000
+ init length-table = 
+ (new-table  { (/ max-gene-length binsize) } initialize 0)
+ for org in *all-organisms*
+ do
+ (loop for gene in (gene-of org) 
+       for gene-length = (length-of gene)
+       for bin = (floor (/ gene-length 25))
+       do
+       (unless (> gene-length max-gene-length)
+         (increment length-table[bin])
+         ))
+ finally (return length-table))
+
+
+========================================================================
+
+
+       POSSIBLE VPL3 VISION BASED ON DISCUSSIONS WITH JEFF ELHAI
+
+
+Envision a VPL 'superstructure' which controls multiple windows of
+various types: the current setup, Workspace/palette windows, Results
+windows, Execution Log windows, data editor windows, monitoring
+windows, 'chat' windows, and potentially others.
+
+Cut and paste at the box or data-object level would be possible between 
+windows.
+
+Note: Each window would needs it own client side and server side, with
+appropriate messaging. Much code could presumably be shared, but this
+would nonetheless be a massive undertaking, probably requiring a total
+rewrite of the VPL system.  Not to mention an enormous amount of design
+work before the rewrite begain.
+
+
+Major components of new VPL/Biobike system:
+
+
+Data editor
+  Like an inspector
+  Like the frame viewer, but for all data types
+  Easy to 'drill down' to view/edit lower levels of structure
+  Viewing options dynamically controllable
+  Edit any component -- specialized editing depending on type of object
+  (e.g., strings)
+  Drag objects from VPL
+  Allow adding of e.g., frame slots, not just editing
+  Easy integration with annotation
+  Some mechanism to restrict editing of system frames
+
+Note: A data editor like this could be used to do annotation within
+Biobike, and with SEED data (with the appropriate SEED interface functions).
+
+Note: A data editor is not the same thing that Mike is working on /
+has implemented, which (as I understand it), can put data into
+something with spreadsheet-like capabilities as well as just
+displaying data in a two-dimensional representation.
+
+
+Monitoring facility
+  Would show requested global variables and their associated values.
+  Could hook in with the MONITOR option now available on VPL boxes
+  Could be a subwindow of workspace window, or a separate window.
+  Could allow changes to values directly or via data editor.
+
+Note: It is conceivable to envision tracing local variables, and being
+able to STEP through programs.  Various programming environments
+provide this kind of capability.  This would require a complete
+re-engineering of the BBL code-walker/compiler to be an order of
+magnitude (at least) more sophisticated.
+
+
+Menus
+  Generalized multiple selection
+  Generalized ability to modify any (sub)menu, any time
+
+
+Changes to current VPL box-editing mechanism:  
+
+  Conditionals
+    Would need to define the logic for each function whose keywords/flags
+      were conditional, probably via Lisp code.   Code would be called
+      whenever there was a change to the function box's immediate children
+      (which could be caused by a change at a deeper nesting level with
+       some sort of type propagation)
+    More elaborate type calculus, type propagation
+
+  Ability to do Multiple selection of boxes
+
+      
+    
+Conditionals Example:
+
+  Let's say we have a function FOO with four flags, F1, F2, F3 and F4.
+It turns out that the semantics of FOO are such that if F1 is enabled,
+F2 may be sensibly enabled, but if F1 is disabled, it makes no sense
+to enable F2.  Similarly for F3 and F4.
+
+In addition to the existing logic for flags and keyword options, we would
+need to define code something like
+
+(define-keys-and-flags-logic FOO (flag-changed-by-user value)
+  ;; on initial creation of FOO box, this logic is called
+  ;; with NIL for flag-changed-by-user
+  (if (null flag-changed-by-user)
+      ;; create initial menu just with F1 and F3, since F2 is
+      ;; dependent on F1 being enabled, etc, instead of F1, F2, F3
+      ;; and F4, as would otherwise be done.
+      (revised-menu F1 F3)  
+  (case flag-changed-by-user
+     ;; if F1 is enabled, enabling F2 becomes possible
+     (F1 (add-to-menu F2))
+     (F2 (no-change))
+     ;; if F3 is enabled, enabling F4 becomes possible
+     (F3 (add-to-menu F4))
+     (F4 (no-change))
+     )))
+
+This could get a lot more complicated if we included the ability to
+somehow manipulate token arguments (and optional arguments) along the
+same lines. 
+  
+Obviously each function has its own semantics regarding the
+interaction of its parameters, based on both existence and type.
+While tools could be developed to ease in describing these interactions
+and in creating on-the-fly the correct templates and menus, each such
+function would, at some non-trivial level, have to be coded individually.
+
+    
+Multiple selection note: The VPL logic is deeply based on the notion
+that a single box is selected at one time.  Much code would have to
+redesigned and rewritten to generalize this.
+
+
+
+More featureful frame system?
+ 
+  -- Features along the lines of Allegrocache frame system?
+     Something else?
+
+  -- Hook into RDF as Mike has done.  Use the Collabrx frame system?
+
+

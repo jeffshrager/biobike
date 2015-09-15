@@ -1,0 +1,51 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.74 [en] (Windows NT 5.0; U) [Netscape]">
+   <title>make-random-rna</title>
+</head>
+<body text="#000000" bgcolor="#C9C9ED" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+
+<center><font size=+4>BioBIKE</font>
+<br><font size=+2>(<a href="../Web-page/documentation/source/Context-of.html" target="_blank">MAKE-RANDOM-RNA</a></font><font size=+1>
+<i>letter</i> </font><font size=+2>)</font>
+<br><font size=+2>(<a href="../Web-page/documentation/source/Context-of.html" target="_blank">MAKE-RANDOM-RNA</a></font><font size=+1>
+<i>letters</i> </font><font size=+2>)</font>
+<br><font size=+2>(<a href="../Web-page/documentation/source/Context-of.html" target="_blank">MAKE-RANDOM-RNA</a></font><font size=+1>
+<i>list-of-letters</i> </font><font size=+2>)</font></center>
+
+<blockquote>
+<blockquote>
+<ul>
+<li>
+<font size=+1>Returns an RNA sequence constructed at random but directed
+by the input letter[s] or list of letters</font></li>
+
+<li>
+<font size=+1>If a letter is given (between quotation marks), then the
+function returns 1000 nucleotides of that letter</font></li>
+
+<li>
+<font size=+1>If multiple letters are given (between quotation markes),
+then the function returns at least 1000 nucleotides of that letter combination</font></li>
+
+<li>
+<font size=+1>If a list of letters is given, then the function returns
+1000 nucleotides, randomly selecting from the list</font></li>
+</ul>
+</blockquote>
+<font size=+1>Examples:</font>
+<br><tt><font size=+1>&nbsp; (MAKE-RANDOM-RNA "U")</font></tt>
+<br><tt><font color="#800080"><font size=+1>&nbsp; :: "UUUUUUUUUUUUUUUUUUUUUU..."</font></font></tt><tt><font size=+1></font></tt>
+<p><tt><font size=+1>&nbsp; (MAKE-RANDOM-RNA "UC")</font></tt>
+<br><tt><font color="#800080"><font size=+1>&nbsp; :: "UCUCUCUCUCUCUCUCUCUCUC..."</font></font></tt><tt><font color="#800080"><font size=+1></font></font></tt>
+<p><tt><font size=+1>&nbsp; (MAKE-RANDOM-RNA {"U" "C" "C" "C"} )&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+; in BioBIKE mode</font></tt>
+<br><tt><font size=+1>&nbsp; (MAKE-RANDOM-RNA (LIST "U" "C" "C" "C") )&nbsp;&nbsp;
+; in BioLISP mode</font></tt>
+<br><tt><font color="#800080"><font size=+1>&nbsp; :: "CCCAACCCCACCCCCACCCCCC..."</font></font></tt>
+<br><i><font size=+0></font></i>&nbsp;</blockquote>
+
+</body>
+</html>

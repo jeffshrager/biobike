@@ -1,0 +1,46 @@
+body {
+  margin-top: .5in;
+  margin-bottom: .5in;
+  margin-left: 1in;
+  margin-right: 1in;
+  background: #ffffff;
+}
+
+.top-questions {
+  background: #eeeeff;
+  margin-top: 12pt;
+  padding-top: 0pt;
+  padding-bottom: 12pt;
+  padding-left: 12pt;
+  padding-right: 12pt;
+  border: thin solid;
+}
+
+.top-questions h2 { font-size: 14pt; }
+
+.top-questions li { margin-top: 0pt; }
+
+h1, h2, h3 { font-family: sans-serif; }
+
+h3:before { content: "Q. "; }
+
+h3 { font-size: 12pt; font-weight: bold; background: #ccccee; padding: 3pt; }
+
+.cl { font-family: Courier; font-weight: bold; }
+
+pre, blockquote {
+  margin-left: .25in; 
+}
+
+pre, blockquote, p { margin-bottom: 0pt; margin-top: 12pt; }
+
+pre { margin-bottom: -6pt; }
+
+blockquote { font-size: 90%; }
+
+li {
+  margin-top: 6pt; 
+  line-height: 1.2;
+}
+
+p, blockquote { line-height: 1.2; }

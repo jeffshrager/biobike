@@ -1,0 +1,288 @@
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+
+;;; Author:  JP Massar
+
+
+                 INTRODUCTION TO USING WORKSPACES
+
+
+Workspaces are most importantly a way to save and restore work that
+you have been doing; secondarily, they can be used to share code
+between users and potentially make a set of code generally available.
+
+To see the entire list of available workspace functions and read each
+one's documentation, click on the 'Bio Primitives' link from the
+weblistener and then near or at the bottom of the newly displayed page
+click on the '*' next to the 'Workspace API' entry.  Or do
+
+> (help "workspace")
+
+from the weblistener and click on the listed individual functions.
+
+In short, a workspace is a set of definitions and variable values that
+can be saved to a disk file and later restored.  This is most useful
+overnight or if you take a break, in case the weblistener is rebooted,
+but may also prove useful in 'capturing' the current state of your
+work.
+
+A workspace is closely associated with the Common Lisp notion of a
+package.  A workspace can only contain definitions and variable values
+for symbols in a single package.  Contrariwise, not all the
+information associated with the symbols of a package will necessarily
+get saved when a workspace is saved.  (E.g., currently, only definitions
+created using DEFUN and DEFMACRO get saved, while those associated with
+e.g., DEFTYPE and DEFCLASS, will not).  To change workspaces one uses
+the Common Lisp IN-PACKAGE form.
+
+
+                         EXAMPLE SESSION                   
+
+
+To give you an idea of how to use workspace, we will work through an
+example.  Suppose I (MASSAR) have just logged on to the weblistener.
+
+
+
+> (create-workspace :w1)
+;; Now in workspace package  MASSAR$W1
+#<The MASSAR$W1 package>
+
+;; I've now created a new workspace, whose package name is derived
+;; from the current package and the workspace name.  The CREATE-WORKSPACE
+;; command has put us into that workspace/package.  Let's check:
+
+> *package*
+#<The MASSAR$W1 package>
+
+;; Yup.  Just like it said.
+;; Okay, let's do some work.
+
+> (setq pi-approx 3.14)
+3.14
+
+> (defparameter *my-file* "/home/visitors/massar/random-stuff.lisp")
+*my-file*
+
+> (defun foo (x y) (+ (* x x) (/ x y)))
+foo
+
+> (available-organisms)
+("anabaena_variabilis_atcc29413" "anabaena_pcc7120"
+ "trichodesmium_erythraeum" "synechocystis_pcc6803"
+ "prochlorococcus_marinus_ss120" "nostoc_punctiforme_atcc29133")
+
+> (setq my-organisms (list (first *) (fourth *) (sixth *)))
+("anabaena_variabilis_atcc29413" "synechocystis_pcc6803"
+ "nostoc_punctiforme_atcc29133")
+
+;; Now let's look at what we've done:
+
+> (show-workspace)
+
+KNOWN DEFINED VARIABLES:
+  *MY-FILE*  "/home/visitors/massar/random-stuff.lisp"
+
+OTHER SYMBOLS WITH VALUES:
+  MY-ORGANISMS  ("anabaena_variabilis_atcc29413"
+                 "synechocystis_pcc6803" "nostoc_punctiforme_atcc29133")
+  PI-APPROX     3.14
+
+KNOWN FUNCTION DEFINITIONS:
+  FOO  (X Y)
+
+;; Okay, that looks about right.  Let's save this stuff to disk.
+
+> (save-workspace)
+
+;; Saving workspace defined by package MASSAR$W1 into file /home/visitors/massar/massar$w1-wks.lisp
+;; Workspace MASSAR$W1 saved to /home/visitors/massar/massar&w1-wks.lisp
+
+NIL
+
+;; Notice that the workspace file has '-wks' appended to its name, and
+;; that it's type is .lisp
+
+;; WAIT A MINUTE, we forgot to do something:
+
+> (defun bar (x) (foo x 3))
+bar
+
+> (save-workspace)
+
+;; Saving workspace defined by package MASSAR$W1 into file /Home/Visitors/massar/massar$w1-wks.lisp
+;; Workspace file /Home/Visitors/massar/massar$w1-wks.lisp exists... Being versioned.
+;; Workspace MASSAR$W1 saved to /Home/Visitors/massar/massar&w1-wks.lisp
+
+NIL
+
+;; Since a workspace file for this workspace already existed, the old
+;; workspace file is renamed (aka 'versioned') and a new
+;; workspace file including the definition of BAR overwrites the old file.
+;; Let's see for ourselves:
+
+> (show-workspace-versions)
+
+/home/visitors/massar/massar$w1-wks.lisp     07/24/04 17:24
+/home/visitors/massar/massar$w1-wks&1.lisp   07/24/04 17:20
+
+;; Yup, there's now two files, the one we just saved and a 'versioned'
+;; file.  As we keep saving out the contents of our workspace, new
+;; 'versioned' files will appear.  (To clean them up, you can use
+;; PURGE-WORKSPACE-VERSIONS.)
+
+;; Now let's assume we quit for the day and when we come back the server
+;; has been rebooted, thereby destroying any state we had lying around
+;; (which would include all the definitions and variable values we typed
+;; in and computed above).  Assume we've just logged in again:
+
+> (show-available-workspaces)
+
+AVAILABLE WORKSPACES in C:\Biomisc\Visitors\massar\
+
+  massar$w1-wks.lisp     07/24/04 17:26
+
+
+;; Okay, that's good.  Our workspace is still there!
+
+
+> (show-workspace-versions :package :massar$w1)
+
+/home/visitors/massar/massar$w1-wks.lisp     07/24/04 17:26
+/home/visitors/massar/massar$w1-wks&1.lisp   07/24/04 17:26
+
+;; And the old version is there too.
+;; Just for yucks, let's retrieve the old version.
+
+> (restore-workspace :package :massar$w1 :version 1)
+:: 
+;; Restoring workspace for package MASSAR$W1 from file /home/visitors/massar/massar$w1-wks&1.lisp
+;; Attempting to compile workspace file
+;;; Compiling file /home/visitors/massar/massar$w1-wks&1.lisp
+; Compiling FOO
+; While compiling (:TOP-LEVEL-FORM "massar$w1-wks&1.lisp" 455):
+Warning: Free reference to undeclared variable MY-ORGANISMS assumed
+         special.
+; While compiling (:TOP-LEVEL-FORM "massar$w1-wks&1.lisp" 584):
+Warning: Free reference to undeclared variable PI-APPROX assumed
+         special.
+;;; Writing fasl file /home/visitors/massar/massar$w1-wks&1.fasl
+;;; Fasl write complete
+;; Problems were noted compiling the workspace file, but the
+compiler was able to produce a binary file. An attempt will
+now be made to load this binary file...
+
+;; Loading binary workspace file /home/visitors/massar$w1-wks&1.fasl
+; Fast loading /home/visitors/massar/massar$w1-wks&1.fasl
+;; Workspace for package MASSAR$W1 restored from file /home/visitors/massar/massar$w1-wks&1.fasl
+;; Entering workspace package MASSAR$W1
+#<The MASSAR$W1 package>
+
+;; Let's see if it's really there...
+
+> (foo 3 4)
+39/4
+
+;; Yup...
+
+> (bar 10)
+attempt to call `BAR' which is an undefined function.
+
+;; Remember that we loaded the old version of the workspace file, the
+;; one we saved before we defined BAR.  Let's get the latest one:
+
+> (restore-workspace :package :massar$w1)
+
+;; Restoring workspace for package MASSAR$W1 from file /home/visitors/massar/massar$w1-wks.lisp
+;; Attempting to compile workspace file
+;;; Compiling file /home/visitors/massar/massar$w1-wks.lisp
+Warning: *MY-FILE*, :VARIABLE was defined in
+         /home/visitors/massar/massar$w1-wks&1.lisp and is now
+         being defined in /home/visitors/massar/massar$w1-wks.lisp
+; Compiling FOO
+Warning: FOO, :OPERATOR was defined in
+         /home/visitors/massar/massar$w1-wks&1.lisp and is now
+         being defined in /home/visitors/massar/massar$w1-wks.lisp
+; Compiling BAR
+; While compiling (:TOP-LEVEL-FORM "massar$w1-wks.lisp" 484):
+Warning: Free reference to undeclared variable MY-ORGANISMS assumed
+         special.
+; While compiling (:TOP-LEVEL-FORM "massar$w1-wks.lisp" 613):
+Warning: Free reference to undeclared variable PI-APPROX assumed
+         special.
+;;; Writing fasl file /home/visitors/massar/massar$w1-wks.fasl
+;;; Fasl write complete
+;; Problems were noted compiling the workspace file, but the
+compiler was able to produce a binary file. An attempt will
+now be made to load this binary file...
+
+;; Loading binary workspace file /home/visitors/massar/massar$w1-wks.fasl
+; Fast loading /home/visitors/massar/massar$w1-wks.fasl
+Warning: *MY-FILE*, :VARIABLE was defined in
+         /home/visitors/massar/massar$w1-wks&1.lisp and is now
+         being defined in /home/visitors/massar/massar$w1-wks.lisp
+Warning: FOO, :OPERATOR was defined in
+         /home/visitors/massar/massar$w1-wks&1.lisp and is now
+         being defined in /home/visitors/massar/massar$w1-wks.lisp
+;; Workspace for package MASSAR$W1 restored from file /home/visitors/massar/massar$w1-wks.fasl
+;; Entering workspace package MASSAR$W1
+#<The MASSAR$W1 package>
+
+;; Okay looks good.  (We get redefinition warnings, of course, but those
+;; make perfect sense).
+
+> (bar 10)
+(310/3)
+
+> (show-workspace)
+
+KNOWN DEFINED VARIABLES:
+  *MY-FILE*  "/home/visitors/massar/random-stuff.lisp"
+
+OTHER SYMBOLS WITH VALUES:
+  MY-ORGANISMS  ("anabaena_variabilis_atcc29413"
+                 "synechocystis_pcc6803" "nostoc_punctiforme_atcc29133")
+  PI-APPROX     3.14
+
+KNOWN FUNCTION DEFINITIONS:
+  FOO  (X Y)
+  BAR  (X)
+
+;; Voila!
+
+
+                                NOTES
+
+
+1. You don't need to create a workspace to save your work.  The
+package that you are logged in to (i.e., your name, e.g. MASSAR)
+defines a workspace which you can save, restore, purge, etc.  One
+reason to create different workspaces would be for different projects.
+
+2. It is possible to create forms or store values in variables which
+cannot be printed out to a text file and then read in again.  (For
+instance, the value of *standard-output* is not printable and
+re-readable).  If the workspace saver detects such an object it will
+warn you about it and not attempt to save the form or variable that
+contains that object.
+

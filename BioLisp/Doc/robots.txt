@@ -1,0 +1,11 @@
+User-agent: microsoft
+Disallow:
+
+User-agent: google
+Disallow:
+
+User-agent: yahoo
+Disallow:
+
+User-agent: *
+Disallow: /

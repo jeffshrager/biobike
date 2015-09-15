@@ -1,0 +1,28 @@
+body{
+	background-color: #EEFFEE;
+}
+.jtitle{
+	font-size: 5;
+	text-align: center;
+	font-weight: bold;
+}
+
+.subtitle{
+	font-size: 3;
+	text-align: center;
+}
+
+.keywords{
+	font-style: italic;
+	text-align: center;
+	font-size: 10pt;
+	color: #333333;
+}
+
+.summary{
+	font-size: 12pt;
+}
+
+.discussion{
+	font-size: 12pt;
+}

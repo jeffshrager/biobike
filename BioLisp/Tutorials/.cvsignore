@@ -1,0 +1,4 @@
+*.removed
+*.fsl
+*.fasl
+.hg

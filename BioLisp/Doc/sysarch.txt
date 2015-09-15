@@ -1,0 +1,472 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+Last revised:  03/11/04, JP Massar.
+
+
+      ORGANIZATION and BUILD STRUCTURE FOR BIOLINGUA/BIOWEB/BIOLISP
+
+
+I.  GOALS
+
+1.  A weblistener system that can be started up or starts up
+automagically on Nostoc.  It allows multiple users and has logging
+facility to keep track of starts, crashes, exits, who is using it and
+what they are doing.
+
+2.  A development system for us that can be easily loaded up.  This is
+for general hacking and further development of the weblistener and
+analysis tools.  Multiple users using different weblistener ports must
+be supported and easy to deal with.
+
+3.  The current Biolisp/tutorial system for people who want to
+download it from SourceForge or aracyc, with any extensions we might add.
+****> THIS GOAL IS CURRENTLY IN ABEYANCE <***** 
+ 
+4.  A startup mechanism and architecture that allows multiple instances
+of the Weblistener/BioLingua software to be running simultaneously on
+a single machine (Nostoc) without interfering with each other.
+
+
+II.  DIRECTORY STRUCTURE ON NOSTOC
+
+
+II.a  INTRODUCTION
+
+SOURCE FILES:  The toplevel source directory is
+
+/usr/local/Biolisp
+
+DATA:  Data files used by BioLingua are found in
+
+/usr/local/bioetc/data/
+
+Data for BioLingua also exists in the MYSQL database whose name is
+'cyanobacteria'.
+
+USER FILES: The default directory structure under
+
+/home/visitors/	
+
+is where users can store files.  A user 'fred' has a directory
+/home/visitors/fred/.
+
+The BioDemo server stores user directories underneath itself, in
+
+/home/BioDemo/visitors/
+
+LOG FILES:  
+
+  -- System log files are in /home/visitors/system/session-logs/
+     The system script files are kept here also.  The symbolic link 
+     'current' points to the currently executing script output, while
+     the symbolic link 'previous' points to the most recently terminated
+     script file.
+  -- User's log files are in /home/visitors/<user>/session-logs/
+  -- The BioDemo log files are in corresponding directories (see above).
+
+
+II.b  The source code subdirectories
+
+BioLingua subdirectories include
+
+  -- < definition files at toplevel>
+  -- Analysis
+  -- Biodefs
+  -- Biomethods
+  -- Dbaccess
+  -- Doc 
+  -- Fastas
+  -- Frames
+  -- Gocode
+  -- Kdbs
+  -- KEGG
+  -- Lib
+  -- Matching
+  -- Ocelot
+  -- Organisms
+  -- Portability
+  -- ppcre
+  -- sample-programs
+  -- Scripts
+  -- Testing 
+  -- Tutorials
+  -- Utils
+  -- Webconfig
+  -- Webdefs
+  -- Weblisten
+  -- Webuser
+  -- Wlisp
+
+Scripts contains startup scripts for the BioWebListener (BWL).
+
+The Web* directories contain code that implements the Weblistener.
+
+Kegg, Gocode and Ocelot contain code dealing with turning these knowledge
+bases into frames.  Kdbs contains toplevel code gluing these databases
+together and storing/retrieving their frames.
+
+Organisms contains code that deals with the MYSQL database and the in-core
+representation of Organism data (a frame representation).
+
+Lib contains useful routines specific to BioLingua.
+
+Ppcre is Edi Weitz's Perl-compatible regular expression package.
+
+The Weblistener and BioLingua code bases are theoretically separate,
+and are contained in different directories.  The directories that
+are not specific to BioLingua (i.e., that implement the Weblistener)
+are the Web* directories, Dbaccess, Frames, Portability, ppcre, Scripts,
+Testing, Utils and Wlisp.
+
+
+III.  HOW THE BIOLINGUA SOFTWARE LOADS FROM SCRATCH
+
+
+A Unix user account should exist for each instance of BioLingua one wishes
+to have potentially running.  Currently the 'BioLingua' and 'BioDemo' 
+accounts are established for this purpose.
+
+The user account should contain the following files:
+
+  -- A shell script (currently runbwl.sh) that calls the system startup script
+(/usr/local/BioLisp/Scripts/runbwl-instance.sh) with the appropriate parameters.
+See the runbwl-instance.sh file for a description of these parameters, which
+includes the http port number the weblistener is to wait for requests on.
+
+  -- A clinit.cl file, which gets loaded when the Lisp running the Weblistener
+starts up (the Lisp is invoked from the runbwl-instance.sh file).  This
+file contains various configuration information for the instance, including
+the SETQ'ing of various configuration parameters and the possible definition
+of the INSTANCE-INITIALIZATIONS function (see below). A sample clinit.cl file is
+provided in the Scripts directory.
+
+  -- An <application-instance-name>-instance-init.lisp file
+which gets load near the end of the initialization procedure, after
+the application code has been loaded.
+
+The runbwl-instance.sh shell script takes the following actions:
+
+  -- defines a script file with a unique prefix (ending in .bwlscript) 
+for this run of the Weblistener software in the system logs directory
+(defaulting to /home/visitors/system/session-logs).  
+
+  -- defines symbolic links 'current' and 'previous' which point to
+this new script file and the previous script file, respectively.
+
+  -- invokes Lisp, such that the Lisp first loads the clinit.cl file in
+the instance's directory, and then the file new-bwlinit.lisp in the Scripts
+directory.  It passes in through command line arguments the port number
+for the Weblistener to use, and the name of the system load file to use
+(currently blload.lisp).
+
+The new-bwlinit.lisp file causes the following to happen:
+
+  -- The command line arguments are extracted to obtain the port number
+and the system load file name.
+
+  -- The system load file is loaded, causing the software to compile/load.
+
+  -- The password file for the instance is sanity-checked
+
+  -- The Allegroserve Weblistener is started on the designated port.
+This runs in a separate thread.
+
+  -- The user EVALUSER is logged in.  This id is used as the username
+when using the Weblistener programatically.
+  
+  -- The XML-RPC service is initialized.
+
+  -- The Lisp puts itself into a sleep loop
+
+When the system load file is loaded (currently /usr/local/BioLisp/blload.lisp)
+the following occurs:
+
+  -- The specific application (:biolingua) is set.
+
+  -- The application code toplevel directory is set (/usr/local/BioLisp)
+
+  -- The Weblistener code is loaded by loading webload.lisp
+
+  -- The BioLingua code is loaded.
+
+  -- The APPLICATION-INITIALIZATIONS method is called with target :biolingua.
+This method, by default, creates/loads the frames for the knowledge bases,
+and loads the organisms data for a specific set of organisms.  However, if
+the function INSTANCE-INITIALIZATIONS is defined, that function is called
+instead of executing the default actions described above.  This allows a
+different instance to define an INSTANCE-INITIALIZATIONS function in its own
+clinit.cl file, then have it executed, potentially causing a different set
+of knowledge bases and/or organisms to be loaded into BioLingua.
+
+  -- The APPLICATION-INSTANCE-INITIALIZATIONS method is called.
+This allows a specific instance of an application, like BioDemo, to
+initialize itself differently than BioLingua.
+
+IV.  Loading the software as a developer.
+
+Once a Lisp has been started, the file blload.lisp can be loaded directly
+to load the BioLingua software into Lisp.  When this is done the Weblistener
+is not started.  
+
+The variable user::*biowebserver* controls whether the knowledge
+frames are loaded and whether any organisms are loaded.  If it is NIL
+then neither will happen.  If it is T the knowledge frames will be
+loaded, all organisms existing in the database will be preloaded, and
+any organisms listed in user::*organisms-to-load-list* will be loaded.
+
+To start the Weblistener execute (wb:start-weblistener &optional port).
+
+By default, the system is not recompiled fully when it is loaded initially.
+Only those files whose .fasl's are out of date with their corresponding .lisp
+files are recompiled.
+
+To recompile the entire system the function
+
+(FORCE-ALL)
+
+may be executed before executing
+
+(load "/usr/local/BioLisp/blload.lisp")
+
+This function should be placed in your clinit.cl file
+and may be copied from JP Massar's clinit.cl file (/home/jpm/clinit.cl).
+Note that the PPCRE code is NOT recompiled even those (FORCE-ALL) has
+been executed.  That must be done independently.
+
+
+V.  Load details and conventions
+
+
+Directories/modules that are not otherwise dealt with will have files named
+
+load.lisp
+
+in them.  These will generally contain a call to the load-system*
+function, which simply compile/loads a list of files in order.
+
+E.g, to load the BioLisp Analysis module one simply executes
+
+(load "biol:Analysis;load.lisp")
+
+To allow files not to be reloaded, and to be able to use the same
+load sequence for the .dxl load as for the basic load, we will use
+
+REQUIRES
+
+instead of a straight load.
+
+REQUIRES/PROVIDES is a modification of the REQUIRE/PROVIDE mechanism
+of Common Lisp.  (REQUIRES requires a filepath, whereas REQUIRE does not)
+
+E.g,
+
+(requires :analysis "biol:Analysis;load.lisp")
+
+This requires that at the end of the Analysis;load.lisp file there be a
+
+(provides :analysis)
+
+Now, if the REQUIRES statement is executed again, nothing will be
+reloaded.
+
+To insure that the latest and greatest software is always loaded into
+bioweb when a .dxl has been built, we will have to treat the Lib
+directory (where this software will live) differently.
+
+The load.lisp file will not be loaded via REQUIRES, but loaded
+directly.  This load file will have a mechanism to test to see if it
+is being run by the .dxl image instead of from scratch.  If so, it
+will compare the list of files that it loaded before the new .dxl was
+built against the list of files that it is being asked to load now,
+and only load the ones that are new.
+
+
+
+
+
+
+III.  Loading systems.
+
+
+*****>  Almost none of this is implemented.  And it is very obsolete <*****
+*****>  But some of the information here may be useful in the future <*****
+*****>  So don't delete this.                                        <*****
+
+III.0  Background.
+
+Allegro 6.2 starts up by running an executable file with a command line
+argument for a particular .dxl file.  Often the names of these files
+are the same.  E.g.,
+
+/usr/local/src/acl61/alisp -I alisp.dxl <other options>
+
+The .dxl file is where all the 'interesting' stuff is.  The executable
+is a kernel that is common to all running Lisp images.  It is possible
+(and legal) to produce new .dxl files using 'dumplisp'.
+
+It is possible to pass command line arguments to Lisp and process
+them.  It is possible to cause expressions to be evaluated and/or
+files to be compiled and/or loaded from the command line before the
+read-eval-print loop starts in.  E.g, the
+
+-L <file>
+
+ option causes a file to be loaded on startup.
+
+**** 
+If a Lisp system is dumped to produce a new .dxl file, when that
+.dxl file starts up it loses all its logical pathname translations.
+****
+
+
+III.1   How the Bioweb system could load from scratch.
+
+The 'bioweb' command will be a little shell or Perl script that executes
+
+/usr/local/acl62/alisp -L /usr/local/BioLisp/Bioweb/load-from-scratch.lisp
+
+or
+
+/usr/local/acl62/alisp -I <.dxl file path> 
+  -L /usr/local/BioLisp/Bioweb/load-from-dxl.lisp
+
+passing all command line arguments on through except the one which
+determines which load-from file to load and the one specifying the
+.dxl file to load, if present.
+
+
+III.2  What load-from-scratch.lisp will do (in the abstract):
+
+  a.  Load any bootstrap software required, including load-system*.
+
+      Find old log files and delete any that are old enough.
+      Start a new log file.
+
+      Determine if a conflicting bioweb listener is executing.  If so,
+      print a message, log it, and exit.
+
+      Process command line arguments to determine, among other things,
+      if tests are to be loaded/run, and if the weblistener should
+      be started, or a REP loop entered, or the system should exit
+      after initial processing.  Also if everything is to be recompiled
+      from scratch.
+
+  b.  Load basic BioLisp, which includes the frame system and the
+      testing mechanism.
+
+  c.  Load other useful BioLisp modules, including
+      -- Fasta
+      -- Analysis
+      -- Matching
+  
+      Load patches for BioLisp.
+
+  d.  Optionally load the BioLisp tests.
+
+  e.  Optionally run all the BioLisp tests.  If an error occurs, log and exit.
+
+  f.  Load the basic weblistener software.
+
+  g.  Load the bioweb system/analysis software.
+
+      Load patches for Bioweb.
+
+  h.  Optionally load the bioweb tests.
+
+  i.  Optionally run all the Bioweb tests.  If an error occurs, log and exit.
+
+  j.  Either:
+       -- exit (for testing -- run the tests and quit).
+       -- go into the default REP loop 
+          (for testing or development or building a new .dxl)
+       -- Start the bioweb weblistener.
+
+It is to be emphasized that the default is to load and run the tests,
+even if the weblistener is to be started up.
+
+The option to not load the tests should only be used once they have been
+run successfuly, to build a new .dxl.
+
+It will be an (unenforceable) requirement that any new functionality
+added to the bioweb libraries/analysis modules have some tests.
+
+
+III.3  What load-from-dxl.lisp will do (in the abstract)
+
+(We assume the .dxl file already has in it BioLisp and Bioweb, that
+being the whole point...)
+
+  a.  Same as above.
+
+  b.  Load the logical-pathnames translations file for BioLisp.
+
+      Load the logical-pathnames translations for Bioweb.
+
+  c.  Load any additional system/analysis software so indicated
+      in the Bioweb/systems directory (see below).
+
+  d.  Load patches for Biolisp.  Load patches for Bioweb.
+
+  e.  Start the weblistener.
+     
+
+III.4  How Biolisp loads from scratch (currently)
+
+ -- The bootstrap.lisp file is loaded, which loads load-system*.
+ -- Files in the toplevel BioLisp directory get loaded, including
+    files which define the BIOLISP package and which define
+    logical pathname translations (e.g., "biol:") for BioLisp.
+    Also, the utils.lisp file gets loaded.
+ -- The testing mechanism (not actual tests) gets loaded.
+ -- The Tutorials and Frames subdirectories get loaded.
+
+
+
+
+IV.  Other goals.
+
+Goal 2 can be achieved by loading bioweb from scratch with the
+option to start the REP print instead of or along with the weblistener.
+
+Each developer can be assigned their own weblistener port number, which
+can be set in their ~/cl-init.cl file.
+
+
+Goal 3 is achieved by default.  BioLisp still exists as a separate,
+loadable entity via the bioload.lisp file, except access to the
+database files needs to be redone.
+
+
+
+V.  Notes.
+
+It is possible to get the 'load-from-scratch' functionality without
+dealing with the complications of building a .dxl.  As an immediate
+goal, this is a good idea, but it would be wrong to set up the system
+in such a way as to ignore the implications of building .dxls.
+Therefore the skeleton should be in place even if the implementation
+is not fleshed out.
+
+

@@ -1,0 +1,14 @@
+(COMMENT "This file is for testing the javascript file compiler")
+
+(COMMENT
+ "This is a multiline comment."
+ "Here's another line."
+ "And another")
+
+(FUNCTION foo (x y z) (IF x y z)) 
+
+(VAR x (FUNCTION (a b) (return (+ a b (* c d)))))
+
+
+(FUNCTION bar ()
+  ((FUNCTION () (IF 1 (RETURN "one") (RETURN "two")))))

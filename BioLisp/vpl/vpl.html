@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <title>VPL</title>
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel='stylesheet' type='text/css' href='vpl.css'>
+  <script type='text/javascript' src='jquery-1.3.2.min.js'></script>
+  <script type='text/javascript' src='jquery.caret.1.02.js'></script>
+  <script type='text/javascript' src='json2.js'></script>
+  <script type='text/javascript' src='queue.js'></script>
+  <script type='text/javascript' src='ajax.js'></script>
+  <script type='text/javascript' src='http.js'></script>
+  <script type='text/javascript' src='vpl.js'></script>
+  <script type='text/javascript' src='vpl-version.js'></script>
+  <script type='text/javascript' src='sexp.js'></script>
+  <script type='text/javascript' src='patches.js'></script>
+</head>
+
+<body onload='VPL.setup();' onbeforeunload='VPL.shutdown();'>
+<div id="outer-bigbox">
+    <div id='palette'>
+    </div>
+    <div id='help-pane' style='display:none; position: fixed; left: 10%; right: 10%; top: 10%; z-index: 1000; border: 7px solid black; background-color: cyan'>
+	<img id='help-clear' class='container-clear' src='images/bbtn_close-magenta.gif' alt='X' title='Clear Help'  height="23" width="23" onclick="alert('onclick'); VPL.doHelpPaneCloseMouseClick();" />
+	<img id='lifesaver'  align='right' src='images/lifesaver.png' alt='Life Saver' title='BioBike Help'  height="72" width="72" />
+	<center> <b  style="font-size:170%;">BioBIKE Help</b> <br><p style="font-size:120%;">Click a function to bring it into your workspace <br>Click a <a href="JavaScript:void()">link</a> to learn more</p> </center>
+	<div id='help-pane-contents'>
+	Stuff goes here!
+	</div>			
+    </div>
+    <div id='workspace-box'>
+			<div id='workspace-toolbox' class='toolbox'>
+				<img id='left-undo' class='arrows' src='images/zleftarrow.gif' alt='&lt;' title='Undo' name="left-undo" />
+				<img id='right-redo' class='arrows' src='images/zrightarrow.gif' alt='&gt;' title='Redo' name="right-redo" />
+				<div id='workspace-status-server' class='workspace-status' title='Server Message'></div>
+				<div id='workspace-status-client' class='workspace-status' title='Client Message'></div>
+				<div id='execution-status-box'><span id="status-msg"></span><span id="status-timer"></span></div>
+				<img id='workspace-clear' class='container-clear' src='images/bbtn_close-magenta.gif' alt='X' title='Clear Workspace'  height="23" width="23" />
+				<img id='workspace-expand' class='container-expand' src='images/bbtn_max-big.gif' alt='^' title='Expand Workspace' height="23" width="23" />
+				<img id='workspace-shade' class='container-shade' src='images/bbtn_min.gif' alt='_' title='Collapse Workspace' height="23" width="23" style="display:none;" />
+				<div id='workspace-help-search-wrap'>
+						<label for='workspace-help-search'>Help:&nbsp;</label>
+						<input id='workspace-help-search' type='text' name='workspace-help-search' />
+				</div>
+			</div>
+			<div id='workspace' class='container contains-jbml'>
+				<div id='workspace-message'>
+        <b> Workspace </b>
+	<br> <br> <br>
+	<p style="font-size: 500%;"> BioBIKE </p>
+	<p style="font-size:200%;">Click
+         <a href='tutorial/vpl2-tutorial.html' target='_blank'> here</a>
+          to learn how to use the interface
+        </p> <br> 
+	<p  style="font-size:200%;"> Click 
+	<a href='http://vplblog.wordpress.com/' target='_blank'>here</a>
+        to find out what's new with the VPL
+	</p><br> 
+	 <p  style="font-size:200%;">
+           Click the red <font color="red"> HELP! </font>
+	 button at any time to get to these 
+            and other resources
+	 </p><br> 
+	  <p  style="font-size:200%;">
+           Type questions or search topics into the help box above right </p>
+      </div>
+	</div>
+		</div>
+		<div id='results-box'>
+			<div id='results-toolbox' class='toolbox'>
+				<img id='results-clear' class='container-clear' src='images/bbtn_close-magenta.gif' alt='X' title='Clear Results' height="23" width="23" />
+				<img id='results-expand' class='container-expand' src='images/bbtn_max-big.gif' alt='^' title='Expand Results' height="23" width="23" />
+				<img id='results-shade' class='container-shade' src='images/bbtn_min.gif' alt='_' title='Collapse Results' height="23" width="23" style="display:none;" />
+			</div>
+			<div id='results' class='container contains-jbml'>
+				<div id='results-message'>
+					<p><b>Results</b></p>
+				</div>
+			</div>
+		</div>
+
+	<!--
+
+	   DEBUGGING THE PIPE
+
+	   Comment out the following line if you don't want the pipe
+	   debugger to display... also adjust the inline styles above to
+	   allow for some space
+
+
+	<div id="debugging">Debugging Window</div>   <!  --     -->
+
+	<!-- Add dragged items here. Last so that ids of cloned nodes don't confuse the browser. -->
+	<div id='dragged'>
+		<div id='drag-proxy'></div>
+	</div>
+</div>
+</body>
+</html>

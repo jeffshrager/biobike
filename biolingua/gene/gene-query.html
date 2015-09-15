@@ -1,0 +1,35 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Gene query</title>
+<base target="main">
+</head>
+
+<body topmargin="0">
+
+<form method="POST" action="/cgi/gene/query" target="main" enctype="multipart/form-data">
+  <br>Enter a sequence:&nbsp; <textarea rows="4" name="sequence" cols="66">TGCAGCGGACGAAAATAAACACGGCGAGAGCGAGAATCGTGTGTGTGGACACTCAAAGACTCAAAATTGAAACCAACTCGAAAAGGTTGCACTGCAAATGCCCAAGTAGAAAAGCCAACGCGAGTGTGCACATCGAATACGAAAATTGTAAACGTTTTTTTTTTGCCGTGTGAGTGCAAGCGCATAAGATCGAAGAAAAACAGCCAGAGCAAGAAAGAACCGAAAAAAGGCAGAGAGAATCAAAAAAGAAAAAAGGAAAAAAAAAACAAGCAGGAAAACACCAACATAATAATGGATCGGGAGCTGAACGGGGCGATGAAGAGCGTGTCCATAAATAGCGCCCAACTGAATGGTCACAATAACGGTGGCGGGCTAGATGAAACGGACCGCGTGGGCGTGGCACAGGGGGCGGCACTGAGTGCAACAGAGAAAATTACAACAACGACGGCGGCAGCTACAAAATCAGCGACAGCGACCACAAATGCAACCACAGCAACAGCCACAACCACAAATCTTACAACTCACAGCCCGCAGCAAATTGCACTCTTATCCGCTGCAGAGAAAAGTAAGATGGTGCACGAGTTATGTCAGCAGCTGCTTCTAACGGACGAACAGGT</textarea>
+  <br><i>or </i>
+  <br> Enter a fasta file:&nbsp;&nbsp;&nbsp; 
+  <input type="file" name="file" size="25">&nbsp;&nbsp;&nbsp;
+  <p>Refresh rate : <select size="1" name="refresh">
+  <option>1</option>
+  <option selected>5</option>
+  <option>10</option>
+  <option>25</option>
+  <option>60</option>
+  <option value="-1">none</option>
+  </select>&nbsp;&nbsp;&nbsp; Expect:
+  <input type="text" name="expect" size="7" value="1E-10">&nbsp;&nbsp;&nbsp; Find pathways: <input type="checkbox" name="pathways" value="yes">&nbsp;&nbsp;&nbsp; 
+  Maximum path length: <input type="text" name="cutoff" size="4" value="5"></p>
+  <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+  <input type="submit" value="Analyze Gene(s)"></p>
+</form>
+
+</body>
+
+</html>

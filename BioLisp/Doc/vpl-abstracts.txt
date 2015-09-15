@@ -1,0 +1,57 @@
+Ajax World NY Apr 1-3 http://www.riaconference.com/general/papers.htm
+ILC: A web-based ajax visual programming language Using Lisp
+on the server and js on the client firefox and lispscript->javascript
+translation implementing a lisp like language (BBL) Lisp gives us
+lispscript macrofication over Javascript, and lisp gives us the
+ability to write an entire new compiled programming language easily
+and to provide a uniform template model for the language that's used
+directly by the lispscript/javascript interface builder. Example of
+both the template that specify the languge, and lispscript are given
+and some pretty picture of the result. The result is an easily
+extensible -- in fact, it's extendible to other lisp-based programming
+languages, and self extensible by virtue of the ability to define
+functions which then becomes a part of the user's vpl. Diriviate of
+biobike/biolingua bioinfoamticas cyanobacteria knowledgebase blah lbah
+lbah. knowos... multi-headed multi-threaded (MHMT) paradigm. structred
+editor with structured, context sensitive operations; division of
+labor whgere the server does the semantics and the clients moves boxes
+around.
+
+ILC: A Lisp-like web-based ajax visual programming language Using Lisp
+on the server and js on the client firefox and lispscript->javascript
+translation implementing a lisp like language (BBL) Lisp gives us
+lispscript macrofication over Javascript, and lisp gives us the
+ability to write an entire new compiled programming language easily
+and to provide a uniform template model for the language that's used
+directly by the lispscript/javascript interface builder. Example of
+both the template that specify the languge, and lispscript are given
+and some pretty picture of the result. The result is an easily
+extensible -- in fact, it's extendible to other lisp-based programming
+languages, and self extensible by virtue of the ability to define
+functions which then becomes a part of the user's vpl. Diriviate of
+biobike/biolingua bioinfoamticas cyanobacteria knowledgebase blah lbah
+lbah. knowos... multi-headed multi-threaded (MHMT) paradigm. structred
+editor with structured, context sensitive operations; division of
+labor whgere the server does the semantics and the clients moves boxes
+around. subtext: how bbl emasculates and extends lisp to provide a
+simpler language that can support the biological computing and VPL ...
+flags, token args, automapping
+
+CHI
+VL/HCC -- boxes to bits in bioinformatics
+
+Bioinformatics: starts from the same premises as the biobike paper.
+here the focus is BBL and its visual rep. and how it helps biologists
+solve proggramming problem; all the functions are reachable and type
+constrained with biological knowledge all opertions are presented,
+with suitable help and types. color coded; makes the frame system
+automaticallt available, lists are lists {}, auto mapcaring,
+generalized areference (ref) in biologist-readable format [] history
+and other biobike stuff MHMT; englishy syntax (candy grammar) live
+tutorials model -- need biological examples -- full-fetured stepping
+stone -- creates bbl fully compiled by virtue of translating to lisp
+boxes to bits - in theory access tyo all the bio objects via menus or
+direec entry subtext: how bbl emasculates and extends lisp to provide
+a simpler language that can support the biological computing and VPL
+
+

@@ -1,0 +1,642 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Introduction to Functional Languages</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+body,td,th {
+	font-family: Garamond;
+	font-size: 14pt;
+	color: #003366;
+}
+body {
+	background-color: #CCFFCC;
+	margin-left: 1.5cm;
+	margin-right: 1.5cm;
+}
+.style1 {color: #000000}
+.style2 {color: #009900}
+.style21 {
+	font-family: monospace;
+	color: #990000;
+	font-size: 16pt;
+}
+.style23 {color: #990000; font-family: monospace; }
+.style25 {color: #FFCC00; font-size: 14pt; }
+.style26 {
+	color: #FF9900;
+	font-weight: bold;
+}
+.style27 {
+	color: #FF9900;
+	font-weight: bold;
+	font-size: 14pt;
+}
+.style28 {color: #FF6600}
+.style30 {
+	font-family: "Courier New", Courier, mono;
+	font-weight: bold;
+}
+.style31 {
+	color: #003366;
+	font-weight: bold;
+}
+.style32 {
+	color: #000099;
+	font-weight: bold;
+}
+.style33 {color: #CC3300}
+.style35 {color: #cc3300; font-weight: bold; }
+.style36 {
+	color: #FF0000;
+	font-weight: bold;
+	font-style: italic;
+}
+.style37 {color: #0000CC}
+.style38 {color: #0000FF}
+-->
+</style>
+</head>
+
+<body>
+ <h1 align="center" class="style1"><font size="3" face="verdana"><font size="4">Guided Tour in 
+
+BioBIKE</font></font></h1>
+ <h2 align="center" class="style2"><font size="6" face="Maiandra GD">What is a Formal 
+
+Language?</font> </h2><br>
+ <p>You are sitting in your isolated Antarctic work station monitoring the size of the 
+
+atmospheric ozone hole. Truth be told, this doesn't occupy a whole lot of your attention, and 
+
+you are without much enthusiasm twiddling the dial on your short-wave radio, hoping to pick up 
+
+something to get you to the next hour. You're about to settle into a Chilean weather report 
+
+when the radio suddenly stops working -- just static. </p>
+ <p>Then through the clicking and squealing you hear quite distinctly: </p>
+ <p align="center" class="style21">&quot;Greetings, carbon-based creature!&quot;</p>
+ <p>The surprising part is that the voice is a dead-on match for Mr. Rogers.</p>
+ <p>First contact! You grab your microphone. What can you say now, at perhaps THE critical 
+
+juncture in human history? Amazingly, you can still think logically, and you consider that if 
+
+&quot;carbon-based&quot; is worthy of alien comment, then ....</p>
+ <p>&quot;<span class="style28">Greetings,</span>&quot; you respond, &quot;<span 
+
+class="style28">non-carbon-based creature!</span>&quot;</p>
+ <p>&quot;<span class="style23">Very good!</span>&quot; chuckles Mr. Rogers.</p>
+ <p>Now what? Should you try to reach the Strategic Air Command to warn about flying saucers 
+
+soon to hover over Washington? You decide to take instead the historic path towards friendly 
+
+encounter.</p>
+ <p>&quot;<span class="style28">How is it going on Alpha Centauri?</span>&quot; A wild guess, 
+
+you admit, but who knows? </p>
+ <p>&quot;<span class="style23">I am sorry,</span>&quot; the alien responds. &quot;<span 
+
+class="style23">Please provide the missing antecedent of the impersonal pronoun you used and I 
+
+will be able to describe its mechanism of locomotion.</span>&quot;</p>
+ <p>Hmmmmm. This is going to be more difficult than you thought.</p>
+ <p>&quot;<span class="style28">Never mind... How are things on your end?</span>&quot;</p>
+ <p>&quot;<span class="style23">Anterior or posterior?</span>&quot;</p>
+ <p>&quot;<span class="style25"><span class="style28">...???</span>.</span>&quot; </p>
+ <p class="style26">Commentary</p>
+ <p>As you can see, English may not be the language of choice for a first encounter with ETs. 
+
+You may consider this an insight of little practical value, but no, we face a similar problem 
+
+all the time, even now: How do you communicate with computers?</p>
+ <p>Note that this is a more difficult problem than the one you faced in the Antarctic. The 
+
+alien, one would suspect, accepted that you were conscious being and could use that fact to 
+
+try to figure out what you mean. Computers - at least at present - have no internal model for 
+
+your mind, and without one, understanding natural human languages is impossible.</p>
+ <p>And yet, we <em><strong>must</strong></em> communicate with computers, because we need 
+
+them to do what we can't do by ourselves: direct complex manufacturing processes, coordinate 
+
+sprawling communication systems, analyze huge sets of biological data. You might respond, 
+
+&quot;Why do I have to communicate with a computer? I don't communicate with my toaster.. I 
+
+just put in the bread and push the button. &quot; That would be fine if we could build a 
+
+machine for every task at hand. But there are too many tasks, tasks whose processes must be 
+
+continuously modified. Instead we have built a <em><strong>general</strong></em> machine - the 
+
+digital computer - and are left with the problem of how to tell it what we want it to do.</p>
+ <p>We need a well-defined, formal language.</p>
+ 
+ <hr color="#000099">
+<p>&nbsp;</p>
+ <p>To some extent, English is a formal language. It has forms. For example:</p>
+ <p align="center"><img 
+
+src="SVO1.bmp" width="400" height="94"> </p>
+ <p align="left">It is also recursive - forms can lie within forms - leading to the 
+
+possibility of endless variation. For example:</p>
+ <p align="center"><img 
+
+src="SVO2.bmp" width="555" height="134"> </p>
+ <p align="left">Nonetheless, English is a mess. To talk to a computer, we need something much 
+
+more regular and unambiguous. Let's start small, building a language that ought to provide the 
+
+best chance of allowing humans to speak to computers. It will have the following 
+
+properties:</p>
+ <ol>
+   <li>It will be English-like (to accommodate us)</li>
+   <li>It will have strict syntax (so the computer knows exactly where to find the subject, 
+
+where to find the verb)</li>
+   <li>It will be allow recursive forms (so we can express thoughts of some complexity)</li>
+   <li>It will not require of the computer any background knowledge outside of simple 
+
+addition.</li>
+ </ol>
+ <p>From this groundwork, we'll build a language through which we can talk arithmetic to the 
+
+computer. If we can't do even that, we're doomed.</p>
+ <p>Let's do it.</p>
+
+ <hr color="#000099">
+ <p class="style27">Before you begin the tour: </p>
+ This tour requires you to be in &quot;BioBIKE&quot; mode (particularly in define-function 
+
+part).
+   Please run the following test.
+ <pre>
+>>(biobike-mode?)
+</pre>
+If <strong>Nil</strong> is returned, you need to enter:
+<pre>
+>>(biobike-mode)
+</pre>
+Please enter the sticks-world. (There are few things you'll need that are only accessible in  
+this world.)
+<pre>
+>>(enter sticks-world)
+</pre>
+<br>
+ <h3 class="style27">Tour Overview</h3>
+ <ol type="I">
+   <li><a href="#part1"> Preliminaries: Things and Functions</a></li>
+   <li><a href="#part2"> The Basic Stick Language</a></li>
+   <li><a href="#part3"> Extended Stick Language - Arithmetic</a></li>
+ </ol>
+ <hr color="#000099">
+ <h3 class="style27"><a name="part1">I. Preliminaries: Things and Functions</h3></a>
+ <p>The language we'll build will have two possible forms:</p>
+ <ul>
+   <li><a href="#formtype1">FORM TYPE 1: Thing</a></li>
+   <li><a href="#formtype2">FORM TYPE 2: Function</a></li>
+   <p><strong><a name="formtype1"></a><u>FORM TYPE 1: Thing</u>(<em>What did I just say?</em>) 
+
+</strong></p>
+   <ol>
+     <li> Type a thing into the Command Box (the thin white window) and BioBIKE will tell you 
+
+what you just typed in. Of course, the thing has to be a <em><strong>valid</strong></em> 
+
+thing, according to the rules of the language, otherwise you'll get an error. </li>
+     <p>Try typing anything that pops into your head (and press Enter). If you've got writer's 
+
+block, they try this:
+<pre>
+>>I am Sam
+</pre>
+     <li>Unless you're incredibly lucky (or you've played this game before), you got a 
+
+response something like:
+         <blockquote>
+           <blockquote>
+             <blockquote>
+               <p align="left"> <strong>Unknown asdfasdf </strong> </p>
+             </blockquote>
+           </blockquote>
+         </blockquote>
+     </li>
+     <p>That's because you didn't type in a valid THING. OK - we can't avoid it -- what is a 
+
+thing? According to the rules of the language, a thing may consist of any of the 
+
+following:</p>
+     <ul>
+       <li>Quoted thing: Anything between double quotes [BioBIKE responds by repeating what 
+
+you typed]</li>
+       Try something like:
+<pre>
+>>"I am Sam"
+</pre>
+       <li>Asterisk thing: (an asterisk) -- [BioBIKE responds by repeating back its own last  
+response]<br>
+         Try: </li>
+<pre>
+>>*
+ </pre>
+       <li>Symbol thing: A symbol (or name) previously defined to be a valid thing [BioBIKE  
+responds be telling you what the valid thing is] You'll learn in a moment how to define 
+
+symbols, but a few symbols come automatically defined:<br>
+           <br>
+           <ul>
+             <li>True or T, which stands for truth</li>
+             <li>False or NIL, which stands for falsity</li>
+           </ul>
+       </li>
+       <br>
+      Try this:
+      <pre>
+>>true
+</pre>
+     </ul>
+     <li>I just introduced yet another concept - <em><strong>symbol</strong></em>. A symbol is 
+
+any collection of characters (letters, numbers, etc) that does not contain a space or  
+parenthesis. There are other restrictions, but that's enough for now. </li>
+     Try this:
+     <pre>
+>>Multiword symbol?
+ </pre>
+    and then this:
+    <pre>
+>>Multiword-symbol?
+</pre>
+    <p>The error message will tell you what set of characters BioBIKE considers to constitute 
+
+a single symbol. </p>
+    <p>&nbsp;</p>
+   </ol>
+   <p><strong><a name="formtype2"></a><u>FORM TYPE 2: Function</u> (<em>Do what I just 
+
+said</em>)</strong></p>
+  <ol>
+    <p>Functions are always of the form:</p>
+    <p align="center"><img 
+
+src="function1.jpg" width="532" height="100"></p>
+    <p align="left">They:</p>
+    <OL type=a>
+      <li>Begin with an open parenthesis</li>
+      <li>Continue with the name of a valid function</li>
+      <li>Continue (optionally) with one or more things or a functions</li>
+      <li>End with a close parenthesis</li>
+    </OL>
+    <p>What number and kinds of things or functions follow the name of a function depends on 
+
+the nature of the function. A command that doesn't fit this form is not a valid function (of 
+
+course that doesn't mean that everything that <strong><em>does</em></strong> fit the form 
+
+<em><strong>is</strong></em> a valid function). </p>
+    <li>Try this:
+        <pre>
+>>SPELL fish
+   </pre>
+    </li>
+    <li>That didn't work. Since what you typed didn't begin with a parenthesis, BioBIKE 
+
+decided it couldn't be a function. So it must be a thing. But SPELL is not a valid thing, so 
+
+error.</li>
+    Try this:
+    <pre>
+>>(SPELL fish)
+ </pre>
+    <li>Still doesn't work, but at least different messages! The first was:
+        <blockquote>
+          <p class="style30"> Warning: While compiling these undefined functions were 
+
+referenced: <br>
+          SPELL.</p>
+        </blockquote>
+        BioBIKE recognized that <strong>SPELL</strong> was the name of a function, because it 
+
+is the first symbol after an opening parenthesis. But it is not a function BioBIKE 
+
+understands. The second message was:
+        <blockquote>
+          <p class="style30">Attempt to take the value of the unbound variable `FISH'</p>
+        </blockquote>
+    </li>
+    <p>This one you've seen before. FISH isn't a valid thing. And it certainly isn't a 
+
+function.</p>
+    <li>Fix the second problem by putting the word between double quotes, making it a valid 
+
+thing. </li>
+    Try this:
+    <pre>
+>>(SPELL "fish")
+ </pre>
+    <p>Now BioBIKE recognized "fish" to be a thing, but it complains that it never heard of 
+
+the function named SPELL before. </p>
+    <li>How can we teach BioBIKE what <strong>SPELL</strong> means? The only way is to define 
+
+it in terms of things BioBIKE already understands. Fortunately, BioBIKE has many previously 
+
+defined functions. For Example:</li>
+    Try this:
+    <pre>
+>>(SPLIT "fish")
+ </pre>
+    <p>That's probably something like what you may have intended by <strong>(SPELL "fish") 
+
+<br>
+           <br>
+       </strong>
+    <li> Now we can define SPELL in terms of SPLIT, using the following complex function: 
+
+</li>
+    <div align="center">
+      <blockquote>
+        <p align="left"><br>
+        <img 
+
+src="function2.jpg" width="581" height="247"> </p>
+      </blockquote>
+      <p align="left">&nbsp;</p>
+    </div>
+    <p>Try this (put it in the big window, hereafter called the Program Box):
+    <pre>
+>>(DEFINE-FUNCTION Spell (word) 
+>>  (SPLIT word)
+>>  )
+ </pre>
+    <li>Now try again:
+        <pre>
+>>(SPELL "fish")
+   </pre>
+    </li>
+    <p>The newly defined function <strong>SPELL</strong> took the thing it was given 
+
+(represented internally by the symbol word) and gave it to the function SPLIT it into 
+
+individual letters. These individual letters were returned to <strong>SPELL</strong>, which 
+
+returned them to you.</p>
+    <p>Any function, whether it is automatically provided or you define it yourself, returns 
+
+the value of the last form in the function and that value replaces the function itself. We'll 
+
+see this in action momentarily.</p>
+  </ol>
+</ul>
+ <hr color="#000099">
+ <h3 class="style27"><a name="part2">II. The Basic Stick Language </h3></a>
+ <p>Let's begin to define a language through which we can speak arithmetic to a computer. Our 
+
+starting point is that the computer already knows one and only one predefined mathematical 
+
+concept: ONE-MORE-THAN.</p>
+ <ol><li>Try this: 
+<pre>
+>>"|"
+</pre> 
+Call the thing you got a stick. The outcome should not be a surprise.</li><br><br>
+<li>Now give that result to a predefined function. Try this:
+<pre>
+>>(ONE-MORE-THAN *)
+</pre>
+<p>(Recall that the asterisk supplies the previous result returned by BioBIKE). You've just 
+
+written a valid function, because the form:<br><br>
+<OL type=a>
+<li>Begins with <span class="style32">(</span></li>
+<li>Continues with a legal symbol <strong>ONE-MORE-THAN</strong> that has previously been 
+
+defined as a function (it was predefined)</li>
+<li>Continues with a thing (asterisk is a thing)</li>
+<li> Ends with <span class="style32">)</span></li></OL></p>
+<li>Press Eval, and press Eval again. Do you get the idea of what ONE-MORE-THAN does?</li>
+<br><br>
+<li>You can get the same result by putting one function inside another (i.e. 
+
+<strong>nesting</strong> them).Try this: 
+<pre>
+>>(ONE-MORE-THAN (ONE-MORE-THAN (ONE-MORE-THAN "|")))
+</pre>
+     <blockquote>
+       <p><img 
+
+src="sticks-function1.jpg" width="588" height="154"><br>
+       </p>
+     </blockquote>
+  </li>
+   <li>Our language consists now solely of the <strong>thing</strong> &quot;|&quot; and the 
+
+<strong>function</strong> ONE-MORE-THAN. Even with only two elements, you can do a great deal. 
+
+With patience, you could construct a thing consisting of, say, a hundred sticks. How would you 
+
+do it? (<em><strong>Don't</strong></em> try it!) </li>
+</ol>
+ <hr color="#000099">
+<br>
+<br>
+  <span class="style27"><a name="part3">III. Extended Stick Language - Arithmetic</span></a>
+     <p class="style31 style33"><b>Addition</b></p>
+ <p>Using the function &quot;ONE-MORE-THAN&quot;, we can define a function that performs 
+
+addition of two groups of sticks. Suppose we have two bundles of sticks:</p>
+ <blockquote>
+   <blockquote>
+     <blockquote>
+       <p> <img width="276" height="135"  
+src="sticks_bundle.jpg"> </p>
+     </blockquote>
+   </blockquote>
+</blockquote>
+ <p>We want to add these two bundles together, but the computer only knows how to add one 
+
+stick at a time. </p>
+<pre>
+>>(ONE-MORE-THAN (ONE-MORE-THAN (ONE-MORE-THAN (ONE-MORE-THAN "|||"))))
+</pre>
+ <p>This works though it's rather tedious to type ONE-MORE-THAN so many times.<br> But you get  
+the idea that</p>
+ <p> <img width="338" height="99" 
+
+src="addstick1.jpg"> </p>
+ <p>is broken down to: </p>
+ <p> <img width="625" height="98"  
+src="addstick2.jpg"> </p>
+ <p>The concept of addition is that each stick in the second bundle is added to the first  
+bundle until all sticks are gone. 
+Keeping this notion in mind, we will now try to define a function &quot;ADD&quot;.</p>
+ <p>First, we will take a stepwise approach to understand the logic of defining a function  
+called ADD.</p>
+ <ol>
+   <li>Let's call the first bundle with three sticks "bundle1", the second bundle with four 
+
+sticks "bundle2". </li>
+
+<pre>
+>> (DEFINE bundle1 as "|||")
+</pre>
+<pre>
+>> (DEFINE bundle2 as "||||")
+</pre>
+
+<li>We want to add each stick in bundle2 into bundle1.
+<p>    Each successive iteration, the result is incremented by one stick. How many times 
+
+should we perform the ONE-MORE-THAN operation? Exactly the same number as the number of sticks 
+
+in bundle2. </p>
+</li>
+<p><img width="712" height="160" 
+
+src="loop.jpg"></p>
+<p><br>
+  This operation can be automated in a <strong>LOOP</strong>. In a loop, you set a statement  
+once, and the task is carried out repeatedly until the condition is met.  </p>
+<blockquote>
+  <blockquote>
+    <p><br>
+ <img width="447" height="172"  
+src="loop-diagram.jpg">  <br>
+    </p>
+  </blockquote>
+</blockquote>
+
+<p>Let's try a simple loop.
+</p>
+<pre>
+>> (FOR-EACH stick in bundle2
+>>   (DISPLAY-LINE stick))
+</pre>
+You see all of the sticks in bundle2 displayed.<br><br>
+Now initialize the variable. You want the starting number to be the same as the number of  
+sticks in bundle1.
+<pre>
+>> (FOR-EACH stick IN bundle2
+>>    INITIALIZE result = bundle1
+>>    (DISPLAY-LINE (ONE-MORE-THAN result)))
+</pre>
+
+The above may not work the way you expected – it just gives 1 + bundle1 sticks several times…  
+because the result isn't UPDATED. To update:
+<pre>
+>>(FOR-EACH stick IN bundle2
+>>    INITIALIZE result = bundle1
+>>    (ASSIGN result = (ONE-MORE-THAN result))                      
+>>    (DISPLAY-LINE result))
+</pre>
+This result shows that each turn in the loop returns the result that is one more than the  
+previous result.
+
+</li></ol>
+Now we are going to combine what we just did within a function.<br>
+
+<pre>
+>>(DEFINE-FUNCTION ADD
+>>   REQUIRED (bundle1 (AND) bundle2)
+>>   INITIALIZE result = bundle1
+>>   BODY
+>>     (LOOP FOR stick in bundle2
+>>         (DEFINE result AS (ONE-MORE-THAN result)))
+>>   (RETURN-FROM Add result))
+</pre>
+<p>We just  created a function called &quot;ADD&quot;. Try:</p>
+<pre>
+>> (ADD "|||" AND "||||")
+</pre>
+<p><br>
+  <br>
+<hr color="#000099">
+<span class="style35">Subtraction</span><br>
+<p>You've taught the computer how to do addition based on the predefined function  
+ONE-MORE-THAN. Can you apply the same logic to define different arithmetic functions? Is it 
+
+possible to define a function called subtraction with minimal modification to ADD?</p>
+
+  <p>Consider:</p>
+    <blockquote>
+      <p>What is the nature of this function?<br>
+      How do you explain subtraction in terms of our stick language, in the same way we  
+explained addition above?<br>
+      What missing concept do you need in order to define &quot;subtract&quot;? </p>
+    </blockquote>
+<p><blockquote>
+<img width="360" height="99" 
+
+src="subtract_stick.jpg"></p></blockquote>
+<p>&nbsp;</p>
+<ol>
+<li>The missing concept has been predefined for you. You should be able to figure out what it's  
+called and how it works. If you're right, you should be able to use the function within 
+
+BioBIKE (in the same way you've used earlier functions), giving it some number of sticks and 
+
+getting the predicted number back.
+  </p>
+</li><br>
+<hr color="#000099">
+
+<p class="style37"><strong>1a. Extra Challenge!</strong></p>
+<p class="style37">Although the missing concept has been provide for you (if you can guess its  
+name), You could also write a function yourself that doew the job, relying only on  
+ONE-MORE-THAN plus logic. If you want to go this route, complete the following:</p>
+
+<pre><span class="style37">
+(DEFINE-FUNCTION my-function
+   REQUIRED</span> <span class="style36">Fill-in</span>
+   <span class="style37">INITIALIZE result = ""
+   BODY
+      (FOR-EACH
+           UNTIL (EQUAL (</span><span class="style36">Fill-in . . .</span><span  
+class="style37">)</span> <span class="style36">Fill-in</span><span class="style37">)</span>
+           <span class="style37">(DEFINE result AS</span> <span  
+class="style36">Fill-in</span><span class="style37">) )
+      (RETURN-FROM my-function result))</span>
+</pre>
+</ol>
+<hr color="#000099">
+<p>&nbsp;</p>
+<p>Using the mystery function supplied to you (or that you've written), and the following  
+skeletal program, develop the function SUBTRACT: 
+    </p>
+</p>
+
+<pre>
+>>(DEFINE-FUNCTION SUBTRACT 
+>>  REQUIRED (YOUR-ANSWER-HERE)
+>>  INITIALIZE result = YOUR-ANSWER-HERE
+>>  BODY
+>>     (LOOP FOR stick IN YOUR-ANSWER-HERE
+>>        (DEFINE result AS (YOUR-ANSWER-HERE)))
+>>  (RETURN-FROM YOUR-ANSWER-HERE))
+</pre> <p>Press 'Do it' button, and you'll see that the program is now copied in your program  
+box. You can make modification there to make it work. </p>
+<br>
+ <hr color="#000099">
+<p><span class="style27"><strong>Questions:</strong></span>
+</p>
+<blockquote>
+  <p>Question 1: Break multiplication down into operations that you've already taught the  
+computer.<br>
+Develop a strategy by which a function might use these operations to understand 
+multiplication.</blockquote>
+<blockquote>
+    <p>Question 2: Develop a function MULTIPLY. </p>
+</blockquote>
+ <blockquote>
+   <p>Question 3: Do the same for DIVIDE. </p>
+ </blockquote>
+</p>
+<br><br>
+</body>
+</html>

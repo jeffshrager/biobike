@@ -1,0 +1,445 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2012 The BioBike Team                                |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>BioBike FAQ</title></head>
+<body>
+</b><p>
+<Table>
+<TR>
+<TD>
+<h2><image src=http://nostoc.stanford.edu/Docs/wlicon.jpg><b>
+<TD><i><h2>BioBike FAQ</i></h2>
+All contents Copyright 2002-2012 by the BioBike Team
+</b></p><p>
+</p>
+</table>
+<p><hr><p>
+
+<font color=red size=+5><i>HELP!</i> Visit the <a target=_blank,
+href=http://groups.google.com/group/biobike>BioBike Google
+Group</a></font>
+
+<p><hr><p>
+Other questions:
+<p>
+<a href=#whatis>What is BioBike?</a><br>
+<a href=#thepoint>What's the point of BioBike?</a><br>
+<a href=#whyname>Why is it called BioBike?</a><br>
+<a href=#invented>Who invented BioBike?</a><br>
+<a href=#pubs>Are there published papers on BioBike?</a><br>
+<a href=#beyond>How does BioBike differ from typical online databases?</a><br>
+<a href=#hardtouse>Is it hard to use?</a><br>
+<a href=#whylisp>Why Lisp?</a><br>
+<a href=#perl>What about those specialized Bio* languages (BioPerl, etc)?</a><br>
+<a href=#whopaid>Who paid for it?</a><br>
+<a href=#opensource>It is Open Source? If so, under what license?</a><br>
+<a href=#whatlisps>What lisps does BioBike run on?</a><br>
+<a href=#started>What's the best way to get started learning BioBike?</a><br>
+<a href=#courses>Is there a BioBike course?</a><br>
+<a href=#myown>What if I want to get my own BioBike server at my own lab?</a><br>
+<a href=#getlisp>How do I get a Lisp that can run BioBike?</a><br>
+<p><hr><p>
+<a name=whatis></a>Q: What is BioBike?
+<p>
+<blockquote>
+
+The BioBike system is a biology-specific programming language embedded in
+an integrated biological knowledge-base, all accessible through the
+web.  In the best case, biologists themselves would be able to log
+into the system and write their own programs to ask novel biological
+questions without the help of (or with very little help from) software
+engineers.
+
+</blockquote>
+<p>
+
+More: <a target=_blank href=intro.html>The BioBike Vision</a>
+
+<p><hr><p>
+
+<a name=thepoint></a>Q: What's the point of BioBike?
+<p>
+<blockquote>
+
+BioBike is an approach to reducing the distance between biologists and
+biocomputation by providing an integrated, on-line, programmable
+biological knowledge base. In many other scientific areas students use
+programmable tools to address complex questions. For example, most
+undergraduate engineers are trained to use matlab, a matrix-based
+programming language. But biologists don't have a tool of that sort,
+and certainly nothing like that is integrated into their training.
+BioBike is a sort of matlab for biological knowledge, where instead of
+matrices you have a knowledge base which integrates biological
+knowledge about particular organisms, their genomes and proteomes, and
+which provides tools to conveniently operate on that knowledge. 
+
+</blockquote>
+
+More: <a target=_blank href=intro.html>The BioBike Vision</a>
+
+<p><hr><p>
+
+<a name=whyname></a>Q: Why is it called BioBike?
+
+<blockquote>
+
+It used to be called "BioLingua" but someone who was using that name
+forced us to change it. Bikes are the most efficient means of
+transportation known, and there are various possible acronyms. ("Big
+Integrated Knowledge Environment" is a favorite.)
+
+</blockquote>
+
+<a target=_blank href="CandD.html">Here's a copy of the letter that forced us to change the name.</a>
+
+<p><hr><p>
+
+<a name=invented></a>Q: Who invented BioBike?
+
+<blockquote>
+
+BioBike was envisioned by Jeff Shrager and the core code was written
+by JP Massar. Many people subsequently contributed to it, most
+significantly: Mike Travers (who built the frame system and many of
+the knowledge access components), and Jeff Elhai.
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=pubs></a>Q: Are there published papers on BioBike?
+<p>
+
+Yes, here's a list:
+<p>
+
+<ul>
+
+<li>The original BioBike (BioLingua) paper in <i>Bioinformatics</i> <a  target="_blank" href=http://bioinformatics.oupjournals.org/cgi/content/full/bth465?ijkey=56vHZ9Co9fWyA&keytype=ref>[link out to Oxford U. Press site].</a>
+
+<p>
+
+<li>A paper in the Open Source journal PLoS One, entitled: <i>Deductive
+BioComputing</i>, describes the way that SRI's SNARK theorem prover can
+be used inside the BioBike platform to do complex biological
+reasoning. <a target=_blank
+href=http://www.plosone.org/article/fetchArticle.action?articleURI=info%3Adoi%2F10.1371%2Fjournal.pone.0000339>[link
+out to PLoSOne]</a>
+
+<p>
+
+<li>A paper for a special issue of the <i>Journal of the History and
+Philosophy of Science</i> which describes BioBike as a "trading zone"
+where biologists and engineers can collaborate. <a target=_blank
+href=http://nostoc.stanford.edu/jeff/temp/jhps20060830.pdf>[preprint
+in PDF]</a>
+
+<p>
+
+<li>A commentary appearing in the <a target=_blank href=http://www.the-scientist.com/2005/06/6>June 6, 2005 issue of The Scientist</a> describes our collaboration with the
+<a target=_blank href=http://www.hybrow.org>HyBrow</a> team at Penn State.
+<p>
+<li><i>The (Re)Birth of the Knowledge Operating System</i> <a target=_blank href=http://nostoc.stanford.edu/jeff/personal/vita/pubs/2005ILCKnowOS.pdf>[PDF]</a> (International Lisp Conference, Stanford, June, 2005)
+</ul>
+
+<p><hr><p>
+
+<a name=beyond></a>Q: How does BioBike go beyond typical biological
+knowledegbases?
+
+<p>
+
+<blockquote>
+
+Online bioloigical data or knowledge bases (of which there are
+zillions!) are very useful for simple lookup sorts of work, but they
+typically operate in a "vending machine" model: You put in a query,
+and you get out an answer. If you're lucky, you can do some
+pre-packaged computations in the database, and maybe even do them on
+multiple results from a query. If that's all you need to do, great!
+
+<p>
+
+BioBike is a <i>full fledged efficent programming language embedded in
+an integrated knowledge base -- all totally web-accessible.</i> This is
+a completely different animal than the vending-machine sort of
+knowledge bases you're probably used to. Instead of using web commands
+you use programming language constructs, and you can pass the results
+of one computation on to the next (like in any sort of programming
+languages), which allows you to combine operations. Moreover, BioBike
+has built-in all of the typical bioinformatic tools (Blast, Clustal,
+etc.) so that not only can you do your own computations in the
+database, but you can call upon these other tools -- all directly
+through the BioBike interface!
+
+</blockquote>
+
+More: <a target=_blank href=intro.html>The BioBike Vision</a>
+
+<p><hr><p>
+
+<a name=hardtouse>Q: Is it hard to use?</a>
+
+<p>
+
+<blockquote>
+
+It's not trivial, like a vending machine database would be, but it's
+much more powerful, and we think that the power/effort ratio is worth
+it. You have to learn a little programming -- usually <i>very</i>
+little -- to get simple things done. The main BioBike language is
+called BioLisp -- it's just common lisp with a bunch of biological
+functionality added in. But you don't have learn Lisp (although we
+think you should! :-) 
+
+<p>
+
+There are several different specialized languages developed for
+BioBike that are there to help biologists get the most out of the
+system. The main one, called BBL, was developed by <a
+href=mailto:ElhaiJ@VCU.Edu>Jeff Elhai at Virginia Commonwealth
+University</a>. BBL also has a visual programming language, called
+vBBL. You can see a walk-through tour of vBBL <a target=_blank href=http://nostoc.stanford.edu/jeff/etc/bblvpl/bblvpl.html>here</a>.
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=whylisp></a>Q: Why Lisp?
+
+<blockquote>
+
+Because it's the right language for the job!
+
+<p>
+
+</blockquote>
+
+More: <a target=_blank href="whylisp.html">Why Lisp?</a> 
+
+<p><hr><p>
+
+<a name=perl>Q: What about those specialized Bio* languages (BioPerl, etc)?</a>
+
+<blockquote>
+
+BioPerl, BioJava, BioPython, etc. certainly have their place, but all
+they offer is a programming language with some biological
+functionality added in. In order to use them you have to install them,
+and then install databases, and then figure out how to put them all
+together. In BioBike we've done all that work for you, and you don't
+even have to have your own computer (except to run a web browser)!
+
+</blockquote>
+
+
+
+<p><hr><p>
+
+<a name=whopaid></a>Q: Who paid for it?
+
+<blockquote>
+
+Many people in various ways. NASA gave us seed funding, Franz Inc and
+Lispworks, Inc. loaned us Lisp licenses, most of the initial
+engineering was done on a volunteer basis, and much continues that
+way. NSF now supports some of the BioBike development, but much is
+still done on a volunteer basis.
+
+</blockquote>
+
+
+<p><hr><p>
+
+<a name=opensource></a>Q: It is Open Source? If so, under what license?
+
+<blockquote>
+
+Yes, under the "MIT" (aka. the BSD) license, which reads:
+<pre>
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2008 The BioBike Team                                |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+</pre>
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=whatlisps></a>Q: What lisps does BioBike run on?
+
+<blockquote>
+
+Theoretically any "compliant" implementation of Common Lisp, but we do
+most of our testing under Franz ACL 8.0 and LispWorks. The
+BioBike servers are running Franz ACL on Linux. 
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=started></a>Q: What's the best way to get started learning BioBike?
+
+<blockquote>
+
+<i><font color=red>Note: The demo server is no longer supported. <a href=http://biobike.csbc.vcu.edu/>Click here to connect to the new BioBike server page.</a></font></i>
+
+<p>
+
+First play with the BioBike demo server. There are numerous "live
+tutorials" that you can get to by logging into the demo server, and
+then using the pulldown at the bottom to go to: Help ... > Live
+Tutorials. This will give you a list of Live Tutorials. We suggest
+starting the the first one, called "A Tour of BioBike".
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=courses></a>Q: Is there a BioBike course?
+
+<blockquote>
+
+The online tutorials (esp. the Live ones) are a good start, but they
+aren't really a lesson plan. Jeff Elhai (of Virgnia Commonwealth
+University) and Jeff Shrager (of The Carnegie Inst. and Stanford) both
+teach BioBike courses and have a lot of course materials, but most of
+it eventually goes online, either in the BioBike static docs, or in
+the Live Tutorials.
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=myown></a>Q: What if I want to get my own BioBike server at my own lab?
+
+<blockquote>
+
+First, think twice about whether you really need this? Can you use our
+demo server or the Cyano sever for your work? If we don't have your
+favorite genome on a server, ask us (via the <a target=_blank,
+href=http://groups.google.com/group/biobike>BioBike Google Group</a>)
+and we may be able to put it up for you on either the demo server, or
+one a private server. If you really really want to try to bring up
+your own BioBike server, you have to get a Lisp platform (see below),
+and then download the sources and install it. There is documentation
+in <a target=_blank href=index.html#core> the core system
+documentation</a> to help you do this.
+
+<p>
+
+It takes some effort to setup and support a BioBike server --
+esp. with complex systems of biological data, knowledge, and
+tools. You need to be knowledgeable about Lisp, Linux, and
+biocomputing tools.  This is a big part of the reason that we
+developed BioBike as a client-server system in the first place; we had
+in mind that a whole community of interest in a particular organism or
+class of organisms would buy one server and one Lisp license and pay
+for one person's time to support it for the whole community. In our
+case it was the cyanobacterial community, which is why the main
+BioBike server contains cyanobacterial models.
+
+<p>
+
+The community might even put in a small grant proposal to build
+themselves a BioBike server, or add it on as a small cost to their
+already probably pretty big genome database grants. Those costs and
+effort are then amortized over the whole user community. And more
+importantly, someone <i>else</i> gets to do the dirty work of
+integrating the data and supporting the server. When every lab has to
+do their own software setup it can be painful and expensive, but
+BioBike lets you amortize the cost and effort over a whole community
+of users.
+
+<p>
+
+If you're interested in putting together a proposal to develop a
+BioBike server for your community, <a
+href=mailto:jshrager@stanford.edu>Jeff Shrager</a> would be more than
+happy to help you project your costs.
+
+</blockquote>
+
+<p><hr><p>
+
+<a name=getlisp></a>Q: How do I get a Lisp that can run BioBike?
+
+<blockquote>
+
+The best way is to buy it from <a target=_blank
+href=http://www.franz.com>Franz, Inc</a>. If you're an academic or
+non-profit, we can usually get you a good deal on a BioBike specific
+license. Contact <a href=mailto:jshrager@stanford.edu>Jeff Shrager</a>
+for more information on this. The cost is currently something like
+$1250 for the first year, and ~1/2 of that for each continuing year
+of the license.
+
+</blockquote>
+
+subQ: Isn't a thousand bucks a little steep for a programming language
+platform? Why didn't you use a free Lisp?
+
+<blockquote>
+
+First off, it's only a thousand dollars the first year, and it's not
+unreasonable compared to how much you pay for computers, HPLC
+machines, lab materials, and books. We chose to use a commercial Lisp
+engine because it is well supported and does what we need it to do. No
+freeware Lisp platforms are as well supported as the for-profit Lisps,
+and none do what we need them to do in all situations. (And when ACL
+doesn't do what we need it to do, we complain and they fix it!)
+
+<p>
+
+However, theoretically any compliant implementation of Common Lisp
+will run the BioBike basics, but possibly not some of the detailed
+multi-tasking code, which is ACL-dependent. (There's no CL standard
+for these sorts of things.) If you want to try to port BioBike to a
+free Lisp, we'll work with you to do that. Someone actully ported
+most of BioBike to SBCL once, and there's still some conditional
+compilation code left in the system. We're happy for you to try to do
+this, and we'll help you as much as we can. Also, we'll be happy to
+patch back your work into the code as conditional compiles.
+
+</blockquote>

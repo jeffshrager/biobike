@@ -1,0 +1,495 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2005-2006 JP Massar, Jeff Shrager, Mike Travers              |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+
+<html><head><title>Advanced Interaction with BioBike</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Advanced Interaction with BioBike</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2005 by The BioBike Team (contact
+<a href="mailto:jshrager@stanford.edu">Jeff Shrager (jshrager@stanford.edu)</a> for more
+information)</p>
+
+<p>
+
+By the time you've arrived here you should be an expert at using
+BioBike, and BioLisp. The purpose of this section is to explain some
+of the advanced features of BioBike and the BioBike listener that will
+make your life a little more pleasant -- well, okay, maybe your life
+will be the same unpleasant mess it's always been, we really can't
+help you with that, but maybe you'll enjoy your time with BioBike a
+little more.
+
+<p>
+<h3>Multiple session and session side effects</h3>
+
+<p>
+
+So far you've been entering functions into the Eval box and short
+expressions into the Enter box. That's all well and good, but you've
+probably wondered whether there is a way to save your work so that you
+don't have to do this all over again when you next log in.
+
+<p>
+
+First off, your work is saved between sessions so long as (a) the
+BioBike server hasn't been rebooted, and (b) you log into the same
+session as you left. We rarely reboot the server, so for the moment,
+let's skip that problem. How do you log into the same session? Up to
+this point every time you've logged in you've pressed the "New Login",
+but there's that other "Previous Session" button. What that does is to
+let you choose from among previous sessions that you might have left
+but would like to return to. Each time you press "New Login" a new
+session is created for you, whereas if you press "Previous Session"
+you are given a choice to reconnect to one that you left. You might
+have already accidentally discovered this because if you enter your
+userid and password and just press ENTER instead of either "New Login"
+or "Previous Session", it acts like you pressed Previous Session and
+just goes to that list -- which probably totally confused you. If you
+do do this by accident, there's a button at the bottom of the page
+that says: "Start a New Session", which will just do the same things
+as if you'd pressed "New Login" to begin with. But you can also chose
+from among the myriad previous sessions that you left around and
+didn't even know you were doing it! (All the things with # signs in
+the "Previous Sessions" page.
+
+<p>
+
+If and when you DO pressed "Previous Session" (or just ENTER) upon
+logging in, you'll notice that the previous sessions are listed in
+reverse chronological order -- that is, the most recent one is at the
+top, and so forth to the very first session that you left.  For fun,
+if you've never done this before, go back and try to log in again, but
+this time press "Previous Session" (or just ENTER) when you login, and
+select one of your previous sessions (if you have any). When you do
+you'll (probably) be <i>shocked</i> to see that *all* of your previous
+work is still there in the history, just like you left it -- possibly
+days or weeks ago! And you can just pick up right where you left off
+-- mostly.
+
+<p>
+
+Mostly? Why "Mostly"??? Well, although each of your sessions has a
+separate history, they <i>share global state</i>, which means that all
+the variables and functions that you created for yourself are shared
+by <i>all</i> of your sessions. So, for example, if you did: (setq a
+5) in one session, and then logged in again (as a new session), A
+would still have the value 5. This is the way BioBike is designed so
+that you can log out and come back tomorrow and log back in and
+continue more-or-less where you left off. Let's say that when you log
+back in (to a new session, as just described), and then you do: (setq
+a 6). Then you log out, and the next time, you log back into <i>the
+first session</i> -- that is, the one where you had set A to 5. If you
+now examine the value of A you'll be surprised to see that it's 6, not
+5! That's because, as just described, all your sessions <i>share
+global state</i>, which means that all the variables and functions
+that you created for yourself are shared by <i>all</i> of your
+sessions.
+
+<p>
+
+The technical term for this is "side effect" -- that is, all your
+sessions <i>side effect one another</i>; they have side effects on one
+another's global state (variables and functions).
+
+<p>
+
+This is true of function definitions as well: If you define a function
+in one session, it's defined that way for all future different
+sessions, as well as all past sessions -- that's because just like
+variables, function definitions are global (to your username).
+
+<p>
+
+This is only really confusing if you try to go back and forth between
+sessions, so if you never do that (either accidentally or on purpose),
+you don't have to worry about this. Why, you might well ask, would you
+ever go back and forth between sessions on purpose? There are a number
+of reasons that you might want to do this. The main one is just to get
+back to where you were. If you press "Previous Session" when you log
+in, and choose the top numbered session -- your latest one -- you'll
+be right back where you were, including your history and the contents
+of your eval and enter boxes, and you can pick up right where you left
+off!
+
+<p>
+
+Another use for being able to manage multiple sessions is that you
+could have multiple BioBike listeners open at the same time, both
+logged into the same global variable and function space (as described
+above), but doing different things. For example, you could be
+developing some new code through one of these, and testing or running
+code through the other. <i>Be careful</i>, though, in this section
+because if you change any of the functions in one session that are
+being executed in the other, you'll <i>dynamically change the
+behavior of the other session</i>. Under some very unusual
+circumstances you might actually <i>want</i> this behavior, but those
+circumstances are really really rare!
+
+<p>
+
+There are ways to create session-local global variables (but not
+functions), but it's such a rare and advanced thing that it's
+described in another document altogether!
+
+<p>
+
+<h3>Creating and editing loadable modules</h3>
+
+Above we mentioned that you can retain your session history, and use
+multiple sessions, as long as the BioBike server hasn't been
+rebooted. When the server reboots, all left-over sessions are
+lost. But then how are you supposed to carry your work forward? There
+are several ways to do this. The classical way, and the one we're
+going to discuss here, is to create code and data modules that you can
+reload later, either when you have to (because maybe the server has
+rebooted and everything you did is lost), or you want to (because
+you've made a mess and want to get back to some sensible state!) In
+either case, the way that you do this is to create text files in your
+file space that has lisp code and data in them, and then simply reload
+these when you need to or want to. Usually such files are designed to
+"load clean", which means that they do all their own data setup, and
+initialize everything (including and esp. all your global values) so
+that it all works right whether you've come into a freshly started
+BioBike server, or you've messed yourself up so badly that you want to
+start over. Actually, more commonly than either of these cases, it's
+often quite useful to do your editing in the file, and then reload it
+for testing. This is esp. true if you have several small function that
+interact with one another. Regardless of the reason you want to use
+file-based modules, here's how you do it.
+
+<p>
+
+For you have to create the file. There are several ways to do
+this. The simplest is to go to your filespace by using the "Browse
+Files" link at the bottom of the listener page. This will bring up
+something that look like this:
+
+<pre>
+  Biobike Viewable File Directories
+---------------------------------------
+ /home/BioDemo/
+ <font color=green>/home/BioDemo/visitors/yourname/</font>
+ /home/BioDemo/visitors/shared-files/
+ /usr/local/bioetc/
+ /home/BioDemo/visitors/
+</pre>
+
+The green one (the one with your name in it) is your file
+directory. Click on that one to get to your directory, and you'll get
+something like this:
+
+<pre>
+  Biobike Directory Listing
+  Listing for /home/BioDemo/visitors/yourname/
+  [New file or subdirectory]  [Delete directory files]
+--------------------------------------------------------
+up ..  
+dir .cih 
+dir .newcih 
+dir session-logs 
+
+[edit]  +cih+.lisp       05/02/05 12:16
+[edit]  +cih-cache+.lisp 06/10/05 14:49    
+</pre>
+
+Notice the button called [New file or subdirectory]. When you click it
+you'll get something like this:
+
+<pre>
+Create New File or Directory
+Current Directory: /home/BioDemo/visitors/yourname/
+(_) New File (_) New Subdirectory    Name: _____________________
+</pre>
+
+Click on New File (it's the default), and type in the name of your new
+file. Call is "fax.lisp" for now -- don't include the quote marks!, so,
+it's just: fax.lisp
+
+<p>
+
+And press ENTER.
+
+<p>
+
+When you do this you'll end up in the BioBike code editor, editing you
+new file, which has, unsurprisingly, nothing in it! Let's put something
+in it! Type in, or cut/paste in the following code:
+
+<pre>
+  (defun fact (n)
+  (cond ((zerop n) 1)
+  (t (* n (fact (1- n))))))
+
+  (defun run! (m)
+  (loop for i from 1 to m
+  collect (fact m)))
+</pre>
+
+Now press the [Reindent] button. By magic, your code should get
+reformatting to look something like:
+
+<pre>
+(defun fact (n)
+  (cond ((zerop n) 1)
+        (t (* n (fact (1- n))))))
+
+(defun run! (m)
+  (loop for i from 1 to m
+        collect (fact m)))
+</pre>
+
+Now, press [Save-Compile-Load]...
+
+<p>
+
+Notice that you ended up back in the BioBike listener, and it
+automatically evaluated:
+
+<pre>
+(load (compile-file "/home/BioDemo/visitors/yourname/fax.lisp"))
+</pre>
+
+That's all you have to do! Your code is saved forever, and you can try
+it out right now:
+
+<pre>
+  >> (run! 5)       ; Remember NOT to put in the >>
+  :: (120 120 120 120 120)
+</pre>
+
+<i>Voila!</i>... uh, well, almost voila... something's wrong. We were
+expecting the factorials of all the numbers up to 5, not just 5 copies
+of 5! ... Hmmm. Let's go back and look at our code: Press the "Prev"
+link (in "Files: Prev All" at the bottom of the page -- note that this
+is three different links! You want to click right on the word "Prev"!)
+
+<p>
+
+If you did that right you'll be back editing your file, fax.lisp! Do
+you see the error? (Hint, the problem is in run!, where it calls
+fact.) Fix it, then press [Save-Compile-Load] again and test your fix.
+
+<p>
+
+[For fun, and to see a neat Lisp trick, try: (run! 100)]
+
+<p>
+
+That's all you need to know in order to create your own lisp code
+modules. Note that when you leave and come back, your modules are
+still there, just as you left them, and you can either directly enter
+the (load (compile-file ...)) command again to get the code back or,
+more simply, just use "Browse Files" like we did before to get to your
+directory, and then press the [Edit] button next to the file you want
+to edit. (And if you've connected to the same session as before, the
+"Prev" button will still work!)
+
+<p>
+
+Another way to get to your file, if it's already loaded, is to choose
+"Other tools..." > "My Stuff". This will give you a list of all your
+global functions and variables. It will look something like this:
+<pre>
+Your Variables:
+   ...
+
+Your Functions:
+
+Name (Edit in Multibox)   Source File   Scratch File 
+   ...
+<font color=blue>     RUN!                 view  edit        edit </font>
+   ...
+</pre>
+
+If you click the first "edit" button (the one under "Source File"),
+you'll end up back editing your module.
+
+<p>
+
+There's some technique involved in putting together "proper" modules,
+but that's beyond the scope of this section. That's also mostly beyond
+the scope of the BioBike documentation, having to do with how to
+declare certain types of variables, and how to order your functions in
+your modules. These are the sort of things that you learn by observing
+how people who know what they're doing do. In the meantime, here are a
+few more interaction tricks.
+
+<p>
+
+<h3>Tips and tricks for convenient BioBike usage</h3>
+
+The BioBike listener is a pretty complex thing to interact with. The
+"standard" methods described above, and in the previous sections, are
+sometimes cumbersome. This section presents a list of little tricks
+that we've learned through experience with BioBike that you can make
+you life with the listener a little nicer. These aren't in any
+particular order, and none of these is a very strong suggestion. You
+might give them a try and see if you like them, and let us know other
+tips and tricks that you've developed.
+
+<p>
+<li><b>Using "Enter Completion" to get back old expressions</b>
+<p>
+
+Suppose you did something yesterday, or last week, that you want to
+get back, but you don't remember it in detail; maybe it was a complex
+definition, or a load command for a particular file that you don't
+feel like typing in again. Enter completion can recover <i>any</i>
+expression that you have evaluated, whether in the Enter or Eval box
+at <i>any</i> time in the past (regardless of session of BioBike
+server reboot!) 
+
+<p>
+
+To use "enter completion" simply type the beginning of the expression,
+usually something like:
+<pre>
+  (defun 
+
+or:
+
+  (load 
+
+</pre>
+
+into the Enter box and click [Enter] (or press the enter key). Each
+time you do click (or press) [Enter] you'll see the next most recent
+possible completion will be put into the Eval box. Press/click enter
+over and over to move backward through your history until you find the
+thing you're looking for, and then do what you like with it!
+
+<p>
+<li><b>Keeping multiple expressions in the Eval box</b>
+<p>
+
+It turns out that even though only the first thing that you put in the
+eval box gets evaluated, everything gets saved in the box, even into
+future sessions (as described above where we talked about logging into
+the same session again). This turns out to be a convenient way to
+store a series of expressions that you want to do over again, possibly
+in different orders, which is a little more convenient than having to
+fish them out of your history list, or using "enter completion" (as above).
+
+<p>
+
+For example, suppose that for some weird reason you want to do these
+five expressions over and over in various orders -- you're testing out
+your understanding of Lisp math, or some such thing:
+
+<pre>
+  (+ 1 2)
+  (* 3 4)
+  (/ 5 6)
+</pre>
+
+If you put these three into the Eval box in this order, and then press
+[Eval], only the first one (+ 1 2) will actually get evaluated, but
+all three will still appear in the box! If you want to do a different
+one, just move it to the top, leaving the rest in place, and then
+<i>that one</i> will be evaluated, and so on.  The three expressions
+will even stay together in the history list, so if you use "enter
+completion" (as above) they'll <i>all</i> re-appear in the Eval box!
+
+<p>
+<li><b>Using multiple windows</b>
+<p>
+
+Many of the controls in the listener, such as "Browse Files", "Files:
+Prev All", and "Browse Frames" default to working in the same web
+browser as the listener, meaning that when you're done with whatever
+you're doing, you have to get back to the listener (which is usually
+not a big problem). But sometimes you want to leave those windows open
+and still be able to control the listener. Some examples where you might want multiple windows:
+
+<p>
+
+<ul> 
+
+<li>You might want to edit a module file (as described above) and test
+it without having to go back and forth all the time: listener ->
+editor -> listener -> editor over and over. 
+
+<p>
+
+<li>You're trying to write some complex code that runs around in
+the knowledge base and you want to keep a frame browser open at the
+same time as both the listener <i>and</i> maybe also the code editor.
+
+<p>
+
+<li>You are working on some code that creates an Excel-loadable file
+in your directory that you download every time you make a change and
+test out the function to see how it worked. Normally you'd have to go
+between the listener, the editor, and several pages of file browser in
+order to do this.
+
+</ul>
+
+<p>
+
+In each of these cases, if you're a little clever and a little
+careful, you can save yourself enormous amount of clicking and time by
+opening the various pages <i>in new browsers</i> (usually by
+right-clicking on the link, instead of left clicking it, and choosing
+"open in new window").
+
+<p>
+
+For example, if you open the frame browser ("Browse Frames") in a new
+window, you can browse frames to your heart's content and still work
+in the listener; these windows are entirely independent! And if you
+open the "Prev" button (as described above in the discussion of module
+files) in a new window, you'll be able to edit and save your code in
+that new window, and just leave it around while testing your code in
+the listener.
+
+<p>
+
+Let's take that last case (both editing and testing code at the same
+time) and see how you can do it. The only trick is how to get the code
+back into the listener without closing your editor. (If you were to
+press "[Save-Compile-Load]" not only would be editor close, but the
+editor page would become another listener -- totally confusing!)
+
+<p>
+
+The way I do this is by just leaving the (load (compile ...)) command
+in the Enter box in the listener, and then using [Save] instead of
+[Save-Compile-Load]. This just saves the file, but doesn't close the
+editor, but it also doesn't do the (load (compile ...)) thing, so you
+have to do that in the listener to get your code loaded up for testing
+in the listener. (The "enter completion" and/or "multiple
+expressions" tricks described above are useful for this!)
+
+<p>
+
+<p align="right">Copyright (c) 2005 by The BioBike Team (contact
+<a href="mailto:jshrager@stanford.edu">Jeff Shrager (jshrager@stanford.edu)</a> for more
+information)</p>
+

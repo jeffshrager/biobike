@@ -1,0 +1,111 @@
+<title>KnowOS: A Knowledge Operating System</title>
+<h3>KnowOS: A Knowledge Operating System</h3>
+
+<p>Copyright 2005 M Travers, JP Massar, Jeff Shrager
+
+<p>
+
+<h4>What is a Knowledge Operating System?</h4>
+
+<p>
+
+<b>In one paragraph</b>:
+
+<p>
+
+Whereas Unix and Windows are operating systems for ASCII strings and
+files, and there are operating systems for tables (such as Oracle), a
+knowledge operating System (or "KnowOS") is an operating systems for
+knowledge!  The current <a target=_blank href=index.html>BioBike</a>
+implementation has many of the facilities of an operating system,
+including an integrated file system and multi-processing, but the
+representational basis for BioBike is knowledge, not files or tables.
+
+<p>
+
+<b>In more detail</b>:
+
+<p>
+
+Both operating systems and programming languages use abstraction to
+provide services such as data management, user and process isolation
+and intercommunication, and interfaces to hardware services and to
+other software. In historical practice, the broad concepts of
+operating systems and programming languages overlap with one another
+in a variety of ways. For example, since one of the most important
+services provided by operating systems is application integration --
+the ability to pass the results of one application program on to
+another -- operating systems often provide custom "scripting
+languages" for this purpose. Deriving from IBM's Job Control Language
+(JCL) in the 60s, the concept was popularized by Unix shell scripts,
+and has evolved a number of rich languages such as Python.
+
+<P>
+
+Both scripting languages and full-strength programming languages
+define a virtual environment consisting of abstract objects and
+operations to manipulate them. They differ primarily in the nature of
+their domain of objects, and in their sense of the persistence of
+their data state. Scripting languages generally range over persistent
+object spaces composed of relatively simple objects. The objects in
+Unix are files organized into directories, and these are highly
+persistent. Similarly, relational database management systems
+(RDBMSs), such as Oracle, range over persistent tables. Contrast this
+with classical programming where what one does is to build up networks
+of complex structured "intermediate" knowledge, use these in
+calculations, and then drop them when the program terminates.
+
+<P>
+
+It is now widely recognized that networks of complex structured
+knowledge are critical to modern software applications, but the tools
+contained in mainstream languages and operating systems are not
+particularly oriented towards this type of data. Operating systems
+deal mainly with serial files, programming languages deal with
+networks of objects but do not provide persistence. RDBMs provide
+persistence but are poor at dealing with complex, evolving ,
+messily-structured domains. Herein lies the vision that we call a
+knowledge operating system or "KnowOS": Complex persistent knowledge
+should be the fundamental domain of both the user interface (UI) and
+of the way that programs interact with one another (i.e., the API).
+
+<P>
+
+The central idea of a knowledge operating system is that knowledge --
+that is, arbitrarily complex, interconnected, semi-structured data of
+all types -- is omnipresent. This knowledge is immediately and easily
+available to both users and programs at all times, and the user is, or
+appears to be, "living in" this universe, just as the user of Unix
+lives in the directory tree, and the user of Oracle lives in a world
+of tables. All of this knowledge should be manipulable through an
+equally-omnipresent programming language through which one can easily
+and efficiently work with complex knowledge structures. In this
+vision, everything known to the OS is a part of the knowledge
+space, basic data, programs, process objects, long text objects
+(analogous to files), etc., and the programming language has access to
+all of these objects equally. The classical example of what we have
+thus far described is the Lisp Machine, variously instantiated at MIT
+and Xerox PARC in the 70s and 80s.  But these did had significant
+limitations, esp. running on special-purpose hardware, and in the
+modern world one wants to be able to access knowledge via The Web.
+
+<p>
+
+<b>For more detail and examples, read some of our publications</b>:
+
+<p>
+
+<li>M Travers,
+JP Massar, and J Shrager (June 2005) The (Re)Birth of the Knowledge
+Operating System. International Lisp Conference, Stanford, CA. <a
+target=_blank href=http://nostoc.stanford.edu/jeff/personal/vita/pubs/2005ILCKnowOS.pdf>[pdf]</a>
+
+<p>
+
+Or try out <a target=_blank href=index.html>BioBike</a>, an integrated programmable biological knowledge
+environment implemented on KnowOS technology.
+
+<p>
+
+Or write to Jeff Shrager (<a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>).
+

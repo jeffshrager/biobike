@@ -1,0 +1,342 @@
+<title>BioBike: Analysis of Regulatory Behavior</title>
+
+<p>
+
+<h3>
+BioBike: Analysis of Regulatory Behavior 
+</h3>
+
+<h1>UNDER CONSTRUCTION!!</h1>
+
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+In the tutorial on regulatory simulation (I - tutorial #5) we
+replicated the results of a regulatory model due to Li et al. In this
+one we're going to use that same model, but this time we're going to
+try to go beyond just the simulation to do some anlaysis of the
+behavior of the system. We'll see that with just a little work we can
+ask some pretty intesting questions about regulation.
+
+Let's start by getting the code from that lesson back, and testing it
+out. You don't actually have to load it all back in function by
+function (although going back through that lesson might be useful for
+you if you don't remember it). We've hidden away the code from that
+lesson in a file. All you have to do to get it back in is to load it
+up:
+
+<pre>
+>> (ld "websrc:Doc;livetutorials;jssymbiolietal.lisp")
+</pre>
+
+Now we'll test it out. Recall that in that tutorial we modelled this
+regulatory system: 
+
+<p>
+<img src=livetutorial-files/regsim2/jssymbiolietalfig1b.jpg>
+<p>
+
+Here's what Li et al. got in terms of simulated behavior:
+
+<p>
+<img src=livetutorial-files/regsim2/jssymbiolietaltable2.gif>
+<p>
+
+And here's what we get:
+
+<pre>
+>> (litest-pumped :cycles-to-run 500 :pump-frequency 50)
+</pre>
+
+Note that they specifically state that "the number of time steps in
+each phase do [sic] not reflect its actual duration." Given that, can
+you confirm that your results are the same as theirs? (Recall that
+come of the protein states in their table have to considered as
+wrapping around from the previous cycle, so begin your comparison
+after the first pump action.)
+
+<p>
+
+Now. Notice that they named the various states: Start, G1, G2, S, M,
+and stationary G1, and had a particular setting of on/off (1/0) values
+for each protein for each of those states. Let's start by making a
+table of those indentifier, and then try to apply the names to our
+results. We'll make a global variable called *named-states* that tells
+us what to look for for each protein in each named state. We'll list
+the names of the proteins that are 1 (on) in each named state -- all
+the others we'll assume are off (0). 
+
+<p>
+
+It turns out that Li et al aren't consistent about what they name
+particular states -- which is probably intentional. So we'll have to
+be a little careful about this. Let's give a major and minor state
+indication. You'll see what this means in a moment:
+
+<pre>
+>> (defvar *named-states* nil)
+
+>> (setf *named-states* 
+>>  '(
+>>    ((start) (CLN3 CDH1 SIC1 size))
+>>    ((G1 a) (MBF SBF CDH1 SIC1))
+>>    ((G1 b) (MBF SBF CLN12 CDH1 SIC1))
+>>    ((G1 c) (MBF SBF CLN12))
+>>    ((S) (MBF SBF CLN12 CLB56))
+>>    ((G2) (MBF SBF CLN12 CLB56 CLB12 MCM1/SFF))
+>>    ((M a) (CLN12 CDC20&14 CLB56 CLB12 MCM1/SFF))
+>>    ((M b) (SWI5 CDC20&14 CLB12 MCM1/SFF))
+>>    ((M c) (SWI5 CDC20&14 SIC1 CLB12 MCM1/SFF))
+>>    ((M d) (CDH1 SWI5 CDC20&14 SIC1))
+>>    ((G1 n) (CDH1 SWI5 SIC1)) ; n = near stationary
+>>    ((G1 s) (CDH1 SIC1)) ; s = stantionary
+>>   ))
+</pre>
+
+The FIRST of each entry in *named-states* is the description of the
+state. You'd think that each state would be characterized by a
+different specific set of proteins, but that's not the case for
+whatever good reason Li et al had for doing it this way. So because Li
+et al used the same name for apparently different states, we've given
+some of the states a sub-name (a, b, c, etc.)
+
+<p>
+
+Now, in order to do what we want to do here, we're going to have to
+change the reporting function from the last tutorial so that it
+reports the state, instead of just the on/off (1/0) values for each
+protien. 
+
+<p>
+
+Here's the old reporting function:
+
+<pre>
+ (defun report-states (cycle)
+  (format t "~8,f" cycle)
+   (loop for p in *proteins*
+         do (format t "~9,f" (gethash p *protein->current-state*)))
+   (format t "~%")
+   )
+</pre>
+
+Since we can figure out that value of each protein, all we need to do
+is ensure that the one's were interested in are 1, and all the rest
+are zero:
+
+<pre>
+>> (defun check-state? (target-proteins)
+>>   (and 
+>>    ;; Make sure all the ones that should be one are one:
+>>    (loop for p in target-proteins
+>>          if (= 0 (gethash p *protein->current-state*))
+>>          do (return nil)                ; found a zero -- fail!
+>>          finally (return 1) ; Completed without a problem -- succeed (this part!)
+>>          )
+>>    ;; And make sure that all the others are zero!  Note the tricky use of 
+>>    ;; set-difference here to get the list of proteins NOT in the target set!
+>>    (loop for p in (set-difference *proteins* target-proteins)
+>>          if (= 1 (gethash p *protein->current-state*))
+>>          do (return nil)                ; found a one -- fail!
+>>          finally (return 1) ; Completed without a problem -- succeed (this part!)
+>>          )
+>>    ))
+</pre>
+
+With this we should be able to get REPORT-STATES to tell us what state
+the system is in at any point:
+
+<pre>
+>>  (defun report-states (cycle)
+>>   (format t "In cycle: ~8,f, the system is in state: ~a~%" cycle 
+>>           (loop for (state-description target-proteins) in *named-states*
+>>                 when (check-state? target-proteins)
+>>                 do (return state-description))))
+</pre>
+
+Let's try that. We have to use the pumped version of litest to see that this actually cycles around multiple times, as predicted:
+
+<pre>
+>> (litest-pumped :cycles-to-run 220 :pump-frequency 50)
+</pre>
+
+Hmmmm. After each pumping event We should get their state
+progressions: 
+
+<pre>
+   Start -> G1a -> G1b -> G1c -> S -> G2 -> Ma
+         -> Mb -> Mc -> Md -> G1n -> G1s... 
+
+But it only does: 
+
+   Start -> Mb -> Mc -> Md -> G1n -> G1s...
+</pre>
+
+<p>
+
+<i>Why?!</i> It's hard to tell, but note that many states are NIL --
+not named. Maybe some of the states are sort of mushed together, or
+pulled apart as a result of a timing difference, and so aren't being
+identified appropriately. That is, they aren't being activated or
+inhibited enough. We have one parameter to play with: The
+*degrade-after* parameter, which is set to 5. Let's explore setting it
+to a smaller value to see if we get more of the right states:
+
+<pre>
+>> (setf *degrade-after* 3)
+
+>> (litest-pumped :cycles-to-run 220 :pump-frequency 50)
+
+;;; That's slighlty better: 
+
+   Start -> S -> G2 -> Ma
+         -> Mb -> Mc -> Md -> G1n -> G1s... 
+
+>> (setf *degrade-after* 1)
+
+>> (litest-pumped :cycles-to-run 220 :pump-frequency 50)
+
+;;; Closer still:
+
+   Start -> G1b -> G1c -> S -> G2 -> Ma
+         -> Mb -> Mc -> Md -> G1n -> G1s... 
+
+</pre>
+
+The last version is only missing G1a, and there's a NIL state where it
+should be, so maybe it's there afterall, but still a little mixed up.
+At any rate, we're close enough at this point to accomplish what we
+want to do, so let's move one, leaving *degrade-after* at 1.
+
+<p>
+
+Let's modify REPORT-STATES one more time, this time instead of
+reporting the states, we want to collect them up in a history
+list. We'll make the history list global, and then add a new outer
+function that calls LITEST-PUMPED but records and reports the history
+for us:
+
+<pre>
+>> (defvar *history* nil)   ; set up the global history
+
+>>  (defun report-states (cycle)
+>>     (push 
+>>       (list cycle
+>>         (loop for (state-description target-proteins) in *named-states*
+>>               when (check-state? target-proteins)
+>>               do (return state-description)))
+>>         *history*))
+
+;;; Because we PUSH the new state onto the history, it comes out in 
+;;; reverse, so we have to reverse it when we finally report it.
+
+>> (defun histest ()
+>>  (setq *history* nil)
+>>  (litest-pumped :cycles-to-run 220 :pump-frequency 50)
+>>  (setq *history* (reverse *history*)))
+
+;;; Let's try:
+
+>> (histest)
+::
+((0 NIL) (1 NIL) (2 NIL) (3 NIL) (4 NIL) (5 NIL) (6 NIL) (7 NIL)
+ (8 NIL) (9 (M B)) (10 (M C)) (11 NIL) (12 NIL) (13 (M D)) (14 (M D))
+ (15 (G1 N)) (16 (G1 N)) (17 (G1 S)) (18 (G1 S)) (19 (G1 S))
+ (20 (G1 S)) (21 (G1 S)) (22 (G1 S)) (23 (G1 S)) (24 (G1 S))
+ (25 (G1 S)) (26 (G1 S)) (27 (G1 S)) (28 (G1 S)) (29 (G1 S))
+ (30 (G1 S)) (31 (G1 S)) (32 (G1 S)) (33 (G1 S)) (34 (G1 S))
+ (35 (G1 S)) (36 (G1 S)) (37 (G1 S)) (38 (G1 S)) (39 (G1 S))
+ (40 (G1 S)) (41 (G1 S)) (42 (G1 S)) (43 (G1 S)) (44 (G1 S))
+ (45 (G1 S)) (46 (G1 S)) (47 (G1 S)) (48 (G1 S)) (49 (G1 S))
+ (50 (G1 S)) (51 (START)) (52 NIL) (53 (G1 B)) (54 (G1 C)) (55 (S))
+ (56 (G2)) (57 (M A)) (58 NIL) (59 (M B)) (60 (M C)) (61 NIL) (62 NIL)
+ (63 (M D)) (64 (M D)) (65 (G1 N)) (66 (G1 N)) (67 (G1 S)) (68 (G1 S))
+ (69 (G1 S)) (70 (G1 S)) (71 (G1 S)) (72 (G1 S)) (73 (G1 S))
+ (74 (G1 S)) (75 (G1 S)) (76 (G1 S)) (77 (G1 S)) (78 (G1 S))
+ (79 (G1 S)) (80 (G1 S)) (81 (G1 S)) (82 (G1 S)) (83 (G1 S))
+ (84 (G1 S)) (85 (G1 S)) (86 (G1 S)) (87 (G1 S)) (88 (G1 S))
+ (89 (G1 S)) (90 (G1 S)) (91 (G1 S)) (92 (G1 S)) (93 (G1 S))
+ (94 (G1 S)) (95 (G1 S)) (96 (G1 S)) (97 (G1 S)) (98 (G1 S))
+ (99 (G1 S)) ...)
+
+</pre>
+
+Note that the first pump event happens at 50, so we really want only
+to be reading from there onward. After that, it reads as expected:
+
+<pre>
+  START -> (G1 B) -> (G1 C) -> (S) -> (G2) -> (M A)
+        -> (M B) -> (M C) -> (M D) -> (G1 N) -> (G1 S)....
+</pre>
+
+with a few NIL states in between, which we're ignoring for the moment.
+
+<p>
+
+We can simplify things a little; there are a lot of extra G1s final
+states (while the cell is presumably growing). We can reduce this by
+pumping at higher frequency, and doing far fewer cycles in the total
+history:
+
+<pre>
+>> (defun histest ()
+>>  (setq *history* nil)
+>>  (litest-pumped :cycles-to-run 100 :pump-frequency 20)
+>>  (setq *history* (reverse *history*)))
+
+>> (histest)
+
+;;; So *history* now contains the record of the run through a 
+;;; number of cell cycles:
+
+>> *history*
+::
+((0 NIL) (1 NIL) (2 NIL) (3 NIL) (4 NIL) (5 NIL) (6 NIL) (7 NIL)
+ (8 NIL) (9 (M B)) (10 (M C)) (11 NIL) (12 NIL) (13 (M D)) (14 (M D))
+ (15 (G1 N)) (16 (G1 N)) (17 (G1 S)) (18 (G1 S)) (19 (G1 S))
+ (20 (G1 S)) (21 (START)) (22 NIL) (23 (G1 B)) (24 (G1 C)) (25 (S))
+ (26 (G2)) (27 (M A)) (28 NIL) (29 (M B)) (30 (M C)) (31 NIL) (32 NIL)
+ (33 (M D)) (34 (M D)) (35 (G1 N)) (36 (G1 N)) (37 (G1 S)) (38 (G1 S))
+ (39 (G1 S)) (40 (G1 S)) (41 (START)) (42 NIL) (43 (G1 B)) (44 (G1 C))
+ (45 (S)) (46 (G2)) (47 (M A)) (48 NIL) (49 (M B)) (50 (M C)) (51 NIL)
+ (52 NIL) (53 (M D)) (54 (M D)) (55 (G1 N)) (56 (G1 N)) (57 (G1 S))
+ (58 (G1 S)) (59 (G1 S)) (60 (G1 S)) (61 (START)) (62 NIL) (63 (G1 B))
+ (64 (G1 C)) (65 (S)) (66 (G2)) (67 (M A)) (68 NIL) (69 (M B))
+ (70 (M C)) (71 NIL) (72 NIL) (73 (M D)) (74 (M D)) (75 (G1 N))
+ (76 (G1 N)) (77 (G1 S)) (78 (G1 S)) (79 (G1 S)) (80 (G1 S))
+ (81 (START)) (82 NIL) (83 (G1 B)) (84 (G1 C)) (85 (S)) (86 (G2))
+ (87 (M A)) (88 NIL) (89 (M B)) (90 (M C)) (91 NIL) (92 NIL) (93 (M D))
+ (94 (M D)) (95 (G1 N)) (96 (G1 N)) (97 (G1 S)) (98 (G1 S)) (99 (G1 S))
+ ...)
+
+>> (length *)
+:: 102
+
+;;; For the sake of cleanliness, let's remove the pre-cycle -- the
+first 21 states before the firsts pump:
+
+>> (setq *history* (subseq *history* 21)
+:: 
+((21 (START)) (22 NIL) (23 (G1 B)) (24 (G1 C)) (25 (S)) (26 (G2))
+ (27 (M A)) (28 NIL) (29 (M B)) (30 (M C)) (31 NIL) (32 NIL) (33 (M D))
+ (34 (M D)) (35 (G1 N)) (36 (G1 N)) (37 (G1 S)) (38 (G1 S)) (39 (G1 S))
+ (40 (G1 S)) (41 (START)) (42 NIL) (43 (G1 B)) (44 (G1 C)) (45 (S))
+ (46 (G2)) (47 (M A)) (48 NIL) (49 (M B)) (50 (M C)) (51 NIL) (52 NIL)
+ (53 (M D)) (54 (M D)) (55 (G1 N)) (56 (G1 N)) (57 (G1 S)) (58 (G1 S))
+ (59 (G1 S)) (60 (G1 S)) (61 (START)) (62 NIL) (63 (G1 B)) (64 (G1 C))
+ (65 (S)) (66 (G2)) (67 (M A)) (68 NIL) (69 (M B)) (70 (M C)) (71 NIL)
+ (72 NIL) (73 (M D)) (74 (M D)) (75 (G1 N)) (76 (G1 N)) (77 (G1 S))
+ (78 (G1 S)) (79 (G1 S)) (80 (G1 S)) (81 (START)) (82 NIL) (83 (G1 B))
+ (84 (G1 C)) (85 (S)) (86 (G2)) (87 (M A)) (88 NIL) (89 (M B))
+ (90 (M C)) (91 NIL) (92 NIL) (93 (M D)) (94 (M D)) (95 (G1 N))
+ (96 (G1 N)) (97 (G1 S)) (98 (G1 S)) (99 (G1 S)) (100 (G1 S))
+ (101 (START)))
+
+</pre>
+
+Okay, so now we're ready to proceed with the task at hand: Analysis of
+the cell cycle model based upon this <i>symbolic</i> behavior
+history. The way that we're going to do this is by making
+"hypotheses", or "theorems" about the behavior, and then testing them
+(or "proving" them) by examination of the behavioral trace.

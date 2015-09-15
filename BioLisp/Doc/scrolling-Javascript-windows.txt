@@ -1,0 +1,279 @@
+HOW SCROLLING WORKS                  by John K. Myers
+===================
+BACKGROUND
+The task is to put a box on the screen, inside a window, with the
+window scrolled to a reasonable height so that the known box
+shows up inside the window.
+
+This is controlled by one parameter, the scroll factor of the window.
+So the final output of this calculation is the scroll factor.
+Then the window scroll is set to this factor.
+
+Since scrolling Y is decoupled from scrolling X, we will just talk
+about one dimension, Y, here.  In order to talk about X,
+swap out "Width" for "Height", and "Left" for "Top".  
+One dimension is hard enough, and they're decoupled, so simply repeat 
+if necessary.
+
+OVERVIEW
+The original rough desired design was to
+"have stuff at the top show up at the top;
+ have stuff in the middle show up in the middle;
+ have stuff that's at the bottom show up at the bottom."
+
+If followed literally, this would result in three separate states.
+Then there would be jerky bumping as boxes transitioned between
+the states, if smooth animated scrolling is followed.
+
+A better approach is to create a smooth space with gradual 
+transitions.  Stuff that's up at the top of the scroll window
+should still show up around the top of the viewport.
+Stuff that's in the middle of the scroll window
+should show up around the middle of the viewport.
+And stuff that's at the bottom of the scroll window
+should show up at the bottom of the viewport.
+
+This can be done to a first pass by conceptually taking
+the middle of the box, then scaling where it shows up
+in relation to the larger scroll window, then using that
+as a proportion as to where it should show up
+inside the viewport.  This then varies from 0% to 100%.
+When this is done, it results in a smooth space with smooth
+transitions that meet all the design criteria.
+This is the crux of the approach, although the implementation
+is substantially more complex.
+
+Does this work in the case where the scroll screen has not overtaken
+the viewport yet?  Yes.  But if the scroll screen is
+smaller than the viewport, we glue it to the top, so stuff
+starts at the top and flows downwards until it overfills the 
+viewport screen.  Otherwise, if we had e.g. boxes on
+three rows that only filled the top half of the viewport,
+if we focused on the middle one, the entire scroll screen would
+jump to the middle of the viewport, leaving space at the top
+and the bottom; whereas if we focused on the
+bottom one, remember being #3 it shows up in the middle of the screen,
+it would jump to the bottom of the viewport dragging everything
+else with it, and leave huge ugly space at the top.
+We don't want to do that if there's only a couple of things on the screen.
+So we glue the scroll screen to the top of the viewport
+until the contents get large enought to overflow the viewport.
+
+
+PRELIMINARY:  TERMINOLOGY
+First of all, it must be understood that there are at least five to
+seven different "height" measurements, each with slightly different
+names, and each with wildly varying semantics.  Unless you take
+some time to look up and understand the magic names, you cannot 
+even talk about what is going on, much less work with it.
+
+First of all we start with a scroll screen or scroll window,
+which contains the actual contents to be displayed.
+Let's assume it's bigger than can fit on the screen.
+
+What fits on the screen is the viewport pane or viewport window.
+It clips the scroll screen at its top and its bottom, 
+then displays the clipped version inside its interior.
+
+There is a tricky part in that the viewport may have a border
+around it, and it may also have a horizontal scroll bar at the bottom
+chewing up space.  So the viewport's outside height is different from
+its inside height of what can actually get displayed.  Hahaha.
+We have to call the two of these different height names.
+
+The viewport is showing a box that is stuck on the scroll screen.
+The box has an (outside) height as well (including its outline).
+This height does not include the margin of space around the outside
+edge of the box's border, but we're not going to worry about that for now.
+The box also has a relative height on the page, measured down
+from the top of the SCROLL screen (NOT the top of the viewport window)
+that tells its top Y coordinate.  This relative height is 
+conveniently called the "Top".
+
+There is thus also a relative height of the box measured down
+from the inside start of the viewport window, its (down positive) Y coordinate
+on the viewport window screen.  This has to be computed.
+
+Finally, there is the scroll factor of the scroll window
+relative to the viewport, which is also a positive-going number (in pixels).
+
+The names of the measurements are as follows:
+
+-----------scroll window--------------------
+|\
+| \
+|  \------viewport window--------|=|\ outside height
+|  |(scrollLeft, scrollTop)      | | \of viewport:
+|  |                             | |  offsetHeight
+|  |        ------box--------|   |=|  |
+|  |        |(offsetLeft/Top)|   | |  |
+|  |        | to scroll win  |   | |  |    inside/outside height
+|  |        -----------------|   | |  |    of scroll window:
+|  |inside height: clientHeight  | |  |    scrollHeight
+|  |=============================| |  |
+|  |     I=horiz scroll bar=I    |=| /
+|  |=============================|=|/
+|   \-offsetWidth------------------/
+|
+-----------scroll window scrollWidth------
+scrollHeight          Total height of partially clipped larger scroll window
+offsetHeight          Outside height of viewport,
+                      including borders and horiz scroll bar at bottom
+innerHeight           This object method variable is in the Mozilla documentation,
+                      but it always comes up "undefined" for boxes and viewport panes.
+                      Apparently it only applies to the browser window itself?
+clientHeight          Working inside height of visible portion of viewport,
+                      not including borders and horiz scroll bar at bottom
+offsetHeight          Outside height of box, not including margin space
+offsetTop             Downwards Y coord of box in scrollwindow space
+scrollTop             Downwards Y coord of pixel(0,0) of viewport in scrollwindow space
+height                The obvious variable, in the css documentation, does not work
+                      for either boxes or panes.  Comes up "undefined".
+style height          Not undefined but has no printable value (!).  Apparently not useful.
+                      parseInt(style height) comes up NaN (Not a Number).
+
+The magic parameter to set is the scrollTop of the pane.
+
+
+ALGORITHM
+
+In actuality, it doesn't work if you manage the top of the box, nor the middle
+of the box, nor the bottom of the box, because one can always come up
+with pathological box heights that break the algorithm.
+
+The correct thing to do, it turns out, is to manage the amount of SPACE
+AROUND the box.
+
+This space can then be used in a ratio to the box's height, to give 
+a scale-factor.  This scale-factor is applied to the box's Top coordinate,
+managing the space BEFORE the box in relation (ratio) to the total space
+AROUND the box.  This works! (to a second approximation, see below).
+
+As a first pass, the scrollHeight is used for the scroll window,
+as well as the inside clientHeight for the viewport window.
+We'll correct this later.
+
+The amount of whitespace room before the box can be measured by
+taking the Box-Top in that particular space. 
+
+Then the computation is as follows:
+
+We want to design it such that
+    Viewport-box-top                  Scroll-box-top
+    ----------------            =     -------------------------
+    Viewport-leftover-space           Scroll-leftover-space
+
+to do this, we compute:
+Viewport-leftover-space  =  Viewport-window-inside-height - Box-height;
+  If viewport-leftover-space is less than or equal to zero,
+  then the box is bigger than the viewport.  Set the scrollTop
+  to equal the boxTop, and quit.
+Scroll-leftover-space    =  Scroll-height  -  Box-height;  
+  If scroll-leftover-space is less than zero, the scroll space is
+  inconsistent.  If equal to 0,then no room.  Set scroll-top to box-top,
+  which should be 0.
+
+  If either of these numbers is less than or equal to zero,
+  then there is no leftover space; simply go ahead and glue the scroll
+  to the top of the viewport, with a scrollTop of 0.
+Ratio  =  Viewport-leftover-space  /  Scroll-leftover-space;
+Viewport-box-top  =  Scroll-Box-top * Ratio;
+Scroll-top-setting = Scroll-Box-top - Viewport-box-top
+if this number is less than 0, the viewport is bigger than the scroll window;
+clip Scroll-top-setting to 0.
+
+return & use Scroll-top-setting.
+
+
+
+A COG IN THE SYSTEM
+It turns out that this won't work directly, because the browser somehow
+does not respect the scroll height of the window.  It is adding
+on significant extra padding.  There is a large space at the end
+equal to about three-fourths of the viewport height, of just
+gratuitous space, not holding anything.  
+So when you actually use the variable pane.scrollHeight, it is way too big,
+and leaves a huge amount of extra space on the table at the end.
+
+this rolling space keeps getting added onto the end, as extra boxes are added.
+
+It was surmised that this is the interior height of the original viewport
+window, with the boxes just taking up extra space at the top.
+The numbers don't add up properly, though.
+Using the size of the original viewport for the ghost padding
+at the bottom results in too much padding.
+
+it is not known where this padding is coming from.
+Perhaps when subboxes are added, they somehow increase the padding
+on the end.  This does not make sense, however, as the boxes are not
+put in the DOM tree until after they are nested.
+
+So it turns out to be impossible to use the scrollHeight to measure
+the desired/effective height of the scroll background after all.
+
+A SOLUTION
+The correct solution is to find the last box in the series, using
+lastChild.  Then find its bottom edge by adding its
+offsetTop to its offsetHeight.  This will then give you the
+effective height of the scroll window.
+Use this number instead of scrollHeight.
+
+this could break in pathological situations where the last box
+is not the one that hangs down the most.  It's always something.
+
+
+DESIGN DECISIONS (FLAVORS)
+(1) What happens when a box is the last box in a sequence, and it's
+going to appear at the bottom?
+--Does it appear exactly at the bottom, so it is resting on the bottom
+ edge and looks glued to the bottom of the window?
+  - This is precisely cutting the scrolling at the bottom of the last box.
+    However, it is ugly, and gives the wrong subconscious meaning.
+    The box should be visually separated from the window frame.
+--Or does it appear one or two pixels up, depending on the mathematics,
+  so that it does not look glued to the bottom?
+  - This is better, as it gives a better esthetic.
+    The box is seen to be clearly different and separate from the 
+    window and its outline frame.  This is quite acceptable
+    and is the default currently used.
+--Or does it appear padded with a full margin on the bottom side, so that
+  there is lots of breathing space between the bottom of the box
+  and the bottom of the viewport window, just as much as is shown
+  between the top of the box and the top of the window?
+  - This would also be acceptable.  However, it chews up a bit of
+    unnecessary space at the bottom, which can push things off the
+    top edge more than you might like.
+
+In order to implement option #2, the box height is taken as 
+the box's offsetHeight.  This is currently being used.
+
+In order to implement option #3, the box height is taken as
+the box's offsetHeight plus one copy of the box's style margin.
+Margin is used for external, whereas padding is used for space
+internal to the box, remember.  
+Only one copy of the margin is used because we're concerned about
+the bottom position of the box plus margin, 
+and the top margin has already been skipped by offsetTop.
+
+It would also be possible to add in the viewport pane's style padding,
+in addition to or instead of the box object's margin.
+This again gives more space and a cleaner view at the bottom,
+but sacrifices the concept of having tighter margins at the 
+bottom to indicate scrolling, plus soaking up more space from the top.
+
+USAGE
+Every time a new box is added to a pane,
+the algorithm has to be called on the new box.
+
+!!!It is very important to call the scrolling algorithm on the box
+AFTER the box has been COMPLETELY displayed, including all of its
+subboxes.  BOXES CHANGE SHAPE AND POSITION depending upon how
+their subboxes are stuffed in.  You have to wait until ALL
+the subboxes are finished drawing, in order to run this algorithm.
+And, of course, the box must have been attached to the pane already.
+
+
+CONCLUSION
+This white paper goes over the theory required to support
+scrolling to a known box on a clipped viewport
+in one dimension.  

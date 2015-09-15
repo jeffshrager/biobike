@@ -1,0 +1,286 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2005 JP Massar, Jeff Shrager, Mike Travers           |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>BioBike Knowledge Bases Procedures and Info</title></head>
+
+<body>
+<center>
+<h2><b>BioBike Knowledge Bases Procedures and Info</b></h2>
+</center>
+
+<a name="TAG-TOP"></a> 
+<h3><b><center>
+Information on how the knowledge bases (kdbs) BioBike uses
+<br>
+are obtained, built, accessed, and threaded into each other.
+<br>
+</center>
+</b></h3>
+
+<ul>
+<li><a href="#TAG-GO">The Gene Ontology (GO) database</a>
+<li><a href="#TAG-KEGG">The Kegg Database</a>
+ <ul>  
+  <li> <a href="#TAG-KEGG-SOURCE">Obtaining Kegg</a>
+  <li> <a href="#TAG-KEGG-PROCESSING">Processing Kegg into frames</a>
+  <li> <a href="#TAG-KEGG-USE">Using Kegg frames</a>  
+ </ul>
+<li><a href="#TAG-OCELOT">The Ocelot Database for Cyanobateria</a>
+ <ul>  
+  <li> <a href="#TAG-OCELOT-SOURCE">Obtaining Ocelot</a>
+  <li><a href="#TAG-OCELOT-PROCESSING">Processing Ocelot data into frames</a>
+  <li> <a href="#TAG-OCELOT-USE">Using Ocelot frames</a>  
+ </ul>
+<li><a href="#TAG-DUMP">How the kdb frames are dumped and restored</a>
+<li><a href="#TAG-THREAD">Threading the knowledge bases together</a>
+</ul>
+
+<br>
+<p><hr><p>
+<a name="TAG-GO"></a>
+<big>The Gene Ontology (GO) </big>
+<p>
+<pre>
+[Last updated on 20050930 by Jeff Shrager]
+
+Generally this staging step is done outside of BioLingua (just 
+using raw acl).
+
+1. Find the latest GO OBO XML release:
+ 
+  http://www.godatabase.org/dev/database/archive/latest
+
+(This path may change, but what you're looking for is something
+ like: go_200501-termdb.obo-xml.gz)
+
+1.5 Backup any old version of GO.XML and GODB.LISP in the bkup subdir.
+
+2. put it in the go data load location (e.g.,/usr/local/bioetc/data/go)
+And unzip it if necessary and rename it to GO.XML
+
+3. Make sure you're in that directory (cd) and start up a lisp, and
+do: 
+
+  (require :pxml)
+  (setq go (with-open-file (i "go.xml")
+    (NET.XML.PARSER:PARSE-XML i))) 
+
+This should take about a minute.
+
+3.5 (Load (compile-file "/usr/local/biolisp/Gocode/go-xml-to-lisp.lisp"))
+
+4. (strip-xml-parsed-go go) 
+
+This will create godb.lisp
+
+Assuming that we've downloaded and xml-parsed the TERMDB.xml from the
+latest Gene Ontology upload, this turns it into the GO form required
+for upload.
+
+<i>NOTE: If the format of the GO XML changes, you'll have to recode
+go-xml-to-lisp.lisp appropriately.</i>
+
+Processing the GO data into frames:
+
+The function MAKE-GO-FRAMES optionally reads in the godb.lisp file, 
+creates frames for all the GO concepts, and dumps out these frames 
+to a file called godb.frames in the same directory as the godb.lisp file.
+The function GO-RECORDS-TO-FRAMES does the actual transformations.
+
+This function makes two passes over the database records. The first 
+creates a frame for the record and establishes some of its properties.
+The second processes the slots of each database record.
+
+Using GO frames:
+
+All frames created by MAKE-GO-FRAMES are tagged with the value :go for
+the slot #$Source.  The variable *go-frames* is a list of all such
+created frames, and the function GOID->FRAMES takes a GOID (an
+integer, or a string representation of an integer) and returns the
+frame created for that GOID.
+
+Most frames associated with the GO are named with a prefix "GO.".
+Some frames created by the GO processing are given the prefix "EC.".
+These are EC-REF references found in the go data (enzyme reference
+ID's).  In these frames a link is provided to an outside database
+which gives more information about the enzyme identified by the EC
+reference.  The EC reference frames instantiated here are also tagged
+with #$Source :go, and are included in the *go-frames* list.
+
+</pre>
+
+<p><hr><p>
+
+<br>
+
+<a name="TAG-KEGG"></a>
+<big>The Kegg Database</big>
+<p>
+
+<a name="TAG-KEGG-SOURCE"></a><i><font color=green>Obtaining Kegg</font></i>
+<br>
+See the directions in the file kegg-frames.lisp in the directory where the
+code related to Kegg resides (currently the KEGG subdirectory of the source
+hierarchy).
+<p>
+Kegg comes as an entire directory, including some documentation, four
+main database files called 'compound', 'glycan', 'reaction' and
+'enzyme', and Subdirectories include image files (gifs) containing
+chemical structures for some of the data items in the database files.
+<p>
+<a name="TAG-KEGG-PROCESSING"></a><i><font color=green>
+Processing the Kegg data into frames</font></i>
+<br>
+Unlike GO, the Kegg database files are not first transformed into Lispified
+versions of themselves.  The function MAKE-KEGG-FRAMES reads directly from
+the line-oriented database files, internally turning each record in each
+of the files into a list, but never writing out these listified records as
+an intermediate form.
+<p>
+A Kegg frame is created for each record read from the database files.
+(Records are separated in the database files by the terminator line
+'///').  All such created frames are tagged with :kegg in each frame's
+#$Source slot.  Further, the database file the record originated from,
+as a keyword (e.g., :compound) is stored in the #$Kegg.Source.s slot
+of each frame. URL pointers to gif image files are defined, as appropriate,
+for some of the frames in the #$Kegg.image.s slot.
+<p>
+<a name="TAG-KEGG-USE"></a><i><font color=green>Using Kegg frames</font></i>
+<br>
+Kegg frames created from database records are named according to their
+'accession' numbers, which are tokens beginning with 'C', 'G', 'R' or
+'E' and followed by a digit string.  These created frames along with
+other some other frames associated with Kegg are stored in the list
+variable *kegg-frames*. All Kegg frames are given the prefix "KEGG.".
+<p>
+To access a Kegg frame given its accession id, construct a frame name of the
+form KEGG.id, e.g., "KEGG.C00282", then call FRAME-FNAMED on that string.
+<p>
+Many Kegg database frames have a set of 'names' associated with them.
+These are stored in the #$Kegg.name.s slot.  This slot is an 'indexed'
+slot, which means that one can find all the Kegg frames that were given
+a name NAME (many Kegg frames are given duplicate names), in constant time
+using the frames function SLOT-LOOKUP.  So 
+<pre>
+(SLOT-LOOKUP "hydrogen" #$Kegg.name.s) 
+
+will return the singleton list
+
+(#$KEGG.C00282) 
+
+while
+
+(SLOT-LOOKUP "GM3 analog" #$Kegg.name.s)
+
+will return a number of frames in a list.
+
+</pre>
+
+The function FIND-KEGG-FRAMES may be used when one does not know the
+accession number or an exact name.  Using the :partial-match option,
+this function will search the names associated with a Kegg frame for a
+substring you provide.  See the documentation for this function for
+further information.
+
+<p>
+
+
+<br>
+<a name="TAG-OCELOT"></a>
+<big>The Ocelot Database for Cyanobacteria</big>
+<p>
+
+<a name="TAG-OCELOT-SOURCE"></a><i><font color=green>Obtaining Ocelot</font></i>
+<br>
+This information is not currently available.  Please stay tuned.
+<p>
+
+<a name="TAG-Ocelot-PROCESSING"></a><i><font color=green>
+Processing the Ocelot data into frames</font></i>
+<br>
+
+The function MAKE-OCELOT-FRAMES optionally reads in the ocelot database file,
+creates frames for all the OCELOT concepts, and dumps out these frames 
+to a file called ocelotdb.frames
+<p>
+The Ocelot database file for cyanobacteria is called cyano6803base.ocelot
+It comes as a set of Lisp forms, so no transformation as is done with GO
+need be performed. 
+<p>
+The function OCELOT-RECORDS-TO-FRAMES does the actual processing of
+each form/record, and performs a two-pass algorithm.  The first
+creates a frame for each record read in, and does preliminary
+processing on the slots / sublists of each record.  The second pass
+turns symbolic references in the slots into pointers to ocelot frame
+objects created in the first pass.
+
+<p>
+<a name="TAG-OCELOT-USE"></a><i><font color=green>Using Ocelot frames</font></i>
+<br>
+All frames created by MAKE-OCELOT-FRAMES are tagged with the value :ocelot for
+the slot #$Source.  The variable *ocelot-frames* is a list of all such
+created frames. The frames created by and associated with Ocelot are named
+using the prefix "OC.".
+<p>
+Each Ocelot database record is identified by a unique name, which becomes
+the name of the frame associated with that record (suitably prefixed and
+otherwise modified to conform to legal frame-name syntax).
+<p>
+
+<li><a href="#TAG-DUMP">How the kdb frames are dumped and restored</a>
+<p>
+
+Calling (make-kdb-frames :redo? t) will rebuild everything named in
+the variable *existing-kdb-names*, defined in .../Kdbs/make.lisp
+(e.g., '(:go :kegg :ocelot)), and will redump them into
+bioetc:data;kdbframes. This is the standard way to rebuild even if
+you've only changed one of the kdbs.
+
+<p>
+
+<a name="TAG-THREAD"></a><i><font color=green>How the knowledge bases are threaded together.</font></i>
+<br>
+Currently, only Kegg and GO are threaded together. Code exists to
+thread GO and Ocelot, but it is not used (instead, threading is done
+through the genes of various organisms that are loaded -- a separate
+but related discussion).  
+<p>
+The function THREAD-KDBS is intended to be the toplevel 'threader'.
+Currently, it simply calls THREAD-KEGG-WITH-OTHER-DBS, which currently
+only calls THREAD-KEGG-COMPOUNDS.
+<p>
+THREAD-KEGG-COMPOUNDS uses word homology to match the names of Kegg
+compounds (strings found in the #$Kegg.name.s slot of Kegg frames that
+represent compounds) against the names of molecules created by GO 
+processing *** needs to be discussed in the GO Processing section !! ***
+The best match (assuming there is a high-threshold match at all) for
+each Kegg compound is stored in the #$Kegg.GOframe.s slot of the Kegg
+compound's frame and likewise, an inverse pointer is stored in the
+#$Go.KEGGframe.s slot of the GO molecule so matched.
+<br>
+
+
+<a href="#TAG-TOP">Back to Index</a>
+

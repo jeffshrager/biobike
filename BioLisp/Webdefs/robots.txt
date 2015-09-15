@@ -1,0 +1,5 @@
+# This should stop all robots
+User-agent: *
+# from accessing anything
+Disallow: /
+

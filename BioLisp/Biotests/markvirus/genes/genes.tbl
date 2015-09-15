@@ -1,0 +1,16 @@
+NAME	GENOME-COMPONENT	ENCODES-PROTEIN	DIRECTION	FROM	TO	
+marka1	chromosome	F	F	61	120
+marka2	chromosome	F	F	140	210
+marka3	chromosome	F	F	222	239
+marka4	chromosome	F	F	229	240
+marka5	chromosome	F	B	301	350
+marka6	chromosome	F	B	330	360
+marka7	chromosome	F	F	421	440
+marka8	chromosome	F	B	435	600
+marka9	chromosome	F	B	601	620
+marka10	chromosome	F	F	630	660
+marka11	chromosome	F	B	661	680
+marka12	chromosome	F	B	681	720
+markb1	nextcontig	F	F	361	60
+markb2	nextcontig	F	B	380	40
+

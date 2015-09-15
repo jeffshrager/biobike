@@ -1,0 +1,579 @@
+<title>BioBike: Complex Analysis</title>
+
+<p>
+
+<h2>
+BioBike: Combining knowledge and data in complex analysis
+</h2>
+
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction</a>
+<a href=#orths><li>Getting the orthologs</a>
+<a href=#data><li>Getting the data</a>
+<a href=#function><li>Figuring out gene function</a>
+<a href=#together><li>Putting it all together</a>
+<a href=#test><li>Let's try it!</a>
+<a href=#exercises><li>Exercises</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+In this tutorial we'll put together a lot of what we have learned so
+far to conduct some fairly complex systems analyses of
+cyanobacteria. The question that motivates these analyses is due to
+Jeff Elhai: Cyanobacteria are bacteria that can perform
+photosynthesis. One of these strains of bacteria, Prochlorococcus
+sp. Med4 (PMed4), is adapted to high light and lives in the upper part
+of the ocean; another, P9313, is adapted to low light and lives in
+deeper waters. We are interested in which gene products (generally
+proteins) are involved in this adaptation.  One way to address this is
+to ask which genes in ProMed4 have no ortholog in Pro9313.that is,
+which functions are found among the genes of one but not the other
+organism. (Orthologous genes have common ancestry and generally a
+common function.) This is not a certain solution because there could
+be several functions represented in one but not the other organism.
+
+<p>
+
+One can get a finer bead on the question by looking at the results of
+microarray expression experiments for those genes, asking which genes
+demonstrate a significant light response---for example, those whose
+level of production is doubled in light stress experiments).
+
+<p>
+
+Unfortunately, microarrays for the procholorococci have been developed
+only recently, and such experimental work does not exist.  There are,
+however, a number of studies on a related freshwater cyanobacterium,
+Synechocystis sp. 6803 (s6803). Indeed, much research specific to
+light acclimation has been conducted by Hihara et al. on one strain of
+this bacterium, and we have used data from that experiment previously
+in these tutorials.
+
+<p>
+
+Going one step further, one may focus specifically on those genes that
+are annotated as photosynthesis-related (e.g., by the Gene Ontology).
+
+<p>
+
+In sum, we can formulate the question as follows: 
+
+<blockquote>
+
+What photosynthesis-related genes in PMed4 have no ortholog in P9313
+but <i>do</i> have an ortholog in S6803 and which there exhibit a
+light stress response -- e.g., greater than 2x up-regulation ratio in
+the light stress microarray experiments of Hihara et al?
+
+</blockquote>
+
+This, then, is our goal. Let's envision how it's going to work.
+
+<p>
+
+What we're going to do is to go through all the genes in pmed4 one by
+one. For each, we'll ask if it's a photosynthetically-related gene. If
+so, we'll find its orthologs in all the other cyanobacteria, and then
+ask whether there is <i>no</i> ortholog in p9313 but there <i>is</i>
+one in s6803. If that's the case, we'll examine the s6803 ortholog's
+hihara ratio for begin greater than 2.0, and if it is, we'll call this
+gene a hit and collect it!
+
+<p>
+
+Here's the same thing simply reformatted:
+
+<pre>
+  Go through all the genes in pmed4 one by one. 
+  
+  For each, we'll ask if it's a photosynthetically-related gene.
+  
+  If so, we'll find its orthologs in all the other cyanobacteria,
+  
+  and then ask whether there is <i>no</i> ortholog in p9313,
+  
+  but there <i>is</i> one in s6803. 
+  
+  If that's the case, we'll examine the s6803 ortholog's
+      hihara ratio for begin greater than 2.0, 
+  
+  and if it is, we'll call this gene a hit and collect it!
+</pre>
+
+Notice that the if clauses are all sort of packed together, so the
+model is really this:
+
+<pre>
+  Go through all the genes in pmed4 one by one. 
+  For each, 
+
+     ask a bunch of complex questions....
+
+  and if they come out right, call it a hit and collect it!
+
+</pre>
+
+
+Okay, and here's that written out in Lisp, and made into a function
+that uses another function, called
+PROMED-SPECIFIC-LIGHT-SENSITIVE-GENE? (which we have yet to write!) to
+ask the questions::
+
+<pre>
+>> (defun proquery ()
+>>   (loop for pm4gene in (#^genes pmed4)
+>>         when (promed-specific-light-sensitive-gene? pm4gene)
+>>         collect pm4gene)))
+</pre>
+
+Now, all we need to do is to write
+PROMED-SPECIFIC-LIGHT-SENSITIVE-GENE? Let's examine the question a
+little more closely (very slightly reformatted from above):
+
+<pre>
+  Is it a photosynthetically-related gene?
+     If so, we'll find its orthologs in all the other cyanobacteria,
+     and then ask:
+  Is there is <i>no</i> ortholog in p9313?
+AND   
+  <i>Is</i> there one in s6803?
+AND   
+  Is the s6803 ortholog's hihara ratio for greater than 2.0?
+</pre>
+
+Here's some code to do that, written in the form of the function we
+need, and using yet a bunch of helping functions that will be explained below:
+
+<pre>
+>> (defun promed-specific-light-sensitive-gene? (pm4gene)
+>>   (let* ((orths (biolite::ORTHOLOGS-OF pm4gene)))
+>>     (and (#^protein pm4gene)
+>>          (photosynthesis-related? pm4gene)
+>>          (not (org-in-orths-list p9313 orths))
+>>          (org-in-orths-list s6803 orths)
+>>          (hiraraup2x? (org-in-orths-list s6803 orths)))))
+</pre>
+
+This bears some explanation! First off, we put the orthologs list into
+a local variable: ORTHS, because we need it in three different places,
+so that we don't have to recompute it every time we need
+it. (Presumably it's sort of difficult to compute it over and over.)
+
+<p>
+
+Second, we added a clause that wasn't in the spec: (#^protein
+pm4gene). This is needed because some genes don't create proteins, and
+we'd like to filter them out.
+
+<p>
+
+Then, in the AND, we use three helping functions that haven't been
+defined yet: biolite::ORTHOLOGS-OF, org-in-orths-list?, and
+hiraraup2x. Their functions should be fairly obvious from their names,
+respectively: "find all the orthologs of a gene in all the other
+organisms", "find the gene in the orths list (returned from
+ORTHOLOGS-OF) that comes from a given organism", and: "is the
+expression level of this gene in the hihara data greater than or equal
+to 2.0?" Assuming that we have all those functions, all we need to do
+is to AND them all together  to satisfy the condition.
+
+<p>
+
+No now all we need to do is to write all those helping functions! 
+
+<p><hr><p>
+<a name=orths>
+<h2>Getting the orthologs</h2>
+
+We don't have to write BIOLITE::ORTHOLOGS-OF, that one already exists
+as as a BioBike built-in. Watch:
+
+<pre>
+>> (biolite::orthologs-of #$PMED4.PMM0007)
+:: 
+(#$S7942.sef1764 #$P9313.PMT0007 #$S6803.sll1348 #$Npun.NpR5132
+ #$A7120.alr4943 #$Tery.Te?2278 #$PRO1375.Pro0007 #$S8102.SynW0007
+ #$Gvi.gll1464 #$TeBP1.tlr0587 #$PMED4.PMM0007 #$Cwat.Cw?6447
+ #$A29413.Av?4112)
+</pre>
+
+Notice that this function accepts the frame representing a gene, and
+returns a list of frames representing the orthologs of this gene in
+all the loaded organisms.  Very useful!
+
+<p>
+
+Next we need the function: org-in-orths-list, which, as above, finds
+the specific ortholog for a given organism. This turns out to be
+easy. If you click on any of the gene frames above, you'll see that it
+has an #^ORGANISM slot, which contains the organism frame! So here's
+alls we have to do:
+
+<pre>
+>> (defun org-in-orths-list (org orths)
+>>   (first
+>>     (loop for orth in orths
+>>           when (eq org (#^organism orth))
+>>           collect orth)))
+</pre>
+
+Notice that we're only returning the FIRST of several possible
+hits. We hope that there will usually be just one, and if there
+isn't... well, for simplicity here, we'll just take the first one.
+
+<p>
+
+Let's test that function. Noticed that each organism has a convenient
+abbreviation in BioBike, so instead of writing out
+#$prochlorococcus_marinus_med4 we can just type "pmed4", etc:
+
+<pre>
+>> (biolite::orthologs-of #$PMED4.PMM0007)
+
+>> (org-in-orths-list s6803 (biolite::orthologs-of #$PMED4.PMM0007))
+:: #$S6803.sll1348
+</pre>
+
+Great! So we've done nearly all the work. Now all we need to do is to
+figure out if a gene is photosynthesis related, and if it's hihara
+ratio is >2x. Let's do the Hihara part first:
+
+<p><hr><p>
+<a name=data>
+<h2>Getting the data</h2>
+
+Let's start by getting the microarray data into a form that we can use
+it. We're eventually going to need to ask, for a given synechocystis
+gene, how highly up-regulated it is. To do this we recall how we
+copied and loaded the data from the file call "hihara.tbl", and used
+simple-load-table to get it into BioBike.
+
+<p>
+
+Let's create a table to relate the name gene to its mean regulatory ratio:
+
+<pre>
+>> (defvar *gene->regratio* (simple-hash-table))
+</pre>
+
+A simple function will load the data into that table:
+
+<pre>
+>> (defun ensure-data ()
+>>   (unless (not (zerop (hash-table-count *gene->regratio*)))
+>>     (format t "Reading hihara data...~%")
+>>     (loop for (gene . data) in (cdr (simple-read-table "hihara.tbl"))
+>>           do (setf (gethash gene *gene->regratio*)
+>>                (mean data)))
+>>     (format t "Table now has ~a entries.~%"
+>>       (hash-table-count *gene->regratio*))
+>>     ))
+</pre>
+
+We can loaded the data by calling:
+
+<pre>
+>> (ensure-data)
+:: 
+Reading hihara data...
+Table now has 3079 entries.
+</pre>
+
+The UNLESS clause keeps us from loaded the data again if it's already
+been loaded (although this would be minor in this case since there's
+not that much data in this table.
+
+<p>
+
+A quick examination of the table should demonstrate that we actually
+have the desired data in hand at this point:
+
+<pre>
+>> (showhash *gene->regratio*)
+;; Hash table #<EQUAL hash-table with 3079 entries>, displaying 10 entries:
+"s6803.ssr0482" 1.27
+"s6803.slr0699" 0.95500004
+"s6803.slr0079" 0.85249996
+"s6803.sll0360" 1.3000001
+"s6803.slr1959" 1.4325
+"s6803.slr1248" 0.9225
+"s6803.sll0657" 1.2925
+"s6803.ssr0109" 1.0675
+"s6803.slr1677" 1.7525
+"s6803.sll0006" 1.33
+</pre>
+
+Note that each entry contains the mean of the expression levels in the
+table for that gene.
+
+<p>
+
+Okay, so now we can write a little function to test, for a given gene,
+whether it is upregulated > 2x:
+
+<p>
+
+<pre>
+>> (defun hiraraup2x? (gene)
+>>   (let ((exp (gethash (string-downcase (#^fname gene))
+>>                *gene->regratio*)))
+>>     (and exp (> exp 2.0))
+</pre>
+
+Note that we grab the #^fname of the gene frame (and downcase it for
+good measure) because the table has the names of the genes, not the
+genes themselves. (We could have used the genes themselves as the
+table keys by converting these on input -- six of one, half a dozen of
+the other).
+
+<p>
+
+Let's test it:
+
+<pre>
+;;; The numbers for s6803.ssr2595 are: 4.30, 2.22, 1.37, 0.92 (mean > 2)
+>> (hiraraup2x? #$s6803.ssr2595)
+:: T
+
+;;; The numbers for s6803.ssr2912 are: 0.97, 0.82, 0.94, 0.84 (mean < 2)
+>> (hiraraup2x? #$s6803.ssr2912)
+:: NIL
+</pre>
+
+Excellent; Almost home! Finally, figure out if the gene is
+photosynthsis related:
+
+<p><hr><p>
+<a name=function>
+<h2>Figuring out gene function</h2>
+
+Normally, to figure out gene function we would look to some sort of
+biological knowledge base, such as the Gene Ontology. For example,
+let's get the gene function information for this gene: #$s6803.slr1113:
+
+<pre>
+>> (#^go-id #$s6803.slr1113)
+:: (#$GO.Atp-BindingCassette[Abc]TransporterActivity 
+    #$GO.AtpBinding #$GO.Membrane #$GO.Transport) 
+</pre>
+
+Unfortunately, the Gene Ontology doesn't have a very useful set of
+annotations for photosynthetic functions, so we're going to have to
+use something a little less obvious.
+
+<p>
+
+It turns out that there is also a "natural language" functional
+description for each gene in its #^annotation slot:
+
+<pre>
+>> (#^annotation #$s6803.slr1113)
+:: "ATP-binding protein of ABC transporter"
+</pre>
+
+We can do a little string matching on that to guess if the gene we're
+looking at is photosynthetic or not:
+
+<pre>
+>> (defun photosynthesis-related? (gene)
+>>   (let ((anno (#^ANNOTATION gene)))
+>>     (and anno ; If there actually IS an annotation...
+>>       (or (search "photo" anno :test #'char-equal)
+>>           (search "light" anno :test #'char-equal)))))
+</pre>
+
+So, this looks for "photo" or "light" in the annotation (if there is
+an annotation to begin with).
+
+<p>
+
+Let's try it:
+
+<pre>
+>> (#^annotation #$s6803.slr1113)
+:: "ATP-binding protein of ABC transporter"
+
+>> (photosynthesis-related? #$s6803.slr1113)
+:: NIL
+
+>> (#^annotation #$PMED4.PMM0253)
+:: "photosystem II reaction center PsbI protein Signal predicted..."
+
+>> (photosynthesis-related? #$PMED4.PMM0253)
+:: 0
+</pre>
+
+(That 0 is the position that the SEARCH found whichever word it was
+looking for in the annotation -- anything except a NIL in lisp is the
+same as T (True), so as long as we didn't get NIL, we're okay!)
+
+<p><hr><p>
+<a name=together>
+<h2>Putting it all together</h2>
+
+Okay, we should be ready to roll! But before we do, we're going to
+make one more little change. Recall way above that we write our main function:
+
+<pre>
+>> (defun promed-specific-light-sensitive-gene? (pm4gene)
+>>   (let* ((orths (biolite::ORTHOLOGS-OF pm4gene)))
+>>     (and (#^protein pm4gene)
+>>          (photosynthesis-related? pm4gene)
+>>          (not (org-in-orths-list p9313 orths))
+>>          (org-in-orths-list s6803 orths)
+>>          (hiraraup2x? (org-in-orths-list s6803 orths)))))
+</pre>
+
+Although this is pretty simple, it has one problem, which is that it's
+going to be quite slow. Let's think about how it's being used:
+
+<pre>
+>> (defun proquery ()
+>>   (loop for pm4gene in (#^genes pmed4)
+>>         when (promed-specific-light-sensitive-gene? pm4gene)
+>>         collect pm4gene)))
+</pre>
+
+So, for every gene in promed4 we're going to find its ortholog, and
+then do a bunch of tests. Recall way above that the reason for writing
+the LET of orths was that finding the orthologs is the slowest part of
+this operation. Is there any way to avoid doing it on every gene? Is
+there something that we can find that is more restrictive (is only
+true for a handful of genes), and easier to test that we can try
+<i>first</i> to keep us from having to do the orthology of every
+damned gene?!
+
+<p>
+
+How about the photo-related test?! Presumably only a handful of genes
+have "photo" or "light" in their annotation, and that test is really
+fast! Let's reorganize promed-specific-light-sensitive-gene? to try
+that test first, and only if that passes will be bother to do the
+orthologs. Here it is:
+
+<pre>
+>> (defun promed-specific-light-sensitive-gene? (pm4gene)
+>>   (if (photosynthesis-related? pm4gene)
+>>     (let* ((orths (biolite::ORTHOLOGS-OF pm4gene))
+>>            (s6803gene (org-in-orths-list s6803 orths))
+>>            )
+>>       (and (#^Proteins pm4gene)
+>>            (not (org-in-orths-list p9313 orths))
+>>            s6803gene
+>>            (hiraraup2x? s6803gene)))))
+</pre>
+
+(While we were performing surgery on that function, we also used
+another local var: s6803gene to avoid having to do the
+org-in-orths-list for the s6803 gene twice, even though that's not a
+big deal -- just searches down a short list, so doing it twice
+wouldn't be that big a deal.)
+
+
+<p><hr><p>
+<a name=test>
+<h2>Let's try it!</h2>
+
+Okay, we'll we should be good to go! All we need to do is to call our
+main function::
+
+<pre>
+>> (proquery)
+
+;;; This should take a few seconds...
+
+:: (#$PMED4.PMM0817)
+</pre>
+
+Voila! We can check that this gene meets ourc criteria:
+
+<pre>
+;;; It should be photosynthesis or light related:
+
+>> (#^annotation #$PMED4.PMM0817)
+:: "possible high light inducible protein has EXXNGXXAMXG motif 215:209-219"
+
+;;; It should have an ortholog in s6803, but NOT in p9313:
+
+>> (biolite::ORTHOLOGS-OF #$PMED4.PMM0817)
+:: (#$S6803.ssr2595 #$S8102.SynW0817 #$PMED4.PMM0817)
+
+;;; And, finally, its hihara ratio of the s6803 ortholog should be > 2 
+;;; (recall that we have to use the name string here):
+
+>> (gethash "s6803.ssr2595" *gene->regratio*)
+:: 2.2025
+
+</pre>
+
+Tada!
+
+
+<p><hr><p>
+<p><hr><p>
+<a name=exercises>
+<h2>Exercises</h2>
+
+<p><hr><p>
+
+1. Generalize the function PROQUERY so that it will find genes of this
+sort that have a user-specified hihara threshold. That is, I want to
+be able to say:
+
+<pre>
+  (proquery 2.0)
+
+to get the same answer as above, or:
+
+  (proquery 1.5)
+
+which should get me more answers.
+</pre>
+
+<p><hr><p>
+
+2. Generalize your new proquery (that takes a threshold) so that it
+will find genes that have a description other than being light or
+photo-related. That is, I want to be able to say:
+
+<pre>
+  (proquery 1.5 "photosynthesis")
+
+or:
+
+  (proquery 1.23 "transporter") 
+</pre>
+
+(For purposes of this exercise don't worry about the fact that in the
+example we did, we looked for two phrases: "light" or "photo"; Just
+looking for one is adequate.)
+
+<p><hr><p>
+
+3. Modify the code as needed to be able to use a Gene Ontology concept
+instead of a match string. That is, I want to be able to say:
+
+<pre>
+  (proquery 1.23 #$go.glucokinaseactivity)
+</pre>
+
+Note that this isn't quite as simple as it might seem because in
+reality, just like the microarray data only existing for
+Synechocystis, the GO annotations are really only reliable for that
+organism as well, so you need to do the test for membership of the GO
+frame in the #^go-id slot of the s6803 ortholog gene, not on the pmed4
+gene.
+
+<p><hr><p>
+<p><hr><p>
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+

@@ -1,0 +1,151 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+; =============== DATA TABLE FUNCTIONS ================
+; This all has to be completely rethought through
+
+(IN-PACKAGE biobike-internals)
+
+(DEFINE-FUNCTION All-data-tables
+  SUMMARY "Lists information on all available data tables"
+  REQUIRED NIL
+  FLAG Display-off
+  PUBLIC
+  BODY
+  (without-code-walker
+    (IF (NOT display-off) (FORMAT T "~&  ~A" ""))
+    (LOOP FOR item IN *microarray-tables*
+          AS name = (biolisp::FIRST item)
+          AS organism = (biolisp::THIRD item)
+          AS description = (biolisp::FOURTH item)
+          DO (IF (NOT display-off)
+                 (FORMAT T "~&~15A ~25A ~A" name organism description))
+          WHEN display-off
+          COLLECT name)))
+
+(DEFINE-FUNCTION Data-table-info-of 
+  SUMMARY "Returns information about given data table[s]"
+  REQUIRED data-table
+    TYPE data-table = (OR String Symbol)
+    CONVERT data-table FROM Symbol TO String
+  MAP data-table
+  PUBLIC
+  BODY
+  (without-code-walker
+     (LOOP FOR current-table-info IN *microarray-tables*
+           AS current-table-name = (biolisp::FIRST current-table-info)
+           WHEN (STRING-EQUAL data-table current-table-name)
+             RETURN current-table-info)))
+
+(DEFINE-FUNCTION Data-table-named 
+  SUMMARY ""
+  REQUIRED data-table-name
+  BODY
+  (without-code-walker
+   (LOOP FOR table IN *microarray-tables*
+          AS table-name = (biolisp::FIRST table)
+          DO (IF-TRUE (EQUALP table-name data-table-name)
+                 THEN (RETURN table)))))
+
+(DEFINE-FUNCTION Read-data-table 
+  SUMMARY ""
+  REQUIRED data-table-name
+  BODY
+  (without-code-walker
+    (LET* ((data-table-info)
+           (data-table)
+           (data-table-file)
+           (organism))
+
+      (SETF data-table
+            (LOOP FOR (name table) IN *active-microarray-tables*
+                  WHEN (EQUALP name data-table-name)
+                  RETURN table))
+
+      (IF-FALSE data-table
+                THEN (SETF data-table-info 
+                           (DATA-TABLE-NAMED data-table-name))
+                (IF-TRUE data-table-info 
+                         THEN (SETF organism (biolisp::THIRD data-table-info))
+                         (SETF data-table-file 
+                               (TRANSLATE-SIMPLE-LP (biolisp::SECOND data-table-info)))
+                         (SETF data-table
+                               (READ-MICROARRAY-TABLE data-table-file :ORGANISM organism))
+                         (SETF *active-microarray-tables*
+                               (APPEND *active-microarray-tables* 
+                                       (LIST (LIST data-table-name data-table))))
+                         ELSE (ERROR "Error in Read-data-table: '~A' doesn't exist."
+                                     data-table-name)))
+      data-table)))
+
+       
+
+(DEFINE-FUNCTION IsDataTable? 
+  SUMMARY "Returns T or NIL depending upon whether argument is a data table"
+  REQUIRED table?
+  TYPE table? = (OR Symbol String)
+  CONVERT table? FROM Symbol TO String
+  BODY
+  (without-code-walker
+    (LOOP FOR table IN (ALL-DATA-TABLES DISPLAY-OFF)
+          WHEN (STRING-EQUAL table table?)
+          RETURN T
+          FINALLY (RETURN NIL))))
+
+; =============== RATIO-OF ===================
+
+(DEFINE-FUNCTION (ratio/s-of Ratio-of Ratios-of)
+  SUMMARY "Looks up the expression ratio for the gene-or-protein in a data table"
+  REQUIRED (gene (IN) data-table (AT COLUMN) condition)
+  TYPE gene = (OR Gene Protein)
+  CONVERT gene FROM protein TO gene
+  TYPE data-table = (OR String Symbol)
+  CONVERT data-table FROM Symbol TO String
+  TYPE condition = Positive-number
+  CONVERT condition FROM Number TO Integer
+  FLAG verbose
+  FLAG labeled
+  RETURNS (OR Float List)
+  CROSSMAP (gene data-table)
+  PUBLIC
+  BODY
+  (without-code-walker
+    (LET* ((data-table-values
+            (IF-TRUE (IsDATATABLE? data-table)
+                     THEN (READ-DATA-TABLE data-table)
+                     ELSE (ERROR 
+                           (ONE-STRING "~&'~A' is not a data table! "
+                                       "Perhaps you mean one of these:"
+                                       "~&    ~{ ~A~}")
+                           data-table (ALL-DATA-TABLES DISPLAY-OFF))))
+           (number-of-columns
+            (LET ((data-table-info (DATA-TABLE-INFO-OF data-table)))
+              (IF-FALSE data-table-info
+                        THEN (ERROR
+                              (ONE-STRING 
+                               "Internal error!"
+                               "~&Invalid table '~S' in number-of-columns calculation"
+                               "~&PLEASE NOTE CONDITIONS AND REPORT TO Help Desk")
+                              data-table))
+              ;; *** NEED TO FIX data-table DEFINITION TO INCLUDE COLUMNS
+              4))
+           (column
+            (IF-TRUE (> condition number-of-columns)
+                     THEN (ERROR (ONE-STRING
+                                  "Error: "
+                                  "Column '~A' must be between 1 and the number of "
+                                  "columns in data table '~A' (which is ~A columns)")
+                                 condition data-table number-of-columns)
+                     ELSE condition))
+
+           (ratio 
+            (IF-TRUE (NOT (TABLE-DATA-KEY-PRESENT? data-table-values gene))
+                     THEN (IF verbose
+                              (ERROR (ONE-STRING
+                                      "Error: '~A' not a gene in data table '~A'")
+                                     gene data-table))
+                     ELSE (TABLE-DATA-ELEMENT data-table-values gene column))))
+      (IF labeled
+          (LIST gene ratio)
+        ratio))))
+
+

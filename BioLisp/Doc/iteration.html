@@ -1,0 +1,1829 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2005 JP Massar and Jeff Shrager                      |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<Html><head><title>
+Bsaic Data Structures and Iteration in BioLisp
+</title></head>
+
+<body>
+
+<center>
+</b><p>
+<h2><b>Basic Data Structures and Iteration in BioLisp</h2>
+</b></p><p>
+</p>
+</center>
+
+<p align="right">Copyright (c) 2002-2005 by The BioBike Team (contact <a
+href="mailto:BioLangSupport@lists.stanford.edu">BioLangSupport@lists.stanford.edu</a> for more information)</p>
+</p>
+
+This lesson introduces the basic data structures that you'll
+encounter in BioLisp, and explain how to "iterate" on them -- which is
+sometimes called "looping over" them, but is actually more general
+than that.
+
+<p>
+
+Iteration is among the most fundamental things that computers do for
+us; figuring out how to do something the first time is interesting,
+and it's sometimes fun to actually do it yourself ... once. But after
+the first time, and then the first ten times, and then the first
+hundred times, you get pretty bored of it. The phrase <i>been there,
+done that</i> is what iteration is all about -- let the computer do
+the boring repetitive part of the task -- that's what they're for:
+They don't get bored, never make mistakes, and are <i>much</i> faster
+than you are!
+
+<p>
+
+Now, when you iterate, you always have to iterate "over" something --
+some sort of structure, so iteration and data structures are
+fundmanetally connected concepts. In this rather long lesson we're
+going to see all the different basic data structures that there are in
+Lisp, and a bunch of different ways to iterate over them. But this
+isn't nearly the complete set of ways that you can create complex data
+structures and iterate over them. In fact, in the next lesson we're
+going to go into a very important complex data structure -- a graph --
+and see how to iterate over graphs. But the examples here will serve
+as a set that you can go back to and examine as a reminder of how to
+do the basic sorts of iteration (and along the way we'll talk about
+common mistakes).
+
+<p>
+
+<h3>Dealing with Sequences: Accessors and Setters</h3>
+
+Most of the data structures you'll be dealing with are some sort of
+<i>sequence</i>. Lists and strings are both kinds of
+sequence. Sequences are, just as the name implies, ordered sets of
+elements. The first element is position 0, and second element position
+1, and so on. (At first this will be slightly confusing; why isn't the
+first element a position 1?! and it is, but there are good reasons for
+this that you'll see soon.)
+
+<p>
+
+The most basic type of sequence data structure in Lisp is the list. In
+fact, lisp gets its name from this data type (Lisp = List Processing
+Language).
+
+<p>
+
+We saw lists in the very first intro lesson. Here's a reminder of what
+they are:
+
+<p>
+<pre>
+  (this is a list of symbols)
+
+  (3.141 2.718 1.414) 
+
+  (the above is a list of numbers)
+
+  ((this) (is) (a) (list) (of other lists))
+
+This one's several lines long:
+
+  ((((this) (is (a ((deeply nested) list) see) if (you (can))
+     (((follow all) the) matching parens) all the way)
+          back up (to (the top)))))
+</pre>
+</p>
+
+Here are some <i>wrong</i> lists (because none of them have correctly
+balanced parentheses:
+
+<p>
+<pre>
+  (this one does not have a close parentheses
+
+  this one does not have an open parenthesis)
+
+  ((this (one has) too many close parentheses)))))
+</pre>
+</p>
+
+There are various ways to get elements from sequences, and to change
+the elements of sequences. The most basic "accessor" (or "getter") is
+ELT.
+
+<p>
+
+First, let's make a pretty long list of the letters of the alphabet.
+
+<pre>
+>> (setf letters '(a b c d e f g h i j k l m n o p q  r s t u v w x y z))
+</pre>
+
+Recall that each letter (each "element") in the above is
+<i>symbols</i>; we could just as well have given them longer names:
+
+<pre>
+>> (setf letters '(a bee see dee eee elephant gee! ach eye jay kay eel emu en oh!
+                   pee que are es tea ewe vee double-ewe ex why? zeeeeeeee))
+</pre>
+
+In fact, I like that one better, lets use that one!
+
+<p>
+
+So get an element from a list (or any sequence), use ELT:
+
+<pre>
+>> (elt letters 1)
+:: BEE   ; Remember that the first (a) is position 0, not 1!
+>> (elt letters 11) 
+:: EEL
+</pre>
+
+Getters (accessors) usually have "setters" that change the thing you
+got. Watch:
+
+<pre>
+>> (elt letters 11)
+:: EEL
+>> (setf (elt letters 11) '(an eel is not a snake))
+:: SNAKE
+>> letters
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY (AN EEL IS NOT A SNAKE) 
+    EMU EN OH! PEE QUE ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+</pre>
+
+It's <i>extremely</i> important to <i>deeply</i> understand this
+example! (You're asking: What's so deep about it?!) 
+
+<p>
+
+First, notice that the argument to SETF are the accessor (i.e., (elt
+letters 11) in this case) and the new value (the list: (an eel is not
+a snake)). This is the way pretty much <i>all</i> data structure
+changing works: You tell lisp how to reach into the data structure,
+and then what to put there in place of whatever used to be there. (The
+sharp-of-eye will notice that they way we set the value of LETTERS to
+begin with was just the same!) <i>You'll see this ALL OVER THE PLACE
+-- Get used to it!</i>
+
+<p>
+
+Second, notice that we replaced a symbol by a whole list. The elements
+of lists can be anything you like (symbols, lists, lists of lists, and
+anything else in Lisp!). This makes lists <i>extremely</i> useful data
+structures! So useful, in fact, that Lisp is named after them! ("Lisp"
+stands for "List Processing Language"!)
+
+<p>
+
+Third, notice in passing that we had to quote the new list (i.e., '(an
+eel is not a snake), not just (an eel is not a snake)). Why? [Hint:
+Remember the recursive evaluation procedure from moons ago!]
+
+<p>
+
+Fourth, and most importantly, SETF <i>destructively changed our
+list</i>! That is, it <i>smashed</i> the new element (the list: (an
+eel is not a snake)) <i>in place of</i> the old element (the symbol:
+eel). This change is <i>permanent</i>, and is a very easy way to
+confuse yourself.
+
+<p>
+
+Watch:
+
+<pre>
+;;; Let's get back to where we were:
+
+>> (setf letters '(a bee see dee eee elephant gee! ach eye jay kay eel emu en oh!
+                   pee que are es tea ewe vee double-ewe ex why? zeeeeeeee))
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL EMU EN OH! PEE QUE 
+   ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Now let's set aside our letters for safe keeping:
+
+>> (setf hold-letters letters)
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL EMU EN OH! PEE QUE
+    ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Now we'll change the original list (same as we did above):
+
+>> (setf (elt letters 11) '(an eel is not a snake))
+:: (AN EEL IS NOT A SNAKE)
+
+>> letters
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY (AN EEL IS NOT A SNAKE) 
+    EMU EN OH! PEE QUE ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Looks good. Thank goodness we have hold-letters in case we need the
+;;; original list:
+
+>> hold-letters
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY (AN EEL IS NOT A SNAKE) 
+    EMU EN OH! PEE QUE ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Oops!!! What's happened?!!!
+</pre>
+
+What happened indeed? When we SETF'ed HOLD-LETTERS to LETTERS, all
+that it did was to make HOLD-LETTERS be <i>the very same list</i> as
+LETTERS. The don't just look alike -- that are <i>the very same
+list!</i> Anything that changes the one, also changes the other! See,
+I warned you that you'd be confused. But this confusion is the way to
+Lisp enlightenment!
+
+<p>
+
+One way to think about this (in fact, the <i>correct</i> way), is to
+think of it in terms of <i>pointers</i>, sort of like arrows that
+point from one thing to another.  SETF changes where arrows
+point. When we SETF'ed LETTERS originally, all we did was to put a
+pointer (an arrow) from the name LETTERS to the list (A BEE ...). Each
+ELT of that list is actually another pointer, in the initial case from
+the place in the list to the symbols: A, BEE, etc. When we SETF'ed the
+(ELT LETTERS 11) to (AN EEL IS NOT A SNAKE), all we did was change the
+pointer at the 11 position of our list away from the symbol EEL, and
+toward the new list: (AN EEL IS NOT A SNAKE). So far so good, but how
+does that help us understand that confusing mess where LETTER and
+HOLD-LETTERS seem to point to <i>the very same list</i>? ... wait a
+minute! We just answered our own question: When we SETF'ed
+HOLD-LETTERS to LETTERS all that did was to put an arrow (a pointer)
+from the symbol HOLD-LETTERS to the very same list as LETTERS was
+pointing to. <i>There was only every one list that both LETTERS and
+HOLD-LETTERS were <b>both</b> pointing to!</i> So when we changed the
+pointer in the list of letter from EEL to point to (AN EEL IS NOT A
+SNAKE), <i>both</i> LETTERS and HOLD-LETTERS got changed!
+
+<p>
+
+Wow! That's a brain-full! Don't worry if you don't fully understand
+this; You'll see it again and again. Just be aware that when you SETF
+things, you're changing them, and that there could be someone else
+(even you) that depends upon their value being stable!
+
+<p>
+
+Of course, Lisp provides a way around this problem. Here's what we
+meant to do:
+
+<pre>
+;;; Let's get back to where we were:
+
+>> (setf letters '(a bee see dee eee elephant gee! ach eye jay kay eel emu en oh!
+                   pee que are es tea ewe vee double-ewe ex why? zeeeeeeee))
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL EMU EN OH! PEE QUE 
+   ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Now let's set aside our letters for safe keeping:
+
+>> (setf hold-letters <font color=red>(copy-seq letters)</font>)
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL EMU EN OH! PEE QUE
+    ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Now we'll change the original list (same as we did above):
+
+>> (setf (elt letters 11) '(an eel is not a snake))
+:: (AN EEL IS NOT A SNAKE)
+
+>> letters
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY (AN EEL IS NOT A SNAKE) 
+    EMU EN OH! PEE QUE ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Looks good. Thank goodness we have hold-letters in case we need the
+;;; original list:
+
+>> hold-letters
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL  EMU EN OH! PEE QUE
+    ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+;;; Ahhhhhhhhh. Much better!
+</pre>
+
+COPY-SEQ (in red) made a COPY of the list (A BEE ...) and then we
+pointed HOLD-LETTERS to that <i>copy</i> instead of to the original
+list.
+
+<p>
+
+Are you enlightened?
+
+<p>
+
+Okay, well enough of that. Let's iterate!
+
+
+<p>
+<h3>Looping in Lists</h3>
+
+
+The simplest way to iterate over a list is with a construct call
+XLOOP. Here are some examples:
+
+<pre>
+;;; Let's get our letters back:
+
+
+>> (setf letters '(a bee see dee eee elephant gee! ach eye jay kay eel emu en oh!
+                   pee que are es tea ewe vee double-ewe ex why? zeeeeeeee))
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL EMU EN OH! PEE QUE 
+   ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+>> (xloop for letter in letters
+         do (print letter))
+:: 
+A 
+BEE 
+SEE 
+DEE 
+EEE 
+ELEPHANT 
+GEE! 
+...etc...
+> NIL
+</pre>
+
+Hard to get much simpler than that! Notice that this loop prints out
+things, but doesn't actually return anything (the NIL at the end is
+the result). We can get loop to return things for us quite easily:
+
+<pre>
+>> (xloop for symbol in letters
+         <font color=red>collect</font> symbol)
+:: (A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL EMU EN OH! PEE QUE ARE
+    ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+</pre>
+
+COLLECT says to give me back a new list composed of whatever got
+computed in the loop.  The above example seems boring -- it just gave
+us back the same list. (Actually, it gave us a <i>copy</i> of the list
+... in fact, the above XLoop is the definition of COPY-SEQ!)
+
+<p>
+
+Let's do something very slightly more interesting:
+
+<pre>
+>> (xloop for mylet in letters
+         collect (list mylet mylet))
+
+:: ((A A) (BEE BEE) (SEE SEE) (DEE DEE) (EEE EEE) (ELEPHANT ELEPHANT) (GEE! GEE!)
+    (ACH ACH) (EYE EYE) (JAY JAY) (KAY KAY) (EEL EEL) (EMU EMU) (EN EN)
+    (OH! OH!) (PEE PEE) (QUE QUE) (ARE ARE) (ES ES) (TEA TEA) (EWE EWE)
+    (VEE VEE) (DOUBLE-EWE DOUBLE-EWE) (EX EX) (WHY? WHY?)
+    (ZEEEEEEEE ZEEEEEEEE))
+
+</pre>
+
+Not that much more intersting, but anyway notice that I keep using a
+different name for LETTER, SYMBOL, MYLET -- this is the variable that
+will get "bound" to each element of the list. What we call this
+doesn't matter -- it can be any symbol, so I'll change it a lot here
+so that you get used to it being any symbol at all.
+
+<p>
+
+Here's something slightly more intersting:
+
+<pre>
+>> (xloop for maybe-an-animal? in letters
+          when (member maybe-an-animal? '(bee eel ewe dog cat emu mouse elephant))
+          collect maybe-an-animal?)
+
+:: (BEE ELEPHANT EEL EMU EWE)
+</pre>
+
+Okay, it's not that interesting, but we did get to learn two new
+things: the WHEN clause in XLoop, and the Lisp MEMBER function. The
+WHEN clause will work with anything that computes a Lisp truth value
+(that is, NIL versus anything except NIL). In fact, watch what member
+returns:
+
+<pre>
+>> (member 'emu letters)
+:: (EMU EN OH! PEE QUE ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE)
+
+>> (member 'dog letters)
+:: NIL
+</pre>
+
+MEMBER actually gives you the whole list including and after the
+member you're looking for, and NIL if it can't find the desired
+member.
+
+<p>
+
+Some more XLooping for fun and profit (well, okay, just fun):
+
+<pre>
+>> (xloop for a-number from 1 to 1000
+          as root = (sqrt a-number)
+          when (= (round root) root)
+          collect a-number)
+:: (1 4 9 16 25 36 49 64 81 100 121 144 169 196 225 ...)
+</pre>
+
+Here AS clause computes the square root of A-NUMBER each time through,
+and then the WHEN clause uses ROOT, thus computed, to decide if
+A-NUMBER is a perfect root or not.
+
+<p>
+
+<h2>Strings</h2>
+
+Remember from previous lessons that strings are any sequence of
+characters surrounded by double-quotes. Just like lists, you can take
+the elements of string. Each element of a string is a single
+character. 
+
+<p>
+
+Watch:
+
+<pre>
+>> (setf a-string "this is a string")
+:: "this is a string"
+
+>> (elt a-string 3)
+:: #\s
+
+>> (elt a-string 4)
+:: #\space
+</pre>
+
+You can loop over strings too, but be aware that you're going to
+because what you get the individual characters:
+
+<pre>
+>> (xloop for each-single-char in "this is a string"
+          collect each-single-char)
+:: (#\t #\h #\i #\s #\Space #\i #\s #\Space #\a #\Space #\s #\t #\r #\i
+    #\n #\g)
+</pre>
+
+The ugly #\ things are each of the characters. Notice that spaces are
+written out: #\space; most other characters are just their own
+name. The reasons for the ugly #\ notation is so that the character
+#\a, for example, isn't confused with the symbol a or the string of
+only one character long "a". This sounds complex now (and it is), but
+it's important to understand that a string (even a one letter long
+string) is a sequence of characters.
+
+<h2>Other Sequence Gizmos</h2>
+
+As we said above, both lists and strings (and a feew other things) are
+an example of <i>sequences</i>. Generally speaking, what you iterate (loop) 
+over are sequences. There are bunches of functions that operate on
+sequences. The most useful one is xloop, as we've just seen. Another
+very useful one is SUBSEQ, which gets a subsequence of a given
+sequence:
+
+<pre>
+>> (setq spanish-planes "the planes in spain fall mainly in the rain")
+>> (subseq spanish-planes 0 19)
+:: "the planes in spain"
+>> (subseq spanish-planes 19)
+:: " fall mainly in the rain"
+>> (subseq spanish-planes 20 24)
+:: "fall"
+>> (subseq letters 10 20)
+:: (KAY EEL EMU EN OH! PEE QUE ARE ES TEA)
+</pre>
+
+(Recall that the first element of a sequence is the 0th, and the
+second the 1th, etc.)
+
+<p>
+
+Let's combine xloop and subseq, and see another form of loop while we're at it:
+
+<pre>
+>> (xloop for start from 1 to 20
+          for end from 15 to 25
+          collect (subseq spanish-planes start end))
+:: ("he planes in s" "e planes in sp" " planes in spa" "planes in spai"
+    "lanes in spain" "anes in spain " "nes in spain f" "es in spain fa"
+    "s in spain fal" " in spain fall" "in spain fall ")
+</pre>
+
+That time we used two different iteration variables: START and END
+(which we could have just as well called anything we liked, like TRATS
+and DNE for all that loop cares!); Each time through the loop
+<i>both</i> of these were updated. So we should have always got
+elements of length 14 (15 -- the distance between our iterators, minus
+1). Let's check:
+
+<pre>
+>> (xloop for result in (xloop for start from 1 to 20
+                               for end from 15 to 25
+                           collect (subseq spanish-planes start end))
+          collect (length result))
+:: (14 14 14 14 14 14 14 14 14 14 14)
+</pre>
+
+Looks right, but .... <i>Whoa!</i> what was all <i>that</i> about!? If
+you look carefully at the above complex mess, all that I did was to
+write a normal loop like this:
+
+<pre>
+>> (xloop for result in SOMETHING
+          collect (length result))
+</pre>
+
+which should be easy to understand. Then I replaced SOMETHING with:
+
+<pre>
+   (xloop for start from 1 to 20
+          for end from 15 to 25
+          collect (subseq spanish-planes start end))
+</pre>
+
+just like above. Lisp is perfectly happy with this. It just evaluates
+the subseq loop, just like we did above, getting: "he planes in s" "e
+planes in sp" ... etc), and then passes that result to the length
+loop. This style of programming is called "functional programming",
+where you pass the result of one function as input to another, and
+it's done a LOT in lisp (although usually not quite so spectacularly
+without warning!)
+
+<p>
+
+Let's move on to somewhat more interesting things.
+
+<p>
+
+<h2>Some Biological Iteration</h2>
+
+We now have all the tools we need to do some work on gene
+sequences. Let's start by getting a handful of genes; We'll pick up
+the ones that happen to be annotated into the Gene Ontology as
+producing Carboxy-Lyase proteins:
+
+<pre>
+>> (setq cxl-genes (#^Go.Related-Genes #$GO.Carboxy-LyaseActivity))
+:: 
+(#$S6803.sll0578 #$S6803.slr0662 #$S6803.slr0546 #$S6803.sll0901
+ #$S6803.sll0504 #$S6803.slr0536 #$S6803.sll0892 #$S6803.sll0838
+ #$S6803.sll1641 #$S6803.slr1099 #$S6803.slr1312 #$A7120.all3569
+ #$A7120.alr2983 #$A7120.alr2945 #$A7120.all0395 #$Tery.Te?6781
+ #$Tery.Te?6780 #$Tery.Te?4796 #$Tery.Te?4797)
+</pre>
+
+(This list might differ slightly when you do it because of changes in
+the knowledge base since this lesson was written.)
+
+<p>
+
+That's a list of gene frames. (Hopefully you recall frames from a
+previous lesson.) Now, there's a BioLisp function called
+EXTRACT-SEQUENCE that gets the gene sequence given a gene frame,
+watch:
+
+<p>
+
+<pre>
+>> (extract-sequence #$A7120.alr2945)
+"ATGGTTTTGGTGGGCAATGCCCACCCTACAGATACTGAGAATTTTATACCTAATTACCTAACAAATAAAATGATT..."
+;; >>> Line truncated to 80 (was 1503). Use SET-OUTPUT-LIMITS to adjust width
+</pre>
+
+(Even though it tolds us that the printout was truncated, the whole
+sequence is still there.)
+
+<p>
+
+That's just a string. So we have a list of genes, and can get the
+strings that represent their sequences out of them using
+EXTRACT-SEQUENCE.  Let's do something simple with loops on
+these. Suppose that we wanted to get a list of the first 100 nucleotides from
+each of these genes. How about:
+
+<pre>
+>> (xloop for gene in cxl-genes
+          collect (subseq (extract-sequence gene) 0 100))
+:: 
+("ATGGAAACAAAATTAACCACAGTGGGGGTAATTGGTGGTGGACAGTTGGCCTGGATGATGGCCCAGGAAGCCCCCCGATTGGGATTAAAACTTGCAGTGC"
+ "ATGGAAGGGCAGTCAATCGAACTAGAACTAAGTGTCATGGCAATGCCGGAGTTAATCGACAGTACTGAAGCAGGCCATACCGCCGGGGTGAAAACTGATT"
+ "ATGGAAATTCGCCGCCGGCCTCCTAACCCCCCCATCAAAGTTGACATTCTTCAGTATCAAATTAAGCATCCAGAAGCGGCTCCCCGTCACATTCTGGAGG"
+ "ATGACTTCCCCCTCTCCCCTGGTCGGCATCATCATGGGAAGCGATTCCGATCTCCCCACCATGGCAGCGGCGATCGCCGTCTGTGAAGAATTTGCCGTAC"
+...etc...
+</pre>
+
+That was easy! Let's do something more interesting. 
+
+<p>
+
+A very common thing to want to do is to read and wite files. There are
+some arcane but standard ways to do this using XLoops. In biology the
+common standard for sequence storage is the "FASTA" file. Fasta files
+always look like this:
+
+<pre>
+>various information about the following sequence
+ATGGAAACAAAATTAACCACAGTGGGGGTAATTGGTGGTGGACAGTTGGC
+CTGGATGATGGCCCAGGAAGCCCCCCGATTGGGATTAAAACTTGCAGTGC
+ATGGAAGGGCAGTCAATCGAACTAGAACTAAGTGTCATGGCAATGCCGGA
+GTTAATCGACAGTACTGAAGCAGGCCATACCGCCGGGGTGAAAACTGATT
+... etc ...
+>next entry
+... etc ...
+</pre>
+
+The > line before each entry in called the "defline", and the sequence
+information is usually, but not always, 50 characters long. FASTA is
+used for LOTS of different sorts of things, often it's not even
+sequence information, so the 50 character property is definitely
+<i>not</i> a rule to depend upon.
+
+<p>
+
+BioLisp has built-in facilities to deal with FASTA files very
+efficiently, but we're going to do our own FASTA processing as an
+exercise in looping.  Let's start by writing out those Carboxy Lyase
+genes to a fasta file. To do this we open the file, write each one
+with a defline. Easy:
+
+<pre>
+>> (with-open-file (ostream "cxl.fasta" :direction :output :if-exists :supersede)
+     (xloop for gene in cxl-genes 
+            as sequence = (extract-sequence gene)
+            (format ostream ">~a~%" (#^fname gene))
+            (format ostream "~a~%" sequence)))
+
+;;; That's all there is to it! Let's see if it worked:
+
+>> (list-file-contents "cxl.fasta")
+----- cxl.fasta -----
+>S6803.sll0578
+ATGGAAACAAAATTAACCACAGTGGGGGTAATTGGTGGTGGACAGTTGGCCTGGATGATGGCCCAGGAAGCCCCCCGATTGGGATTAAAACTTGCAGTGCAAACCCCTGGGGAAAGTGATCCGGCCGTGGCATTGGCGGACAAAGTGGTATTGACGGCGATCGCCGATGGGGAAGGAACTAGGGAGTTAGCAGAGCA...
+>S6803.slr0662
+ATGGAAGGGCAGTCAATCGAACTAGAACTAAGTGTCATGGCAATGCCGGAGTTAATCGACAGTACTGAAGCAGGCCATACCGCCGGGGTGAAAACTGATTCCAATCCCCAGGCGATCGCCCAAGACCGTCGTTGGACCATTGACGACAGCGAAAACCTCTACCGCATCACTGGTTGGGGGGAACCTTACTTTTCCAT...
+>S6803.slr0546
+ATGGAAATTCGCCGCCGGCCTCCTAACCCCCCCATCAAAGTTGACATTCTTCAGTATCAAATTAAGCATCCAGAAGCGGCTCCCCGTCACATTCTGGAGGAAATTGTTTGGCATAAGGAAAAGGAAGTGGCCCAACGGCGAGAATTAGTCCCCCTGGTCAAACTCCAAAGTTTAGTCAAGGACATGACTCCCCCATT...
+...etc...
+</pre>
+
+Cool! Now, let's look at the way we did that in a little more detail.
+
+<p>
+
+The WITH-OPEN-FILE is a little complex, although most of the keywords
+are obvious. The only non-obvious part is "ostream".  That's just the
+name of the variable that WITH-OPEN-FILE connects the file to so that
+you can write to it, which we did using the format functions in the
+body of the loop. Notice that you don't have to close the file, when
+the WITH-OPEN-FILE ends (that is, at the end of its matching
+close-paren) the file gets closed automatically. (Or, as they say:
+"auto<i>magically</i>" :-)
+
+<p>
+
+The next slightly weird thing is the #^FNAME -- you might recall from
+the lesson on frames that that's just the name of the frame -- in this
+case, the name of the gene.
+
+<p>
+
+Okay, good, so now lets read the files back in, and, just to test it,
+collect the lengths of the genes in the file:
+
+<p>
+
+<pre>
+>> (with-open-file (istream "cxl.fasta" :direction :input)
+     (xloop for line = (read-line istream nil nil)
+            until (null line)
+            collect (list line (length (read-line istream)))))
+:: 
+((">S6803.sll0578" 1167) (">S6803.slr0662" 2088) (">S6803.slr0546" 888)
+ (">S6803.sll0901" 531) (">S6803.sll0504" 1410) (">S6803.slr0536" 1053)
+ (">S6803.sll0892" 438) (">S6803.sll0838" 696) (">S6803.sll1641" 1404)
+ (">S6803.slr1099" 621) (">S6803.slr1312" 1980) (">A7120.all3569" 384)
+ (">A7120.alr2983" 717) (">A7120.alr2945" 1503) (">A7120.all0395" 1617)
+ (">Tery.Te?6781" 456) (">Tery.Te?6780" 444) (">Tery.Te?4796" 207)
+ (">Tery.Te?4797" 333))
+</pre>
+
+Wow, great! A few new things to notice: 
+
+<p>
+
+<u>for line = ...</u> : Instead of "in" we
+used "=" -- this means that each time through the loop a new value is
+calculated for LINE. In is only used when we are iterating over a
+pre-computed structure, but here we want it to go out to the file each
+time and read the next line.
+
+<p>
+
+<u>(read-line istream nil nil)</u> : This reads a line from istream,
+and returns NIL when it hits the end of the file.  This goes with the
+next line: <u>until (null line)</u>. So, the loop will continue until
+we hit the end, at which point READ-LINE will return NIL to LINE, and
+the UNTIL (NULL LINE) clause will stop the loop!
+
+<p>
+
+<u>... collect (list line (length (read-line istream)))</u> : We're
+depending here upon the fact that each fasta entry is exactly two
+lines: the defline and one line of sequence information. We know that
+that's the case because we wrote this file out!! 
+
+<p>
+
+This code would definitely <i>not</i> work if we tried to read a
+standard FASTA, which has multiple lines. That's a little trickier
+because you don't know when you've hit the end of an entry until you
+see either the next defline, or the end of the file. We won't try to
+that that at the moment, although it's instructive to try to figure
+it out. 
+
+<p>
+
+Let's do the slightly simpler thing first of putting out 50 characters
+at a time, instead of writing the whole thing out as one long line. To
+do that we want the same code as above, but when it prints the
+sequence, we put out only 50 characters at a time, like this:
+
+<pre>
+(with-open-file (ostream "cxl.fasta" :direction :output :if-exists :supersede)
+     (xloop for gene in cxl-genes 
+            as sequence = (extract-sequence gene)
+            (format ostream ">~a~%" (#^fname gene))
+	    (xloop for pos from 0 to (length sequence) by 50
+	           (format ostream "~a~%" 
+			   (subseq sequence pos (+ 50 pos))))))
+
+<<< Evaluation failed. Actual error: >>>
+<<< 
+Within the loop "(LOOP FOR POS FROM 0 TO (LENGTH SEQUENCE) BY 50
+  ...",
+  While executing the IMPLIED-DO clause "((FORMAT OSTREAM ~a~% (SUBSEQ SEQUENCE POS (+ 50 P..."
+  After executing the loop 23 times, an error was detected: 
+In SUBSEQ, `end' (1200) is beyond the end of the sequence (1167).>>>
+<<< Use (EXPLAIN) to see a stack trace. >>>
+</pre>
+
+Oops! I guess that we need to ensure that we don't try to subseq off
+the end of the sequence. We can add a clever little condition for that:
+
+<pre>
+(with-open-file (ostream "cxl.fasta" :direction :output :if-exists :supersede)
+     (xloop for gene in cxl-genes 
+            as sequence = (extract-sequence gene)
+	    as length = (length sequence)
+            (format ostream ">~a~%" (#^fname gene))
+	    (xloop for pos from 0 to length by 50
+	           (format ostream "~a~%" 
+			   (subseq sequence pos 
+				   (min length (+ 50 pos)))))))
+
+
+>> (list-file-contents "cxl.fasta")
+
+----- cxl.fasta -----
+>S6803.sll0578
+ATGGAAACAAAATTAACCACAGTGGGGGTAATTGGTGGTGGACAGTTGGC
+CTGGATGATGGCCCAGGAAGCCCCCCGATTGGGATTAAAACTTGCAGTGC
+AAACCCCTGGGGAAAGTGATCCGGCCGTGGCATTGGCGGACAAAGTGGTA
+TTGACGGCGATCGCCGATGGGGAAGGAACTAGGGAGTTAGCAGAGCACTG
+...etc.
+CCGCTCTGCCCCATAGCCACGTCCATTGGTACGGCAAAGGAGACTGTCGT
+CCCGGTCGGAAGCTGGGCCATGTGACTTTGTTAAACCCTGATGTTGAATC
+GGAACCTTCCACTGCCTGGGCTGAAGATTTGGTGAAACAAGTAGAGGCGA
+TTTGGTATCCGGATTAA
+>S6803.slr0662
+ATGGAAGGGCAGTCAATCGAACTAGAACTAAGTGTCATGGCAATGCCGGA
+GTTAATCGACAGTACTGAAGCAGGCCATACCGCCGGGGTGAAAACTGATT
+...etc...
+GAAATGGACCGGGTTTTGGCTTTGGACGGGGTGCAACTAATCGGAGTTAA
+TAACCGTAATTTGCAAACCTTCACCGTTGATCTGCAAACCACAGAGGATC
+TTTTTGCCCAACGACGGGAGCAATTAA
+</pre>
+
+That looks good, but we ought to check that it's not losing characters
+at the line turns, and that it works when there's an even multiple of
+50. We'll do that by making up a sequence with exactly 200 character,
+and trying out our loop on that. 
+
+<pre>
+>> (setq test-sequence 
+      (xloop with result = ""
+             for i from 1 to 200
+             (setq result (format nil "~a~a" result (mod i 10)))
+             finally (return result)))                                       
+
+ 
+; While compiling (:ANONYMOUS-LAMBDA 147):
+Warning: 
+Within the loop "(LOOP WITH RESULT =  FOR I FROM 1 TO 200
+      (SE...",
+  contains a WITH clause!
+    A WITH clause is executed exactly once before the loop starts,
+    not each time through the loop (like FOR or AS clauses are).
+    Since WITH is easy to confuse with FOR or AS, we ask you to
+    use INIT or INITIALIZE instead of WITH, and if you do, you won't
+    see this obnoxious warning.
+
+:: "123456789012345678901234567890123456789012345678901234567890..."
+</pre>
+
+Well, it worked, but let's take the obnoxious warning's word for it,
+and use init instead of with:
+
+
+<pre>
+>> (setq test-sequence 
+      (xloop init result = ""
+             for i from 1 to 200
+             (setq result (format nil "~a~a" result (mod i 10)))
+             finally (return result)))                                       
+:: "123456789012345678901234567890123456789012345678901234567890..."
+</pre>
+
+Much nicer. Okay, now we can test the relevant part of our writing
+loop. We won't bother writing to a file, just print it out on the
+screen:
+
+<pre>
+>> (let ((length (length test-sequence)))
+     (xloop for pos from 0 to length by 50
+	    (format t "~a~%" 
+		    (subseq test-sequence pos 
+			    (min length (+ 50 pos))))))
+::
+12345678901234567890123456789012345678901234567890
+12345678901234567890123456789012345678901234567890
+12345678901234567890123456789012345678901234567890
+12345678901234567890123456789012345678901234567890
+</pre>
+
+Looks right.
+
+<p>
+
+Okay, enough of that nonsense, let's get back to more interesting
+problems.
+
+<h2>Accessors and Setf</h2>
+
+One of the cool things about Lisp is that is has this duality between
+accessing things and setting them. For example, you access the value
+of a symbol (used as a variable) by naming the symbol, and you set it
+using setf:
+
+<pre>
+>> (setf myvar 5)
+:: 5
+>> myvar
+:: 5
+</pre>
+
+Well, it turns out that you can do that for <i>any</i> single
+structure reference! Watch:
+
+<pre>
+>> letters 
+:: (a bee see dee eee elephant gee! ach eye jay kay eel emu en oh!
+    pee que are es tea ewe vee double-ewe ex why? zeeeeeeee)
+>> (nth 11 letters)
+:: eel    ; remember, the count starts at zero!
+>> (setf (nth 11 letter) 'wheel)
+:: wheel
+>> letters 
+:: (a bee see dee eee elephant gee! ach eye jay kay wheel emu en oh!
+    pee que are es tea ewe vee double-ewe ex why? zeeeeeeee)
+</pre>
+
+See, the setf changes the accessed element (the (nth 11...) or the
+12th element because of starting at zero!) to the new value!)
+
+<p>
+
+Here's another example, this time using AREF, which is how you get a
+single element from an array, like a string::
+
+<pre>
+>> (setf mystring "this is my string")
+:: "this is my string"
+>> mystring
+:: "this is my string"
+>> (aref mystring 2)
+:: #\i
+>> (aref mystring 3)
+:: #\s
+>> (setf (aref mystring 2) #\a)
+:: #\a
+>> (setf (aref mystring 2) #\t)
+:: #\t
+>> mystring
+:: "that is my string"
+</pre>
+
+<font color=red>Warning! When you SETF something, you destroy the old
+value!</font> So once you've changed the symbol value, list, or string
+the old value is <i><font color=red>gone gone gone</i></font>! This
+could be relevant to your algorithm, so it's worth begin aware of.
+
+<h2>Hash Tables</h2>
+
+The next data structure we're going to study is the <i>hash
+table</i>. A hash table is a lookup table that associates anything
+with anything....well, okay, not <i>anything</i>, like, you probably
+can't associate your knee with the department of defense, much as you
+might like to... but any lisp thing with any other lisp thing. The way
+this works is that you first tell lisp that you have a hash table, and
+usually you'll want to assign it to a symbol (that is, a variable) so
+that you can conveniently refer to it:
+
+<pre>
+>> (setf my-table (simple-hash-table))
+</pre>
+
+SIMPLE-HASH-TABLE is a function that creates and returns the most
+common type of HASH table (a simple one!) ... this implies that there
+are complex hash-tables, which there are, but 99% of the time you just
+want a simple one.
+
+<p>
+
+This will put an empty hash table into the variable (in this case:
+MY-TABLE). You'll see something like this:
+
+<pre>
+::  #&lt;EQUAL hash-table with 0 entries @ #x8f0e809a&gt;
+</pre>
+
+That's the printed-out form of a hash table. Don't worry about what it
+means for now, just notice that there are "0 entries", which is good
+because we haven't put anything into it yet!
+
+<p>
+
+The way that you put things into a hash table, and the way that you
+get them out is just like you would for any other data structure,
+using SETF on the <i>accessor</i> form. The accessor form for a hash
+table look like this:
+
+<pre>
+>> (gethash key table)
+</pre>
+
+where KEY is the thing that you want to be the lookup key.  For
+example, if you want to look me up by my phone number, you could do this:
+
+<pre>
+>> (setf (gethash 'jeff my-table) 5551212)
+</pre>
+
+(That's not my real phone number!)
+
+<p>
+
+And to look up my phone number:
+
+<pre>
+>> (gethash 'jeff my-table)
+:: 5551212
+</pre>
+
+And we'll notice that if we just look at the table, there's now 1 entry:
+
+<pre>
+>> my-table
+:: #&lt;EQUAL hash-table with 1 entries @ #x8f0e809a&gt;
+</pre>
+
+<p>
+
+Let's clear that entry out:
+
+<pre>
+>> (clrhash my-table)
+>> my-table
+:: #&lt;EQUAL hash-table with 0 entries @ #x8f0e809a&gt;
+</pre>
+
+<p>
+
+Okay, so let's do an experiment with our Carboxy Lyase genes (which we
+have, as you might recall, in the variable: cxl-genes). Let's
+associate each of those with its length.  That's sort of a boring
+association because we can just compute it easily using (length ...),
+but it's just a demo, so bear with me here:
+
+<pre>
+>> (xloop for gene in cxl-genes
+          (setf (gethash gene my-table) (length gene)))
+
+<<< Evaluation failed. Actual error: >>>
+<<< 
+Within the loop "(LOOP FOR GENE IN CXL-GENES
+      (SETF (GETHASH G...",
+  While executing the IMPLIED-DO clause "((SETF (GETHASH GENE MY-TABLE) (LENGTH GENE)))"
+  After executing the loop 0 times, an error was detected: 
+attempt to take the length of a non-sequence: #$S6803.sll0578>>>
+<<< Use (EXPLAIN) to see a stack trace. >>>
+</pre>
+
+Oops! We need the length of the gene sequence, not the gene:
+<pre>
+>> (xloop for gene in cxl-genes
+          (setf (gethash gene my-table) 
+		(length (extract-sequence gene))))
+:: NIL
+</pre>
+
+As usual, the loop didn't return anything.  Did it actually do
+anything? Let's see:
+
+<pre>
+>> my-table
+:: #&lt;EQUAL hash-table with 19 entries @ #x8f1a810a&gt;
+</pre>
+
+Sure did: There are now 19 entries in the table. We can see them with
+the help of XLoop:
+
+<pre>
+>> (xloop for (key value) in my-table
+          do (print (list key value)))
+::
+(#$S6803.sll0578 1167) 
+(#$S6803.slr0662 2088) 
+(#$S6803.slr0546 888) 
+(#$S6803.sll0901 531) 
+(#$S6803.sll0504 1410) 
+(#$S6803.slr0536 1053) 
+(#$S6803.sll0892 438) 
+(#$S6803.sll0838 696) 
+(#$S6803.sll1641 1404) 
+(#$S6803.slr1099 621) 
+(#$S6803.slr1312 1980) 
+(#$A7120.all3569 384) 
+(#$A7120.alr2983 717) 
+(#$A7120.alr2945 1503) 
+(#$A7120.all0395 1617) 
+(#$Tery.Te?6781 456) 
+(#$Tery.Te?6780 444) 
+(#$Tery.Te?4796 207) 
+(#$Tery.Te?4797 333) 
+> NIL
+</pre>
+
+Perfect! (Again, this didn't return the list, just printed it out; Do
+you remember how to actually return the list?)
+
+<p>
+
+Recall that I said that you can associate anything with anything in a
+hash-table. Let's do something a little more interesting.  Suppose
+that we want to know which genes among our carbox lyases genes have a
+particular nucleotide motif. In fact, we want to know, for some
+specific nucleotide motif, which genes contain that version of
+the motif. The motif I have in mind is five-nt long, and they're all
+Ts except the middle one, which can be any nt (A T G or C).
+
+<p>
+
+We can find one string in another by the SEARCH function:
+
+<pre>
+>> (search "TTATT" "ACTCCTCTATCTATACTTATTCTCTATATACGATGACTAGA")
+:: 16
+>> (search "TTATT" "ACTCCTCTATCTATACTTAATCTCTATATACGATGACTAGA")
+:: NIL
+<p>
+
+If the string is found, it tells us the position, ortherwise it
+returns NIL -- for not found. Let's put together some of what we've
+done thus far to solve this problem easily. 
+
+<p>
+
+We're going to use one new construction. Above we used SETF with the
+GETHASH accessor to change the table value, here we're going to use
+PUSH to add to the head of the list being built up in the table
+key. You'll see what we mean. Watch:
+
+<pre>
+>> (clrhash my-table)  ; always remember to clear your tables!
+:: #<EQUAL hash-table with 0 entries @ #x8f1a810a>
+
+>> (push 'a (gethash 'any-key my-table))
+:: (A)
+>> (push 'b (gethash 'any-key my-table))
+:: (B A)
+
+>> (gethash 'any-key my-table)
+:: (B A)
+</pre>
+
+So, the PUSH pushed (just like its name!) each symbol (A and then B)
+on to the front of a list being built up in the table under the given
+key (ANY-KEY in this case)
+
+<pre>
+>> (clrhash my-table)  ; always remember to clear your tables!
+:: #<EQUAL hash-table with 0 entries @ #x8f1a810a>
+
+>> (xloop for center-nt in '(#\A #\G #\C #\T)
+	  as target-sequence = (format nil "TT~aTT" center-nt)
+	  (xloop for gene in cxl-genes
+		 as gene-sequence = (extract-sequence gene)
+		 when (search target-sequence gene-sequence)
+		 (push gene (gethash target-sequence my-table))))
+:: NIL    ; As usual -- the loop is silent but deadly!
+
+>> my-table  ; Let's see how many entries there are:
+:: #&lt;EQUAL hash-table with 4 entries @ #x8f1a810a&gt;
+
+;;; And what they are:
+
+>> (xloop for (key value) in my-table
+          do (print (list key value)))
+
+::
+("TTGTT"
+ (#$Tery.Te?4796 #$Tery.Te?6781 #$A7120.all0395 #$A7120.alr2945
+  #$A7120.alr2983 #$S6803.slr1312 #$S6803.sll1641 #$S6803.sll0838
+  #$S6803.sll0892 #$S6803.sll0504 #$S6803.slr0546 #$S6803.slr0662
+  #$S6803.sll0578)) 
+("TTATT"
+ (#$Tery.Te?4796 #$Tery.Te?6780 #$Tery.Te?6781 #$A7120.all0395
+  #$A7120.alr2945 #$A7120.alr2983 #$A7120.all3569 #$S6803.slr1312
+  #$S6803.sll1641 #$S6803.sll0838 #$S6803.sll0892 #$S6803.slr0536
+  #$S6803.sll0504 #$S6803.sll0901 #$S6803.slr0546 #$S6803.slr0662
+  #$S6803.sll0578)) 
+("TTCTT"
+ (#$A7120.all0395 #$A7120.alr2945 #$S6803.slr1312 #$S6803.slr0536
+  #$S6803.slr0546)) 
+("TTTTT"
+ (#$Tery.Te?4796 #$Tery.Te?6780 #$Tery.Te?6781 #$A7120.all0395
+  #$A7120.alr2945 #$A7120.alr2983 #$S6803.slr1312 #$S6803.sll1641
+  #$S6803.sll0838 #$S6803.sll0892 #$S6803.sll0504 #$S6803.slr0546
+  #$S6803.slr0662 #$S6803.sll0578)) 
+</pre>
+
+Great! So as it turns out, TTCTT isn't all that common a motif among
+these genes!
+
+<p>
+
+<p>
+==================== UNDER CONSTRUCTION ======================
+<p>
+
+(xloop for gene in (#^genes #$synechocystis_pcc6803)
+       as aaseq = (translate-d/rna-to-aa (extract-sequence gene) 
+                                         :if-partial-codon :ignore)
+       when (search "HEIN" aaseq)
+       collect gene)
+
+<p>
+
+Let's create a function, called XAA-LENGTH, that figures out the length
+of the Amino Acid translation of a given gene, given its frame:
+
+<pre>
+  (defun xaa-length (gene)
+    (length (TRANSLATE-D/RNA-TO-AA (extract-sequence gene)
+              :if-partial-codon :warn :if-unknown-codon :replace)))
+</pre>
+
+Here are some ways of calling this function on every gene in an
+organism. 
+
+<pre>
+;;; First let's set a variable to represent the organism's 
+;;; genes, so that we don't have to keep typing that:
+
+  >> (setq syn6803 (load-organism :syn6803))
+  :: #$synechocystis_pcc6803
+
+  >> (setq syngenes (#^genes syn6803))
+  :: (#$S6803.slr0612 #$S6803.slr0613 #$S6803.sll0558 #$S6803.sll1214
+      ...)
+
+;;; And we're only going to use the first ten genes for these examples,
+;;; so let's reset the variable, and just drop the rest:
+
+  >> (setq syngenes (first-n 10 syngenes))
+  :: (#$S6803.slr0612 #$S6803.slr0613 #$S6803.sll0558 #$S6803.sll1214
+      #$S6803.sll1213 #$S6803.sll1212 #$S6803.slr1311 #$S6803.slr1312
+      #$S6803.sll1209 #$S6803.slr1315)
+
+;;; Okay, now let's do some iteration! 
+
+  >> (loop for gene in syngenes 
+           collect (xaa-length gene))
+
+  :: (231 174 234 359 313 363 361 660 670 203)
+
+;;; Here's another way to do the same thing using DOLIST:
+
+  >> (let (result)
+       (dolist (gene syngenes result)
+          (push (xaa-length gene) result))
+      (nreverse result))
+  :: (231 174 234 359 313 363 361 660 670 203)
+
+;;; Note that the result is BACKWARDS at the end of the DOLIST.  That's because
+;;; the PUSH put each new length on the FRONT of the result list.  So we
+;;; call NREVERSE to reverse the elements.  The LOOP mechanism using COLLECT
+;;; is a lot less verbose!
+
+;;; One more:
+
+  >> (mapcar #'xaa-length syngenes)
+  :: (231 174 234 359 313 363 361 660 670 203)
+
+;;; Mapcar applies the function to every element of the list. 
+
+</pre>
+
+The main thing to notice about all the above is that there are
+<i>many</i> ways to do the same job.  If you want to learn more
+regarding non-LOOP ways of iterating, read up on DOTIMES, DOLIST, DO,
+MAPCAR, MAPCAN, MAPLIST, MAPC, MAP and friends in the
+<a href="http://www.lispworks.com/reference/HyperSpec/Front/index.htm">
+Common Lisp Hyperspec</a>.  
+
+<p>
+<a name="TAG-LOOP-EXAMPLES"></a>
+<i><font color=green><h2>LOOP examples</h2></font></i>
+<p>
+While all these other iteration constructs have their uses, LOOP will
+usually do the trick, and the code one writes with LOOP is arguably
+easier to understand for involved iteration tasks than the other
+constructs, so we'll stick to LOOP from here on out.
+
+<p>
+
+Here's some more complicated LOOP uses, with explanations:
+
+<pre>
+
+;; Collect all numbers below 1000 which are squares and which
+;; are divisible by 3.
+
+  >> (loop for j from 1
+           as k = (* j j)
+           until (> k 1000)
+           when (zerop (mod k 3)) 
+           collect k)
+        
+ :: (0 9 36 81 144 225 324 441 576 729 900)
+</pre>
+
+The above illustrates the use of WHEN inside LOOP to control the items
+collected, and the use of UNTIL to control the termination of the
+loop.  Also, note how AS is used to define a temporary variable which
+gets reset each time through the loop.  (You'll see both FOR and AS
+used in this way.  FOR and AS are <i>completely interchangable</i>;
+They mean exactly the same thing!  This is <i>not</i> true for another
+similar-looking construct: WITH.  Whereas FOR/AS indicate a term is to
+be calculated each time through the loop, WITH only does the
+calculation <i>the first time, and not again!</i> You can get yourself
+into all sorts of trouble by confusing FOR/AS with WITH.  
+
+<p>
+
+Here's an example that demonstrates the difference between the loop keywords
+AS and WITH.  
+
+<pre>
+
+;; Print some random numbers
+
+ >> (loop for j from 1 to 10
+          with r1 = (random 100)
+          as r2 = (random 100)
+	  collect (list r1 r2))	
+
+ :: ((82 77) (82 72) (82 10) (82 34) (82 46) (82 62) (82 80) (82 70) (82 66) (82 99))
+
+</pre> 
+Notice that while R2 changes each time through the loop, R1 does not.  
+A WITH-clause evaluates its expression once and only once, conceptually before 
+the loop actually begins.  An AS-clause evaluates its expression each time through
+the loop.  Therefore, a WITH-expression is very much like using a LET surrounding
+the entire loop.  
+
+<p>
+
+
+Here's a much more complex example which counts up the number of genes
+in each chromosome (or plasmid -- i.e., each contigous sequence) of an
+organism:
+
+<pre>
+
+ >> (let ((contig-genes-list <font color="green">
+            ;; Define a temporary variable which we initialize to a list
+	    ;; of two-element lists to prepare
+  	    ;; to count up the number of genes in each contig.
+            ;; (NOTE HOW THIS IS EMBEDDED IN THE LET) </font>
+            (loop for cs in (#^Contiguous-Sequences #$synechocystis_pcc6803)
+                  collect (list cs 0))))
+      <font color="green">;; Now run through all the genes, 
+      ;; and increment the count (the second element of the sublist)
+      ;; for the contig that each gene is found on. </font>
+      (loop for gene in (#^Genes #$synechocystis_pcc6803) 
+            do
+            (incf (second (find (#^Contiguous-Sequence gene) 
+                                contig-genes-list
+                                :key 'first                                
+                                ))))
+      <font color="green">;; Finally, Print the results.
+      ;; (NOTE THE DESTRUCTURING HERE --
+      ;; CONTIG and GENE-COUNT get bound to the first and second
+      ;; of each element in the contig-genes-list.) </font>
+      (loop for (contig gene-count) in contig-genes-list 
+            do
+            (format t "~D genes in ~A~%" gene-count contig)
+            ))
+
+3313 genes in #$S6803.chromosome
+106 genes in #$S6803.pSYSA
+49 genes in #$S6803.pSYSG
+132 genes in #$S6803.pSYSM
+110 genes in #$S6803.pSYSX
+6 genes in #$S6803.pCC5.2
+2 genes in #$S6803.pCA2.4
+3 genes in #$S6803.pCB2.4
+</pre>
+
+The above has a bunch of interesting features, including demonstrating
+how loops can be embedded in other code (the LET both declares and
+sets the value of the temporary variable at the same time!), and how
+loop can "destructure" arguments.  If the elements we are iterating
+over are lists (in this case lists of two elements each) we can tell
+LOOP to bind different variables to each part subpart of each sublist
+as the iteration proceeds.  (This destructuring may be arbitrarily
+complex.)
+
+<p>
+
+Next we see how to use LOOP to iterate across the elements of an array
+using ACROSS, along with with our now familiar use of IN to do the
+same for the elements of a list.  Unfortunately, LOOP does <i>not</i>
+let you iterate over the elements of a sequence which might be either
+a list or a vector; you have to know which in advance.  (But see MAP
+for a way to do this):
+
+<pre>
+
+  >> (defparameter x-vector #(1 0 5 9))
+  >> (defparameter names '("JP" "JEFF" "FRED"))
+
+  >> (loop for ticket-count across x-vector   ; Iterate ACROSS the vector,
+           for name in names                  ; While iterating IN the list!
+           unless (zerop ticket-count) do
+          (format t "~&~A has ~D ticket(s)~%" name ticket-count))
+  ::
+    JP has 1 ticket(s)
+    FRED has 5 ticket(s)
+
+</pre>
+
+Notice in the above that LOOP can iterate over two (or more) things at
+once, and that it stops when it reaches the end of <i>any</i> of the
+things it is iterating over.
+
+<p>
+
+Next we illustrate the use of '=' for assignment within LOOP and the
+use of THEN to provide the next value for an iteration variable.
+
+<pre>
+
+> (loop for s = "A" then (concatenate 'string s "A")
+        until (> (length s) 6) collect s)
+
+:: ("A" "AA" "AAA" "AAAA" "AAAAA" "AAAAAA")
+</pre>
+
+<p>
+
+Here's an illustration of the BY feature of LOOP, used by on numbers
+and lists:
+
+<pre>
+
+ (loop for j from 10 by -2 
+       for x in '(a b c d e) by 'cddr 
+       do (print (list j x)))
+::
+(10 A) 
+(8 C) 
+(6 E) 
+</pre>
+
+Unfortunately, we can't give examples of every possible loop.  There
+is extensive (and very hard to use) documentation of loop in the
+hyperspec, <a
+href=http://www.lispworks.com/reference/HyperSpec/Body/m_loop.htm>here</a>.
+In the next section we list some of the most common mistakes that we
+have seen BioLingua users (including US!) make.  In the process, we
+end up illustrating many more uses of loop.
+
+<p>
+
+
+<p>
+<a name="TAG-FRAMES"></a>
+<i><font color=green><h2>Iteration over frames</h2></font></i>
+<p>
+
+Let's look at the implementation of the function GOOGLEPLEX-FRAMES, which
+searches over every frame and over every slot in every frame.
+
+<pre>
+(defun googleplex-frames (&rest strings &aux result)
+  (for-all-frames (frame)
+    (block frame-matched
+      (for-each-frame-slot (slot-name slot-value) frame
+        (when (stringp slot-value)
+          (loop for string in strings do
+                (when (search string slot-value :test 'char-equal)
+                  (push frame result)
+                  (return-from frame-matched)
+                  ))))))
+  result)
+</pre>        
+
+The BioLingua macro FOR-ALL-FRAMES allows us to iterate over every frame.
+In the case the variable 'frame' is specified as the iteration variable;
+inside of FOR-ALL-FRAMES 'frame' is bound successively to one frame after
+another.
+<p>
+The BioLingua macro FOR-EACH-FRAME-SLOT allows us to iterate over every
+slot of a particular frame.  In the above case the variables 'slot-name'
+and 'slot-value' are the iteration variables; inside of FOR-EACH-FRAME-SLOT
+they are bound successively to each slot's frame and value.
+<p>
+Finally, we use a standard LOOP construct to iterate over our input STRINGS,
+searching every slot value that is a string for a match against one of the
+input STRINGS.
+<p>
+Some other functions that iterate over frames are SEARCH-FRAMES, GOOGLE-FRAMES,
+GOOGLEPLEX-FRAMES, and FIND-FRAMES.  SEARCH-FRAMES is the most general and most 
+powerful of these.  For more details, read their documentation using HELP.
+<p>
+If you want to write your own specialized frame search function, you can use 
+the code from any of these functions as a base.	 GOOGLE-FRAMES is probably a
+good function to use for this purpose.  
+
+<p><hr><p>
+<p><hr><p>
+
+<p>
+<a name="TAG-LOOP-MISTAKES"></a>
+<i><font color=green><h2>Some common LOOP mistakes</h2></font></i>
+<p>
+
+Here are some of the most common mistakes that we have seen BioLingua
+users make.  The incorrect forms appear in red, and the correct forms
+are given immediately afterward, along with a brief explanation of the
+mistake.
+
+<pre>
+<font color=purple>
+;;; ----------- FORGOTTEN COLLECTOR
+;;; Symptom: Doesn't return anything:
+</font>
+  ;; Trying to get a list of the integers from 0 to 10, each times 5:
+  <font color=red>
+  >> (loop for n below 11 do (* n 5))
+  :: NIL                                 ; Oops!  Nothing was returned!
+  </font>
+  ;; Should have used COLLECT instead of DO ...
+  <font color=green>
+  >> (loop for n below 11 collect (* n 5))
+  :: (0 5 10 15 20 25 30 35 40 45 50)
+  </font>
+
+<font color=purple>
+;;; ----------- OFF BY ONE ("OBIWON ERROR")
+;;; Symptom: Skips the last iteration, or starts at the wrong place:
+</font>
+  ;; Trying to get a list of the integers from 1 to 10:
+  <font color=red>
+  >> (loop for n below 10 collect n)
+  :: (0 1 2 3 4 5 6 7 8 9)  ; HEY! What's with the 0... and only went to 9?!?
+  </font>
+  ;; Should have used FROM ... TO instead:
+  <font color=green>
+  >> (loop for n from 1 to 10 collect n)
+  :: (1 2 3 4 5 6 7 8 9 10)
+  </font>
+
+<font color=purple>
+;;; ----------- OOPS: OBSCURE SYNTAX ERROR #1
+;;; Symptom: <i>Error: ____ found where LOOP keyword expected.</i>
+</font>
+  <font color=red>
+  >> (loop for i from 1 to 10 (print i))
+  :: Error: (PRINT I) found where LOOP keyword expected.
+     Current LOOP context: FOR I FROM 1 TO 10 (PRINT I).
+     [condition type: SIMPLE-ERROR]
+  </font>
+  ;; Forgot the DO or COLLECT (etc.):
+  <font color=green>
+  >> (loop for i from 1 to 10 do (print i))
+  :: 1
+     2
+     ....  </font>
+
+<font color=purple>
+;;; ----------- OOPS: OBSCURE SYNTAX ERROR #2
+;;; Symptom: <i>Error: ____ found where LOOP keyword expected.</i>
+</font>
+  <font color=red>
+  >> (loop for x from 0 below 10 as k= (sqrt x) collect k)
+  :: Error: (SQRT X) found where a LOOP keyword or LOOP type keyword expected.
+     Current LOOP context: AS K= (SQRT X).
+     [condition type: SIMPLE-ERROR]
+  </font>
+  ;; Forgot a space between the variable and '=' (so the variable name becomes 'K='):
+  <font color=green>
+  >> (loop for x from 0 below 10 as k = (sqrt x) collect k)
+  :: (0.0 1.0 1.4142135 1.7320508 2.0 2.236068 2.4494898 2.6457512 2.828427 3.0)  </font>
+
+
+<font color=purple>
+;;; ----------- ACROSS v. IN :: SEQUENCES v. LISTS
+;;; Symptom: <i>Error: Illegal argument to endp: ...</i>
+</font>
+
+Assume:
+
+  (defun ntcomp (char)
+    (case  char
+      ((#\a #\A) #\T)
+      ((#\t #\T) #\A)
+      ((#\c #\C) #\G)
+      ((#\g #\G) #\C)))
+
+</font>
+  <font color=red>
+  >> (coerce (loop for nt in "GATTACA" collect (ntcomp nt)) 'string)
+  :: Error: Illegal argument to endp: "GATTACA"
+     [condition type: TYPE-ERROR]
+  </font>
+  ;; Use ACROSS on vectors (A string is a kind of vector), not IN:
+  <font color=green>
+  >> (coerce (loop for nt across "GATTACA" collect (ntcomp nt)) 'string)
+  :: "CTAATGT"
+  </font>
+
+<font color=purple>
+;;; ----------- IN v. ACROSS :: LISTS v. SEQUENCES
+;;; Symptom: <i>Error: Illegal argument to endp: ...</i>
+</font>
+  <font color=red>
+  >> (coerce (loop for nt across '(#\G #\A #\T #\T #\A #\C #\A) collect (ntcomp nt)) 'string)
+  :: Error: Attempt to do an array operation on
+          (#\G #\A #\T #\T #\A #\C #\A) which is not an array.
+     [condition type: SIMPLE-ERROR]
+  </font>
+  ;; Use IN on lists, not ACROSS:
+  <font color=green>
+  >> (coerce (loop for nt in '(#\G #\A #\T #\T #\A #\C #\A) collect (ntcomp nt)) 'string)
+  :: "CTAATGT"  
+</font>
+
+<font color=purple>
+;;; ----------- Various versions of unexpectedly slow loop:
+</font>
+  <font color=red>
+  ;; This takes a LOT longer than you expected (about 100 times longer!)
+
+  >> (loop for i from 1 to 100
+           as j = (a-really-long-calculation-that-only-really-needs-to-be-done-once)
+           do whatever....)
+  </font>
+  ;; Although you only meant for the really-long-calculation to be
+  ;; done once, and the value used in each look cycle, the above
+  ;; is doing the really-long-calculation EACH TIME THROUGH THE LOOP!
+
+  ;; Solution 1: Do the calculation outside the loop:
+  <font color=green>
+  >> (let ((j (a-really-long-calculation-that-only-really-needs-to-be-done-once)))
+      (loop for i from 1 to 100
+            do whatever....))
+  </font>
+
+  ;; Solution 2: Use WITH instead of AS or FOR.  WITH clauses are only done
+  ;; once, at the start of the loop.
+  <font color=green>
+  >> (loop <i>WITH</i> j = (a-really-long-calculation-that-only-really-needs-to-be-done-once)
+           for i from 1 to 100
+           do whatever....)
+
+  ;; (Notice that in the above we put the WITH before the FOR/AS clauses.  This is just a 
+  ;;  convention to remind us that the WITH is sort of outside (above) the loop.  It would 
+  ;;  also work to do it in the other order, i.e., FOR ... WITH ...)
+  </font>
+
+<font color=purple>
+;;; ----------- How to iterate over the elements of a hash table, or ...
+;;; WHO INVENTED THIS DUMB MACRO ANYWAY?! (Answer: Probably a committee!)
+;;; Symptom: Can't figure out the syntax for looping over a hash table!
+</font>
+
+Assume:
+
+  (setq mytable (make-hash-table))
+  (loop for i from 1 to 10 
+        do (setf (gethash i mytable)
+                 (* i 100)))
+
+So the table looks like:
+
+   Key    Value
+   ---    -----
+    1      100
+    2      200
+      ...
+   10     1000
+
+Believe it or not, here how you would loop over it:
+
+  >> (loop for kkk being the hash-keys of table
+           using (hash-value vvv)
+           collect (list kkk vvv))
+
+  :: ((7 700) (1 100) (8 800) (2 200) (9 900) (3 300) (10 1000) (4 400)
+      (5 500) (6 600))
+
+</pre>
+
+(Notice that the result order is arbitrary.)
+<p>
+Got that?!
+<p>
+For less obscure ways of iterating over hash tables see the Lisp function
+MAPHASH and the BioLingua functions LMAPHASH, LMAPHASHNN, and 
+MAPFUNC-OVER-HASHTABLE.
+
+</body>
+</html>
+
+<b>[OPTIONAL SECTION!] Some totally confusing things about strings:</b>
+
+<p>
+
+There are some very confusing things that are worth knowing about
+strings.  You don't have to study this section now, but you should be
+aware that it's here; Maybe skim it once without trying to understand
+it, so that when you run into these you'll say to yourself: "Oh, yeah,
+there was that optional section on totally confusing things about
+strings, maybe I should go back and look at that again in more
+detail."  It probably won't help, but on the off chance that it
+will, here we go anyhow.
+
+<p>
+
+First off, there's another datatype called a char (or character).
+Strings are made up of characters (duh!).  You can actually type a
+single character by typing, for example for the character 'c': #\c
+Here's a list of several characters:
+
+<pre>
+ '(#\a #\space #\l #\i #\s #\t #\?)
+</pre>
+
+Notice that #\space is a single cahracter (a single space); Some
+characters are written out like that.  Just to prove the point that
+strings are made up of characters, we'll use the AREF function, which
+gets things out of an array to get some of the characters out of the
+array that is a string:
+
+<pre>
+  >> (setf my-string "this is an array of chars")
+  :: "this is an array of chars"
+  >> (aref my-string 4)
+  :: #\Space
+  >> (setf (aref my-string 4) #\-)
+  :: #\-
+  >> my-string
+  "this-is an array of chars"
+</pre>
+
+Woah! What was that last thing!?  We used SETF on an expression
+instead of on a symbol!  Actually SETF works that way -- it's sort of
+of magical.  Pretty much any simple expression that accesses something
+(like AREF accesses the elements of an array) can be SETF'ed to change
+the thing they access. Above we accessed the 5th element of the array
+my-string, and then used SETF to change it!
+
+<p>
+
+Okay, with all that in mind, on to the confusing part:
+
+<p>
+
+The backslash is Lisp's escape character.  That is, if you want to put
+a double quote into a string, you can't just type: "this string has a
+" in it" because the quote in the middle will terminate the string and
+totally confuse Lisp (not to mention you and me!)  So you have to
+type: "this string has a \" in it" 
+
+<p>
+
+(Note that in typing strings you don't have to type the # ... that's
+just to denote a single character as its own value.  You use the '#\'
+notation to represent characters OUTSIDE of strings.  The #\ notation
+is not recognized INSIDE of double quotes. So "#\a" is a string
+consisting of two character, pound sign and the letter 'a'. Whereas
+#\a is the single character object, the letter a. )
+
+<p>
+
+You can quote any character, so the string: "abc" has exactly the same
+characters as the string: "\a\b\c".  So if you have a string with a
+double quote in it, as above, you have to type it in with a \ and
+it'll appear with a \ when it's printed out:
+
+<pre>
+  >> (setf my-string "this string has a \" in it")
+  :: "this string has a \" in it"
+  >> (aref my-string 18)
+  #\"
+</pre>
+
+Okay, so there's the quote.  Note that it came out as a char, just as
+in the previous example.  
+
+<p>
+
+Now, what if you waht to put a backslash INTO a string?  To put a
+backslash in a string you have to escape the escape character:
+
+<pre>
+  >> "\\a\\\\b"
+</pre>
+
+That's a string with five characters, a backslash, an 'a', two more
+backslashes, and a 'b'.  The char: #\\ is the single character
+backslash (as opposed to a string with a single backslash character,
+"\\".
+
+<p>
+
+Things can get really confusing when you are creating regular expression
+strings, because a regular expression has its own syntax, which includes using
+escape characters.  So you end up putting in 18 billion backslashes into the
+Lisp string that defines the regular expression.  Here's a relatively 
+simple example:
+
+<pre>
+(defvar *dollars-and-cents-pattern*
+   (ppcre:create-scanner
+    (one-string
+     ;; Either '$', or '+' or '-' followed by '$' or vice versa
+     "((\\$)|((\\+|\\-)\\$)|(\\$(\\+|\\-)))"
+     ;; Followed by any number of digits, at least 1
+     "([0-9]+)"
+     ;; followed either by the end of the string,
+     ;; or a period and the end of the string,
+     ;; or a period followed by exactly two digits
+     "((\\z)|(\\.\\z)|(\\.[0-9][0-9]\\z))"
+     )))
+</pre>
+
+To create a string with a Tab character in it you need to do something like
+
+<pre>
+  >> (one-string "abc" #\Tab "def")
+
+Or:
+
+  >> (concatenate 'string "abc" (string #\Tab) "def")
+</pre>
+
+
+<p><hr>
+<p align="right">Copyright (c) 2002-2005 by The BioBike Team (contact <a
+href="mailto:BioLangSupport@lists.stanford.edu">BioLangSupport@lists.stanford.edu</a> for more information)</p>
+</p>

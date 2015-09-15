@@ -1,0 +1,326 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<html><head><title>Using BioLingua to Manipulate Microarray data</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Using BioLingua to Manipulate Microarray data</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003 by <a
+href="http://aracyc.stanford.edu/~jshrager/personal/index.html">Jeff
+Shrager</a> and JP Massar</p>
+
+<p> Microarray data is typically stored in tab-delimited ascii files.
+Data is stored one entry per row, and the tabs separate the columns
+(or fields) of each entry.  (Often a field will contain text which has
+spaces in it, so using tabs makes sense.)  On a line above the actual
+data rows, a line naming the fields (again tab-delimited), must be
+provided.
+
+<p>
+These files are more generally referred to as tables.  Here are two
+example tables, the first of microarray data and the second a more
+complicated looking one of a different genre.  Note that the lines
+with dashes are NOT part of the actual file.
+
+<pre>
+----------- START OF FIRST TABLE ---------------------------------------------
+
+geneID 	15	 60 	360 	900
+ssr3571	0.97	1.05	0.96	0.92
+ssr3570	0.99	1.11	0.91	0.96
+ssr3532	1.46	1.15	1.21	0.88
+ssr3467	1.08	1.51	0.98	0.84
+ssr3465	0.51	0.76	1.16	0.70
+ssr3451	0.80	1.01	1.12	0.94
+----------- END OF FIRST TABLE -----------------------------------------------
+----------- START OF SECOND TABLE --------------------------------------------
+
+;;; This is a totally useless comment.
+
+CODE	NAME	SSN	LEVEL0	LEVEL1	LEVEL2	LEVEL3	R1	R2
+
+What is Barney's wife's name, anyway?
+NAME and SSN will be KEY fields.
+
+a	Fred	62-055	1.0	2.0	-3.0	50.0e-2	23	the big man
+v	Wilma	37-999	2.05	3.0		0.50	24	his wife
+c	Barney	12-171	3.0	4.0	5.0	0	89	his friend
+d	Dino	37-999	11.0	21.0	31.0	0.005e2	10	his dog
+------------ END OF SECOND TABLE ---------------------------------------------
+
+</pre>
+
+In this tutorial we're only going to deal with the former kind of
+table.  If you would like to learn how to read in and manipulate
+tables of a more general sort like the latter table, see the documentation
+entry entitled 'Table Reading Tools' under the 'More Advanced Materials'
+section.
+
+<p> Let's read in our simple, sample microarray data from above.
+There are six data rows, and the names of the columns in our
+microarray data table are "geneID", "15", "60", "360" and "900".
+
+<pre>
+ >> (setq syn6803 (load-organism "syn6803"))
+ >> (setq my-table (read-microarray-table "biol:data;hihara-sample.tbl"
+                                          :organism syn6803))
+#&lt;COMMON-LISP-USER::TABLE-DATA 206146F4&gt
+</pre>
+
+And now let's describe it:
+
+<pre>
+BIOLISP 11 > (describe-table-data my-table :nrows 2)
+
+;; Description of table object from file biol:data;hihara-sample.tbl:
+
+;;   Table has 5 fields, with names:
+;;     Column  1: geneID
+;;     Column  2: 15
+;;     Column  3: 60
+;;     Column  4: 360
+;;     Column  5: 900
+
+;;   There are 4 data columns and 1 other columns.
+;;     The data columns are: (1 2 3 4).
+;;     The other columns are: (0).
+;;   Table has 1 key field, in column (0):
+;;     Key  1: geneID (in column 0)
+
+;;   There are 6 rows of data in the table.
+
+;;   Table data is of uniform type SINGLE-FLOAT.
+;;   There are no missing data values in this table.
+
+;; The first 2 rows of the table:
+
+#(#$S6803.ssr3571 0.97 1.05 0.96 0.92) 
+#(#$S6803.ssr3570 0.99 1.11 0.91 0.96) 
+NIL
+</pre> 
+
+<p> 
+It looks like the description is consistent with our table,
+so all is well.  The notation '#(' means that the set of things that
+follows is being stored in a one-dimensional array (aka a vector).
+When more than one datum is retrieved from a table it is usually
+returned as a vector.  The notation '#$' indicates a FRAME, as we've
+previously learned.
+
+<p> READ-MICROARRAY-TABLE reads in a table in this particular format
+and no other: The first column is the gene name, and the rest of the
+columns are floating point values.  The gene name is turned into a
+FRAME (see the FRAMES tutorial or the introductory tutorial for more
+discussion about frames), and the frame representing the gene is a KEY
+value for this table.  Being a key value means that you can ask for
+the data associated with that KEY by using the KEY, instead of using
+the row number the data is to be found at.  Let's see this in action:
+
+<pre>
+ >> (table-data-data-row my-table 1)
+#(0.99 1.11 0.91 0.96)
+
+ >> (table-data-data-row my-table #$S6803.ssr3570)
+#(0.99 1.11 0.91 0.96)
+</pre>
+
+Indeed, we get the data for row 1 back whether we ask for it by row number
+or by KEY.  
+
+<p> As you might expect, you can extract a single datum from the
+table, a single row (as we just did), a single column, or multiple
+rows or multiple columns.
+
+<pre>
+ >> (table-data-element my-table #$S6803.ssr3570 "360")
+0.91
+
+ >> (table-data-col my-table "60")
+#(1.05 1.11 1.15 1.51 0.76 1.01)
+
+ >> (table-data-data-rows my-table (list #$S6803.ssr3570 4))
+(#(0.99 1.11 0.91 0.96) #(0.51 0.76 1.16 0.7))
+
+ >> (table-data-cols my-table (list "geneID" "15"))
+(#(#$S6803.ssr3571 #$S6803.ssr3570 #$S6803.ssr3532 #$S6803.ssr3467 #$S6803.ssr3465 #$S6803.ssr3451)
+ #(0.97 0.99 1.46 1.08 0.51 0.8))
+
+</pre>
+
+<p>
+A more general function to extract information from a table is called
+TABLE-DATA-SELECT.  The more general something is, often the more complicated
+its description, and TABLE-DATA-SELECT is no exception.  But here is a
+fairly simple example which extracts the rows of table whose first two
+data values both exceed 1.0.
+
+<pre>
+
+ >>  (table-data-select
+       my-table
+       #'(lambda (v) (and (> (aref v 0) 1.0) (> (aref v 1) 1.0)))
+      :return :entire-record)
+
+(#(#$S6803.ssr3532 1.46 1.15 1.21 0.88) #(#$S6803.ssr3467 1.08 1.51 0.98 0.84))
+
+</pre>
+
+<p>
+
+(The "#'(lambda" notation is simply a way of defining a function
+within an expression without having to bother giving it a name.
+In this case the function being defined is given the data vector
+for each row and tests whether the first and second elements of
+that data vector are both greater than 1.0.)
+
+<p>
+
+There are numerous other functions which extract data, create
+subtables, and access information about a table (such as the number of
+rows it has).  Descriptions of all these functions can be found in the
+detailed documentation for the table data facility.
+
+<p>
+
+Now that we can get data into tables, and get rows etc. out of these
+tables, let's do something interesting with them.  The simplest thing
+to do is to plot the data in the table.  There are a number of "smart"
+plotting functions in BioLingua that try to figure out how to plot
+data in a variety of formats. Let's try some simple plotting:
+
+<p>
+<pre>
+  >> (line-plot '((numbers 1.141 2.718 3.141)))
+</pre>
+<p>
+
+If this works right, you should get a nice plot of the numbers, with
+the label "numbers" in a legend.  How about a few lists of numbers:
+
+<p>
+<pre>
+  >> (line-plot '((n1 1.141 2.718 3.141) (n2 7 3 1)))
+</pre>
+<p>
+
+Okay, that was easy.  Here's a variation that we'll use in a little
+while:
+
+<p>
+<pre>
+  >> (line-plot '((1.141 2.718 3.141) (7 3 1)) :labels '(n1 n2))
+</pre>
+<p>
+
+That should come out just the same, but note that we gave the labels
+as a keyword argument instead of the labels being the first thing in
+each sublist.
+
+<p>
+
+Line-plot can conveniently display the data that you get out of
+tables, too.  Remember this:
+
+<p>
+<pre>
+ >> (table-data-data-rows my-table (list #$S6803.ssr3570 4))
+ :: (#(0.99 1.11 0.91 0.96) #(0.51 0.76 1.16 0.7))
+</pre>
+<p>
+
+Do that again, and then try:
+
+<p>
+<pre>
+ >> (line-plot * :labels (list #$S6803.ssr3570 4))
+</pre>
+<p>
+
+Let's put that together into a function. (Enter this into the
+expression box and then press EVAL.)
+
+<p>
+<pre>
+(defun plot-table-rows (rows)
+ (line-plot (table-data-data-rows my-table rows)
+            :labels rows))
+</pre>
+<p>
+
+Now try:
+
+<p>
+<pre>
+  >> (plot-table-rows (list #$S6803.ssr3570 4))
+</pre>
+<p>
+
+By the way, notice that you can click on the graphs to download them
+(right click and "Save picture as..."), or, if you just left click on
+them you get the data itself!
+
+<p>
+
+Let's try something a little more complex.  Remember this:
+
+<p>
+<pre>
+
+  >>  (table-data-select
+        my-table
+        #'(lambda (v) (and (> (aref v 0) 1.0) (> (aref v 1) 1.0)))
+        :return :entire-record)
+
+  :: (#(#$S6803.ssr3532 1.46 1.15 1.21 0.88) #(#$S6803.ssr3467 1.08 1.51 0.98 0.84))
+
+Let's just try plotting these results:
+
+  >> (line-plot *)
+
+</pre>
+<p>
+
+Line-plot figured out that since you didn't give labels, you intended
+the gene ids as the labels. This kind of smarts can be a little
+confusing if you forget to put the labels.  Watch:
+
+<p>
+<pre>
+  >> (line-plot '((1 3 2 4 5) (6 4 5 3 2)))
+</pre>
+<p>
+
+Notice that we lost the first number in each list, and it was used as
+the label.  You probably meant something like this:
+
+<p>
+<pre>
+  >> (line-plot '((1 3 2 4 5) (6 4 5 3 2)) :labels '(first second))
+</pre>
+<p>
+

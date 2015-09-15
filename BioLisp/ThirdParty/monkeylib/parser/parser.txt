@@ -1,0 +1,310 @@
+When a lexer matches a character, string, or production call, if
+the string literal (one character long for a char match) or
+production name is one of the lexer's tokens, then we make a new
+token object out of the match. If it was a production call that
+specifically returned something (i.e. uses a ^-grammar) then that's
+the value of the token. Otherwise, we use whatever matched. This
+allows things like:
+
+  (defprod number (d)
+    (+ (^ (@ digit (setq d (digit-char-p digit)))
+          (+ (* 10 (or number 0)) d))))
+
+to be used as a token which will return a token object with a number
+rather than a string in its value slot.
+
+---
+
+In a token-based grammar, a symbol can either be a production call or
+an attempt to match a token of that type. We can either make the
+distinction when we compile the grammar or we can treat them both as
+production-call-grammars and then generate different code depending on
+whether they're tokens or actual productions. (Hmmm, since a token
+match isn't a production that needs to have a function generated, we
+probably want to do it at grammar compile time.)
+
+In either case, we need to know at some point whether a given symbol
+names a production or a token. But if we want reuse the symbol that
+names the production from whatever parser generated the token in the
+first place it has to be a function of the parser; we have to list
+what tokens it expects to match. Or make new syntax for that.
+
+
+
+
+---
+
+
+
+
+By default, the parser doesn't capture anything. It just parses the
+string and returns (values t nil) if it parses correctly and (values
+nil nil) if it doesn't. If you want the parser function to return
+something in the secondary return value you need to include some
+^-expression in the parser grammar. 
+
+(defparser p (^ foo))
+
+  whatever value foo is set to or the string foo matched.
+
+(defparser p (^ (foo bar))
+
+  A list of the value or string of foo and bar.
+
+
+(^ grammar) => the value of grammar or the string it matched.
+
+(^ symbol)         => symbol or match-string
+(^ #\c)            => single character string
+(^ "string")       => "string"
+(^ (g1 g2 ... gn)) => (list (^ g1) (^ g2) ... (^ gn))
+(^ (* grammar))    => (list of each match of (^ grammar))
+(^ 
+
+
+(^ foo) -- depends on foo. If foo doesn't contain any ^ values then
+the value of this expression is simply the string matched by foo.
+However if foo uses ^ to set its own value then (^ foo) returns that
+value. 
+
+ (let ((start current-index))
+   (foo)
+   (setq this-production (or foo (substring s start current-index))))
+
+(defprod foo "abc")
+(defprod foo (^ "abc" (upper-case last-match)))
+
+
+
+chartype prods: can save last character without consing
+prods that match a single string: can save the string into the prod var
+prods that match a complex grammar: Silly to save the string, 
+
+
+Option one: every grammar sets last-match to something on a successful
+match. Productions further set their corresponding variable to what
+they matched. The last-match of a char or chartype is a
+single-character string. The last-match of a string is the string. And
+the default
+
+Option two: an un-annotated grammar (no ^'s) returns (values t nil) on
+a successful parse. In order to make the second return value be
+non-nil you need to add some ^'s around something in the top-level
+grammar. 
+
+
+
+Default behavior for a parser is to return t or nil as it's primary
+value and any saved values as its secondary value. 
+
+
+SYNTAX:
+
+grammar       := symbol        /
+                 character     /
+                 string        /
+                 sequence      /
+                 *-expression  /
+                 1*-expression /
+                 ?-expression  /
+                 /-expression  /
+                 &-expression  /
+                 ~-expression  /
+                 lisp-escape  /
+                 value-caupture
+
+grammars      := grammar / grammar grammars
+
+sequence      := (grammars)
+
+*-expression  := (* grammars)
+
+1*-expression := (1* grammars)
+
+?-expression  := (? grammars)
+
+/-expression  := (/ grammars)
+
+&-expression  := (& grammars)
+
+~-expression  := (~ grammar)
+
+lisp-escape  := !lisp-form
+
+value-caupture  := (^ grammar [lisp-form])
+
+
+SYMANTICS:
+
+symbol ...... Match a named production. After a successful match the variable
+              of the same name holds the value of the match.
+
+sequence .... Matches if each expression matches in turn. The natural
+              value of a sequence is a list of all the values of the
+              expressions.
+
+*-expression  Zero or more matches of a sequence of expressions. The
+              natural value of is the concatenation of the matched
+              values. If the expression matches at least once we
+              choose the type of concatenation based on the type of
+              the first matched value: if it's a string or a character
+              we concatenate with 'string, otherwise we use 'list. If
+              we match zero times we return an empty list unless ...
+              is a simple call to a chartype production in which case
+              we return an empty string.
+
+1*-expression One or more matches of a a sequence of expressions. The
+              natural value of a 1*-expression is the same as the
+              value of a *-expression where at least one match
+              occured.
+
+?-expression  Zero or one matches of an expression. The natural value
+              is the natural value of expression.
+
+/-expression  Matches if any of the expressions match, starting from the 
+              same position. The natural value is the value of the
+              first matching expression.
+
+&-expression  Matches if all of the expressions match, starting from the 
+              same position. The natural value is the value of the
+              first matching expression. Mostly (only?) used where one
+              of the alternatives is a ~-expression. For
+              example (& char (~ crlf)) would match any char as long
+              as it wasn't the beginning of a crlf expression.
+
+~-expression   Matches if expression doesn't match. The natural value is
+               nil (and should never really be used.)
+
+lisp-escape    Matches if the following lisp form evaluates to true. The
+               natural value is the evaluation of the form. The form
+               is evaluated in a context where the name of the
+               production is bound to a symbol macro referencing the
+               current value of the production.
+
+value-caupture Matches if expression matches. Then sets the value of the
+               enclosing production to the value of the lisp-form (if
+               there is one) or the expression (if there isn't). The
+               optional lisp form is evaluated with a symbol macro of
+               the productions name bound to the current value of this
+               this production so it can be used to build up a value.
+               For instance in a production 'number' you might use
+               this expression to accumulate the numeric value while
+               matching individual digits:
+
+                 (1* (^ digit (+ (* 10 (or number 0)) (atoi digit)))))
+
+
+
+atomic grammars         : char, string, chartype, prod
+composite grammars      : ?, *, 1*, &, /, ~, lisp-escape sequence
+takes implicit sequence : ?, *, 1*, ~
+
+(^ #\b)           => string
+(^ "foo")         => string
+(^ chartype)      => string
+(^ prod)          => prod variable
+(e1 ... en)       => list ((^ e1) ... (^ en))
+
+(^ (? #\b))       => string or nil
+(^ (? "foo"))     => string or nil
+(^ (? chartype))  => string or nil
+(^ (? prod))      => prod variable or nil
+(^ (? ...))       => list or nil
+
+(^ (* #\b))       => string or ""
+(^ (* "foo"))     => string or ""
+(^ (* chartype))  => string or ""
+(^ (* prod))      => list or nil
+(^ (* ...))       => list (concatenation of lists)
+
+(^ (1* #\b))      => string
+(^ (1* "foo"))    => string
+(^ (1* chartype)) => string
+(^ (1* prod))     => list
+(^ (1* ...))      => list (concatenation of lists)
+
+(^ (& ...))       => (^ x) where x is first element
+(^ (/ ...))       => (^ x) where x is matching element
+
+(^ (~ anything))  => nil
+
+
+(^ foo)                => if foo matches, make it's value the value of
+                          the enclosing production or grammar.
+
+(^ (@ foo) (frob foo)) => if foo matches, bind it's value to a
+                          variable of the same name, and make the
+                          result of (frob foo) the value of the
+                          enclosing production or grammar.
+
+(^ (@ foo f) (frob f)) => if foo matches, bind it's value to a
+                          variable named 'f', and make the result of
+                          (frob f) the value of the enclosing
+                          production or grammar.
+
+(^ (@ (/ a b)) (frob a-or-b)) => INVALID
+
+(^ (@ (/ a b) a-or-b) (frob a-or-b))
+
+(% white-space) => match whitespace end set last-match to nil.
+
+
+(^ foo (some-lisp foo)) =>
+
+^ sets the value of the enclosing production. The first time it is
+used in a production
+
+(let ((start index))
+  (or
+    (and (foo)
+      (let ((foo (or foo (substring start))))
+        (some-lisp foo)
+        t)
+    (rollback start)))
+
+(^ (foo bar) (some-lisp foo bar))
+
+(defprod prod (^ (* foo)))
+
+(flet ((prod ()
+         (let ((start index) (result nil))
+           (and
+             (or 
+               (not (do () (not (and (foo) (progn (push foo result) t)))))
+      (rollback start))
+    (setq production-name result)))
+
+
+
+(foo (^ !(some-function)))
+
+(defprod number ()
+  (1* (^ (digit) (+ (* 10 (or number 0)) (atoi digit)))))
+
+(let ((start index) (result nil))
+  (or (and 
+       (symbol-macrolet ((number result))
+         (and 
+          (and (digit) (+ (* 10 (or number 0)) (atoi digit)))
+          (not
+           (do () (not
+                   (and (digit) (+ (* 10 (or number 0)) (atoi digit))))))))
+       (progn (setq number result) t))
+      (rollback start)))
+
+
+
+(defprod number () (^ (1* digit) (parse-integer match-text)))
+
+(let ((start index) (result nil))
+  (or (symbol-macrolet ((text (subseq s start index)))
+        (and
+          (and (digit) (not (do () (not (and (digit)))))))
+          (progn (setq number (parse-integer match-text)
+
+(let ((start index))
+  (or
+    (symbol-macrolet ((match-text (subseq s start index)))
+      (when (and (digit) (not (do () (not (digit)))))
+        (setq number (parse-integer match-text)))
+    (rollback start)

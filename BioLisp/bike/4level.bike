@@ -1,0 +1,1646 @@
+ ;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE bbi)
+
+;;; Some of the code that used to be in this file is now in 
+;;; level-4-aux.lisp -- JP
+
+; ============ INTERNAL FUNCTIONS ===========
+(DEFUN Display-sequence (sequences &KEY (line-length 50) (segment-length 10)
+                                   (start 1) no-coords double-stranded)
+  ;; Original by James Mastros
+
+  (unless (null *output-lines-limit*) 
+
+    (LET* ((longest-name 
+            (reduce 'MAX (MAPCAR 'LENGTH 
+                                 (MAPCAR 'FIRST sequences))))
+           (true-line-length
+            (+ line-length (FLOOR (/ line-length segment-length))))
+           (number-of-sequences (LENGTH sequences))
+           (coord (MAKE-LIST number-of-sequences 
+                             :INITIAL-ELEMENT (- start 1)))
+		   (prev-coord (MAKE-LIST number-of-sequences 
+                             :INITIAL-ELEMENT (- start 1)))
+		   (coord-format (JOIN {"~" (STRING-OF longest-name)  "F ~5D "} ))
+           (names NIL)
+           (max-characters (* *output-lines-limit* line-length))
+           (processed-sequences
+            (LOOP FOR (name pre-sequence) IN sequences
+                  AS seq-len = (MIN (LENGTH pre-sequence) max-characters)
+                  AS sequence = pre-sequence[1 -> seq-len]
+                  AS gapped-subsequences
+                  = (BB-BREAK-STRING sequence segment-length T)
+                  AS gapped-sequence 
+                  = (JOIN gapped-subsequences BY " ")
+                  AS processed-sequence 
+                  = (BB-BREAK-STRING gapped-sequence true-line-length T)
+                  DO (PUSH name names)
+                  COLLECT processed-sequence))
+           (line-packets (TRANSPOSE-LIST processed-sequences))
+           (lines-printed 0)
+           (number-of-strands (IF double-stranded 2 1))
+           )
+      (SETF names (REVERSE names))
+
+      (LOOP FOR line-packet in line-packets
+            UNTIL (> lines-printed *output-lines-limit*)
+            DO (LOOP FOR segment IN line-packet
+                     FOR line FROM 1
+                     FOR name IN names
+                     AS hyphen-count = (COUNT #\- segment)
+                     AS left-coord = coord[line]
+                     AS coord-increment = (- line-length hyphen-count)
+                     DO (IF-TRUE (> coord-increment 0)
+                            THEN (INCF left-coord)
+						         (IF-TRUE (AND (< prev-coord[line] 0)
+						                       (>= coord[line] -1))
+							         THEN (INCF coord[line])
+							              (INCF left-coord))
+                     	         (SETF prev-coord[line] coord[line])
+                                 (INCF coord[line] coord-increment))
+                        (LOOP FOR strand FROM 1 TO number-of-strands
+                              AS to-print = 
+                                 (IF (= strand 1)
+                                     segment
+                                     (REVERSE (INVERSION-OF segment)))
+                              DO (FORMAT T "~&")
+                                 (INCF lines-printed)
+                                 (IF (NOT no-coords)
+                                     (FORMAT T coord-format name left-coord))
+                                 (FORMAT T "~A " to-print)
+                                 (IF (= strand 2) (FORMAT T "~& "))
+                              )
+                     )
+            (IF-TRUE (> number-of-sequences 1)
+                     THEN (PRINC *newline*)
+                     (PRINC *newline*)
+                     (INCF lines-printed 2))))
+    ))
+
+
+
+; ============= ALIGNMENT-OF ====================
+
+(DEFINE-FUNCTION Alignment-of
+   SUMMARY "Aligns given sequences (using Clustal)"
+   REQUIRED sequence-list
+     TYPE sequence-list = List
+   KEYWORD line-length = 50
+     TYPE line-length = (OR NULL Nonnegative-Number)
+   KEYWORD group-length = 10
+     TYPE group-length = (OR NULL Nonnegative-Number) 
+   KEYWORD gap-open-penalty = 10
+   KEYWORD gap-extension-penalty = 0.2
+     TYPE (gap-open-penalty gap-extension-penalty) = Nonnegative-number
+   FLAG remove-duplicates
+   FLAG no-consensus
+   FLAG (no-return no-display colored)
+   FLAG label-with-organism
+   FLAG label-with-nickname
+   FLAG no-gapped-columns
+   BODY
+     (ERROR-IF-MORE-THAN-ONE label-with-organism label-with-nickname)
+     (SETF line-length
+	    (COND
+		   ((NOT line-length) *big-number*)
+		   ((= line-length 0) *big-number*)
+		   (T (CONVERT line-length TO Integer))))
+     (SETF group-length
+	    (COND
+		   ((NOT group-length) *big-number*)
+		   ((= group-length 0) *big-number*)
+		   (T (CONVERT group-length TO Integer))))
+     (alignment-of-aux
+        sequence-list line-length group-length
+        remove-duplicates no-consensus 
+        no-return no-display colored label-with-organism
+        label-with-nickname
+        gap-open-penalty gap-extension-penalty
+        :NO-GAPPED-COLUMNS no-gapped-columns)
+   )
+
+
+; ============= COUNT-OF COUNTS-OF ====================
+
+(DEFINE-FUNCTION (Counts-of Counts-of-each Count-of-each)
+                 SUMMARY "Returns the number of times the query or queries appear in the target or targets"
+                 REQUIRED ((EACH) (NOT) query)
+                 KEYWORD in = *unprovided-string*
+                 TYPE in = (OR String list Gene Protein Contiguous-sequence
+                               Organism Labeled-sequence) ; Table)
+                 CONVERT in FROM Labeled-sequence TO String
+                 KEYWORD (in-each in-each-of) = NIL
+                 TYPE in-each = (OR List Organism)
+                 FLAG case-sensitive
+                 FLAG case-insensitive
+                 FLAG both-strands
+                 FLAG labeled
+                 RETURN (OR Nonnegative-number list)
+                 PUBLIC
+                 BODY
+                 (counts-of-aux 
+                  each not query in in-each case-sensitive 
+                  case-insensitive both-strands labeled)
+                 )
+
+; -----------------------------------------------
+(DEFINE-FUNCTION Count-of
+  SUMMARY "Returns the number of times the query appears in the target"
+  REQUIRED ((EACH) (NOT) query)
+  KEYWORD in = *unprovided-string*
+  KEYWORD (in-each in-each-of) = NIL
+    TYPE (in in-each) = (OR String List Gene Protein Contiguous-sequence
+                            Organism Labeled-sequence) ; Table)
+    CONVERT in FROM Labeled-sequence TO String
+ ;  CONVERT (in in-each) FROM Table TO Simple-List
+  FLAG case-sensitive
+  FLAG case-insensitive
+  FLAG both-strands
+  FLAG labeled
+  RETURN (OR List Nonnegative-number)
+  PUBLIC
+  BODY
+   (ERROR-IF-MORE-THAN-ONE in in-each)
+   (IF (AND each (NOT (LISTP query)))
+       (ERR+   problem "~A is not a valid type of argument."
+               indent  "The EACH option must be followed by a list of items."
+               advice  "Use a list of items or do not use the EACH option."
+               help~A
+               format-args
+               query *df-name*)
+     )
+   (COND
+      (in-each
+         (IF (NOT (LISTP in-each))
+             (ERR+ problem "~A is not a valid type of argument."
+                   advice  "The IN-EACH keyword requires a list of items."
+                   help~A
+                   format-args in-each *df-name*)
+           )
+         (LOOP FOR given-target IN in-each
+               AS target = (IF (TYPEP given-target 'Labeled-sequence)
+                               (LABELED-SEQUENCE-SEQUENCE given-target)
+                               given-target)
+
+               COLLECT (COUNT-OF-AUX query each not target
+                          case-sensitive case-insensitive :BOTH-STRANDS both-strands)))
+      ((AND each (NOT in-each) (UNPROVIDED in))
+         (LOOP FOR item IN query
+               COLLECT (COUNT-OF-AUX item NIL not in
+                          case-sensitive case-insensitive :LABELED labeled
+                          :BOTH-STRANDS both-strands)))
+      (T (COUNT-OF-AUX query each not (OR in-each in)  
+                       case-sensitive case-insensitive :BOTH-STRANDS both-strands))))
+
+; ========= BACKGROUND-FREQUENCIES-OF ===========
+
+(DEFINE-FUNCTION Background-frequencies-of-new
+   REQUIRED (sequence-source (DNA protein))
+     TYPE sequence-source = (OR Organism Contiguous-sequence String List)
+   PUBLIC
+   INITIALIZE DNA? = (OR DNA (NOT Protein))
+   INITIALIZE alphabet = (if DNA? *nucleotides* *amino-acids*)
+   INITIALIZE sequence-set =
+   (mapcan (lambda (s) (to-pssm-sequence s dna?)) (ensure-list sequence-source))
+   INITIALIZE bg-counts = (frequency-count alphabet sequence-set)
+      ; Fails because FREQUENCY-COUNT requires list of characters, not strings
+      ; When I changed *nucleotides* to characters, didn't run faster than old version
+      ; Old version takes ~0.7 sec on A7120
+   INITIALIZE total = (reduce '+ bg-counts :key 'biolisp::second :initial-value 0)
+   BODY
+   (LOOP FOR datum IN bg-counts do 
+         (setf (biolisp::second datum) (float (/ (biolisp::second datum) total)))
+         finally (return bg-counts)
+         ))
+
+(DEFINE-FUNCTION Background-frequencies-of
+   REQUIRED (sequence-source (DNA protein))
+     TYPE sequence-source = (OR Organism Contiguous-sequence String List)
+     CONVERT sequence-source FROM Labeled-Sequence to String
+   ; NEED backdoor to allow internal functions to specify type
+   ; CHANGE use in many many places, then change both-strands to one-strand
+   ;         so default is both
+   PUBLIC
+ ;  FLAG one-strand
+   FLAG both-strands
+   FLAG as-table
+   BODY
+   (LET ((bg
+           (forward-funcall 
+            'background-frequencies-of-aux
+     ;       sequence-source dna protein (NOT one-strand)))
+             sequence-source dna protein both-strands))
+         )
+     (IF as-table
+         (LET ((table (NEW-TABLE '(("A" "C" "G" "T")))))
+                 (SETF table["A"] (FIRST bg))
+                 (SETF table["C"] (SECOND bg))
+                 (SETF table["G"] (THIRD bg))
+                 (SETF table["T"] (FOURTH bg))
+            table)
+         bg)
+              
+ ) )
+
+;===================== DISPLAY ====================
+
+(DEFUN Display (entity &REST arguments)
+ "Display given text to screen, with optional formatting
+  (DISPLAY item1 item2 item3 ...)
+ "     
+  (LOOP FOR item IN (APPEND (LIST entity) arguments)
+        DO (FORMAT T "~A" item)))
+
+;===================== DISPLAY-LINE ====================
+
+(DEFUN Display-line (&REST item-list)
+ "(DISPLAY-LINE items-to-print)
+  - Displays items on screen on same line, ending by a line-feed
+  - Put in tabs between items with *tab*
+  - Move to new line between items with *newline*
+  - No need to put *newline* at end of item-list
+  - If you DON'T want to go to new line at end of item-list,
+      use DISPLAY instead
+  - EXAMPLES
+      (DISPLAY-LINE 1 *tab* 2)
+      (DISPLAY-LINE \"Header \" n *tab* \"Header \" (+ n 1))
+ "
+      (LOOP FOR item IN (ENSURE-LIST item-list)
+            DO (FORMAT T "~A" item))
+    (FORMAT T "~%")
+    NIL)
+
+;; ========== DISPLAY-LIST ==============
+  
+(DEFINE-FUNCTION Display-list
+  SUMMARY "Displays a list, automatically inserting tabs"
+  REQUIRED ((EACH THE-ENTITY) list)
+  KEYWORD alignment
+     TYPE alignment = List
+  KEYWORD columns-of-length 
+     TYPE columns-of-length = (OR Positive-number list)
+  KEYWORD labels
+     TYPE labels = List
+  KEYWORD padding = 3
+     TYPE padding = Nonnegative-number
+  FLAG %%expandable%%
+  FLAG Flush-left
+  FLAG Centered
+  FLAG Flush-right
+  INITIALIZE each-value =
+      (COND (each 'each)(the-entity 'the-entity))
+  BODY
+    (ERROR-IF-MORE-THAN-ONE (LIST centered flush-right flush-left))
+    (IF (AND (LISTP list)
+             (NOT the-entity)
+             (ALL-TRUE (MAPCAR 'LISTP list))
+             (APPLY '= (LENGTHS-OF list)))
+	    (SETF each-value 'EACH))
+   (DISPLAY-LIST-aux
+     each-value list columns-of-length padding alignment 
+     Centered Flush-left Flush-right :LABELS labels)
+  )
+
+; =================== DISPLAY-DATA =================
+
+(DEFMACRO Display-data (&REST data-list)
+ "(DISPLAY-DATA variable1 variable2 ...)
+   - Displays name of variable followed by its value for each variable'
+ "
+   `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	 (PROGN
+       (DISPLAY-LINE "")
+       ,@(LOOP FOR data IN data-list
+               COLLECT `(DISPLAY-LINE ',data *tab* ,data)))))
+
+;===================== DISPLAY-SEQUENCE-OF ==============
+
+(DEFUN Display-sequence-of-aux (sequence-packet line-length segment-length
+           no-coordinates from to fasta &KEY label double-stranded)
+    (IF-TRUE fasta
+        THEN (SETF segment-length line-length)
+             (SETF no-coordinates T)
+             (IF label 
+                 (PRINC (S+ ">" label))
+                 (PRINC (S+ ">" sequence-packet[1][1] " from " from " to " to))))
+    (UNLESS (= (LENGTH sequence-packet[1][2]) 0)
+    (DISPLAY-SEQUENCE sequence-packet 
+        :LINE-LENGTH line-length 
+        :SEGMENT-LENGTH segment-length 
+        :NO-COORDS no-coordinates
+        :START from 
+        :DOUBLE-STRANDED double-stranded)))
+
+
+(DEFINE-FUNCTION (DISPLAY-SEQUENCE-OF DISPLAY-SEQUENCES-OF)
+   SUMMARY "Formats a nucleotide or amino acid sequence (or any text)"
+   REQUIRED entity
+     TYPE entity = (OR gene protein contiguous-sequence organism 
+                       labeled-sequence string)
+   KEYWORD From = 1
+     TYPE From = Number
+     CONVERT From FROM Number TO Integer
+   KEYWORD To = *unprovided+*
+     TYPE To = Number
+     CONVERT To FROM Number TO Integer
+   KEYWORD (Line-length Line-size) = 50
+     TYPE Line-length = Positive-Number
+     CONVERT Line-length FROM Number TO Integer
+   KEYWORD (Segment-length Segment-size) = 10
+     TYPE Segment-length = Positive-Number
+     CONVERT Segment-length FROM Number TO Integer
+   FLAG Unsegmented
+   FLAG No-coordinates
+   FLAG No-coords
+   FLAG FastA
+   MAP entity
+   BODY
+   #+really-not-needed
+   ;; -- JP
+   (ERROR-IF-MORE-THAN-ONE no-coordinates no-coords)
+     (SETF no-coordinates (OR no-coordinates no-coords))
+     (IF-TRUE fasta 
+         THEN (SETF unsegmented T)
+              (SETF no-coordinates T))
+     ;; I believe the following function can be boiled
+     ;;   down to (NAME-OF x), since x cannot be a list
+     (FLET ((Set-name (x)
+              (COND
+                 ((AND fasta (STRINGP x) (> (LENGTH x) 10))
+                       (S+ x[1 -> 10] "..."))
+                 ((AND fasta (STRINGP x)) x)
+                 (fasta (NAME-OF x))
+                 (T ""))))
+           
+     (LET* ((name (SET-NAME entity))
+            (from-to-label (BB-JOIN {" from " (BB-STRING-OF from)
+                               " to "
+                               (IF (PROVIDED to)
+                                   (BB-STRING-OF to)
+                                   (BB-JOIN { "end (" (LENGTH-OF entity)
+                                              ")" } )) } ))
+            (to (UNLESS-PROVIDED to (LENGTH-OF entity)))
+            (sequence (SEQUENCE-OF entity FROM from TO to))
+            (segment-length 
+               (IF-TRUE unsegmented
+                   THEN line-length
+                   ELSE segment-length))
+           (sequence-packet {{name sequence}})
+          )
+       (IF-TRUE (LISTP sequence)
+           ;; I believe the THEN clause is unreachable
+           THEN (LOOP FOR seq IN sequence
+                      FOR replicon IN (SLOTV entity #$contiguous-sequences) 
+                      AS replicon-name = (NAME-OF replicon)
+                      AS name = (SET-NAME replicon)
+                      AS sequence-packet = {{name seq}}
+                      DO (DISPLAY-LINE "Sequence-of " replicon-name 
+                           from-to-label *newline*)
+                         (DISPLAY-SEQUENCE-OF-aux sequence-packet
+                             line-length segment-length no-coordinates from to fasta)
+                         (PRINC *newline*)
+                         (PRINC *newline*))
+           ELSE (DISPLAY-LINE "Sequence-of " (NAME-OF entity) from-to-label
+                      *newline*)
+                (DISPLAY-SEQUENCE-OF-aux sequence-packet
+                   line-length segment-length no-coordinates from to fasta))
+       (DISPLAY-LINE *newline* *newline*))))
+
+;===================== DISPLAY-TABLE ==============
+
+(DEFINE-FUNCTION old-Display-table
+  SUMMARY "Displays the formatted contents of a given table"
+  REQUIRED table
+    TYPE table = table
+  KEYWORD columns
+  KEYWORD rows
+  KEYWORD column-width
+  FLAG invert
+  MAP table
+  BODY
+  (LET* ((provisional-rank (GARRAY-RANK table))
+         (rank (IF (> provisional-rank 2)
+                   (ERROR "Table must be one- or two-dimensional")
+                   provisional-rank))   
+         (format-string)
+        )
+
+    (UNLESS columns
+       (SETF columns (IF (= rank 1)
+                         (LABELS-OF table DIMENSION 1)
+                         (LABELS-OF table DIMENSION 2))))
+    (COND
+       ((AND rows (= rank 1))
+          (ERROR "Rows can't be specified unless table is 2-dimensional"))
+       ((NOT rows)
+          (SETF rows (LABELS-OF table DIMENSION 1))))
+
+  (LET ((rows (IF invert columns rows))
+        (columns (IF invert rows columns)))
+   
+  (FLET 
+      ((Print-row (list) 
+         (LET* ((string-list (MAPCAR 'BB-STRING-OF list))
+                (mod-string-list 
+                 (SUBST "--" "<GARRAY-NOT-SET-MARKER>" string-list 
+                        :TEST 'EQUAL))
+                (right-end (MAPCAR (LAMBDA (x) (MIN column-width (LENGTH x)))
+                                   mod-string-list))
+                (truncated-list 
+                 (MAPCAR (LAMBDA (x y) (SUBSEQ x 0 y)) 
+                         mod-string-list right-end)))
+           (FORMAT t format-string truncated-list))))
+        
+    (SETF column-width
+          (OR column-width
+              (LOOP FOR c IN columns 
+                    WITH max-width = (LENGTH (BB-STRING-OF c))
+                    WHEN (= rank 1)
+                    DO (LET ((value (BB-STRING-OF (GREF table c))))
+                         (IF (EQUAL value "<GARRAY-NOT-SET-MARKER")
+                             (SETF value "--"))
+                         (SETF max-width (MAX max-width (LENGTH value))))
+                    WHEN (= rank 2)
+                    DO (LOOP FOR r IN rows
+                             AS value 
+                             = (BB-STRING-OF (IF invert
+                                                 (GREF table c r)
+                                               (GREF table r c)))
+                             AS mod-value 
+                             = (IF (EQUAL value "<GARRAY-NOT-SET-MARKER>")
+                                   "--"
+                                 value)
+                             AS width = (LENGTH mod-value)
+                             WHEN (> width max-width)
+                             DO (SETF max-width width))
+                    FINALLY (RETURN max-width))))
+ 
+    (SETF format-string
+          (CONCATENATE 'STRING "~&~{ ~" (BB-STRING-OF column-width)
+                       "A~} ~%"))
+    (COND ((= rank 1)
+           (IF-TRUE invert
+                    THEN (LOOP FOR lbl IN rows
+                               DO (PRINT-ROW (LIST lbl (REF table lbl))))
+                    ELSE (PRINT-ROW columns)
+                    (PRINT-ROW
+                     (LOOP FOR lbl IN columns
+                           COLLECT (REF table lbl)))))
+          ((= rank 2)
+           (PRINT-ROW (CONS " " columns))
+           (LOOP FOR j IN rows 
+                 DO (PRINT-ROW
+                     (CONS j
+                           (LOOP FOR i IN columns 
+                                 AS value = (IF-TRUE invert 
+                                                     THEN table[i j]
+                                                     ELSE table[j i])
+                                 COLLECT value))))))))))
+
+(define-function display-table
+  summary "Displays the formatted contents of a given table"
+  required table 
+  type table = table
+  keyword name = "Unnamed"
+  keyword starting-row = 1
+  keyword starting-column = 1
+  keyword max-rows = nil
+  keyword max-columns = nil
+  keyword specific-rows = nil
+  keyword specific-columns = nil
+  keyword maximum-column-width = nil
+  keyword maximum-width = wb::*output-chars-per-line-limit*
+  keyword if-not-there? = '-
+  keyword column-widths = nil
+  keyword lines-between-rows = 0
+  keyword space-between-columns = 1
+  keyword alignment = :center
+  flag details?
+  flag invert
+  body 
+  (utils::new-display-garray 
+   table
+   :name name
+   :type "TABLE"
+   :details? details?
+   :starting-row starting-row
+   :starting-column starting-column
+   :max-rows max-rows
+   :max-columns max-columns
+   :specific-rows specific-rows
+   :specific-columns specific-columns
+   :maximum-column-width maximum-column-width
+   :maximum-width maximum-width
+   :if-not-there? if-not-there?
+   :column-widths column-widths
+   :lines-between-rows lines-between-rows
+   :space-between-columns space-between-columns
+   :alignment (keywordize alignment)
+   :mode :vpl
+   :invert? invert
+   )
+  table
+  )
+   
+
+; =============== GC-FRACTION-OF ===================
+
+(DEFINE-FUNCTION GC-fraction-of
+  SUMMARY "Returns fraction of (G+C) nucleotides in given entity"
+  REQUIRED ((EACH) entity)
+    TYPE entity = (OR gene protein organism contiguous-sequence string
+	                  labeled-sequence list)
+    CONVERT entity FROM Protein TO Gene 
+  RETURNS (OR Number List)
+  BODY
+   (IF (AND each (NOT (LISTP entity)))
+       (ERR+   problem "~A is not a valid type of argument."
+               indent  "The EACH option must be followed by a list of items."
+               advice  "Use a list of items or do not use the EACH option."
+               help~A
+               format-args
+               entity *df-name*)
+     )
+   (IF each
+       (LOOP FOR item IN entity
+             COLLECT (GC-FRACTION-OF-aux item))
+       (GC-FRACTION-OF-aux entity))
+)
+
+; =============== MOTIFS-IN ===================
+ 
+#+obsolete
+(DEFINE-FUNCTION Motifs-in
+  SUMMARY "Uses Meme to search for statistically overrepresented sequences within a set of sequences"
+  REQUIRED sequences
+    TYPE sequences = List
+  KEYWORD return = 3
+  KEYWORD width = NIL
+  KEYWORD min-width = NIL
+  KEYWORD max-width = NIL
+    TYPE (return width min-width max-width) = (OR Positive-integer NULL)
+  KEYWORD threshold = NIL
+    TYPE threshold = (OR Number NULL)
+  KEYWORD start-with = NIL
+    TYPE start-with = (OR String NULL)
+  FLAG (DNA protein)
+  FLAG (motif-in-all motif-in-some zoops oops)
+  FLAG display-off
+  FLAG return-table
+  FLAG return-alignments
+  FLAG both-strands
+  FLAG palindromes
+  INITIALIZE meme-min-length = 9
+  INITIALIZE target-type = (OR (AND DNA 'DNA) (AND protein 'PROTEIN))
+  INITIALIZE mode = (IF (OR motif-in-all oops) "oops" "zoops")
+          ; (OR motif-in-some zoops) "zoops")
+  INITIALIZE target-set = (SEQUENCE-LIST-OF sequences :SEQ-TYPE target-type
+                             :MIN-LENGTH meme-min-length)
+  INITIALIZE meme-type = (IF (EQUAL target-type 'DNA) "-dna" "-protein")
+  INITIALIZE web-result = NIL
+  INITIALIZE web-path = NIL
+  BODY
+  (ERROR-IF-MORE-THAN-ONE motif-in-all motif-in-some zoops oops)
+  (ERROR-IF-MORE-THAN-ONE DNA protein)
+  (ERROR-IF-MORE-THAN-ONE width min-width)
+  (ERROR-IF-MORE-THAN-ONE width max-width)
+
+  (FLET 
+      ((Run-meme (html?)
+         (WITH-TEMPORARY-FASTA-FILE 
+             (prefix fapath fafile master-list :safe? T :user-label T) 
+             target-set
+           (LET* ((outpath 
+                   (IF html?
+                       (MERGE-PATHNAMES cl-user::*webtmp-directory* 
+                                        (FORMAT NIL "~A.html" prefix))
+                     (MERGE-PATHNAMES cl-user:*tmp-directory*
+                                      (format nil "~a.out" prefix))))
+                  (meme-command 
+                   (FORMATN 
+                    (one-string
+                     "~ameme -nostatus "
+                     (IF html? "" "-text ")
+                     (IF both-strands "-revcomp " "")
+                     (IF palindromes "-pal " "")
+                     (IF threshold (JOIN "-evt " threshold " ") "")
+                     (IF width (JOIN "-w " width " ") "")
+                     (IF min-width (JOIN "-minw " min-width " ") "")
+                     (IF max-width (JOIN "-maxnw " max-width " ") "")
+                     (IF start-with (JOIN "-cons " start-with " ") "")
+                     "-nmotifs "
+                     "~a -mod ~a ~a ~a > ~a")
+                    cl-user::*meme-executable-dir* 
+                    return mode meme-type fapath outpath)))
+             
+             #+debug
+             (print 
+              (list 'prefix prefix 'fapath fapath 'fafile fafile 
+                    'outpath outpath 'meme-command meme-command 
+                    'return return 'width width 'min-width min-width
+                    'max-width max-width 'threshold threshold 
+                    'start-with start-with 
+                    'both-strands both-strands 'palindromes palindromes
+                    'meme-type meme-type 'objects target-set
+                    ))             
+                    
+
+             (CASE (PROTECTED-SHELL-COMMAND meme-command)
+               (:timeout (RETURN-FROM MOTIFS-IN nil))
+               (OTHERWISE nil))
+             (IF-TRUE html?
+                      THEN
+                      (SETF 
+                       web-path (wb::webtmp-url (format nil "~a.html" prefix)))
+                      (wb::MAKE-URL
+                       :PATH web-path
+                       :DISPLAY-STRING "MEME Results in HTML")
+                      ELSE
+                      (WITH-OPEN-FILE  (i outpath)
+                        (LOOP
+                         FOR motif =
+                         (Bio::PARSE-NEXT-MEME-MOTIF i master-list)
+                         UNTIL (NULL motif)
+                         COLLECT motif)))))))
+                
+    (IF (< (LENGTH target-set) 2)
+        (ERROR "Insufficient number of sequences with lengths > ~A"
+               (1- meme-min-length)))
+    (SETF web-result (RUN-MEME T))
+    (UNLESS (OR (NOT (CALLED-FROM-VPL)) display-off)
+      (SHOW-POPUP-WINDOW web-path))
+    (LET* ((motif-list (PARSE-MEME-RESULTS web-path))
+           (result 
+            (COND
+             (return-table motif-list)
+             ((OR return-alignments T) 
+              (FOR-EACH motif IN motif-list
+                        COLLECT (REF motif 'alignment))))))
+      (IF (CALLED-FROM-VPL)
+          result
+        (IF display-off
+            result
+          web-result)))
+    ))
+
+(DEFINE-FUNCTION Motifs-in
+  SUMMARY "Uses Meme to search for statistically overrepresented sequences within a set of sequences"
+  REQUIRED sequences
+    TYPE sequences = (OR List Gene Protein String Labeled-sequence)
+  KEYWORD return = 3
+  KEYWORD width = NIL
+  KEYWORD min-width = NIL
+  KEYWORD max-width = NIL
+    TYPE (return width min-width max-width) = (OR Positive-integer NULL)
+  KEYWORD threshold = NIL
+    TYPE threshold = (OR Number NULL)
+  KEYWORD start-with = NIL
+    TYPE start-with = (OR String NULL)
+  FLAG (DNA protein)
+  FLAG (motif-in-all motif-in-some multiple-hits-ok)
+  FLAG display-off
+  FLAG return-table
+  FLAG return-alignments
+  FLAG both-strands
+  FLAG palindromes
+  FLAG %%multivalue%%
+  INITIALIZE meme-min-length = 9
+  INITIALIZE target-type = (OR (AND DNA 'DNA) (AND protein 'PROTEIN))
+  INITIALIZE mode =   ; motif-in-some (= zoops) is default
+      (COND
+         (motif-in-all "oops")
+         (multiple-hits-ok "anr")
+         (T "zoops"))
+  ;; This gives every sequence a string label.  
+  INITIALIZE target-set = (SEQUENCE-LIST-OF sequences :SEQ-TYPE target-type
+                                            :MIN-LENGTH meme-min-length)
+  ;; INITIALIZE meme-type = (IF (EQUAL target-type 'DNA) "-dna" "-protein")
+  ;; INITIALIZE web-result = NIL
+  ;; INITIALIZE web-path = NIL
+  BODY
+  (ERROR-IF-MORE-THAN-ONE motif-in-all motif-in-some multiple-hits-ok)
+  (ERROR-IF-MORE-THAN-ONE DNA protein)
+  (ERROR-IF-MORE-THAN-ONE width min-width)
+  (ERROR-IF-MORE-THAN-ONE width max-width)
+
+  (COND
+     ((AND multiple-hits-ok
+           (OR (NOT (LISTP sequences))
+               (= (LENGTH sequences) 1)))
+        (SETQ target-set 
+             (APPEND 
+                (IF (LISTP sequences) target-set (LIST target-set))
+                (LIST (LIST "dummy1" (REPEAT "X" meme-min-length))
+                      (LIST "dummy2" (REPEAT "Y" meme-min-length))))))
+     ((AND multiple-hits-ok (LISTP sequences) (= (LENGTH sequences) 2))
+        (SETQ target-set 
+             (APPEND target-set (LIST (LIST "dummy1" (REPEAT "X" meme-min-length))))))
+     ((OR (NOT (LISTP sequences)) (< (LENGTH sequences) 2))
+          (ERROR (JOIN "Sequences must be a list with at least 3 elements "
+                     "(unless the MULTIPLE-HITS-OK option is specified), ")
+                       "each with a length > ~A "
+                 (1- meme-min-length))))
+  (without-code-walker 
+    (block exit
+      (multiple-value-bind (web-result web-path status)
+          (bio::run-meme 
+           target-set
+           :html? t :both-strands both-strands 
+           :palindromes palindromes :threshold threshold
+           :width width :min-width min-width :max-width max-width
+           :start-with start-with
+           :return return :mode mode :target-type target-type 
+           )
+        (when (eq status :timeout) (return-from exit nil))
+        (UNLESS (OR (NOT (CALLED-FROM-VPL)) display-off)
+          (SHOW-POPUP-WINDOW web-path))
+        (LET* ((motif-list (PARSE-MEME-RESULTS web-path))
+               (motif-alignments			   
+                  (FOR-EACH motif IN motif-list
+                            COLLECT (REF motif 'alignment)))
+			   (result (COND
+                          (return-table 
+                             (LIST motif-list motif-alignments))
+                          ((OR return-alignments T)
+                             (LIST motif-alignments motif-list)))))
+          (IF (CALLED-FROM-VPL)
+              (VALUES-LIST result)
+              (IF display-off
+                  (VALUES-LIST result)
+                  (VALUES-LIST (JOIN web-result result AS-LIST)))
+              ))))))
+
+; =============== ORFS-IN =======================
+
+(defun orfs-in-body
+       (return-sequences one-strand all-orfs pattern sequence hit-list)
+  (without-code-walker 
+    (IF-TRUE one-strand
+             THEN 
+             (ASSIGN hit-list = (ORFS-IN-aux sequence pattern return-sequences))
+             ELSE 
+             (ASSIGN 
+              hit-list =
+              (FOR-EACH strand IN {"F" "B"}
+                        FOR-EACH seq IN {sequence (INVERSION-OF sequence)}
+                        APPEND 
+                        (ORFS-IN-aux
+                         seq pattern return-sequences :STRAND strand))))
+      (BBL::SORT
+	   (IF all-orfs
+           hit-list
+          (FOR-EACH hit IN hit-list
+                 INITIALIZE old-dir = ""
+                 INITIALIZE old-end = -1
+                 AS dir = (IF one-strand "" (FIRST hit))
+                 AS end = (IF (OR one-strand (EQUAL dir "B"))
+				              (SECOND hit) 
+							  (THIRD hit))
+                 AS good-hit 
+                   = (UNLESS (AND (EQUAL dir old-dir) (= end old-end))
+                        hit)
+                 (ASSIGN old-dir = dir)
+                 (ASSIGN old-end = end)
+                 WHEN good-hit
+                    COLLECT good-hit))
+           ;; BY-POSITION 2)))
+	   BY-POSITION 2 THEN-SORT-ASCENDING-BY 3)))
+
+(DEFINE-FUNCTION Orfs-in
+  SUMMARY "Identifies coordinates of open reading frames in a sequence"
+  REQUIRED entity
+    TYPE entity = (OR gene string labeled-sequence contiguous-sequence)
+  KEYWORD longer-than = 100
+    TYPE longer-than = Positive-number
+    CONVERT longer-than FROM Number TO Integer
+  KEYWORD start-codons = {"ATG" "GTG" "TTG"}
+    TYPE start-codons = (OR String List)
+  FLAG no-starts
+  FLAG return-sequences
+  FLAG one-strand
+  FLAG all-orfs
+  MAP entity
+  INITIALIZE pattern
+    = (JOIN 
+        (IF no-starts
+            ""
+            {"(" (JOIN (ENSURE-LIST start-codons) BY "|") ")"} )
+        "((?!TAA|TAG|TGA)...){"
+        longer-than ",}(TAA|TAG|TGA)" AS-STRING)
+  INITIALIZE sequence = (SEQUENCE-OF entity DISPLAY-OFF)
+  INITIALIZE hit-list = NIL
+  BODY
+  (orfs-in-body return-sequences one-strand all-orfs pattern sequence hit-list))
+
+
+; =============== POSITION-OF ===================
+
+(DEFINE-FUNCTION Position-of
+  SUMMARY "Returns the first position of an item in a sequence, string, or list"
+  REQUIRED (query (IN) (IN-EACH) target)
+    TYPE target = (OR gene protein contiguous-sequence organism 
+                      labeled-sequence string list)
+  FLAG case-sensitive
+  FLAG partial
+  RETURN (OR List Integer)
+  MAP query
+  INITIALIZE test = (IF case-sensitive 'EQUAL 'BB-SAME)
+  PUBLIC
+  BODY
+    (BB-POSITION-OF query target in in-each NIL test partial))
+
+
+(DEFINE-FUNCTION Positions-of
+  SUMMARY "Returns all positions of an item in a sequence, string, or list"
+  REQUIRED (query (IN) (IN-EACH) target)
+    TYPE target = (OR gene protein contiguous-sequence organism 
+                      labeled-sequence string list)
+  FLAG case-sensitive
+  FLAG partial
+  RETURN (OR List Integer)
+  MAP query
+  INITIALIZE test = (IF case-sensitive 'EQUAL 'BB-SAME)
+  PUBLIC
+  BODY
+    (BB-POSITION-OF query target in in-each T test partial))
+
+; ============= READ =====================
+
+(DEFINE-DF-SYNTACTIC-TOKENS BBL::Read from)
+(DEFINE-FUNCTION BBL::Read
+   SUMMARY "Reads material from a possibly formatted file"
+ ;; PROBE-FILE first and solve for extension problems
+ ;; Check extension. If .txt, read; if .bike or .lisp, load.
+   REQUIRED ((FROM) file-name)
+     TYPE file-name = (OR String Pathname)
+ ; KEYWORD to = NIL
+ ;   TYPE to = (OR NULL Symbol)
+ ; KEYWORD (header label labeled) = *unprovided-string*
+ ;   TYPE header = (OR String List)
+ ; KEYWORD max-size = 1000000
+   FLAG shared
+   FLAG fasta
+   FLAG (tab-delimited tabbed)
+   FLAG text
+   FLAG join-lines
+   FLAG join-lines-by-spaces
+   FLAG convert-numbers
+   FLAG convert-lists
+   INITIALIZE path
+     = (IF shared (S+ "../shared-files/" file-name) file-name)
+   BODY
+     (ERROR-IF-MORE-THAN-ONE tabbed tab-delimited fasta text)
+     (ERROR-IF-MORE-THAN-ONE join-lines join-lines-by-spaces)
+     (IF (AND (OR fasta tab-delimited tabbed)
+              (OR join-lines join-lines-by-spaces))
+         (ERR+ problem "The JOIN-LINES and JOIN-LINES-BY-SPACES options"
+               indent  "are incompatible with the FASTA and TAB-DELIMITED options."
+               advice  "Perhaps you meant to use the TEXT option (where "
+               indent  "   joining lines would make sense)."
+               indent  "Otherwise remove the JOIN-LINES flag.")
+       )
+     (COND      
+        ((OR tabbed tab-delimited)
+           (WITH-OPEN-FILE (stream path :DIRECTION :input)
+             (LOOP FOR line = (READ-LINE stream NIL NIL) 
+                   UNTIL (NULL line) 
+                   AS items = (BB-SPLIT line :EVERY #\tab :NO-COMPRESS T)
+                   DO (IF (OR convert-numbers convert-lists)
+                          (SETF items
+                             (FOR-EACH item IN items
+                                  AS converted = NIL
+								  (IF convert-numbers
+								      (SETF converted
+								         (CONVERT-TO-NUMBER-MAYBE item))) 
+								  (IF convert-lists
+								      (SETF converted
+								         (CONVERT-TO-LIST-MAYBE item))) 
+                                  COLLECT converted)))
+                   COLLECT items)))
+        (fasta (READ-FASTA-FILE path))
+;       (T (LET ((lines (FILE-TO-STRING-LIST path :MAX max-size)))
+        (T (LET ((lines (FILE-TO-STRING-LIST path)))
+             (COND
+                (join-lines (BB-JOIN lines))
+                (join-lines-by-spaces (BB-JOIN lines :BY " "))
+                (T lines))))))
+
+
+; ============= TRANSLATION-OF =====================
+
+(DEFINE-FUNCTION (Translation-of Translations-of)
+ SUMMARY "Translates DNA sequence into amino-acid sequence"
+ REQUIRED entity
+   TYPE entity = (OR Gene Protein String Symbol Labeled-sequence Null)
+   CONVERT entity FROM Symbol TO String
+   MAPTREE entity
+ KEYWORD if-bad-codon = NIL
+ FLAG noncoding
+ FLAG nowarnings
+ RETURNS (OR String Null Labeled-sequence)
+ BODY
+  (FLET ((translate-string (string)  
+      (IF-TRUE if-bad-codon
+          THEN (TRANSLATE-D/RNA-TO-AA string :if-partial-codon :ignore 
+                    :if-unknown-codon if-bad-codon)  
+          ELSE (IF-TRUE nowarnings
+                   THEN (TRANSLATE-D/RNA-TO-AA string :if-partial-codon 
+                           :ignore :if-unknown-codon if-bad-codon)  
+                   ELSE (TRANSLATE-D/RNA-TO-AA string :if-partial-codon 
+                            :ignore :if-unknown-codon :warn)))))
+  (TYPECASE entity
+      (Protein
+          (EXTRACT-SEQUENCE entity))
+      (Gene
+         (COND
+            ((SLOTV entity #$ENCODES-PROTEIN)
+               (EXTRACT-SEQUENCE (FIRST (SLOTV entity #$PROTEINS))))
+            (noncoding
+                (TRANSLATE-D/RNA-TO-AA (SEQUENCE-OF entity) :if-partial-codon :ignore :if-unknown-codon :warn))
+            (nowarnings NIL)
+            (T  (WARN (S+ "~&You are trying to translate noncoding gene ~A!" 
+                         "~%If you want this gene translated, use the NONCODING option."
+                         "~%If you do not want this warning to appear use the NOWARNINGS option.")
+                         entity))))
+      (Labeled-sequence 
+         (MAKE-LABELED-SEQUENCE :SEQUENCE (TRANSLATE-STRING (SEQUENCE-OF entity))
+               :LABEL (NAME-OF entity SHORT)))
+      (String
+         (TRANSLATE-STRING entity)))))
+
+; ==================== RANDOM-DNA ================
+
+(DEFINE-FUNCTION Random-DNA
+  SUMMARY "Produces a random DNA sequence"
+  KEYWORD like = NIL
+  TYPE like = 
+  (OR gene organism contiguous-sequence labeled-sequence string list)
+  KEYWORD frequencies = NIL
+  TYPE frequencies = List
+  KEYWORD length = *UNPROVIDED+*
+  TYPE length = Positive-number
+  CONVERT length FROM Number TO Positive-Integer
+  RETURN (OR String List)
+  BODY
+  (ERROR-IF-MORE-THAN-ONE like frequencies)
+  (when frequencies 
+    (unless (or (= 3 (length frequencies)) (= 4 (length frequencies)))
+      (err+ 
+       problem "You specified the FREQUENCIES keyword incorrectly."
+       indent "FREQUENCIES must be a list of"
+       indent "three or four numbers, representing the relative weights"
+       indent "for A, C, G, and T.  The actual value you passed was ~A." 
+       format-args frequencies
+       ))
+    (unless (every 'numberp frequencies)
+      (err+ problem "The FREQUENCIES keyword must be a list of only numbers."
+            indent "You provided the value ~A."
+            format-args frequencies
+            )))
+  (IF (AND like (LISTP like))
+      (LOOP FOR seq IN like
+            COLLECT (utils::forward-funcall 'RANDOM-DNA-aux seq NIL length))
+    (utils::forward-funcall 'RANDOM-DNA-aux like frequencies length)))
+
+; =================== MATCH-OF and MATCHES-OF ==================
+
+; ------------ MATCH-OF-SLOT ----------
+
+(DEFUN Match-of-slot-aux (plural? slot query target partial test)
+  (without-code-walker
+  (LET ((*suppress-warnings* T))
+   (COND 
+      ((LISTP target)
+          (LOOP FOR item IN target
+                AS match = (FORWARD-FUNCALL 'MATCH-OF-SLOT-aux plural? 
+                                slot query item partial test)
+                DO (IF (AND match (NOT plural?))
+                       (RETURN match))
+                WHEN match
+                  COLLECT item))
+      ((AND plural? (IS-LIST? query))
+          (LOOP FOR item IN query
+                WHEN (FORWARD-FUNCALL 'MATCH-OF-SLOT-aux plural? 
+                         slot item query partial test)
+                  COLLECT item))
+      ((NOT partial)
+          (IF (FUNCALL test query target[slot]) target NIL))
+      ((LISTP target[slot])
+          (IF (MEMBER query target[slot] :TEST test) target NIL))
+      (T (IF (SEARCH query target[slot] :TEST test) target NIL))))))
+
+
+; --------------- MATCH-OF-ITEMS ----------
+
+(DEFINE-FUNCTION Matches-of-item
+  SUMMARY "Finds match of some part of a list or string"
+  REQUIRED ((EACH) query (IN IN-EACH) target)
+  ; TYPE target = (OR String List Frame)
+  FLAG case-sensitive
+  FLAG both-strands
+  FLAG one-strand
+  FLAG partial
+  FLAG +1st-match-only
+  FLAG +compression
+  FLAG -compression
+  FLAG +coordinates
+  FLAG -coordinates
+  FLAG +query-label
+  FLAG -query-label
+  FLAG +target-label
+  FLAG -target-label
+  ; KEYWORD return = *unprovided+*
+  INITIALIZE test 
+    = (IF case-sensitive 'EQUAL 'BB-SAME)
+  INITIALIZE plural = (NOT +1st-match-only)
+  INITIALIZE compression = (LIST +compression -compression)
+  INITIALIZE t-label-info = (LIST +target-label -target-label)
+  INITIALIZE strand-info = (LIST both-strands one-strand)
+  INITIALIZE coord-info = (LIST +coordinates -coordinates)
+  BODY
+  -query-label
+  (ERROR-IF-MORE-THAN-ONE +compression -compression)
+    (IF (AND each (NOT (LISTP query)))
+        (ERROR "The EACH option requires a list of queries, not '~A'"
+             query))
+    (IF (AND in-each (NOT (LISTP target)))
+        (ERROR "The IN-EACH option requires a list of targets, not '~A'"
+             target))
+    (COND
+       ((AND each (LISTP query))
+           (LOOP FOR item IN query
+                 COLLECT (MATCH-OF-ITEM-aux plural item target in in-each 
+                           partial test :q-label +query-label
+                           :t-label-info t-label-info :compression compression
+						   :STRAND-INFO strand-info :COORD-INFO coord-info)))
+       (T (MATCH-OF-ITEM-aux plural query target in in-each partial test 
+             :q-label +query-label :t-label-info t-label-info 
+			 :compression compression :STRAND-INFO strand-info
+			 :COORD-INFO coord-info))))
+
+
+; --------------- MATCHES-OF-PATTERN ----------
+
+(DEFUN Match-of-pattern-one-item-aux 
+       (pattern target return report-list both-strands labeled
+          case-sensitive cross-lines)
+ "Finds matches to patterns in strings or sequences"
+
+ (LET* ((target-seq (IF (LISTP target) (SECOND target) target))
+        (target-name (IF (LISTP target) (FIRST target) "?"))
+        (inverse-seq
+           (IF both-strands (INVERSION-OF target-seq)))
+        (full-length (LENGTH target-seq))
+        (start 1)
+        (scanner (CL-PPCRE:CREATE-SCANNER pattern 
+                   :MULTI-LINE-MODE T
+                   :CASE-INSENSITIVE-MODE (NOT case-sensitive)
+                   :SINGLE-LINE-MODE cross-lines))
+        (get-full-coords)  (get-full-string)
+        (get-subcoords)  (get-substrings)
+        (get-any-coords) ; (get-any-strings)
+        )
+  
+  (ASSIGN (get-full-coords get-subcoords get-full-string get-substrings)
+     = report-list)
+  (ASSIGN get-any-coords = (OR get-full-coords get-subcoords))
+  ; (ASSIGN get-any-strings = (OR get-full-string get-substrings))
+     
+  (FLET ((Real-coords (direction coord1 coord2 &OPTIONAL string)
+           (COND
+              ((AND (EQUAL direction "F") string)
+                 (LIST (+ coord1 start) (+ coord2 start -1) string))
+              ((EQUAL direction "F")
+                 (LIST (+ coord1 start) (+ coord2 start -1)))
+              (string
+                 (LIST (- full-length (+ coord1 start) -1)
+                       (- full-length (+ coord2 start))
+                       string))
+              (T (LIST (- full-length (+ coord1 start) -1)
+                       (- full-length (+ coord2 start)))))))
+ 
+   (LET* ((number-of-hits 0)
+          (hits 
+            (IDENTITY ; REMOVE-DEGENERATE-SUBLISTS
+               (LOOP FOR seq IN (LIST target-seq inverse-seq)
+                     FOR dir IN (IF-TRUE both-strands THEN '("F" "B") ELSE '("F"))
+                     UNTIL (>= number-of-hits return)
+                     AS match = NIL
+                     AS (targ-set reg-set dir-set total-set) = NIL
+                     DO (CL-PPCRE:DO-SCANS (t-start t-end r-start r-end scanner seq) 
+                           (SETQ dir-set (IF (AND get-any-coords both-strands) (LIST dir)))
+                           (IF (OR get-subcoords get-substrings)
+                               (SETQ reg-set
+                                  (LOOP FOR rs ACROSS r-start
+                                        FOR re ACROSS r-end
+                                        COLLECT
+                                          (COND
+                                             ((AND get-subcoords get-substrings)
+                                                 (AND rs (REAL-COORDS dir rs re 
+                                                          (subseq seq rs re))))
+                                             (get-subcoords 
+                                                (AND rs (REAL-COORDS dir rs re)))
+                                             (get-substrings 
+                                                (AND rs (subseq seq rs re)))))))
+                           (IF (OR get-full-coords get-full-string)
+                               (SETQ targ-set
+                                  (COND
+                                     ((AND get-full-coords get-full-string)
+                                          (REAL-COORDS dir t-start t-end 
+                                             (subseq seq t-start t-end)))
+                                     (get-full-coords
+                                            (REAL-COORDS dir t-start t-end))
+                                     (get-full-string 
+                                            (LIST (subseq seq t-start t-end))))))
+                           (SETQ total-set
+                              (COND
+                                 ((NULL targ-set) (APPEND reg-set dir-set))
+                                 ((NULL reg-set) (APPEND targ-set dir-set))
+                                 (get-full-coords (APPEND (CONS targ-set reg-set) dir-set))
+                                 (T (APPEND targ-set reg-set dir-set))))
+                           (IF labeled 
+                              (SETQ total-set (CONS target-name total-set)))
+                           (IF (= (LENGTH total-set) 1)
+                               (SETF total-set (FIRST total-set)))
+                           (PUSH total-set match)
+                           (INCF number-of-hits)
+                   ;        (IF (AND (NOT multi-search) match)
+                   ;            (RETURN)))
+                           )
+                     WHEN match
+                        APPEND match))))
+
+       (COND
+          ((<= return 1) (FIRST (REVERSE hits)))
+          ((< number-of-hits 2) hits)
+          ((AND get-any-coords both-strands)
+              (REVERSE hits)) ; (SORT hits '< :KEY (LAMBDA (c) (FIRST (FIRST c))))
+          (T (REVERSE hits)))))))
+
+; ------------ MATCH-OF-PATTERN-aux ------------		  
+(DEFUN Match-of-pattern-aux (plural? pattern target report-list
+   &KEY case-sensitive cross-lines strand-info p-label t-label-info compression 
+        original-pattern)
+  (without-code-walker
+   (LET* ((length-threshold 20)
+          (compress?)
+          (long-list?)
+		  (t-label?)
+          (p-seq) 
+          (return 
+             (COND
+                ((AND (NOT report-list) plural?) *unprovided+*)
+                ((NOT report-list) 1)
+                ((ALL-FALSE report-list) *unprovided+*)
+                (plural? *unprovided+*)
+                (T 1)))
+          (result))
+ ; -----------------
+   (FLET ((output-unit (value targ t-index)
+             (LET* ((alt-value (IF (EQUAL (bbl::LAST value) "?") T))
+                    (value (UNLESS alt-value (REST value)))
+                    (unit (JOIN  	
+                            (IF p-label original-pattern)
+                            (IF t-label?
+                                (COND
+                                   ((IS-FRAME? targ) targ)
+                                   ((TYPEP targ 'Labeled-sequence) 
+                                        (LABELED-SEQUENCE-LABEL targ))
+                                   (T t-index)))
+                            (IF compress? value (OR value alt-value '(NIL)))
+                            AS-LIST)))
+               (IF (= (LENGTH unit) 1)
+                   (FIRST unit)
+                   unit)))
+;         -----------------
+          (p-or-t-sequence (entity entity-type)
+             (TYPECASE entity
+                (Labeled-sequence
+                   (LABELED-SEQUENCE-SEQUENCE entity))
+                (String entity) 
+				((OR gene protein contiguous-sequence organism)
+                    (SEQUENCE-OF entity DISPLAY-OFF))
+                (OTHERWISE
+				  (ERROR (S+ "The list of ~As must contain only "
+                             "sequences or strings, not '~A'")
+                         entity-type entity))))
+;         -----------------
+          (both-strands? (entity)
+             (COND 
+                ((FIRST strand-info) T)     ; BOTH-STRANDS
+                ((SECOND strand-info) NIL)  ; ONE-STRAND
+				((THIRD strand-info) T)     ; AS-DNA
+				((FOURTH strand-info) NIL)  ; text
+                ((EQUAL (BB-SEQUENCE-TYPE-OF entity NIL) 'DNA) T)))
+         )
+; -----------------
+   (IF (ALL-FALSE report-list) (SETF plural? NIL))
+   (SETF p-seq (P-OR-T-SEQUENCE pattern "pattern"))
+   (IF (OR (AND (IS-ORGANISM? target)
+                (> (LENGTH (REPLICONS-OF target)) 1)) ; organism w/>1 replicon
+           (AND (LISTP target)
+                (ANY-TRUE (MAPCAR 'IS-ORGANISM? (ENSURE-LIST target)))))
+       (SETF target
+          (FOR-EACH targ IN (ENSURE-LIST target)
+               AS new-targ 
+                 = (IF (AND (IS-ORGANISM? targ)
+                            (> (LENGTH (REPLICONS-OF target)) 1))
+                       (REPLICONS-OF targ)
+                       (LIST targ))
+               APPEND new-targ)))
+   (SETF t-label?
+      (COND
+         ((FIRST t-label-info) T)    ; +target-label
+         ((SECOND t-label-info) NIL) ; -target-label
+         ((LISTP target) T)
+         (compress? T)))
+   (IF (LISTP target)
+       (PROGRAM
+         (SETF result
+            (FOR-EACH targ IN target
+                 AS t-seq = (P-OR-T-SEQUENCE targ "target")
+                 COLLECT
+                   (MATCH-OF-PATTERN-one-item-aux p-seq t-seq return
+                      report-list (BOTH-STRANDS? t-seq) T case-sensitive
+                      cross-lines)))
+          (SETF long-list? 
+             (AND (LISTP result) (> (LENGTH result) length-threshold)))
+          (SETF compress?
+             (COND
+                ((FIRST compression) T)     ; +compression
+                ((SECOND compression) NIL)  ; -compression
+                ((EQUAL report-list '(NIL NIL NIL NIL)) T) ; no matches or 
+                (long-list? T)))
+	      )
+        (SETF result 
+           (LET* ((t-seq (P-OR-T-SEQUENCE target "target")))
+             (MATCH-OF-PATTERN-one-item-aux p-seq t-seq return
+                        report-list (BOTH-STRANDS? t-seq) T case-sensitive
+                        cross-lines))))
+   (COND
+      ((NOT result) NIL)
+      ((AND (LISTP target) (ALL-FALSE result)) NIL)
+      ((LISTP target)
+        (FOR-EACH r-item IN (ENSURE-LIST result)
+         FOR-EACH t-item 
+             IN (IF (TYPEP target 'Organism)
+                    (REPLICONS-OF target)
+                    (ENSURE-LIST target))
+         FOR-EACH i FROM 1
+             AS matches-for-targets 
+               = (FOR-EACH match 
+                      IN (IF (AND plural? r-item) r-item (LIST r-item))
+                      WHEN (OR (NOT compress?) match)
+                         COLLECT (OUTPUT-UNIT match t-item i))
+             APPEND matches-for-targets))
+      (T (LET ((output
+	             (FOR-EACH match
+	                  IN (IF (AND plural? result) result (LIST result))
+			          COLLECT (OUTPUT-UNIT match target 1))))
+           (IF plural? output (FIRST output)))))
+))))
+
+; --------------- MATCH-OF-X --------------
+
+
+(DEFINE-FUNCTION Match-of-aux
+  REQUIRED (plural? (EACH EACH-OF) type query (IN) (IN-EACH) target)
+  FLAG partial
+  FLAG case-sensitive
+  FLAG cross-lines
+  KEYWORD return = *unprovided+*
+  BODY
+    (ERROR-IF-MORE-THAN-ONE in in-each)
+    (COND
+       ((AND each (LISTP query))
+           (LOOP FOR item IN query
+                 COLLECT (MATCH-OF-AUX-aux plural? type item in in-each
+                           target return case-sensitive :PARTIAL partial
+                           :CROSS-LINES cross-lines)))
+       (T (MATCH-OF-AUX-aux plural? type query in in-each target return 
+              case-sensitive :PARTIAL partial :CROSS-LINES cross-lines))))
+
+
+(DEFMACRO Match-of-pre-aux (plural? &REST args)
+  (LET ((pre-flags '(PATTERN PATTERNS ENZYME ENZYMES))
+        (arg1 args[1])
+        (arg2 args[2])
+        (arg3 args[3])
+        (arg4 args[4])
+        (in-or-in-each (LIST 'IN 'IN-EACH))
+        (each-words (LIST 'EACH 'EACH-OF))
+        )
+    
+    (COND
+     ((= (LENGTH args) 0)
+      (ERR+ problem "No arguments provided!~&")
+      ) 
+     ((< (LENGTH args) 3)  ; (FIRST entity)
+      (ERR+ problem "Insufficent arguments provided!~&")
+      )
+     ((MEMBER arg2 in-or-in-each :TEST 'SYMBOL=)
+      `(MATCH-OF-AUX ,plural? NIL ,arg1 ,arg2 ,@(SUBSEQ args 2)))
+
+     ((MEMBER arg3 in-or-in-each :TEST 'SYMBOL=)
+      (COND
+       ((MEMBER arg1 pre-flags :TEST 'SYMBOL=)
+        `(MATCH-OF-AUX ,plural? ',arg1 ,arg2 ,arg3 ,@(SUBSEQ args 3)))
+       ((MEMBER arg1 each-words :TEST 'SYMBOL=)
+        `(MATCH-OF-AUX ,plural? ,arg1 NIL ,arg2 ,arg3 ,@(SUBSEQ args 3)))
+       (T `(MATCH-OF-AUX ,plural? ,arg1 ,arg2 ,arg3 ,@(SUBSEQ args 3)))))
+     ((MEMBER arg4 in-or-in-each :TEST 'SYMBOL=)
+      (IF (MEMBER arg2 pre-flags :TEST 'SYMBOL=)
+          `(MATCH-OF-AUX ,plural? ,arg1 ',arg2 ,arg3 ,arg4 ,@(SUBSEQ args 4))
+        `(MATCH-OF-AUX ,plural? ,arg1 ,arg2 ,arg3 ,arg4 ,@(SUBSEQ args 4))))
+     (T 
+      (ERR+ problem "Target for search must be specified after IN or IN-EACH")
+      ))))
+
+; ------------ MATCHES-OF-X external --------------
+
+(DEFMACRO Matches-of (&REST args)
+   "(MATCHES-OF [PATTERN][PATTERNS][ENZYME][ENZYMES][any] query
+        IN target)"
+  `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	 (Match-of-pre-aux T ,@args)))
+
+(DEFMACRO Match-of (&REST args)
+   "(MATCH-OF [PATTERN][PATTERNS][ENZYME][ENZYMES][any] query
+        IN target)"
+  `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	 (Match-of-pre-aux NIL ,@args)))
+
+(DEFINE-DF-SYNTACTIC-TOKENS Matches-of-pattern IN)
+(DEFINE-FUNCTION (Matches-of-pattern Match-of-pattern Matches-of-patterns Match-of-patterns)
+  REQUIRED (pattern (IN) target)
+    TYPE pattern = (or String List)
+  ; TYPE pattern = (or labeled-sequence String #+:allegro excl::closure)
+  ;   Closure permits using PPCRE-compiled pattern
+  ;   However, the downstream function at present requires a string or list of strings  
+  FLAG as-DNA
+  FLAG as-regex
+  FLAG both-strands
+  FLAG case-sensitive
+  FLAG cross-lines
+  FLAG one-strand
+  FLAG text
+  FLAG +1st-match-only
+  FLAG +compression
+  FLAG -compression
+  FLAG +coordinates
+  FLAG -coordinates
+  FLAG +full-coordinates
+  FLAG -full-coordinates
+  FLAG +sub-coordinates
+  FLAG -sub-coordinates
+  FLAG +matches
+  FLAG -matches
+  FLAG +full-matches
+  FLAG -full-matches
+  FLAG +sub-matches
+  FLAG -sub-matches
+  FLAG +pattern-label
+  FLAG -pattern-label
+  FLAG +target-label
+  FLAG -target-label
+  FLAG +display
+  FLAG -display
+ ; KEYWORD return = *unprovided+*
+ ;   TYPE return = Nonnegative-number
+ ;   CONVERT return FROM Number TO Integer
+  INITIALIZE plural = (NOT +1st-match-only)
+  INITIALIZE compression = (LIST +compression -compression)
+  INITIALIZE t-label-info = (LIST +target-label -target-label)
+  INITIALIZE strand-info = (LIST both-strands one-strand as-dna text)
+  INITIALIZE processed-pattern 
+    = (LET ((p (IF as-regex
+                   pattern
+                   (BIOBIKE-PATTERN-TO-REGEX pattern))))
+         (IF as-dna
+            (DNA-PATTERN-TO-REGEX p)
+            p))
+  INITIALIZE report-list
+    = (LET ((temp-list (LIST 0 0 0 0)))
+        (IF +coordinates (SETF (SUBSEQ temp-list 0 2) '(1 1)))
+        (IF -coordinates (SETF (SUBSEQ temp-list 0 2) '(-1 -1)))
+        (IF +full-coordinates (SETF (REF temp-list 1) 1))
+        (IF -full-coordinates (SETF (REF temp-list 1) -1))
+        (IF +sub-coordinates (SETF (REF temp-list 2) 1))
+        (IF -sub-coordinates (SETF (REF temp-list 2) -1))
+        (IF +matches (SETF (SUBSEQ temp-list 2 4) '(1 1)))
+        (IF -matches (SETF (SUBSEQ temp-list 2 4) '(-1 -1)))
+        (IF +full-matches (SETF (REF temp-list 3) 1))
+        (IF -full-matches (SETF (REF temp-list 3) -1))
+        (IF +sub-matches (SETF (REF temp-list 4) 1))
+        (IF -sub-matches (SETF (REF temp-list 4) -1))
+        (SETF temp-list (SUBSTITUTE T 1 temp-list))
+		(SETF temp-list (SUBSTITUTE NIL -1 temp-list))
+		(IF (FIND T temp-list)
+		    (SETF temp-list (SUBSTITUTE NIL 0 temp-list))
+            (SETF temp-list (SUBSTITUTE T 0 temp-list)))
+       )
+  INITIALIZE display = NIL
+  INITIALIZE result = NIL
+  BODY
+   -pattern-label
+   (ERROR-IF-MORE-THAN-ONE +coordinates -coordinates)
+   (ERROR-IF-MORE-THAN-ONE +matches -matches)
+   (ERROR-IF-MORE-THAN-ONE +compression -compression)
+   (ERROR-IF-MORE-THAN-ONE both-strands one-strand)
+   (ERROR-IF-MORE-THAN-ONE +pattern-label -pattern-label)
+   (ERROR-IF-MORE-THAN-ONE +target-label -target-label)
+   (IF (AND -coordinates (OR +full-coordinates +sub-coordinates))
+       (ERR+ problem "The -COORDINATES option is incompatible with the"
+            indent "   +FULL-COORDINATES and +SUB-COORDINATES options."
+            advice "Click HELP on the function's pulldown menu for a meaning of options.")
+    )
+  (IF (AND -matches (OR +full-matches +sub-matches))
+      (ERR+ problem "The -MATCHES option is incompatible with the"
+            indent "   +FULL-MATCHES and +SUB-MATCHES options."
+            advice "Click HELP on the function's pulldown menu for a meaning of options.")
+    )
+  (IF (AND +coordinates (OR +full-coordinates +sub-coordinates))
+      (WARN (S+ "+FULL-COORDINATES and +SUB-COORDINATES options are unnecessary when "
+                "the +COORDINATES option is specified")))
+  (IF (AND -coordinates (OR -full-coordinates -sub-coordinates))
+      (WARN (S+ "-FULL-COORDINATES and -SUB-COORDINATES options are unnecessary when "
+                "the -COORDINATES option is specified")))
+  (IF (AND +matches (OR +full-matches +sub-matches))
+      (WARN (S+ "+FULL-MATCHES and +SUB-MATCHES options are unnecessary when "
+                "the +MATCHES option is specified")))
+  (IF (AND -matches (OR -full-matches -sub-matches))
+      (WARN (S+ "-FULL-MATCHES and -SUB-MATCHES options are unnecessary when "
+                "the -MATCHES option is specified")))
+
+  (IF (NULLSTRING? target)
+      (SETF target NIL))
+  (SETF result
+    (IF (LISTP pattern) 
+        (LOOP FOR item IN processed-pattern
+	          FOR p IN pattern
+	          COLLECT (MATCH-OF-PATTERN-aux plural item target report-list
+                          :p-label +pattern-label
+                          :t-label-info t-label-info :compression compression
+                          :STRAND-INFO strand-info :CASE-SENSITIVE case-sensitive
+                          :CROSS-LINES cross-lines :ORIGINAL-PATTERN p
+                      ))
+        (MATCH-OF-PATTERN-aux plural processed-pattern target report-list 
+              :P-LABEL +pattern-label :T-LABEL-INFO t-label-info 
+              :compression compression :STRAND-INFO strand-info
+              :CASE-SENSITIVE case-sensitive :CROSS-LINES cross-lines
+              :ORIGINAL-PATTERN pattern
+              )))
+  (SETF display
+    (COND
+       (-Display NIL)
+       (+Display T)
+       ((NOT (BBL-TOPLEVEL?)) NIL)
+       ((NOT (LISTP result)) NIL)
+       (T T)
+       ))
+  (IF display (DISPLAY-LIST EACH result))
+  result
+  )
+ 
+  
+; =================== WRITE and friends ===============
+
+(DEFINE-FUNCTION Header-of 
+  SUMMARY "Provides an informational string that can be used as the header of a  FastA file"
+  REQUIRED entity
+  TYPE entity = (OR Gene Protein Contiguous-sequence Organism)
+  MAP entity
+  RETURNS String
+  BODY
+  (LET* ((frame (NAME-OF entity SHORT))
+         (organism (NAME-OF (ORGANISM-OF entity) SHORT))
+         (length (LENGTH-OF entity)))
+    (TYPECASE entity
+      (Organism
+       (JOIN frame length "nt" BY " " AS-STRING))
+      (Contiguous-sequence
+       (JOIN frame "in" organism length "nt" BY " " AS-STRING))
+      (Gene
+       (JOIN frame "in" organism length "nt" 
+             (SLOTV entity #$From) "-" (SLOTV entity #$To) 
+             (SLOTV entity #$Direction)
+             (DESCRIPTION-OF entity LENGTH 30)
+             BY " " AS-STRING))
+      (Protein
+       (JOIN frame "in" organism length "aa" 
+             (DESCRIPTION-OF entity LENGTH 30)
+             BY " " AS-STRING))
+      (OTHERWISE
+       (ERROR "INTERNAL ERROR in HEADER-OF (type): Please report")))))
+
+(DEFINE-DF-SYNTACTIC-TOKENS BBL::Write from to)
+(DEFINE-FUNCTION BBL::Write
+   SUMMARY "Writes material to a file, with or without formatting"
+   REQUIRED ((FROM) material (TO) file-name)
+     TYPE file-name = (OR String Pathname)
+   KEYWORD (header label labeled) = *unprovided-string*
+     TYPE header = (OR String List)
+   FLAG fasta
+   FLAG tabbed
+   FLAG tab-delimited
+   FLAG text
+   FLAG append
+   INITIALIZE output-mode = (IF append :append :supersede)
+   INITIALIZE if-not-there-option = :create
+   INITIALIZE header-list = (ENSURE-LIST (PROVIDED header))
+   INITIALIZE *print-lines* = NIL
+   INITIALIZE *print-length* = NIL
+   INITIALIZE *print-level* = NIL
+   INITIALIZE writing-sequence = 
+       (OR (IS-ORGANISM? material)(IS-GENE? material)(IS-PROTEIN? material))
+   BODY
+     (ERROR-IF-MORE-THAN-ONE tabbed tab-delimited fasta text)
+     (IF (AND writing-sequence (OR tabbed tab-delimited))
+         (ERROR (S+ "Organisms, genes, and proteins may be written only "
+                    "in FastA or Text formats")))
+     (IF (IS-ORGANISM? material)
+         (SETF material (CONTIGS-OF material)))
+     (WHEN writing-sequence
+        (IF text
+            (PROGN  
+                (SETF material (JOIN (SEQUENCE-OF material) BY *NEWLINE*))
+                (SETF text NIL))
+            (SETF fasta T))
+        )
+     (WITH-OPEN-FILE (stream file-name :IF-DOES-NOT-EXIST if-not-there-option 
+             :IF-EXISTS output-mode :DIRECTION :output)
+       (COND      
+          ((OR tabbed tab-delimited)
+             (WRITE-STRING (TAB-DELIMITED material) stream))
+          (fasta
+            (LOOP FOR element IN (ENSURE-LIST material)
+                  FOR seq-number FROM 1
+                  AS seq = (SEQUENCE-OF element)
+                  AS header-text = 
+                     (OR (POP header-list)
+                         (AND (IsFRAME? element) (HEADER-OF element))
+                         (AND (TYPEP element 'Labeled-sequence)
+                              (NAME-OF element))
+                         (JOIN "Seq " seq-number))
+                  AS line1 = (JOIN ">" header-text (STRING *newline*))
+                  AS seq-lines = (JOIN (BB-BREAK-STRING seq 50 T) ""
+                                       BY (STRING *newline*) AS-STRING)
+                  DO (WRITE-STRING line1 stream)
+                     (WRITE-STRING seq-lines stream)))
+          (text (FORMAT stream "~A" material))    
+          ; (text (FORMAT stream "~S" material))    
+          (T (LET ((lines (BB-BREAK-STRING material 50 NIL)))
+               (LOOP FOR line IN lines
+                     DO (WRITE-STRING line stream))))))
+      T)
+
+ 
+;; ============================================
+
+(define-macro make
+  summary "Creates a list, string, or table of specified size and content"
+  required what?
+  keyword how-big = 1
+  keyword initial-element = nil
+  body 
+  `(make-function ',what? ,how-big ,initial-element)
+  )
+
+(defun make-function (what how-big initial-element)
+  (cond 
+   ((symbol= what :list)
+    (typecase how-big
+      (number
+       (lisp:make-list how-big :initial-element initial-element))
+      (list
+       (loop for j in how-big 
+         collect
+         (lisp:make-list j :initial-element initial-element)
+         ))
+      (otherwise
+       (error 
+        "When making a list, the HOW-BIG keyword must be a number or list."
+        ))))
+   ((symbol= what :string)
+    (unless initial-element (setf initial-element #\a))
+    (unless (numberp how-big) 
+      (error "When making a string, HOW-BIG must be a number."))
+    (lisp:make-string 
+     how-big
+     :initial-element 
+     (if (numberp initial-element)
+         (lisp:coerce (write-to-string initial-element) 'character)
+       (lisp:coerce initial-element 'character)
+       )))
+   ((or (symbol= what :table) (symbol= what :garray))
+    (when (not (listp how-big)) (setq how-big (list how-big)))
+    (new-table how-big :initialize initial-element)
+    ;; (utils::make-garray how-big :initial-element initial-element)
+    )
+   (t (error "You must select list, string, or table!"))
+   ))
+
+
+  
+ 

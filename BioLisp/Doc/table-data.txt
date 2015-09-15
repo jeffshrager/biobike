@@ -1,0 +1,458 @@
+;;;; Author:  JP Massar.
+;;;; Date:  01/20/04
+
+
+          TABLE DATA READING, WRITING and MANIPULATION SPECIFICATION
+
+
+I.  GENERAL FORMAT OF TABLE DATA INPUT FILES.
+
+
+STANDARD table data files have the following format:
+
+  -- Lines are separated by #\Newline; that is, each line can be obtained
+by a call to the Lisp function READ-LINE.
+
+  -- Within lines, fields are separated by #\Tab (^I) characters.  If there
+are X tabs on a line, then by definition there are X+1 fields on that line.
+
+  -- An empty line consists of either
+     -- no characters	
+     -- nothing but tab and space characters
+     -- any number of tab and space characters (possibly 0) followed
+        by a specified comment character (default ';'), followed by 
+        anything at all.
+
+  -- An arbitrary number of initial lines may be empty lines.  These
+lines are ignored and are not considered part of the resulting data
+structure.
+
+  -- A specified number of non-blank lines (default = 0) are
+documentation.  These are read in and stored as a list of strings, one
+string per line.
+
+  -- An abitrary number of empty lines may be present after the
+documentation lines, if the number of documentation lines is specified
+as non-zero.
+
+  -- The first subsequent non-empty line contains header information.
+The number of fields on this line (computed by the number of tab
+characters on the line, and adding 1) define the number of fields or
+columns for all succeeding lines.
+
+The data in each field is treated as a string, and becomes the field
+(column) name.  It is an error if any column name has no characters.
+Column names treated as being caseless.  E.g., a column name of DATA
+is the same as Data or data or dAtA.
+
+  -- A specified number of lines after the header line (default is 0)
+contain additional information that is not considered part of the
+actual data.  This is treated like documentation, save that it is stored
+and accessed separately.  It is stored as a list of strings, one string
+per line.  This is referred to as posthdr information.
+
+  -- If the number of posthdr lines in non-zero, any number of empty
+lines may follow before the first data line. 
+
+  -- Note that empty lines are NOT permitted between the header
+information line and the posthdr lines; if they are present they are
+assumed to be part of the posthdr information and must be counted as
+such when specifying the number of posthdr lines.
+
+  -- All subsequent lines are data lines.  Each data line contains
+N fields, as specified by the header information.  It is permissible
+for some of the fields to have no characters (i.e., be null strings).
+If a line contains less than N fields, the user can control whether
+an error is signalled or the subsequent fields are defaulted.
+
+  -- Note that no empty lines are permitted within the data lines.
+  -- Note that no empty lines are permitted after the data lines.
+
+
+II.  SYNTAX AND SEMANTICS OF DATA LINES
+
+
+The standard data line consists of M (default 1) PREDATA FIELDS,
+followed by some number of DATA FIELDS, followed by N POSTDATA FIELDS.
+The M+N pre and post data fields are known as OTHER FIELDS and are by
+default stored as strings.  If TOTAL is the total number of fields
+(as defined by the header information line (see above)), then there
+are TOTAL - (M+N) data fields.
+
+The user may designate any or all fields as KEY fields.  The
+set of values in a KEY need not be unique.  A mapping will be defined
+between each value in each KEY field and a list of data lines which
+contain the KEY VALUE.
+
+The DATA FIELDS are potentially of different types.  The default is
+that all DATA FIELDS represent single-float numbers, convertible to
+Lisp floating point by taking the characters of the field and calling
+READ-FROM-STRING on them.
+
+The user may specify a MISSING VALUE to be used if a DATA FIELD
+is the empty string or a string of all #\Space characters.  The
+default missing value is NIL.  To be maximally efficient, the MISSING-VALUE
+specified should be of the same type as the data in the DATA FIELDS.
+
+The user may specify NONE-MISSING? as T, indicating that there are no
+missing values in the table.
+
+Currently, the user must specify a single data type for all the DATA
+FIELDS.
+
+If there are supposed to be N fields, and a line has less than N
+fields, then the keyword :USE-MISSING-VALUE-IF-NOT-ENOUGH-FIELDS can
+be set to T (default NIL) to allow a MISSING-VALUE to be used for
+these fields instead of signalling an error (the default).  If set to
+T, the MISSING-VALUE will be used regardless of whether the field is
+a DATA FIELD or an OTHER FIELD.
+
+The user may specify a function other than READ-FROM-STRING to transform
+the strings read in as data fields by providing a function of one
+argument (or the name of such a function) to the DATA-RDRFUNC key parameter.
+
+The OTHER FIELDS by default remain as strings.  The user may specify
+a function to transform each OTHER FIELD after it is read in, by
+specifying values to the OTHER-RDRFUNCS key parameter.  If a single
+function is specified, it will be used for all OTHER FIELDS.  Otherwise
+an assoc list of column names and functions should be provided.  For
+example, if NAME, SSN and INFO are OTHER FIELDS, then
+
+:OTHER-RDRFUNCS `((:name ,#'name-to-frame) 
+	          (:ssn ,#'(lambda (x) (parse-integer x)))
+	          (:info 'parse-person-info))
+
+will cause NAME-TO-FRAME to be called on the string representing each
+NAME field after it is read in, PARSE-INTEGER on the SSN field, and
+PARSE-PERSON-INFO on the INFO field.  If any OTHER FIELD column is not
+mapped to a reader function the function IDENTITY (i.e, a noop) is used.
+
+-------
+
+III.  GENERALIZATION OF TABLE FORMAT
+
+It will be possible to read in other formats of tables by defining
+methods for these formats and giving these other formats names.  The
+methods that deal with the above format use (eql :standard) as the
+method discriminator.
+
+Note:  Other formats will not be provided in the prototype.  An attempt
+will be made to define generic functions appropriately so that user's
+may write their own, but this will not be a prototype priority.
+
+Note:  This is obsolete.
+
+IV.  FUNCTIONS and METHODS
+
+IV.0  Definitions.
+
+ROW-INDEX:  An integer between 0 inclusive and the number of data
+rows in the table, exclusive.
+
+COLUMN-INDEX:  An integer between 0 inclusive and the number of fields
+(columns) in the table, exclusive.
+
+COLUMN-DESIGNATOR: Either a COLUMN-INDEX, or a string naming a column.
+However, in some contexts, the COLUM-INDEX may only range from 0
+inclusive to the number of data columns, or if a string it must name
+a data column.
+
+ROW-DESIGNATOR: Either a ROW-INDEX, the non-integer KEY-VALUE (see
+below), or a TABLE-KEY (see below).
+
+KEY VALUE: Given a column in the table that has been specified as a
+KEY column, any data element in that column.  A KEY VALUE maps to one
+or more ROW-INDEX's.
+
+TABLE-KEY:  An object of type TABLE-KEY denoting a key value.
+The key may be a COMPLETE KEY, or an INCOMPLETE KEY.
+
+COMPLETE KEY:  A TABLE-KEY object which has recorded within it the
+rows of a table which it maps to.  A COMPLETE KEY is always associated
+with a particular table.
+
+INCOMPLETE KEY: A TABLE-KEY object which does not have stored within
+it the rows of the table which it maps to.  When created, an
+INCOMPLETE KEY may not be associated with any table.  Once it is used
+it is associated with the table on which it was used and becomes a
+COMPLETE KEY.
+
+
+IV.1  Reading Table Data from an ascii text File
+
+READ-TABLE-DATA file 
+	&key
+	(format :standard)
+        (comment-char #\;)
+        (n-doc-lines 0)
+        (n-posthdr-lines 0)
+        (n-predata-fields 1)
+        (n-postdata-fields 0)
+        (data-type 'single-float)
+        (none-missing? nil)
+        (missing-value nil)
+        (key-columns nil)
+        (field-descriptors nil)
+        (name nil)
+        (data-rdrfunc #'read-from-string)
+        (other-rdrfuncs nil)
+        (warn-on-coercion *warn-on-data-coercion*)
+        (warn-on-missing-value-mismatch t)
+        (use-missing-value-if-not-enough-fields nil)
+	(strip-returns t)
+
+Assuming all goes well, this creates an object of class TABLE-DATA.
+The file is parsed as per the syntax and semantics defined in Sections
+I and II.
+
+IV.2  Accessing Table Data meta-information.
+
+TABLE-DATA-DOCUMENTATION (td)
+TABLE-DATA-POST-HEADER-INFO (td)
+TABLE-DATA-HEADERS (td)
+TABLE-DATA-HEADER (td column-index)
+TABLE-DATA-KEYCOLS (td)
+TABLE-DATA-NROWS (td)
+TABLE-DATA-NCOLS (td)
+TABLE-DATA-NDATACOLS (td)
+TABLE-DATA-NOTHERCOLS (td)
+
+This first set of methods provide access to the headers and auxiliary
+information of the table TD.
+
+
+IV.3  Accessing individual elements of the table by row and column
+
+TABLE-DATA-ELEMENT (td row-designator column-designator)
+
+This function returns the value of the cell specified by the row and
+column indicated.
+
+TABLE-DATA-ELEMENTS (td sequence-of-row-designators column-designator)
+
+or
+
+TABLE-DATA-ELEMENTS (td row-designator sequence-of-column-designators)
+
+This function return a list of values.  If more than one row AND more
+than one column are specified, an error will be signalled.
+
+
+IV.4  Retrieving particular rows or columns from the data array.
+
+TABLE-DATA-DATA-ROW (td row-designator)
+TABLE-DATA-DATA-COL (td column-designator)
+
+These functions return Lisp vectors.  If the table data is all of one type
+the vector will have element type in accordance with that type, otherwise
+it will be element type T.  If COLUMN-DESIGNATOR is an integer, it is
+an index into the data array, not into the table.
+
+TABLE-DATA-DATA-ROWS (td row-designators)
+TABLE-DATA-DATA-COLS (td column-designators)	
+
+These functions return lists of Lisp vectors.
+
+IV.5  Functions which deal with TABLE-KEYs
+
+Table keys are required when a key column contains integer data.
+Creating a table key from an integer removes the ambiguity of whether
+the the integer represents a key or a row-index.  Table keys can be
+created from any key, not just integers, however.
+
+TABLE-KEY (key-value &optional (column-designator nil) (table nil))
+
+Creates a TABLE-KEY object.  Examples:
+
+(TABLE-KEY "Massar" "NAME" *USER-TABLE*)
+
+creates a COMPLETE KEY which caches whatever row(s) of the table "MASSAR"
+is found at under the "NAME" column.
+
+(TABLE-KEY "Massar")
+
+creates an INCOMPLETE KEY without an associated table.  Further, even the
+column name the key is to be associated with is unknown.
+
+(TABLE-KEY "Massar" "NAME")
+
+creates an INCOMPLETE KEY without an associated table, but with a known
+column name.
+
+TABLE-DATA-KEY-PRESENT? (td key)
+TABLE-DATA-KEY-ROW-INDICES (td key)
+
+These are similar.  Both return a list of rows the KEY maps to if it is
+present in the table.  If not, TABLE-DATA-KEY-PRESENT? returns NIL, while
+TABLE-DATA-KEY-ROW-INDICES generates an error.  If KEY is not a TABLE-KEY
+object it is first converted to one using (TABLE-KEY KEY).
+
+IV.6  Functions which return all or portions of the table's data array.
+
+TABLE-DATA-DATA-ARRAY (td &key as)
+TABLE-DATA-DATA-SUBARRAY 
+	(td start-row-index start-col-index 
+            &key end-row-index end-col-index as)
+TABLE-DATA-DATA-SUBARRAY 
+	(td sequence-of-row-designators 
+            sequences-of-column-designators
+	    &key as)
+
+These methods return vectors of vectors by default.  If the keyword
+value for :AS is :MATRIX or :2D-ARRAY then a two-dimensional array is
+returned.
+
+If the data is all initially specified as being of a single type, then
+the array or set of vectors returned is created with :element-type of
+that type; otherwise the :element-type is T.
+
+TABLE-DATA-DATA-ARRAY returns uncopied the table's data array unless
+:AS is specified to be :MATRIX or :2D-ARRAY.  Modification of the
+returned structure is this extremely ill-advised.
+
+TABLE-DATA-DATA-SUBARRAY always returns a new array or new vectors.
+It is not necessary that the row indices in SEQUENCE-OF-ROWS or the
+columns in SEQUENCE-OF-COLS be unique.  If they are not unique
+multiple, identical rows and/or columns will be created in the
+returned array.
+
+The column indices are indices into the data array.
+
+
+IV.7  Functions which return entires rows or columns
+
+TABLE-DATA-ROW (td row-designator &optional as)
+TABLE-DATA-COL (td column-designator &optional as)
+
+AS must be either :list or :vector, and defaults to :vector.
+
+TABLE-DATA-ROWS (td row-designators &optional as)
+TABLE-DATA-COLS (td column-designators &optional as)
+
+
+
+IV.8  Functions which return a new Table Data object, derived from
+an existing object, using rows and columns.
+
+TABLE-DATA-ROW-TABLE (td row-designator)
+TABLE-DATA-ROWS-TABLE (td row-designators)
+TABLE-DATA-COL-TABLE (td column-designator)
+TABLE-DATA-COLS-TABLE (td column-designators)
+TABLE-DATA-SUBTABLE (td sequence-of-row-indices sequence-of-column-designators)
+
+These methods return a SUBTABLE of the original table,
+that is, another object of class TABLE-DATA.
+
+
+IV.9 Functions which do SQL-like queries on tables.
+
+TABLE-DATA-SELECT 
+  (td predicate 
+   &key (from :data) (return :row-indices)
+        (tag nil) (index-predicate nil)
+
+Applies PREDICATE to part or all of each row of the TD table data object
+and returns part or all of each row (or the row index) that satisfies
+the test.  The results are gathered together in a list.
+
+FROM can be one of
+
+  :all -- apply predicate to a vector of elements consisting of the entire row
+  :data -- apply predicate to a vector of all the data elements in the row
+  :other -- apply predicate to a vector of all the other elements in the row
+  <column-name> -- apply predicate to the value of that column in the row
+
+RETURN can be one of
+
+  :all -- return the entire row as a vector
+  :data -- return the data vector
+  :other -- return the other vector
+  :row-indices -- return the index of the row
+  <column-name> -- return the value of that column in the row.
+
+TAG can be one of:
+
+  :row -- tag each return with the row index, as (<row-index> <return>)
+  <column-name> --  tag each return with the value of that column in the row
+  
+INDEX-PREDICATE is either NIL or a function which returns T or NIL based
+on the row index it is called with.  This function is called each time
+a new row is considered, and no further testing is done unless it returns T.
+
+Example:  To select the data from all the genes in a hihara data table
+whose gene name starts with "sll" and tag each data vector with its row:
+
+  (table-data-select *h*
+    #'(lambda (gene-frame) 
+        (eql 0 (search "sll" (#^Fname gene-frame) :test #'char=)))
+    :from "geneID"
+    :return :data
+    :tag :row
+    )	
+
+
+IV.8  Setf Functions (Destructive Modification Of Tables)
+
+  Note:  Not to be implemented in prototype.
+
+The user can destructively modify the data in a table by using SETF
+with TABLE-DATA-ELEMENT (restricted to those R's and C's that represent
+data), TABLE-DATA-ROW-DATA, TABLE-DATA-COL-DATA and TABLE-DATA-DATA-SUBARRAY.
+The entire set of data values can be replaced by using SETF with
+TABLE-DATA-DATA-ARRAY.  The data arrays given to SETF must of course
+conform in dimensions and be type-compatible to the data being replaced.
+
+
+IV.9  Consing up Table Data objects from scratch.
+
+CREATE-TABLE-DATA (&key name doc headers post-header-info 
+                        initial-fields keys data-array 
+	           &allow-other-keys)
+
+Creates an object of class TABLE-DATA.
+
+
+IV.10  Storing Table Data objects
+
+WRITE-TABLE-DATA (table-data-object file
+                  &key (deframe? t) (float-format "~A")
+	               (package (find-package :bio))
+                       (write-docs? nil) (write-posthdrs? nil)
+
+This writes the table data object to a file in such a way that
+READ-TABLE-DATA can read it back in.  
+
+If DEFRAME? is true (the default) frames will be converted to their
+names, otherwise they will be output in '#$' format.
+
+If WRITE-DOCS? and/or WRITE-POSTHDRS? is true, any doc or posthdr lines
+read in with the table will be output.
+
+The user can specify a more detailed floating point format for floating
+point data output if so desired.
+
+Meta-information about the file may be written to a file of the same
+name but with type extension .tbi.  The table file will be readable
+without this meta information, but the call to READ-TABLE-DATA will
+have to specify proper values for the keyword parameters, whereas
+these values will be found in the .tbi file if it exists.
+
+Note:  Meta-information capabilities are not implemented in the prototype.
+
+COMPILE-TABLE-DATA (table-data-object)
+WRITE-COMPILED-TABLE-DATA (file compiled-table-data-object)
+READ-COMPILED-TABLE-DATA (file)
+
+These functions provide a mechanism to write out a table in an manner
+such that reading it back in may be more efficient that using 
+READ-TABLE-DATA.  (It may also take less space on disk).
+
+Note:  Not to be implemented in prototype.
+
+
+IV.11  Miscellaneous
+
+DESCRIBE-TABLE-DATA (table-data-object &key (nrows 0))
+
+Prints out information about the table.
+The first NROWS rows of the table are also shown.

@@ -1,0 +1,53 @@
+I have the beginnings of a Behave!-like VPL working and available for
+playing with.  My goal was to get this by the end of the year and I
+think I just made it.  I've spent the last week or so wrestling with
+Javascript, and I have to say, what a pain.
+
+Many caveats -- it's still clunky, you can't do anything real with it,
+there are several important missing features (biggest one: ability to
+enter text in place of a block) and it currently only works in Firefox
+or other Mozilla-type browsers. More importantly, the semantics of the
+language is not really defined, since the idea is to hook it up to
+BioLite. So right now it does a few things, but it's a pretty random
+set of things.
+
+Here's how to play with it:
+
+1) Log into my dev system (not up all the time and the DNS may change):
+
+   http://69.107.92.165:8002/biologin
+
+Your Nostoc password may work, or use mt/mt
+
+2) (bio::vpl)
+
+3) Click left on the resulting block to fill in something, and recurse.
+
+Here's a program you can make that actually does something:
+  (sequence upstream from (first (23) of (genes of (anabaena))) of size (23))
+where () means a block.
+
+4) Hit the Eval button to run the block program.
+
+
+Happy New Year and new UI,
+
+Mike
+
+________________________________________________________________
+
+Some small improvements to the VPL:
+
+- it works now from IE
+
+- partly as a consequence of that, menus are now driven from the right
+  mousebutton rather than the left
+
+- fixed some glitches so there will be fewer disappearing blocks etc.
+
+The problem with the background loading indicator still eludes me,
+since it seems to be intermittent or timing-dependent or
+something. But it doesn't seem to affect operation one way or the
+other.
+
+Mike

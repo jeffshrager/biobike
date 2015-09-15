@@ -1,0 +1,56 @@
+<title>BioBike: Constraint-Based Modeling</title>
+
+<p>
+
+<h2>
+BioBike: Constraint-Based Modeling
+</h2>
+
+<p>
+<i>Copyright 2005 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+Okay, so I've fixed the problems we were having this afternoon w/the 
+constraint
+solver, and I've attached our paper on this technique.
+
+Let's start by getting you to the point where you can run the categorical
+example yourself. I've copied over everything you need into your top level
+BioBike directory and edited it to work.  All you should have to do is to log
+into BioBike (that it, in the normal way, through the web browser 
+into the main
+server), and do the following:
+
+>> (c/l "jkf.lisp")
+
+then:
+
+>> (setf g (jkf-test))
+
+This will result in a graph, which you can visualize by:
+
+>> (seegraph g)
+
+(By the way, I still don't know what the :xinches ... argument does exactly on
+seegraph, but if you do:
+
+>> (seegraph g :xinches 500)
+
+it's a least readably large!)
+
+Anyway, so test that out, and work though the lisp code so that you see what
+it's doing -- how it connects genes to categories and how it gets the
+cross-correlations, and then lets get together next week.  (It may 
+save you some
+time if you want to take online notes while you're working through it, which
+you'll be able to reformulate into lesson content later... of even just as
+comments on the code!)

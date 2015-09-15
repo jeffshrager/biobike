@@ -1,0 +1,297 @@
+<html>
+<head>
+<title>Javascript Testing</title>
+<style>
+#result p {
+  background: #ffddff;
+  padding: 3pt;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+}
+</style>
+
+<script>
+function say(text) {
+  document.getElementById("result").innerHTML += "<p> " + text;
+}
+
+function Widget () {
+  if (arguments.length == 0) {
+    alert("no args. this is Widget: " + (this instanceof Widget));
+    this.id = ++Widget.counter;
+  } else if (arguments.length == 1 && (arguments[0] instanceof Widget)) {
+    alert("one argument, a Widget");
+    arguments[0].id = ++Widget.counter;
+  } else if (arguments.length == 1 && (this instanceof Widget)) {
+    alert("one argument plus this is a Widget");
+    this.id = arguments[0];
+  }
+}
+
+Widget.counter = 0;
+
+ColorWidget.prototype = new Widget();
+ColorWidget.prototype.constructor = ColorWidget;
+ColorWidget.superclass = Widget.prototype;
+
+function ColorWidget (color) {
+  ColorWidget.superclass.constructor.call(this);
+  this.color = color;
+}
+
+
+
+function foo () {
+  say(widgetTest("red"));
+}
+
+function widgetTest (color) {
+  var w = new ColorWidget(color);
+  return "id: " + w.id + "; color: " + w.color;
+}
+
+function undefinedTest (x) {
+    return typeof(x);
+}
+
+function notNotTest() {
+    return !(!(true));
+}
+
+function equalityTest () {
+  var x = { value : undefined };
+  return x == x;
+}
+    
+
+function dotTest() {
+  var o = { x : function () { return this.y; }, y : 10 };
+  //return function () { return o; }()['x'];
+  return o['x']();
+}
+
+function letTest2 () {
+  return function (x) {
+    return x;
+  }(function (y) {
+    return (2 * y);
+  }(10));
+}
+
+function blockTest ()  {
+  (function () {
+    var block$foo = { value : undefined };
+    try {
+      (function (x) {
+        (function () {
+          var block$bar = { value : undefined };
+          try {
+            (function (x) {
+              blockTest2(x);
+            })(function () {
+              block$foo.value = 20;
+              throw block$foo;
+              return undefined;
+            });
+            return alert("not here");
+          } catch (g$37) {
+            if ((g$37 == block$bar)) return block$bar.value; else throw g$37;
+          }
+        })();
+        alert("not here either");
+        blockTest2(x);
+      })(function () {
+        block$foo.value = 10;
+        throw block$foo;
+        return undefined;
+      });
+      return alert("and not here");
+    } catch (g$36) {
+      if ((g$36 == block$foo)) return block$foo.value; else throw g$36;
+    }
+  })();
+  return alert("here");
+}
+
+
+function blockTest2 (fn) {
+  return fn();
+}
+
+
+
+function testundefined () {
+  return undefined;
+}
+
+function testSameName () {
+    alert("" + testSameName);
+    (function (testSameName) {
+      alert("" + testSameName)
+    })("bound");
+    alert("" + testSameName);
+}
+
+
+function f3 (x) {
+  return function () {
+    if (((x % 2) == 0)) return function () {
+      return "even";
+    }(); else return function () {
+      if (((x % 2) == 1)) return function () {
+        return "odd";
+      }(); else return function () {
+        if (true) return function () {
+          return "not a number";
+        }();
+      }();
+    }();
+  }();
+}
+
+
+
+
+
+function bar () {
+  (function (x, y) {
+    return (x + y);
+  })(10, 0);
+}
+
+
+function ifTest () {
+  say((function() {
+    if (1) {
+      return "yes";
+    } else {
+      return "no";
+    }
+  })());
+}
+
+function prognTest() {
+  say((function () {
+    "one";
+    "two";
+    return "three";
+  })());
+}
+
+function letTest() {
+  (function (a, b) {
+    say("a-outer: " + a + ";");
+    say("b-outer: " + b + ";");
+    (function (a, b) {
+      say("a-inner: " + a + ";");
+      say("b-inner: " + b + ";");
+    })("a-inner", "b-inner");
+    say("a-outer: " + a + ";");
+    say("b-outer: " + b + ";");
+  })("a-outer", "b-outer");
+}
+
+function fletTest() {
+  var result = "";
+  (function (fn1, fn2) {
+    say(fn1());
+    say(fn2());
+    (function (fn1, fn2) {
+      say(fn1());
+      say(fn2());
+    })(function () { return "fn1-inner "; }, function () { return "fn2-inner "; });
+    say(fn1());
+    say(fn2());
+  })(function () { return "fn1-outer "; }, function () { return "fn2-outer "; });
+}
+
+function unwindProtectTest() {
+  try {
+    upOne();
+  } catch (e) {
+    say("caught: " + e.x);
+  }
+}
+
+function upOne() { 
+  try {
+    say("upOne main; ");
+    upTwo();
+  } finally {
+    say("upOne finally; ");
+  } 
+}
+
+function upTwo() { 
+  try {
+    say("upTwo main; ");
+    upThree();
+  } finally {
+    say("upTwo finally; ");
+  } 
+}
+
+function upThree() { 
+  try {
+    throw { x: "throwing from upThree" };
+  } finally {
+    say("upThree finally; ");
+  }
+}
+
+function catchTest() {
+  try {
+    catchOne();
+  } catch (e) {
+    alert("whoops: " + e);
+  }
+}
+
+function catchOne() {
+  try {
+    catchTwo();
+  } catch (thing) {
+    if (thing == "expected") {
+      say("caught " + thing + " in catchOne. ");
+    } else {
+      say("caught " + thing + "; rethrowing from catchOne. ");
+      throw thing;
+    }
+  }
+}
+
+function catchTwo() {
+  try {
+    catchThree();
+  } catch (thing) {
+    if (thing == "unexpected") {
+      say("caught " + thing + " in catchTwo. ");
+    } else {
+      say("caught " + thing + "; rethrowing from catchTwo. ");
+      throw thing;
+    }
+  }
+}
+
+function catchThree() {
+   throw "expected";
+}
+
+
+</script>
+</head>
+
+<body>
+
+<p><input value="foo"             type="submit" onclick="foo();"></p>
+<p><input value="if"             type="submit" onclick="ifTest();"></p>
+<p><input value="progn"          type="submit" onclick="prognTest();"></p>
+<p><input value="let"            type="submit" onclick="letTest();"></p>
+<p><input value="flet"           type="submit" onclick="fletTest();"></p>
+<p><input value="unwind-protect" type="submit" onclick="unwindProtectTest();"></p>
+<p><input value="catch"          type="submit" onclick="catchTest();"></p>
+
+<div id="result"></div>
+
+</body>
+</html>

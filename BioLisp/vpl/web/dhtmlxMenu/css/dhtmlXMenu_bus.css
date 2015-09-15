@@ -1,0 +1,164 @@
+/*button text - all levels*/
+#busstyle .menuButtonSecond td, #busstyle .menuButton td, #busstyle .menuButtondown td,#busstyle .menuButtonover td {
+	cursor:pointer;
+}
+/*menu text - all levels*/
+#busstyle .defaultMenuText{
+	font: 12px Arial;
+	padding-left:10px;
+	padding-right:5px;
+	color:white;
+}
+/*menu caption if any*/
+#busstyle .menuName{
+	color : whitesmoke;
+	letter-spacing : 7px;
+	font : 11px Arial,sans-serif;
+	padding-left : 10px;
+	padding-right : 10px;
+}
+/*========= BUTTONS ======================*/
+
+/*plain button state - top level*/
+#busstyle .menuButton {
+	border : 0px;
+}
+/*down button state - top level*/
+#busstyle .menuButtondown {
+	background-color : blue;
+	border: 0px;
+	color:#87ceeb;
+	cursor : pointer;
+}
+/*mouse over button state - top level*/
+#busstyle .menuButtonover {
+	background-color : blue;
+	border: 0px;
+	color:#87ceeb;
+	cursor : pointer;
+}
+/*text color for pressed and over items - top level*/
+#busstyle .menuButtondown .defaultMenuText,#busstyle .menuButtonover .defaultMenuText{
+	color:#87ceeb;
+}
+/*plain button state - other levels*/
+#busstyle .menuButtonSecond {
+	background-color:blue;/*#xD4D0C8*/
+	border:0px;
+	font:12px Arial,sans-serif;
+	padding:5px;
+}
+/*mouse over button and down button states - other levels*/
+#busstyle .menuButtonSecondover,#busstyle .menuButtonSeconddown {
+	background-color : blue;
+	color:87ceeb;
+	cursor : pointer;
+	border:0px;
+	font:12px Arial,sans-serif;
+	padding:5px;
+}
+/*icon place style on button over/down - other levels
+.menuButtonSeconddownimg {
+	background-color : #C9D9F5;
+}*/
+
+/*text of mouse over button - other levels*/
+#busstyle .menuButtonSeconddown td {
+	 color:87ceeb;
+	 text-decoration:underline;
+	 cursor:pointer;
+	 border:0px solid;
+}
+
+
+/*============ PANELS and DEVIDERS ===========================================*/
+
+/*manu panel - top level*/
+#busstyle .menuTable{
+	background-color : blue;
+	border: solid white 1px;
+	margin : 0px;
+	-moz-user-select : none;
+	padding : 0px;
+	
+}
+/*menu panel - other levels*/
+#busstyle .secondMenuTable{
+	background-color : blue;
+	border: 1px solid white; 
+	margin : 0px;
+	-moz-user-select : none;
+	padding : 0 1 0 2;
+	margin-top:px;
+}
+
+/*devider - horizontal*/
+#busstyle .menudivider {
+	background-color : #ece9d8;
+	border-left : solid #FFFFFF 1px;
+	border-right : solid #FFFFFF 1px;
+	height : 100%;
+	margin-bottom : 2px;
+	margin-top : 1px;
+	overflow : hidden;
+	vertical-align : middle;
+	width : 2px;
+}
+/*devider - vertical*/
+#busstyle .menudividery {
+	background-color : #ece9d8;
+	border-bottom : solid #FFFFFF 1px;
+	border-top : solid #FFFFFF 1px;
+	height : 2px;
+	overflow : hidden;
+	width : 100%;
+}
+
+/*================== DRAG HANDLERS ==================*/
+
+/*drag handler for menu - horizontal*/
+#busstyle .menuhandle {
+	background-color : #ece9d8;
+	border-bottom : solid #808080 1px;
+	border-left : solid #FFFFFF 1px;
+	border-right : solid #808080 1px;
+	border-top : solid #FFFFFF 1px;
+	cursor : move;
+	height : 100%;
+	overflow : hidden;
+	width : 3px;
+}
+/*drag handler for menu - vertical*/
+#busstyle .vmenuhandle {
+	background-color : #ece9d8;
+	border-bottom : solid #808080 1px;
+	border-left : solid #FFFFFF 1px;
+	border-right : solid #808080 1px;
+	border-top : solid #FFFFFF 1px;
+	cursor : move;
+	height : 3px;
+}
+
+
+/*============ ICONS and SCROLLERS ====================*/
+
+/*disabled icon - all levels*/
+#busstyle .iconGray {
+	filter : BlendTrans(Percent=50) gray(); 
+	cursor: default; 
+	border:solid 1px #ece9d8;
+}
+
+/*enabled scroller*/
+#busstyle .menuscrollerenabled{
+	background-color:#CAC8D4;
+	 cursor: pointer;	
+	 text-align:center;
+}
+/*disabled scroller*/
+#busstyle .menuscrollerdisabled{
+	background-color: #CAC8D4;
+	cursor: default;
+	visibility:hidden;
+	text-align:center;
+}

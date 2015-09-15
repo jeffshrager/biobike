@@ -1,0 +1,873 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :bbi)
+
+
+; =============== PLOT ===================
+
+#-:lispworks
+;; Lispworks says the code generated for this function is too big!
+(DEFINE-FUNCTION Plot
+  SUMMARY "Simple plotting of points"
+  REQUIRED list-or-table
+     TYPE list-or-table = (OR List Table)
+  KEYWORD vs
+     TYPE vs = (OR List NULL)
+  KEYWORD bin-interval = *unprovided+*
+  KEYWORD min = *unprovided+*
+  KEYWORD max = *unprovided-*
+  KEYWORD ymin = *unprovided+*
+  KEYWORD ymax = *unprovided-*
+  KEYWORD xlabel
+  KEYWORD ylabel
+     TYPE (min max ymin ymax) = Number
+     TYPE bin-interval = positive-number
+  FLAG points
+  FLAG box-histogram
+  FLAG line-histogram
+  FLAG lines
+  FLAG counts
+  INITIALIZE type 
+  = (COND (points 'Points)
+          (box-histogram 'Boxes)
+          (line-histogram 'Impulses)
+          (T 'Lines)) 
+  INITIALIZE data-is-list? = (LISTP list-or-table)
+  INITIALIZE data-list
+     = (COND
+          ((AND data-is-list? vs)
+               (INTERLEAVE list-or-table vs))
+          (data-is-list? list-or-table)
+          (vs (ERROR "To use the VS option, both sets must be lists"))
+          (T (TABLE-TO-LIST-aux list-or-table)))
+  INITIALIZE revised-list = data-list
+  INITIALIZE list-type = (DATA-LIST-TYPE-OF data-list)
+  BODY
+  (ERROR-IF-MORE-THAN-ONE points box-histogram line-histogram lines)
+  (ERROR-IF-MORE-THAN-ONE counts bin-interval)
+  (IF (AND (EQUAL list-type 'multiple) (NOT (EQUAL type 'Lines)))
+      (ERROR "PLOT currently does not support multiple data sets with any graph type except lines"))
+  (IF (AND (EQUAL list-type 'multiple) (> (LENGTH data-list) 5))
+      (ERROR "At present PLOT can handle only up to five data sets"))
+
+  (WHEN counts
+      (SETF revised-list
+         (COND
+            ((EQUAL list-type 'simple-list)
+                (LIST-TO-COUNTS data-list))
+            ((EQUAL list-type 'multiple)
+                (SETF min (UNLESS-PROVIDED min (MIN-OF (FLATTEN data-list))))
+                (SETF max (UNLESS-PROVIDED max (MAX-OF (FLATTEN data-list))))
+                (FOR-EACH sub-list IN data-list
+                     COLLECT (LIST-TO-COUNTS sub-list)))
+            (T (ERROR "ERROR in PLOT: The COUNTS option is incompatible with duplet lists")))))
+  (WHEN (PROVIDED bin-interval)
+      (SETF revised-list
+         (COND
+            ((EQUAL list-type 'simple-list)
+               (BIN-DATA-OF data-list 
+                  (UNLESS-PROVIDED min (MIN-OF data-list))
+                  (UNLESS-PROVIDED max (MAX-OF data-list))
+                  bin-interval))
+            ((EQUAL list-type 'multiple)
+                (SETF min (UNLESS-PROVIDED min (MIN-OF (FLATTEN data-list))))
+                (SETF max (UNLESS-PROVIDED max (MAX-OF (FLATTEN data-list))))
+               (FOR-EACH sub-list IN data-list
+                    COLLECT
+                      (BIN-DATA-OF sub-list min max bin-interval)))
+            (T (ERROR "ERROR in PLOT: The BIN-INTERVAL option is incompatible with duplet lists"))))) 
+  (IF-TRUE (EQUAL list-type 'multiple)
+      THEN (SETF ymin (UNLESS-PROVIDED ymin 
+                        (MIN-OF (FOR-EACH sub-list IN revised-list
+                                     APPEND (IF (TYPEP sub-list 'Simple-list)
+                                                sub-list
+                                                (BBL::SECOND IN-EACH sub-list))))))
+           (SETF ymax (UNLESS-PROVIDED ymax 
+                        (MAX-OF (FOR-EACH sub-list IN revised-list
+                                     APPEND (IF (TYPEP sub-list 'Simple-list)
+                                                sub-list
+                                                (BBL::SECOND IN-EACH sub-list))))))
+           (IF data-is-list?
+               (FOR-EACH series FROM 1 TO (LENGTH revised-list)
+                FOR-each format-type IN '("solid line" "_._." "_ _  _ _  " "----" "_.._..")
+                    (DISPLAY-LINE "Series " series " = " format-type))
+               (FOR-EACH series IN (LABELS-OF list-or-table DIMENSION 2)
+                FOR-each format-type IN '("solid line" "_._." "_ _  _ _  " "----" "_.._..")
+                    (DISPLAY-LINE "Series " series " = " format-type))) 
+
+           (MULTIPLE-PLOT revised-list :XMIN (PROVIDED min) :XMAX (PROVIDED max)
+                :YMIN (PROVIDED ymin) :YMAX (PROVIDED ymax)
+                :XLABEL xlabel :YLABEL ylabel)
+      ELSE (GNUPLOT revised-list 
+              :TYPE type
+            ; :BIN-INTERVAL (PROVIDED bin-interval)
+              :MIN (PROVIDED min) :MAX (PROVIDED max)
+              :YMIN (PROVIDED ymin) :YMAX (PROVIDED ymax)
+              :XLABEL xlabel :YLABEL ylabel))
+)
+
+
+
+
+; ============================ SAM ====================
+
+(DEFINE-FUNCTION sam
+   SUMMARY "Takes experiment, threshold and experiment number and returns list of significant genes"
+   REQUIRED (expt (condition#) condition)
+     TYPE expt = Frame
+     TYPE condition = Positive-integer
+   KEYWORD threshold = 1.2
+     TYPE threshold = Positive-Number
+   INITIALIZE table = (NORMALIZED-MICROARRAY-OF expt)
+   INITIALIZE org = (Ref expt #$organism)
+   INITIALIZE USER-DATA =(FOR-EACH gene IN (CODING-GENES-OF org)
+      FOR-EACH i FROM 1 TO (LENGTH(CODING-GENES-OF org))
+          AS cs = (Ref table gene condition "CVALUES")
+          AS ts = (Ref table gene condition "TVALUES")
+        WHEN CS 
+	COLLECT (SIMPLIFY-LIST (LIST gene cs ts)))
+   
+  INITIALIZE GENE-DATA = (SIMPLIFY-LIST (FIRST USER-DATA))
+  INITIALIZE RETURNED-INDICES = (RETURN-INDICES gene-data)
+  INITIALIZE USER-GROUPS =(GROUP-PERMUTATIONS (FIRST RETURNED-INDICES) (REST RETURNED-INDICES))
+  INITIALIZE GROUP-INDICES = (FIRST USER-GROUPS)            
+  INITIALIZE DValues=(bbl::SORT(LISTd GROUP-INDICES USER-DATA)DESCENDING)
+  INITIALIZE DeiValues=(bbl::SORT(Dei USER-GROUPS USER-DATA) DESCENDING)
+  INITIALIZE NoSigList = (TRANSPOSE-LIST (LIST DValues DeiValues))
+     
+BODY
+
+  (SigGenes NoSigList threshold)
+)
+
+;; =============== write microarray description file ===================
+
+
+(DEFINE-DF-SYNTACTIC-TOKENS Write-Microarray-description-file NUMBER-OF-CONDITIONS NUMBER-OF-BIOLOGICAL-REPLICATES MICROARRAY-DIRECTORY )
+(DEFINE-FUNCTION  Write-Microarray-description-file
+  REQUIRED ((NUMBER-OF-CONDITIONS) conditions-#) ; (nb-BIOLOGICAL-REPLICATES) nb-bioreplicates (MICROARRAY-DIRECTORY) upload-directory )
+    TYPE conditions-# = positive-integer
+  REQUIRED ((NUMBER-OF-BIOLOGICAL-REPLICATES) bioreplicates-#)
+    TYPE bioreplicates-# = positive-integer
+  REQUIRED ((MICROARRAY-DIRECTORY) upload-directory)
+    TYPE upload-directory = string
+  BODY
+  (let* (
+          (header (marray-form-header upload-directory))
+          (body_part1 (marray-form-body-1 conditions-#))
+          (upload-directory-path (user-microarray-directory upload-directory))
+          (body_part2 (marray-form-body-2 upload-directory-path))
+          (body_part3 (marray-form-body-3 conditions-# bioreplicates-# ))
+          (footer (marray-form-body-4))
+          (file-content (JOIN header body_part1 body_part2 body_part3 footer))
+          )
+    (write-and-show-php-form-etc file-content)))
+
+;; =======================================================
+
+(define-function 
+    display*
+    summary "A generic function to display any kind of Biobike data"
+  required display-thing
+  flag blast
+  body
+  (cond
+   ((or 
+     (typep display-thing 'gene)
+     (typep display-thing 'protein)
+     (typep display-thing 'contiguous-sequence))
+    (display-sequence-of display-thing))
+   ((typep display-thing 'table)
+    (if blast 
+        (display-blast display-thing)
+      (display-table display-thing)
+      ))
+   ((typep display-thing 'string)
+    (display-line display-thing))
+   (t (display display-thing))
+   ))
+   
+
+
+;; ========================= FILTER =========================
+
+(DEFINE-FUNCTION INSIDE-DOMAIN
+REQUIRED domain-data
+MAPTREE DOMAIN-DATA
+FLAG gene
+FLAG domain
+FLAG start
+FLAG stop
+FLAG score
+FLAG evalue
+FLAG definition
+BODY
+(LET* ((dgene (IF gene (domain-gene domain-data)))
+       (dname (IF domain (domain-domain domain-data)))
+       (dstart (IF start  (domain-start domain-data)))
+       (dstop (IF stop (domain-stop domain-data)))
+       (dscore (IF score (domain-score domain-data)))
+       (devalue (IF evalue (domain-evalue domain-data)))
+       (ddefinition (IF definition (domain-definition domain-data)))
+       (ddata (LIST dgene dname dstart dstop dscore devalue ddefinition)))
+(FLATTEN ddata)))
+
+
+(DEFINE-DF-SYNTACTIC-TOKENS bbl::FILTER KEEPING-ITEMS)
+(DEFINE-FUNCTION bbl::FILTER
+  REQUIRED (list (KEEPING-ITEMS) (NOT) 
+          (same-as greater-than less-than = < > between contained-in containing 
+           a-subset-of containing-the-subset matched-by-pattern 
+           true-per) value)
+  FLAG case-sensitive
+  FLAG inclusive
+  KEYWORD by-position = *UNPROVIDED+*
+    TYPE by-position = Nonnegative-number
+    CONVERT by-position FROM Number TO Integer
+  INITIALIZE user-function = (IF TRUE-PER value)
+  BODY
+  (LET* ((domainp (TYPEP (FIRST list) 'DOMAIN))
+           ;; I don't know what domainp is about, so code pertaining to it
+           ;; remains untouched (and weird)
+         (list2 (IF domainp (INSIDE-DOMAIN list gene domain start stop score evalue) list))
+         (extents (EXTENTS-OF-COMPLEX-LIST list))
+         (working-by-position (UNLESS-PROVIDED by-position 1))
+         )
+  (MACROLET 
+     ((TRUE-CASED (target operator value)
+        `(IF case-sensitive
+             (TRUE? ,target ,operator ,value :CASE-SENSITIVE)
+             (TRUE? ,target ,operator ,value))))
+
+  (WHEN (PROVIDED by-position) 
+    (IF (< (SECOND extents) by-position)
+        (WARN "BY-POSITION ~A used in FILTER, but the list goes up to only position ~A"
+              by-position (SECOND extents)))
+    (IF (= (SECOND extents) 0)
+        (WARN (S+ "BY-POSITION used in FILTER, but no element of list "
+                  "is a list and therefore none have positions "
+                  "BY-POSITION should probably be removed "))))
+       
+    (FOR-EACH item IN list2
+     FOR-EACH d IN list
+         AS i* = (IF domainp d item)
+         AS target = 
+            (COND
+               ((LISTP item) (REF item working-by-position)) 
+               ((LABELED-SEQUENCE-P item) (SEQUENCE-OF item))
+               (T item))
+         AS result = 
+            (COND 
+               (same-as (TRUE-CASED target SAME-AS value))
+               (greater-than (TRUE-CASED target GREATER-THAN value))
+               (less-than (TRUE-CASED target LESS-THAN value))
+               (= (= target value))
+               (< (< target value))
+               (> (> target value))
+               (between (IF inclusive
+                            (TRUE? target BETWEEN value :INCLUSIVE)
+                            (TRUE? target BETWEEN value)))
+               (contained-in
+                  (TRUE-CASED target CONTAINED-IN value))
+               (containing (TRUE-CASED value CONTAINED-IN target))
+               (A-SUBSET-OF
+                  (TRUE-CASED target A-SUBSET-OF value))
+               (containing-the-subset
+                   (TRUE-CASED value A-SUBSET-OF target))
+               (MATCHED-BY-PATTERN
+                  (TRUE-CASED target MATCHED-BY-PATTERN value))
+               (TRUE-PER (TRUE? target TRUE-PER user-function))
+               (T (bio::FUNCALL user-function target)))
+         (IF not (SETF result (NOT result)))
+         WHEN result COLLECT i*)
+)))
+
+; =======
+
+(DEFUN surimpose-on-map (lists-of-coords-strand &key as-point)
+  (LET* ((all-rows))
+    (FOR-EACH i IN lists-of-coords-strand
+      ;     INITIALIZE oprefix = org[.Organism-Prefix]
+      INITIALIZE counter = 0
+      INITIALIZE slot = 2
+      INITIALIZE thickness = 0.5
+      INITIALIZE mouseover = "-"
+      INITIALIZE hyperlink = "-"
+      INITIALIZE type = "score_II"
+      INITIALIZE sampled-data = (FIRST lists-of-coords-strand)
+      INITIALIZE data-type =
+      (COND ((ALL-TRUE (LIST (STRINGP (FIRST sampled-data)) (NUMBERP (SECOND sampled-data)) (STRINGP (THIRD sampled-data)) (NUMBERP (FOURTH sampled-data)) (STRINGP (FIFTH sampled-data)))) :ss)
+            ((ALL-TRUE (LIST (NUMBERP (FIRST sampled-data)) (NUMBERP (SECOND sampled-data)) (STRINGP (THIRD sampled-data)) (STRINGP (FOURTH sampled-data)))) :mp))
+      AS strand = (COND ((SAME data-type :ss) (THIRD i))
+                        ((SAME data-type :mp) (FOURTH i)))
+      
+      AS strand* = (IF (SAME strand "F") "forward" "reverse")
+      
+      AS start = (COND ((SAME data-type :ss)  (FOURTH i))
+                       ((AND (SAME data-type :mp) (SAME strand "F")) (SECOND i))
+                       ((AND (SAME data-type :mp) (SAME strand "B")) (THIRD i)))
+      AS length-1 = (WHEN (SAME data-type :ss) (- (LENGTH-OF (FIFTH i)) 1))
+      AS stop = (COND ((SAME data-type :ss) (+ start length-1))
+                      ((AND (SAME data-type :mp) (SAME strand "F")) (THIRD i))
+                      ((AND (SAME data-type :mp) (SAME strand "B")) (SECOND i)))
+      AS stop* = (IF as-point start stop)
+      AS label = (IF (SAME data-type :ss)  (FIRST i))
+      AS label* = (IF label label (bio::INCF counter))
+      AS data-row = (JOIN strand* *TAB* slot *TAB* start *TAB* stop* *TAB* type *TAB* thickness *TAB* label* *TAB* mouseover *TAB* hyperlink)
+      DO (PUSH data-row all-rows))
+    (JOIN all-rows BY *newline*)))
+
+; --------
+
+(defun create-circular-map-tab (chromosome-or-plasmid)
+  (assign *suppress-warnings* t)
+  (LET* ((chromosome-or-plasmid-name 
+          (JOIN "#" (NAME-OF chromosome-or-plasmid)))
+         (chromosome-or-plasmid-length
+          (JOIN "%" (LENGTH-OF chromosome-or-plasmid)))
+         (column-titles
+          (utils::string-join
+           '("!strand" "slot" "start" "stop" "type" "thickness" "label"
+                       "mouseover" "hyperlink")
+           *tab*
+           )
+          #+obsolete
+          (JOIN "!strand" *TAB* "slot" *TAB* "start" *TAB* "stop" *TAB*
+                "type" *TAB* "thickness" *TAB* "label"
+                *TAB* "mouseover" *TAB* "hyperlink")
+          )
+         (all-rows nil)
+         )
+    (FOR-EACH 
+     orf IN (GENES-OF chromosome-or-plasmid)
+     INITIALIZE slot = 1
+     INITIALIZE thickness = 1
+     INITIALIZE type = "gene"
+     AS strand = (IF-TRUE (SAME orf[.direction] :F)
+                          THEN "forward"
+                          ELSE "reverse")
+     AS start = orf[.From]
+     AS stop = orf[.To]
+     AS label = (NAME-OF orf SHORT)
+     AS gname = orf[.genetic-name]
+     AS gname* = (WHEN gname (JOIN gname "; "))
+     AS definition = orf[.ANNOTATION]
+     AS mouseover =
+     (JOIN label " " gname* definition " (" strand ":" start " - " stop ")")
+     AS hyperlink = 
+     (IF (EQUAL cl-user::*blast-lookup-database* :SEED)
+         (FORWARD-FUNCALL 'bio::CREATE-SEED-ANNOTATION-URL orf)
+       ;; Need to make this absolute because the java applet window
+       ;; is not relative to the port.  
+       (utils::s+ 
+        "http://"
+        user::*weblistener-machine-name*
+        ":"
+        user::*weblistener-port*
+        (wb::make-weblistener-frames-editor-url :name (fname orf))
+        )
+       #+obsolete
+       (JOIN
+        "http://cyano.genome.jp/cgi-bin/cyorf_view.cgi?ORG=syf&ACCESSION="
+        label)
+       )
+     AS data-row = 
+     (JOIN strand *TAB* slot *TAB* start *TAB* stop *TAB* type *TAB*
+           thickness *TAB* label *TAB* mouseover *TAB* hyperlink)
+     DO (PUSH data-row all-rows))
+    (PUSH column-titles all-rows)
+    (PUSH chromosome-or-plasmid-length all-rows)
+    (PUSH chromosome-or-plasmid-name all-rows)
+    (JOIN all-rows BY *newline*)
+    ))
+
+;; http://biobike.csbc.vcu.edu:8003/frame-editor?pkg=MASSAR77173&name=Gvi.gsr0107&pkey=126
+
+;; *weblistener-machine-name*
+;; *weblistener-port*
+; ----------
+
+(defun create-circular-map-htm (file-name-tab)
+  (format nil "~a~a~a~%"
+"<applet code=\"CGView.class\" width=\"750\" height=\"750\" archive=\"CGView.jar\">
+	    <param NAME=\"file\" VALUE=\""   (FIRST file-name-tab) "\">
+	    <param NAME=\"hideLegend\" VALUE=\"T\">
+	    <param NAME=\"rulerFontSize\" VALUE=\"10\">	    
+	</applet>"))
+
+; -----------
+
+(defun write-map-tab (file-content-string)
+  (bio::WITH-TEMP-FILE-IN 
+   (map-file cl-user::*WEBTMP-DIRECTORY* :prefix "map" :type "tab" :delete? NIL)
+      (WITH-OPEN-FILE (file-content-stream map-file :direction :output :if-exists :supersede)
+              (FORMAT file-content-stream "~a" file-content-string)) 
+ (LAST (SPLIT (STRING-OF map-file) EVERY "/"))  ))
+
+; ------------
+
+(defun write-and-show-map-htm (file-content-string)
+  (bio::with-temp-file-in 
+      (map-file
+       cl-user::*webtmp-directory* :prefix "map" :type "html" :delete? nil)
+    ;; (setq *map-file* map-file)
+    (with-open-file
+        (file-content-stream map-file :direction :output :if-exists :supersede)
+      (format file-content-stream "~a" file-content-string))
+    (let ((map-file-name
+           (bbl::last (bbl::split (string-of map-file) every "/")))) 
+      ;; (break)
+      (wb::make-url
+       :path  (wb::webtmp-url map-file-name)
+       :display-string "show map" :target "_blank")
+      )))
+
+
+; -----------
+
+(define-function make-circular-map
+  REQUIRED chromosome-or-plasmid
+  KEYWORD superimpose
+  FLAG as-point
+  BODY
+    (MAKE-CIRCULAR-MAP-aux
+        chromosome-or-plasmid :SUPERIMPOSE superimpose :AS-POINT as-point))
+
+; -----------
+
+(DEFINE-FUNCTION GROUP
+  SUMMARY "Groups and orders elements of a list"
+  REQUIRED list-of-lists
+  KEYWORD by-position = NIL
+  INITIALIZE by-position-given = by-position
+  BODY
+   (SETF by-position (OR by-position 1))
+   (FOR-EACH list 
+        IN (JOIN NIL 
+                (IF by-position-given
+                    (BBL::SORT list-of-lists BY-POSITION by-position) 
+                    (BBL::SORT list-of-lists))
+                (LIST NIL))
+    INITIALIZE sublist = NIL
+    INITIALIZE reference = NIL
+    AS item = (IF (LISTP list) list[by-position] list)
+    WHEN (AND (NOT (SAME reference item)) sublist)
+    COLLECT  (REVERSE sublist)
+    DO
+    (UNLESS (SAME reference item)
+      (SETF sublist NIL))
+    (PUSH list sublist)
+    (SETF reference (IF (LISTP list) list[by-position] list))
+    ))
+
+; =============== MICROARRAY-FUNCTIONS ===========
+
+; =============== MICROARRAY-TABLE-FROM ==========
+
+(DEFINE-FUNCTION Microarray-table-from
+   REQUIRED expt
+   FLAG raw
+   FLAG normalized-by-median
+   INITIALIZE table-type 
+        = (OR (AND raw "raw") (AND normalized-by-median "median") "median")
+   BODY
+     (COND
+        ((EQUAL table-type "raw") (RAW-MICROARRAY-OF expt))
+        ((EQUAL table-type "median") (NORMALIZED-MICROARRAY-OF expt))
+        )
+  )
+
+; =============== INSIDE-MICROARRAY ==========
+
+(DEFINE-DF-SYNTACTIC-TOKENS INSIDE-MICROARRY for-gene condition#)
+(DEFINE-FUNCTION Inside-microarray
+  REQUIRED (expt (for-gene) gene (condition#) condition)
+     TYPE gene = (OR Gene Protein List)
+     CONVERT gene FROM Protein TO Gene 
+  FLAG raw
+  FLAG normalized-by-median
+  FLAG +ratio 
+  FLAG +ratio-log2
+  FLAG +target-values 
+  FLAG +target-background 
+  FLAG +target-mean
+  FLAG +target-StDev
+  FLAG +control-values 
+  FLAG +control-background 
+  FLAG +control-mean
+  FLAG +control-StDev
+  FLAG +t-test-score
+  FLAG +description-short
+  FLAG +description-full
+  FLAG -labels
+  INITIALIZE table-type 
+        = (OR (AND raw "raw") (AND normalized-by-median "median") "median")
+  INITIALIZE data-types 
+     = (STRING-OF
+         (IF raw
+             '(ratio ratio-log2 TSIG TBG
+               target-mean target-stdev CSIG CBG
+               control-mean control-stdev t-test-score
+               descr-s descr-l)
+             '(ratio ratio2 Tvalues target-background Tmean TSD 
+               Cvalues control-background Cmean CSD ttest
+               descr-s descr-l)))
+  INITIALIZE legal-data-types
+     = (STRING-OF
+         (IF raw 
+             '(TSIG TBG CSIG CBG descr-s descr-l)
+             '(ratio ratio2 Tvalues Tmean TSD 
+               Cvalues Cmean CSD ttest descr-s descr-l)))
+  INITIALIZE return
+    = (CHOSEN-SYMBOLS (+ratio +ratio-log2 +target-values +target-background 
+                       +target-mean +target-stdev +control-values +control-background 
+                       +control-mean +control-stdev +t-test-score +description-short
+                       +description-full)
+                      data-types)
+  INITIALIZE microarray = NIL
+  MAP expt
+  BODY
+    (IF (SUBTRACT-SET legal-data-types FROM return)
+        (ERR+ PROBLEM
+              "At least one of the items to be returned, '~A',"
+              indent "is not appropriate for"
+              indent "the type of table (~A) you chose."
+              ADVICE  "Change the type of table (see Options) or"
+                      "choose from the legal search items: ~A"
+              FORMAT-ARGS (SUBTRACT-SET legal-data-types FROM return) table-type 
+                      (APPLY-FUNCTION (GETHASH item *microarray-symbols*)
+                         REPLACING item WITH legal-data-types)))
+
+    (SETF microarray
+      (COND
+         ((EQUAL table-type "raw") (RAW-MICROARRAY-OF expt))
+         ((EQUAL table-type "median") (NORMALIZED-MICROARRAY-OF expt))
+         ))
+    (INSIDE-MICROARRAY-aux microarray gene condition return :-LABELS -labels)
+    )
+
+; =============== SEARCH-MICROARRAY ==========
+
+(DEFINE-DF-SYNTACTIC-TOKENS SEARCH-MICROARRAY for-gene condition# searching for-those)
+(DEFINE-FUNCTION Search-microarray
+  REQUIRED (expt (for-gene) gene (condition#) condition (searching) 
+             (ratio ratio-log2 target-values target-background 
+              target-mean target-StDev control-values control-background 
+              control-mean control-StDev t-test-score)
+             (for-those) (> >= = NOT= < <=) value)
+     TYPE gene = (OR Gene Protein List)
+     CONVERT gene FROM Protein TO Gene 
+  FLAG raw
+  FLAG normalized-by-median
+  FLAG +ratio 
+  FLAG +ratio-log2
+  FLAG +target-values 
+  FLAG +target-background 
+  FLAG +target-mean
+  FLAG +target-StDev
+  FLAG +control-values 
+  FLAG +control-background 
+  FLAG +control-mean
+  FLAG +control-StDev
+  FLAG +t-test-score
+  FLAG +description-short
+  FLAG +description-full
+  FLAG if-target-above-bg
+  FLAG if-control-above-bg
+; FLAG if-significant
+  INITIALIZE table-type 
+        = (OR (AND raw "raw") (AND normalized-by-median "median") "median")
+  INITIALIZE data-types 
+     = (STRING-OF
+         (IF raw
+             '(ratio ratio-log2 TSIG TBG
+               target-mean target-stdev CSIG CBG
+               control-mean control-stdev t-test-score
+               descr-s descr-l)
+             '(ratio ratio2 Tvalues target-background Tmean TSD 
+               Cvalues control-background Cmean CSD ttest
+               descr-s descr-l)))
+  INITIALIZE legal-data-types
+     = (STRING-OF
+         (IF raw 
+             '(TSIG TBG CSIG CBG descr-s descr-l)
+             '(ratio ratio2 Tvalues Tmean TSD 
+               Cvalues Cmean CSD ttest descr-s descr-l)))
+  INITIALIZE search-item 
+     = (CHOSEN-SYMBOL (ratio ratio-log2 target-values target-background 
+                       target-mean target-stdev control-values control-background 
+                       control-mean control-stdev t-test-score)
+                      data-types)
+  INITIALIZE return
+    = (CHOSEN-SYMBOLS (+ratio +ratio-log2 +target-values +target-background 
+                       +target-mean +target-stdev +control-values +control-background 
+                       +control-mean +control-stdev +t-test-score +description-short
+                       +description-full)
+                      data-types)
+  INITIALIZE operator = (CHOSEN-SYMBOL (> >= = NOT= < <=))
+  INITIALIZE controls = (LIST if-target-above-bg if-control-above-bg
+                           ) ; if-significant
+  INITIALIZE microarray = NIL
+  MAP expt
+  BODY
+    (UNLESS (MEMBER search-item legal-data-types :TEST 'EQUAL)
+        (ERR+ PROBLEM "The search item '~A' is not appropriate for"
+                      "the type of table (~A) you chose."
+              ADVICE  "Change the type of table (see Options) or"
+                      "choose from the legal search items: ~A."
+              FORMAT-ARGS search-item table-type 
+                      (APPLY-FUNCTION (GETHASH item *microarray-symbols*)
+                         REPLACING item WITH legal-data-types)))
+    (IF (SUBTRACT-SET legal-data-types FROM return)
+        (ERR+ PROBLEM 
+              "At least one of the items to be returned, '~A', "
+              indent "is not appropriate for"
+              indent "the type of table (~A) you chose."
+              ADVICE  "Change the type of table (see Options) or"
+                      "choose from the legal search items: ~A."
+              FORMAT-ARGS (SUBTRACT-SET legal-data-types FROM return) table-type 
+                      (APPLY-FUNCTION (GETHASH item *microarray-symbols*)
+                         REPLACING item WITH legal-data-types)))
+
+    (SETF microarray
+      (COND
+         ((EQUAL table-type "raw") (RAW-MICROARRAY-OF expt))
+         ((EQUAL table-type "median") (NORMALIZED-MICROARRAY-OF expt))
+         ))
+    (SEARCH-MICROARRAY-aux microarray gene condition search-item 
+                 operator value return controls)
+    )
+
+(defparameter *view-seed-gene-url* 
+  "http://www.phantome.org/PhageSeed/seedviewer.cgi?page=Annotation&feature=~A"
+  ;; "http://theseed.uchicago.edu/FIG/seedviewer.cgi?page=Annotation&feature=~A"
+  )
+
+(define-function view-seed-gene
+  summary "Bring up a seed annotation overview page for a seed gene"
+  required gene
+  type gene = (or string symbol gene)
+  body
+  (unless (called-from-vpl)
+    (error "Only callable from VPL currently!"))
+  (let ((peg-id 
+         (typecase gene 
+           ((or string symbol) 
+            (let* ((s (string gene))
+                   (pos (search "fig|" s)))
+              (if (and pos (zerop pos))
+                  s
+                (utils::s+ "fig|" s)
+                )))
+           (gene (#^seed-id gene))
+           )))
+    (forward-package-funcall 
+     :vpl 'show-vpl-popup-url-window
+     (formatn *view-seed-gene-url* peg-id)
+     :width "900px"
+     :height "1000px"
+     :location "yes"
+     :menubar "yes"
+     )
+    peg-id
+    ))
+    
+(define-function annotate-seed-feature
+  summary "Bring up the annotation page for a seed feature"
+  required feature-frame
+  type feature-frame = (or string gene protein)
+  body
+  (forward-package-funcall :bio :annotate-seed-feature-aux feature-frame)
+  )
+
+(define-function change-subsystem-role
+  summary "Cause the role of a set of genes in a seed subsystem to be modified."
+  required (to genes)
+  type to = string
+  type genes = (or string frame list)
+  body
+  (forward-package-funcall :bio :change-subsystem-role-aux to genes)
+  )
+  
+(define-function send-message
+  summary "Sends a message to a user or everyone"
+  required message
+  type message = string
+  keyword to = :all
+  keyword from = *username*
+  keyword to-window-type = :all
+  keyword expires = (hours-from-now 24)
+  keyword how-many-times = 1
+  keyword how-often = nil
+  keyword color = "blue"
+  body
+  (wb::announce 
+   message
+   :to to
+   :from from
+   :to-window-type to-window-type
+   :expires expires
+   :how-many-times how-many-times
+   :how-often how-often
+   :color color
+   ))
+                
+; ========== DIGESTION-OF ==============
+(DEFINE-DF-SYNTACTIC-TOKENS Digestion-of by)
+(DEFINE-FUNCTION Digestion-of
+  SUMMARY "Performs restriction digest of sequence"
+  REQUIRED (sequence (BY) enzyme)
+    TYPE sequence = (OR organism contiguous-sequence sequence string gene 
+                        protein labeled-sequence)
+    TYPE enzyme = (OR string symbol)
+  BODY
+   (LET* 
+     ((sites (MATCH-OF-ENZYME-aux T enzyme sequence NIL))
+      (circular? 
+         (AND (OR (TYPEP sequence 'Organism)
+                  (TYPEP sequence 'Contiguous-sequence))
+              sequence[.circular ]))
+      (effective-sites
+         (IF circular?
+             (AND sites (JOIN sites (+ (FIRST sites) (LENGTH-OF sequence))))
+             (AND sites (JOIN 0 sites (1+ (LENGTH-OF sequence))))))
+      (site-count (LENGTH effective-sites))
+      (lengths (IF sites
+                   (DIFFERENCE-OF effective-sites[2 -> site-count]
+                                - effective-sites[1 -> (1- site-count)])))
+      )
+  (DISPLAY-LINE "Digestion by enzyme " enzyme " of " 
+        (IF circular? "circular " "")
+        (LENGTH-OF sequence)
+        "-letter sequence")
+  (IF sites
+      (PROGN
+         (DISPLAY-LINE "")
+         (DISPLAY-LIST 
+            (JOIN (LIST (LIST "Coordinate" "Length") (LIST "----------" "------"))
+                  (INTERLEAVE effective-sites[1 -> (LENGTH lengths)] lengths)))
+         (INTERLEAVE effective-sites[1 -> (LENGTH lengths)] lengths))
+      (DISPLAY-LINE *NEWLINE* "No sites found"))
+))
+
+; ================== DIRECTORY functions ==============
+(DEFINE-FUNCTION My-files
+  SUMMARY "Displays the files in your files"
+  KEYWORD file-pattern = "*.*"
+    TYPE file-pattern = (OR string bbi::symbol labeled-sequence bbi::frame)
+    CONVERT file-pattern FROM bbi::Symbol TO String
+    CONVERT file-pattern FROM Labeled-sequence TO String
+  FLAG sort-by-date
+  FLAG sort-by-size
+  FLAG reversed
+  FLAG -display
+  FLAG +display
+  INITIALIZE files = NIL
+  INITIALIZE sort-pos = 
+      (OR (AND sort-by-size 2) (AND sort-by-date 3) 1)
+  INITIALIZE header = '(("" "FILE-NAME" "BYTES" "   TIME-STAMP")
+                        ("" "---------" "-----" "----------------"))
+  BODY
+    (WHEN (FRAMEP file-pattern)
+       (WARN (JOIN "File-patterns should be entered as quoted strings"
+                   *newline*))
+       (SETF file-pattern (BB-STRING-OF file-pattern :LOWER-CASE T)))
+    (SETF files (DIRECTORY file-pattern))
+    (SETF files
+       (FOR-EACH file IN files
+            AS name = (MATCHES-OF-PATTERN ".*/(.*)" IN (STRING-OF file)
+                        +1st-MATCH-ONLY +SUB-MATCHES AS-REGEX)
+            AS size = (FILE-LENGTH file)
+            AS raw-date = (FILE-WRITE-DATE file)
+            AS raw-start =
+               (bbi::MAKE-TIMESTAMP-STRING :UNIVERSAL-TIME raw-date :MODE :STDFULL)
+            AS date = (JOIN (REF RAW-START 1 -> 4) "-" (REF RAW-START 5 6)
+                            "-" (REF RAW-START 7 8) " " (REF RAW-START 9 10)
+                            ":" (REF RAW-START 11 12))
+            COLLECT (LIST name size date)))
+     (IF (> (LENGTH files) 1)
+         (SETF files 
+            (IF reversed
+                (bbl::SORT files BY-POSITION sort-pos DESCENDING)
+                (bbl::SORT files BY-POSITION sort-pos))))
+     (IF (AND files (NOT -display) (OR +display (BBL-TOPLEVEL?)))
+         (DISPLAY-LIST 
+            (JOIN header
+                 (INSERT INTO-COPY-OF-EACH files EACH (FROM 1 TO (LENGTH files))
+                     BEFORE 1))
+            ALIGNMENT '(R L R L)))
+     files
+)
+
+(DEFINE-FUNCTION Delete-file/s
+  SUMMARY "Deletes one or more files from your files"
+  REQUIRED files-or-path
+    TYPE files-or-path = (OR String List bbi::Symbol Labeled-sequence bbi::Frame)
+    CONVERT files-or-path FROM bbi::Symbol TO String
+    CONVERT files-or-path FROM Labeled-sequence TO String
+    CONVERT files-or-path FROM bbi::frame TO String
+  KEYWORD items
+  FLAG -display
+  FLAG +display
+  INITIALIZE files = NIL
+  BODY
+    (SETF items (ENSURE-LIST items))
+    (SETF files
+      (FOR-EACH entity IN (ENSURE-LIST files-or-path)
+       FOR-EACH i FROM 1
+           AS file =
+             (COND
+                ((LISTP entity) (FIRST entity))
+                ((MATCHES-OF-PATTERN "`*" IN entity)
+                    (bbL::FIRST IN-EACH (MY-FILES FILE-PATTERN entity -DISPLAY)))
+                (T entity))
+           WHEN (OR (NOT items) (MEMBER i items))
+             APPEND (ENSURE-LIST file)))
+    (WHEN (AND (NOT -display) files (OR +display (BBL-TOPLEVEL?)))
+       (DISPLAY-LINE "***** The following files have been deleted *****" *newline*)
+       (FOR-EACH file IN files
+            (DELETE-FILE file)
+            (DISPLAY-LINE file))
+       T)
+)
+
+; ================ MY-VARIABLES =====================
+
+(DEFINE-FUNCTION My-variables 
+  FLAG -Display
+  BODY
+  (LET* ((header '(("Variable" "Type" "Length" "Value")
+                   ("--------" "----" "------" "-----")))
+         (variables (MY-VARIABLES-aux))
+         (values (APPLY-FUNCTION (SYMBOL-VALUE v) 
+                       REPLACING v WITH variables -DISPLAY))
+         (types '((FIXNUM NUMBER)(CONS LIST)(%FRAME FRAME)))
+         (variable-info
+           (FOR-EACH variable IN variables
+            FOR-EACH value IN values
+            FOR-EACH i FROM 1
+                AS pre-type = (TYPE-OF value)
+                AS type = (OR (SECOND (ASSOC pre-type types :TEST 'BB-SAME)) pre-type)
+                AS len 
+                  = (COND
+                       ((STRINGP value) (LENGTH value))
+                       ((LISTP value) (LENGTH value))
+                       ((FRAMEP value) (LENGTH (SLOTS-OF value)))
+                       (T "-")
+                       )
+                AS displayed-value 
+                  = (COND
+                       ((FRAMEP value) value)
+                       ((EQUAL len "-") value)
+                       (T "-"))
+                AS type-string = (STRING-OF type)
+                (IF (AND (LISTP type-string)
+                         (= (LENGTH type-string) 3)
+                         (EQUAL (SECOND type-string) "CHARACTER"))
+                    (SETF type 'STRING))
+                COLLECT (LIST variable type len displayed-value)))
+         )
+   (UNLESS (OR -display (NOT variable-info))
+      (DISPLAY-LIST (JOIN header (bbl::SORT variable-info))))
+   variables
+))

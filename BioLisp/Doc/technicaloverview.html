@@ -1,0 +1,491 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001, 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+<html><head><title>BioBike Technical Overview</title></head>
+<body><center>
+
+</b><p>
+<h2><b>BioBike Technical Overview</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2005 by The BioBike Team (contact <a
+href="http://nostoc.stanford.edu/jeff/personal/index.html">Jeff
+Shrager</a> for more information)</p>
+
+<p>
+
+BioBike is the name given both to a programmable biological
+knowledge environment and to the biological programming language used
+in this environment.  Usually a particular BioBike server instance
+is created for one or a few related organisms.  The CIW/NASA
+Multi-Cyano BioBike server, hosted at The Carnegie Inst. of
+Washington, was established is for use by the cyanobacterial
+community.  It has been publicly accessible since about June of 2003,
+and is being used by a number of biologists for tasks as broad in
+range as bacterial genomics, causal model discovery in a variety of
+domains, and dynamic analysis of social and biological concepts from
+literature.
+
+<p>
+
+BioBike instances have several conceptual layers:
+
+<ol>
+
+<li><u>The Base Knowledge Layer</u> represents major data and
+knowledge bases, such as that found in CyanoBase, the JGI Microbial
+database, and BioCyc (Karp, 2001). These are locally loaded for
+efficient query service, and integrated with one another for
+convenient cross-database reference.  This knowledge is captured in a
+knowledge-representation substrate, called a "frame system", which is
+described in more detail below.  This knowledge represents biological
+component concepts, such as organism, gene, protein, scaffold, etc.,
+and their relationships.
+
+<li><u>The Computed Concepts Layer</u> represents complex concepts,
+built up from component concepts. Here we find such things as
+subsystem, protein complex, pathway, signal transduction pathway, etc,
+including functional concepts such as enzymatic reactions.  These are
+complex, sometimes tentative, usually context-sensitive
+interpretations of the primitive biological concepts rather than fixed
+biological facts. Usually these are calculated by BioBike programs,
+although a basic set is abstracted from external knowledge bases such
+as KEGG (Ogata, et al. 1999) and the Gene Ontology (Gene Ontology
+Consortium, 2000).
+
+<li>Through <u>the BioBike Programming Layer</u>, biologists access
+and manipulate the knowledge and data in the previous layers. The
+BioBike programming language, described in more detail below, is
+designed to permit flexible integration of the various facilities
+inside and outside of the BioBike environment.  BioBike code
+primarily makes use of the concepts in the previously described
+layers.  (The BioBike language is described in great detail in the
+extensive <a href=index.html>online documentation</a>.  It is a
+derivative of Common Lisp, with many biologically-relevant functions
+and special syntax. [1])
+
+<li>In <u>the Task-Specific Interface Layer</u>, specific interactive
+graphical interfaces can drive BioBike programs, making these
+available for public use without having to log into the BioBike
+programming environment.
+
+<li>Finally, <u>the Collaboration Layer</u> enables users to store
+their code and results, document their work, organize user groups, and
+conduct individual and collaborative activities. This layer is based
+upon <a href=http://c2.com/cgi/wiki?WikiWikiWeb>Wiki Technology</a>,
+in particular <a href=http://www.cliki.net/CLiki>Cliki</a>, a Wiki
+derivative,and is used in ever-changing ways by the community.
+
+</ol>
+
+<p>
+
+Standing beside the BioBike system are many common BioInformatic
+tools, which can be called directly through BioBike programs.  These
+include: ClutalW, Blast, Meme, the microarray and statistical tools
+from the R statistical package (<a
+href=http://www.r-project.org/>http://www.r-project.org/</a>).  We
+also tabulate the complete "blast" between all the genes in all the
+available organisms, and provide tools for analyzing the graph implied
+by this inter-organism blast table.  Finally, BioBike includes a set
+of experimental causal modeling and discovery tools developed in one
+of our laboratories (Shrager, Langley, and Pohorille, 2002; Bay, et
+al. 2002).
+
+<p>
+
+The Multi-Cyano BioBike server links knowledge about cyanobacteria
+to the Gene Ontology (GO) and BioCyc knowledge bases through the frame
+system.  The knowledge base currently contains integrated knowledge
+for Nostoc punctiforme, Anabaena PCC 7120, Anabaena variabilis
+ATCC29413, Trichodesmium erythraeum, Synechocystis PCC 6803, and as
+more organisms are sequenced they will curated into the BioBike
+knowledge base.  Concepts and tools in the first three layers above
+are added by users and developers based on the requirements of
+specific tasks at The Carnegie, NASA, and elsewhere in the
+Cyanobacterial community.
+
+<p>
+<p>
+
+<b>Frame-based Biological Knowledge Representation</b>
+
+<p>
+
+All permanent knowledge in BioBike is represented in terms of
+objects called <i>frames</i>.  A frame may represent a particular
+object (e.g., an instance of a gene), or a class of objects, or other
+sorts of abstract concepts (e.g., a pathway).  Indeed, each organism
+comprises a set of frame objects which represent its genes, proteins,
+and other components.  
+
+<p>
+
+Frames have named properties called <i>slots</i>.  The values of these
+slots can be primitive objects (like numbers or strings), other
+frames, or lists of frames, or any other sort of thing that one wants
+to associate as a property to a concept.  [2] BioBike has a
+knowledge browser which enables users to conveniently explore the
+network of frames, select desired objects and execute computations on
+them.
+
+<p>
+
+Knowledge from Gene Ontology, the basic KEGG ontology, and a set of
+pathway models from BioCyc are transformed into frames, and then these
+are related to one another together through shared chemistry, and
+associated with the genes in each organism. Moreover, the
+"definitions" in the Gene Ontology, which are non-formal descriptions
+of the reactions, are parsed into actual reaction representations.
+For example, Glucokinase Activity (GO ID: 4340) has this description:
+"Catalysis of the reaction: ATP + D-glucose = ADP + D-glucose
+6-phosphate."  We parse this into reactants and products, which are
+individually accessible via slots of the frame representing this
+reaction.  Through these mechanisms BioBike programs can reach
+across knowledge base boundaries and realize complex analytical
+computations.
+
+<p>
+
+<b>The BioBike Server Interface, Usability, and Collaborative Features</b>
+
+<p>
+
+Users interact with BioBike through a web-based "Listener", which
+accepts either programs or commands, displays results, and keeps a
+running history of interactions.  The Listener provides an array of
+services intended to support both non-expert users, expert
+programmers, and communities working collaboratively.  These include:
+
+<ul>
+
+<p>
+
+<li><u>Collaborative "Blackboard" Architecture</u>: The most important
+collaborative feature of BioBike lies in the architecture of the
+server itself.  Specifically, although each logged-in user of
+BioBike appears to have his or her own complete server instance, in
+reality, these are all the same server, so that code and variables
+implemented or set by one user can, if so desired, be seen by all or
+any other users.  This can be extremely useful, for example, when a
+team wishes to collaborate.  Moreover, because of this design, if 
+two different users are logged in from different locations using the
+same login name, they will each be operating in the same exact
+BioBike environment.  As a result, each user will see the very
+same system I/O.  We have had a number of occasions to use the
+listener in this "collaborative" mode, and one would expect it to be
+very useful in remote user assistance settings.
+
+<p>
+
+<li><u>CLiki interface</u>: BioBike is also tightly integrated with
+the <a href=http://www.cliki.net/CLiki>CLiki</a> system where users
+can conveniently store and edit their data and code.  Because the
+CLiki is readable and editable by all users, it serves as a sort of
+collaborative notebook.
+
+<p>
+
+<li><u>Homology-based help</u>: For beginning users, the help
+system uses "word homology", essentially a BLAST algorithm on
+sentences, to find relevant help without concern for precise spelling.
+
+<p>
+
+<li><u>Click-through code</u>: The results of a help search are links
+that click through to a page giving a function's complete
+documentation, its complete code, and a link that will display the
+entire source module containing this function.  Moreover, all of the
+functions in the displayed code are live links which link either to
+other BioBike code, or out to the <a
+href=http://www.lispworks.com/reference/
+HyperSpec/Front/index.htm>Common Lisp HyperSpec</a>.  Through this
+dynamic linkage, both beginning and expert programmers can explore the
+entire BioBike source tree, learning how to write and modify code by
+example, as well as being able to see exactly how every part of the
+language is implemented.  (User's own programs are dynamically entered
+into this source tree as well.)
+
+<p>
+
+<li><u>Integrated file system, data management and analysis tools</u>: Each
+BioBike user is assigned a Unix-style home directory, into which
+code and data may be loaded.  GUI tools enable users to manage their
+files, and there are a number of primitives for convenient processing
+of table data, FASTA files, and other common formats, including a set
+of primitives that provide inferential and microarray statistics via
+the R statistical programming system.  Built in primitives also provide
+simple plotting capabilities.
+
+<p>
+
+<li><u>Dynamic web tools</u>: Users can create active web pages
+dynamically from within BioBike.  Users can attach any function to a
+dynamically-created web-based form.  Arguments entered into the form
+are passed to the user's function, and the results are displayed across
+the web.  In this way, any BioBike user can create a simple web
+interface to his or her programs for others to use.  The method for
+doing this is quite simple, usually only requiring two or three lines
+of BioBike code that are just arguments to one function call to
+create an active server page.  From then onward, the page is available
+for anyone to use without having to be logged into BioBike.  This is
+important because it enables users who develop program in BioBike to
+easily publish a public interface to their programs.
+
+</ul>
+
+<p>
+
+<b>Comparisons with other Work</b> 
+
+<p>
+
+Direct user-level programmability is rare among biological knowledge
+bases, which generally provide point-and-click interfaces to some
+services, and sometimes a programmer-level interface (i.e., an API).
+Using these APIs requires learning to program in one of several
+non-biological programming languages, or one of their
+biologically-oriented analogs, generally called the "Bio*" languages
+(BioPython, BioJava, etc.)  Indeed, this is how many bioinformatics
+engineers go about their work.  How does BioBike differ from these?
+
+<p>
+
+Learning to program in a particular language is only a small part of
+the difficulty in building useful bioanalytical tools.  There is a
+huge amount of additional work that must be done in getting the right
+data, getting it into the right formats for processing, putting it in
+accessible places, integrating knowledge from one source with
+knowledge from another, and many other non-programmatic but very real
+practical problems.  These are the activities that the Bio* languages
+were designed to facilitate, but these are not the activities that
+biologists want to spend their time doing! Rather, they would like to
+have all of that integration already done for them, and just get on
+with analysis.  This is why BioBike operates in an integrated
+environment; once the integration has been done, most of the Bio*
+languages lose their utility, and what one wants is a <i>knowledge
+processing</i> language, not a string processing language. BioBike
+is just that.
+
+<p>
+
+There are a few projects whose goals are closer to ours than the Bio*
+languages.  A similar vision is shared by <a
+href=http://www.geneticxchange.com>GeneticXChange</a>, which is based
+upon the Kleisli language (Davidson, et al. 2001).  This commercial
+product is essentially a cross-integrating web-wide query language.
+Nonetheless our work differs in a number of ways from GeneticXChange.
+First, BioBike is a complete programming language, not just a query
+language; Queries can be done with ease in BioBike, but so can
+algorithmic computations.  Thus, in BioBike, users can run the
+results of a query through, for example, Clustal, and then compute
+with the resulting alignments, producing new results that can be fed
+into yet another analytical step, and so on.  Second, the BioBike
+server is an integrated knowledge base around one or a number of
+organisms; We do not envision having to ever (or almost never) go out
+to other knowledge bases; All calculations run fast from the outset
+because all data is localized in the warehouse, and pre-integrated.
+
+<p>
+
+Another class of programmable bio-genomic data analysis tools are
+those following the dataflow paradigm, such as <a
+href=http://www.scitegic.com>PipeLine pilot</a> and the <a
+href=http://www.silicongenetics.com>GeneSpring scripting
+environment</a>.  This model was popularized by ProGraph (Cox &
+Pietryzkowsky, 1989) and made most useful by <a
+href=http://www.ni.com>Labview</a>.  Although considered by most users
+very convenient because of their simple graphically representation,
+such languages are also well known for their lack of flexibility.  So
+long as one's algorithms are naturally represented in a relatively
+pure dataflow model, they work well, but when one needs to break from
+the dataflow model, for example, where cycles of iteration interact
+with one another, such formalism can be quite clumsy.  Because
+BioBike is based upon a mature and well understood programming
+language, it has no such limitations.  However, it also has no
+strongly motivating graphical interface, and there are some important
+advantages to be had by this sort of simplicity.  Indeed, we are
+working toward a programming model based upon <a
+href=http://xenia.media.mit.edu/~mt/behave/behave.html>Behave!</a> (by
+Mike Travers).
+
+<p>
+
+Some other concepts present in BioBike are also not new with our
+work.  The concept of users working in a persistent environment is a
+very old idea in programming languages, harking back as far as early
+time-shared BASIC, and most importantly developed in the APL workspace
+concept (Falkoff and Iverson, 1968).  However, none of these had the
+collaborative facility of the BioBike server architecture. Also,
+although we did not invent the Wiki concept, as far as we know, the
+concept of tightly integrating a Wiki with a programming system is
+novel in BioBike.  Whether it is useful is contentious even amongst
+ourselves.  Only time and use will tell whether it is a useful
+innovation.
+
+<p><hr><p>
+
+<b>References</b>
+
+<p>
+
+<li>S Bay, J Shrager, A Pohorille, P Langley (2002). Revising regulatory
+networks: From expression data to linear causal
+models. J. Biomed. Informatics, 35: 289-297.
+
+<p><li>Capone DG, Zehr JP, Paerl HW, Bergman B, Carpenter EJ
+(1997). Trichodesmium, a globally significant marine
+cyanobacterium. Science 276:1221-1229.
+
+<p><li>Ciferri O (1983). Spirulina, the edible microorganism. Microbiol Rev
+47:551-578.
+
+<p><li>Codd GA, Ward CJ, Bell SG (1997). Cyanobacterial toxins: occurrence,
+modes of action, health effects and exposure routes. Arch Toxicol
+Suppl 19:399-410.
+
+<p><li>Cox, P.T., Giles, F.R. and Pietrzykowski, T. (1989). ``Prograph: a
+step towards liberating programming from textual conditioning''. 1989
+IEEE Workshop on Visual languages, pp. 150-6.
+
+<p><li>Davidson, SB, Crabtree, J, Brunk, BP, Schug, J, Tannen, V, Overton,
+GC, Stoeckert, CJ Jr. (2001) K2/Kleisli and GUS: Experiments in
+integrated access to genomic data sources. IBM Systems Journal, 40(2).
+
+<p><li>Douglas SE (1994). Chloroplast origins and evolution. In: The
+Molecular Biology of Cyanobacteria (Ed: Bryant DA). Kluwer Academic
+Pub, Dordrecht, Netherlands. pp.91-118.
+
+<p><li>Falkoff, AD, & Iverson, KE (1968) APL\360 User.s Manual; IBM Thomas
+J. Watson Research Center
+
+<p><li>Gantar M, Elhai J (1999). Colonization of wheat para-nodules by the
+N2-fixing cyanobacterium Nostoc sp. strain 2S9B. New Phytol
+141:373-379.
+
+<p><li>Gene Ontology Consortium (2000) Gene Ontology: tool for the
+unification of biology. Nature Genet. 25: 25-29.
+
+<p><li>Hess WR, Rocap G, Ting CS, Larimer F, Stilwagen S, Lamerdin J,
+Chisholm SW (2002). The photosynthetic apparatus of Prochlorococcus:
+Insights through comparative genomics Photosyn Res 70:53-71.
+
+<p><li>Hihara, Y., A. Kamei, M. Kanehisa, A. Kaplan, and M. Ikeuchi. (2001)
+DNA microarray analysis of cyanobacterial gene expression during
+acclimation to high light. Plant Cell 13:793-806
+
+<p><li>Kaneko T and 23 others (1996): Sequence analysis of the genome of the
+unicellular cyanobacterium Synechocystis sp. strain PCC
+6803. II. Sequence determination of the entire genome and assignment
+of potential protein-coding regions. DNA Res 3:109-136.
+
+<p><li>Kaneko T and 21 others (2001): Complete genomic sequence of the
+filamentous nitrogen-fixing cyanobacterium Anabaena sp. strain PCC
+7120. DNA Res 8:205-213.
+
+<p><li>Karp, P.D. (2001) Pathway Databases: A Case Study in Computational
+Symbolic Theories. Science, vol. 293, pp. 2040-2044.
+
+<p><li>Meeks, JC, Elhai J, Potts M, Thiel T, Larimer F, Lamerdin J, Predki P,
+Atlas R (2001) An overview of the genome of Nostoc punctiforme, a
+multicellular, symbiotic cyanobacterium. Photosyn Research 70:85-106.
+
+<p><li>Meeks JC and Elhai J (2002). Regulation of cellular differentiation in
+symbioses between cyanobacteria and plants. Microbiol Molec Biol Revs
+66:94-121.
+
+<p><li>Moore, L., Rocap, G., and Chisholm, S. Physiology and molecular
+phylogeny of coexisting Prochlorococcus ecotypes. Nature 393: 464-467
+(1998).
+
+<p><li>Moore RE (1996). Cyclic-peptides and depsipeptides from cyanobacteria:
+A review. J Ind Microbiol 16:134-143.
+
+<p><li>Norvig, P. (undated) Python for Lisp programmers
+(http://www.norvig.com/python-lisp.html, last accessed: 20040315).
+
+<p><li>Ogata, H., Goto, S., Sato, K., Fujibuchi, W., Bono, H., and Kanehisa,
+M.; KEGG: Kyoto Encyclopedia of Genes and Genomes. Nucleic Acids
+Res. 27, 29-34 (1999).
+
+<p><li>Schaeffer DJ, Krylov VS (2000). Anti-HIV activity of extracts and
+compounds from algae and cyanobacteria. Ecotoxicol Environ Safety
+45:208-227.
+
+<p><li>Shrager, J. (2003) The fiction of function. Bioinformatics, 19(15),
+1934-1936.
+
+<p><li>Shrager, J., Langley, P., & Pohorille, A. (2002), Guiding revision of
+regulatory models with expression data. Proc. of the Pacific Symposium
+on BioComputing. World Scientific Press
+
+<p><li>Tamagnini P, Axelsson R, Lindberg P, Oxelfelt F, WThiel T
+(1994). Genetics analysis of cyanobacteria. In: The Molecular Biology
+of Cyanobacteria. (Ed: Bryant,Donald A) Kluwer Academic Publishers,
+Dordrecht, 581-611.
+
+<p><li>Zehr JP, Waterbury JB, Turner PJ, Montoya JP, Omoregie E, Steward GF,
+Hansen A, Karl DM (2001). Unicellular cyanobacteria fix N2 in the
+subtropical North Pacific Ocean. Nature 412:635-638.
+
+<p><hr><p>
+
+Notes:
+
+<p>
+
+[1] Common Lisp is a modern, fully compiled, interactive programming
+language with excellent compilers and programming/debugging tools.
+(Lisp code can run, on average, at nearly the speed of C; ranging from
+100x faster, to 7x slower by one well-respected estimate (Norvig,
+accessed 20040315). A PERL-compatible pattern matcher written entirely
+in Lisp is as fast as, and in some cases faster than, the actual PERL
+pattern matcher, <a
+href=http://www.weitz.de/cl-ppcre>http://www.weitz.de/cl-ppcre</a>,
+when benchmarked on the PERL-standard tests.)  Lisp is a naturally
+interactive language which has, for nearly its whole existence (since
+the late 1950's), had the "modern" concepts of functional
+decomposition, automatic memory management (i.e., garbage collection),
+and incremental compilation that make interactive programming
+possible. Moreover, Lisp's simple syntax permits true macros, which
+enables us to flexibly extend the language's syntax; No other
+programming language has this capability.  One of the
+cyanobacteriologists has used the macro facility extensively to design
+new syntax for many common Lisp operations.  Finally, and most
+importantly, Lisp is the most natural language in which to write
+complex 'symbolic reasoning' programs, which is why it has remained
+popular in the most advanced computing circles, esp. in Artificial
+Intelligence.  Listener-type interfaces are not new; In fact, they are
+nearly as old as Lisp itself.
+
+<p>
+
+[2] Frames are a sort of dynamically-defineable object similar to, yet
+different from, standard structures, Java class objects, or CLOS Lisp
+objects.  A variety of special forms manage frames, esp. (#^slot
+#$frame), which access the value of a particular slot in a given
+frame.  So, for example, this form: (#^proteins #$synechocycstis6803)
+extracts a list of the proteins in this organism.
+

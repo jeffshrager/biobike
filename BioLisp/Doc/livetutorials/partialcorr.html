@@ -1,0 +1,175 @@
+>> (setq data (simple-read-table "/home/symbio/livetutorials/partialcorr.data"))
+
+>> (pop data)
+</pre>
+
+<pre>
+>> (defun matelem (mat x y)
+>>         (elt (elt mat x) y))
+</pre>
+
+<pre>
+>> (defun extract-names (table)
+>>         (setq names 
+>>                 (loop for row from 0 to (- (length table) 1)
+>>                         collect (matelem table row 0)
+>>                         do (pop (elt table row)))))
+</pre>
+
+<pre>
+>> (defvar *genes* (- (length names) 1))
+</pre>
+
+<pre>
+>> (defvar *observations* (- (length (elt data 0)) 1))
+</pre>
+
+<pre>
+>> (defun mean-of-gene (table row)
+>>         (mean
+>>                 (loop for i from 0 to *observations*
+>>                         collect (matelem table row i))))
+</pre>
+
+<pre>
+>> (defun build-meansmatrix (table)
+>>         (setq meansmatrix 
+>>                 (loop for row from 0 to *genes* 
+>>                         do (setq genemean (mean-of-gene table row))
+>>                         collect (loop for el from 0 to *observations*
+>>                                 collect (- (matelem table row el) genemean)))))
+</pre>
+
+<pre>
+>> (defun build-covmatrix (table)
+>>         (setq covmatrix
+>>                 (loop for rowa from 0 to *genes*
+>>                         collect (loop for rowb from 0 to *genes*
+>>                                 do (setq tmp 0)
+>>                                 do (loop for obs from 0 to *observations*
+>>                                         do (setq tmp (+ tmp (* (matelem table rowa obs) (matelem table rowb obs)))))
+>>                                 collect (/ tmp (- (length (elt table rowa)) 1)))))
+>>                 
+</pre>
+
+<pre>
+>> (defun build-corrmatrix (covmatrix)
+>>         (setq corrmatrix
+>>                 (loop for x from 0 to *genes*
+>>                         collect (loop for y from 0 to *genes*
+>>                                 do (setq covxy (matelem covmatrix x y)) 
+>>                                 do (setq varx (matelem covmatrix x x))
+>>                                 do (setq vary (matelem covmatrix y y))
+>>                                 collect (/ covxy (sqrt (* varx vary))))))
+</pre>
+
+<pre>
+>> (defun set-threshold (pval) 
+>>         (setq df (- *observations* 5))
+>>         (setq zscore (* pval (sqrt (/ 1 df))))
+>>         (defvar *threshold* (/ (exp (- (* 2 zscore) 1)) (exp (+ (* 2 zscore) 1)))))
+</pre>
+
+<pre>
+>> (defun square (num)
+>>         (* num num))
+</pre>
+
+<pre>
+>> (defun build-1storder (corrmatrix pval)
+>>   (set-threshold pval)
+>>   (setq 1storder corrmatrix)
+>>   (loop for z from 0 to *genes*
+>>    do (loop for x from 0 to *genes*
+>>        do (when (/= z x) 
+>>      (loop for y from (+ x 1) to *genes*
+>>        do (when 
+>>      (AND (/= y z) (> (abs (matelem 1storder x y)) *threshold*))
+>>      (setq numerator (- (matelem corrmatrix x y) (* (matelem corrmatrix x z) (matelem corrmatrix x z))))
+>>      (setq denominator (sqrt (* (- 1 (square (matelem corrmatrix x z))) (- 1 (square (matelem corrmatrix y z))))))
+>>      (when 
+>>       (/= denominator 0.0)
+>>       (setq tmp (/ numerator denominator))
+>>       (when 
+>>        (< (abs tmp) (abs (matelem 1storder x y))) 
+>>        (setf (elt (elt 1storder x) y) tmp)
+>>        (setf (elt (elt 1storder y) x) tmp)))))))))
+</pre>
+
+<pre>
+>> 
+>> ;;; I don't think I'm going to use this one. . . 
+>> (defun build-goodcorrs (1storder pval)
+>>         (set-threshold pval)
+>>         (setq goodcorrs
+>>                 (loop for x from 0 to *genes*
+>>                         collect (remove NIL (loop for y from (+ x 1) to *genes*
+>>                                 collect (if (> (abs (matelem 1storder x y)) *threshold*)
+>>                                               y))))))
+</pre>
+
+<pre>
+>> (defun createpairs ()
+>>         (remove NIL (loop for x from 0 to *genes*
+>>                 append (loop for y from (+ x 1) to *genes*
+>>                         collect (list x y)))))
+</pre>
+
+<pre>
+>> (defun removepairs (pairs corrmatrix)
+>>         (loop for genepair in pairs
+>>                 do (setq x (elt genepair 0)
+>>                 do (setq y (elt genepair 1))
+>>                 do (if (< (abs (matelem corrmatrix x y)) *threshold*)
+>>                         (setq pairs (delete genepair pairs)))))
+</pre>
+
+<pre>
+>> (defun build-2ndorder (corrmatrix pval)
+>>         (set-threshold pval)
+>>         (setq 1storder corrmatrix)
+>>         (setq 2ndorder corrmatrix)
+>>         (setq pairs (createpairs))
+>>         (removepairs pairs corrmatrix)
+>>         (loop for z from 0 to *genes*
+>>                 do (loop for x from 0 to *genes*
+>>                         do (when (/= z x) 
+>>                                 (loop for y from (+ x 1) to *genes*
+>>                                         do (when (and (/= y z) (> (abs (matelem 1storder x y)) *threshold*))
+>>                                         (setq numerator (- (matelem corrmatrix x y) (* (matelem corrmatrix x z) (matelem corrmatrix x z))))
+>>                                         (setq denominator (sqrt (* (- 1 (square (matelem corrmatrix x z))) (- 1 (square (matelem corrmatrix y z))))))
+>>                                         (when (/= denominator 0.0)
+>>                                                 (setq tmp (/ numerator denominator))
+>>                                                 (when (< (abs tmp) (abs (matelem 1storder x y))) 
+>>                                                         (setf (elt (elt 1storder x) y) tmp)
+>>                                                         (setf (elt (elt 1storder y) x) tmp))))))) 
+>>                 do (loop for genepair in pairs
+>>                         do (setq x (elt genepair 0))
+>>                         do (setq y (elt genepair 1))
+>>                         do (loop for q from (+ z 1) to *genes*
+>>                                 do (when (and (/= q x) (/= q y))
+>>                                         (setq numerator (- (matelem 1storder x y) (* (matelem 1storder x q) (matelem 1storder y q))))
+>>                                         (setq denominator (sqrt (* (- 1 (square (matelem 1storder x q))) (- 1 (square (matelem 1storder y q))))))
+>>                                         (when (/= denominator 0.0)
+>>                                                 (setq tmp (/ numerator denominator))
+>>                                                 (when (< (abs tmp) (abs (matelem 2ndorder x y)))
+>>                                                         (setf (elt (elt 2ndorder x) y) tmp)
+>>                                                         (setf (elt (elt 2ndorder y) x) tmp))))))
+>>                 (removepairs pairs 2ndorder)))
+>>                                 
+>>                         
+</pre>
+
+<pre>
+>> (defun build-graph (matrix pval)
+>>         (set-threshold pval)
+>>         (setq nodes 
+>>                   (remove NIL (loop for x from 0 to *genes*
+>>                         collect (flatten (remove NIL (loop for y from (+ x 1) to *genes*
+>>                                 collect (when (> (matelem matrix x y) *threshold*)
+>>                                         (list (elt names x) '+ (elt names y)))))))))))
+</pre>
+
+ :: (("PRAF" + "PMEK") ("PIP2" + "PIP3")
+  ("P44_42" + "PAKTS473" "P44_42" + "PKA") ("PAKTS473" + "PKA")
+  ("PKC" + "P38"))

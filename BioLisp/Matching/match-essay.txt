@@ -1,0 +1,220 @@
+
+
+     WHY ARE THERE TWO APPARENTLY DIFFERENT RECURSION FORMULAS
+         FOR GLOBAL ALIGNMENT IN THE BIOLOGY LITERATURE?
+
+
+Browsing Biolinformatics web sites and books that discuss
+Needleman-Wunsch and Smith-Waterman algorithms, one comes across two
+apparently different recursion formulas that claim to implement these
+alignment algorithms.
+
+Below we provide the two different formulas, discuss what they mean,
+and why they are in fact different but in some cases equivalent.
+
+
+Consider the alignment problem
+
+SEQA = ACGTA
+SEQB = ACATA
+
+One would normally think that the alignment 
+
+ACGTA
+|| ||
+ACATA
+
+was optimal.
+
+But given a relatively large mismatch penalty and a relatively small
+gap penalty, then
+
+AC-GTA
+||  ||
+ACA*TA
+
+or
+
+ACG-TA
+||  ||
+AC*ATA
+
+could be optimal.
+
+Using the recursion relationship found in the original Needleman-Wunsch
+algorithm
+
+http://www.cs.umd.edu/class/spring2003/cmsc838t/papers/needlemanandwunsch1970.pdf
+
+and, e.g., in the course notes web site by Dr. Altman of Stanford
+University at
+
+http://www.smi.stanford.edu/projects/helix/bmi214/4-03-03clr.pdf
+
+which is:
+
+SCORE(i,j) = SUBST(i,j) + 
+ 
+ MAX { SCORE(i-1,j-1), 
+ 
+       MAX    SCORE(k,j-1) - W(i-1-k) 
+     k=0,i-2 
+ 
+       MAX    SCORE(i-i,k) - W(j-1-k) 
+     k=0,j-2 
+    } 
+
+it is impossible to find these latter alignments, while using the
+alternate recursion formula, it is.
+
+The reason finding these alignments is not possible using the
+recursion formula above is because it forces the backpointers from
+(I,J) to point to some point K<I AND L<J.  A backpointer from (I,J)
+cannot go to (I-1,J) or (I,J-1) and then to (I-1,J-1), and these paths
+are the only ways to produce such an alternating gap.
+
+Recall that backpointer(s) from (I,J) point back to the cell(s) selected
+by the MAX operations in the recursion formula that contribute the
+highest score(s).  No cell with I or J as a coordinate is ever considered.
+
+Graphically, for the '*' point below, the algorithm allows
+backpointers to the '+' points.
+
+- - - + - -
+- - - + - -
++ + + + - -
+- - - - * -
+- - - - - -
+
+In mathematical English, what this recursion relationship says is
+"The optimal alignment of the subsequences SEQA[0...I] and SEQB[0...J]
+GIVEN that SEQA[I] and SEQB[J] are to be exactly aligned, must be
+determined by looking either for some K<I such that SEQA[K] will be
+aligned with SEQB[J-1], or for some L<J such that SEQA[I-1] will be
+aligned with SEQB[L].  That is, one MUST go back to a previous point
+where two sequence elements are exactly aligned.
+
+The fact that SEQA[I] and SEQB[J] must be exactly aligned here is
+enforced by the addition of SUBST(I,J) (the score for this exact
+match) regardless of which term is selected by the outer MAX
+operation.  This addition is done for all I and J, so every
+backpointer points back to an exact alignment.
+
+Now consider the alternate recursion formula, found, for instance, in
+Gusfield, "Algorithms of Strings, Trees and Sequences", Chapter 11.
+(It is presented there in a somewhat different format.  It has been
+converted to the format used above):
+
+ 
+SCORE(i,j) = 
+ 
+ MAX { SCORE(i-1,j-1) + SUBST(i,j), 
+ 
+       MAX    SCORE(k,j) - W(i-k) 
+     k=0,i-1 
+ 
+       MAX    SCORE(i,k) - W(j-k) 
+     k=0,j-1 
+     } 
+
+
+Note that the backpointers can point back to the same row I or the
+same column J when one of the bottom two terms is selected, since
+coordinates with I or J in them are part of the formula.
+
+Graphically, as above,
+
+- - - - + -
+- - - - + -
+- - - + + -
++ + + + * -
+- - - - - -
+
+This recursion formula does NOT impose the constraint that SEQA[I]
+and SEQB[J] must align exactly.  They only align exactly if the
+first term is chosen (because only then do we add SUBST(I,J), the
+score for exact alignment).
+
+This recursion relationship says that the optimal alignment for
+the subsequences SEQA[0...I] and SEQB[0...J] is either
+
+  1.  The optimal alignment of SEQA[0...I-1] and SEQB[0...J-1],
+      concatenated with SEQA[I] and SEQB[J].
+
+  2.  Some optimal alignment of SEQA[0...I] with SEQB[0...J]
+      such that SEQA[I] is strictly to the left of SEQB[J].  That is,
+      the alignment ends with a gap in SEQA from SEQA[I] until we
+      hit SEQB[J].
+
+  3.  The same as (2), reversing A&B, I&J.
+
+There is no presumption in (2) that SEQA[I] must exactly align with
+any character in SEQB, and similarly for (3).
+
+Illustrated graphically, the first recursion relation can only produce
+the following backpath, regardless of the penalty for mismatches:
+
+   A C A T A
+A  0
+C    1
+G      2
+T        3
+A          4
+
+while the latter recursion relation can produce the same as above,
+but can also produce
+
+
+   A C A T A
+A  0
+C    1 2
+G      3
+T        4
+A          5
+
+
+or
+
+   A C A T A
+A  0
+C    1
+G    2 3
+T        4
+A          5
+
+given suitable mismatch and penalty functions.
+
+
+Now, in some kinds of DNA matching it may be the case that one never
+encounters a situation where it would be appropriate to have a large
+mismatch penalty and small gap penalty.  Then the two recursion
+formulas would, I believe, produce the same alignments, all other
+things equivalent.  Also note that the first algorithm is slightly
+more efficient since less cells need to be searched (although in the
+standard case, with a linear gap penalty function, this is no longer
+true if one implements the optimization that allows the algorithm to
+run in O(NM) instead of cubic time; both algorithms need to search the
+same number of cells).
+
+But presumably there are other scenarios where a gap would be
+acceptable while a mismatch highly unlikely (See Gusfield, p 253, for
+a discussion of when adjacent gaps in opposite strings might be
+appropriate in a biological context).
+
+As noted, the original Needleman-Wunsch paper uses the first algorithm,
+and the paper specifically notes the constraint that both I and J must
+decrease as the path matrix is traversed backwards.  They do not,
+however, talk about the implications/restrictions of this contraint
+on what alignments are possible.
+
+The Gribskov, Devereux paper,
+
+http://www.cs.umd.edu/class/spring2003/cmsc838t/papers/gribskovanddevereux1994.pdf
+
+also uses the first algorithm.
+
+However, most texts and websites I've examined seem to use the second,
+more general, recursion formula.
+
+ 
+

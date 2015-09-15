@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+<head> <title> The Palette </title> </head>
+<style type="text/css">
+ td {
+ border:0 solid black;
+ vertical-align:top;
+ }
+ td.padded {
+ padding-left:30px;
+ }
+ blockquote { margin: 25px; padding: 0px; }
+ ul { margin-top: 0; }
+ .bq { padding-left: 25px; display:block; margin-bottom: 10px; }
+</style>
+
+<center>
+<h5>
+&nbsp;&nbsp;&nbsp;<a href="vpl2-tutorial.html">Main menu</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp; <a href="palette.html">The Palette</A> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="boxes.html">Function and data boxes</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="workspace.html">The Workspace</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="resultsarea.html">The Results Area</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="errors.html">When Things Go Wrong</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="define.html">Define and Define-function</a> &nbsp;&nbsp;&nbsp; 
+
+<br/>
+</h5>
+</center>
+<center><h2><br/>The Palette </h2></center> 
+
+
+<P><B>DETAILS</B>
+<TABLE padding-left="30"><TR VALIGN="top">
+<TD class="padded"><U><SPAN style="border-bottom: 1px double #000;"><A href="palette-black.html"><B>Black buttons</B></A></SPAN></U>
+<BR><A href="palette-black.html#help">Help menu</A>
+<BR><A href="palette-black.html#files">Files menu</A>
+<BR><A href="palette-black.html#sessions">Sessions menu</A>
+<BR><A href="palette-black.html#edit">Edit menu</A>
+</TD>
+<TD class="padded"><U><SPAN style="border-bottom: 1px double #000;"><A href="palette-green.html"><B>Green buttons</B></A></SPAN></U>
+<BR><A href="palette-green.html#categories">Function categories</A>
+<BR><A href="palette-green.html#alpha">Alphabetical list</A>
+<BR><A href="palette-green.html#documentation">Function documentation</A>
+<BR><A href="palette-green.html#finding">Finding functions</A>
+</TD>
+<TD class="padded"><U><SPAN style="border-bottom: 1px double #000;"><B>Blue buttons</B></SPAN></U>
+<BR><A href="#data">Data menu</A>
+<BR><A href="#favorites">Favorites menu</A>
+<BR><A href="#functions">Functions menu</A>
+<BR><A href="#variables">Variables menu</A>
+<BR><A href="#organisms">Organisms menu</A>
+<BR><A href="#subsystems">Subsystems menu</A>
+</TD>
+</TR>
+</TABLE>
+
+<P>BLUE BUTTONS
+<TABLE><TR>
+<TD><A name="data"><U>DATA menu</U>
+<BR><IMG src="datamenu.jpg" alt="data menu" vspace"5"/>
+</TD>
+<TD>
+<BR><SPAN class="bq">This menu is a grabbag of constants that are useful in special circumstances
+</SPAN>
+<UL>
+<LI><B>True</B> and <B>False</B>: Useful in certain logical expressions to represent truth and falseness
+<LI><B>*Genbank*</B>: Represents National Center for Biotechnological Information (NCBI)'s Genbank database, used in certain functions
+<LI><B>*big-number*</B>: A very large number (32 and 37 zeros)
+<LI><B>*tab*</B> and <B>*newline*</B>: When displayed, causes the next text to be positioned on either the next tab position or next line
+<LI><B>*nucleotides*</B> and <B>*amino-acids*</B>: Lists of the four nucleotides ("A" "C" "G" "T") and the 20 amino acids ("A" "C" "D"...) commonly found in DNA and proteins, respectively
+<LI><B>*end*</B>: Sometimes useful to specify the end of list, particularly when the length is unknown
+</UL>
+</TD></TABLE>
+
+<P>
+<TABLE><TR>
+<TD valign="top"><A name="favorites"><U>FAVORITES menu</U>
+<BR><IMG src="favorites.jpg" alt="favorites menu" vspace"5"/>
+</TD>
+<TD>
+<BR><SPAN class="bq">BioBIKE keeps track of which functions you use the most and adds them to your Favorites menu. 
+This might make it easier for you to find frequently used functions.</SPAN>
+
+<UL>
+<LI><B>Add favorite</B>: Add a function to the favorite list yourself
+<LI><B>Delete favorite</B>: Remove a function from the list
+<LI><B>Clear favorites</B>: Throw out the entire list and start over
+<LI><B>Forbid favorite</B>: Prevent a function from appearing in the list
+</UL>
+</TD></TABLE>
+
+<P>
+<TABLE><TR>
+<TD><A name="functions"><U>FUNCTIONS menu</U>
+<BR><IMG src="functions-menu.jpg" alt="functions menu" vspace"5"/>
+</TD>
+<TD>
+<BR><SPAN class="bq">This button appears only when you create your own functions using DEFINE-FUNCTION.
+</SPAN>
+<UL>
+<LI><B>Expunge</B>: Opens a menu that allows you to selectively delete functions you've created 
+<LI><B>Expunge all</B>: Deletes all the functions you've created
+<LI><B>(List of functions you've created)</B>: Clicking a function brings it down to the workspace
+</UL>
+</TD></TABLE>
+
+<P>
+<TABLE><TR>
+<TD><A name="variables"><U>VARIABLES menu</U>
+<BR><IMG src="variables-menu.jpg" alt="variables menu" vspace"5"/>
+</TD>
+<TD>
+<BR><SPAN class="bq">This button appears only when you create your own functions using DEFINE.
+</SPAN>
+<UL>
+<LI><B>Expunge</B>: Opens a menu that allows you to selectively delete variables you've created 
+<LI><B>Expunge all</B>: Deletes all the variables you've created
+<LI><B>(List of variables you've created)</B>: Clicking a variable brings it down to the workspace
+</UL>
+</TD></TABLE>
+
+<P>
+<TABLE><TR>
+<TD><A name="organisms"><U>ORGANISMS menu</U>
+<BR><IMG src="organisms-menu.jpg" alt="organisms menu" vspace"5"/>
+</TD>
+<TD>
+<BR><SPAN class="bq">The contents of this button will vary considerably from one BioBIKE instance to another. 
+The menu allows access to all the genomes supported by the instance and to subsets of those genomes.</SPAN>
+</TD></TR>
+<TR><TD>
+<IMG src="organisms-menu-extended.jpg" alt="organisms menu extended"/>
+</TD>
+<TD>
+<SPAN class="bq">In the case shown (PhAnToMe/BioBIKE), clicking <B>Viruses</B> or <B>Bacteria</B> causes their menus to be loaded. 
+The resulting menus present the organisms sorted alphabetically or according to phylogeny (or, in the 
+cases of viruses, according to bacterial host).
+
+<P>At each phylogenetic level, it is possible to select all organisms within that classification. 
+In the case shown at the right, for example, clicking <B>All Cyanobacteria</B> creates a set consisting 
+of all bacteria known to BioBIKE within the cyanobacteria.
+
+<P>Proceeding one phylogenetic level down, the user would be able to create a set consisting of all Nostocales.
+
+<P>Clicking any item that is not itself a menu (i.e. followed by a sideways triangle), causes the genome or set 
+of genomes to be brought down into the workspace.
+</SPAN>
+</TD></TABLE>
+
+<P>
+<TABLE><TR>
+<TD><A name="subsystems"><U>SUBSYSTEMS menu</U>
+<BR><IMG src="subsystems-menu-enable.jpg" alt="enable subsystems menu" vspace"5"/>
+</TD>
+<TD>
+<BR>
+<SPAN class="bq">This button appears only in BioBIKE instances that use the SEED database. 
+It provides access to human-curated categories of proteins. 
+Since the menu takes several seconds to load, it is loaded only on demand, 
+by clicking <B>Enable subsystem selection</B>.</SPAN>
+</TD></TR>
+<TR>
+<TD><IMG src="subsystems-menu.jpg" alt="subsystems menu" vspace"5"/>
+</TD>
+<TD>
+<SPAN class="bq">When subsystem selection is enabled, the subsystems are presented alphabetically
+(<B>By Name</B>) and by functional category (<B>By Category</B>). The categories are
+arranged hierarchically.
+
+<P>Clicking any item that is not itself a menu (i.e. followed by a sideways triangle), 
+causes the subsystem to be brought down into the workspace.
+</SPAN>
+</TD></TR></TABLE>
+  
+<center>
+<h5>
+&nbsp;&nbsp;&nbsp;<a href="vpl2-tutorial.html">Main menu</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp; The Palette &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="boxes.html">Function and data boxes</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="workspace.html">The Workspace</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="resultsarea.html">The Results Area</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="errors.html">When Things Go Wrong</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="define.html">Define and Define-function</a> &nbsp;&nbsp;&nbsp; 
+
+<br/>
+</h5>
+</center>
+
+</body></html>
+
+
+
+
+

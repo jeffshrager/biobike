@@ -1,0 +1,436 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<html><head><title>Program Development in the BioBike Programming Environment</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Program Development in the BioBike Programming Environment</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2006 by The BioBike Team.</p>
+
+<p>
+
+The BioBike web service is called a "Listener" because it listens to
+your commands, executes them, and reports the results.  This is the
+BioBike "programming environment" (hereafter, the BPE).  In previous
+sections we learned how to write small programs in the BPE (using
+DEFUN), but we didn't really go into much detail on how to debug
+programs when you have problems, or on how to develop larger programs.
+Together these are called the "program development process."
+
+<p> 
+
+Each programming environment requires a different style of program
+development, so although some Lisp texts and tutorials explain some
+common ways in which program development could or should take place,
+these usually have to be understood in the context of each new
+programming environment.  Program development in the BPE is very
+different than most other commonplace programming environments,
+primarily because there are specific limitations to what can go on
+between the server and your web browser.  Understanding the structure
+of the interaction between your web browser and the BioBike server
+will help you to understand what you can and can't do, and will help
+you understand how program development should go on in the BPE.
+
+<p>
+
+The topics considered here are:
+
+<font color="green">
+<ul>
+<li> Debugging using the Listener 
+<li> A few simple tools to ease your typing
+<li> Using the editor
+</ul>
+</font>
+
+<p>
+
+<big><b>Debugging in the BPE</b></big>
+
+<p>
+
+Because interaction between you and the BioBike server is so
+limited, you have to be somewhat creative in your debugging
+techniques for BioBike programs.
+
+<p>
+
+Errors: 
+
+<p>
+
+Errors are trapped normally by BioBike, and you get a normal error
+report, but instead of ending up in a debugger, you are thrown back to
+the BioBike Listener.  Any output that your program has done to that
+point will be displayed, and you'll see the error, but the program
+stops running at that point, and its state is lost.
+
+<p>
+
+Here's an example:
+
+<p><pre>
+(defun wrong! (n)
+  (format t "It's really wrong to try to divide ~a by zero!~%" n)
+  (/ n 0))
+
+  >> (wrong! 4)
+  :: It's really wrong to try to divide 4 by zero!
+  Attempt to divide 4 by zero.
+</pre><p>
+
+Sometimes it's useful to force the program to stop when some condition
+is encountered that you're trying to debug.  Normally, in Lisp, you
+can use the BREAK function to essentially pause the program by
+dropping into the interactive debugger.  Since there's no interactive
+debugger in the BPE, you can't use BREAK.  (If you do, you'll get a
+nice error message telling you as much.) However, you can use ERROR
+instead.
+
+<p>
+
+For example:
+
+<pre>
+(defun right! (n m)
+  (cond ((zerop m) (error "It's really wrong to try to divide ~a by ~a!~%" n m))
+        (t (/ n m))))
+
+  >> (right! 1.0 2.0)
+  :: 0.5
+  >> (right! 4.0 0.0)
+  :: It's really wrong to try to divide 4.0 by 0.0!
+</pre>
+
+Here instead of you waiting for Lisp to find the error, we signaled
+and error ourselves.
+
+<p>
+
+This is fine until an problem occurs in a place you didn't expect it to,
+which is, of course, most of the time.  To aide in determining where such
+an error occurred, the function EXPLAIN exists.  Calling EXPLAIN:
+
+<pre>
+>> (explain)
+</pre>
+immediately after an error occurs will cause a string showing the 'stack trace'
+of the Lisp system at the point your error occurred.  While the output
+is a bit hard to read without some getting used to, it can invaluable.
+<p>
+
+Print Tracing:
+<p>
+Since when an error occurs, you get all your output up to that point
+(as we saw above) you can easily use what is perhaps the most
+important, most common, and easiest debugging tool: Displaying values
+along the way.  Here's an example:
+<pre>
+(defun self-traced (n m)
+  (format t "N is ~a, and M is ~a~%" n m)
+  (/ n m))
+
+  >> (self-traced 3.0 4.0)
+  :: N is 3.0, and M is 4.0
+  0.75
+  >> (self-traced 3.0 0.0)
+  :: N is 3.0, and M is 0.0
+  Attempt to divide 3.0 by zero.
+</pre><p>
+
+This is esp. useful when it's a little hard to figure out where the
+error message is coming from.  For example:
+<pre>
+(defun ugly! ()
+   (/ 5 (* 4 (- 3 (+ 1 2)))))
+
+  >> (ugly!)
+  :: Attempt to divide 5 by zero.
+</pre>
+Okay, but where along the line did the zero come from?? (I know that
+it's obvious, but this is just an exercise!) 
+<p>
+One of the great things about Lisp is that you can wrap (print ...)
+around any expression, and it outputs the value of the expression, and
+then gives you the result anyway.  Watch:
+<pre>
+  >> (print 5)
+  :: 5
+  5
+</pre>
+We got 5 twice!  Once it was printed, and once it was returned from
+print.  So, we can rewrite Ugly! as:
+<pre>
+(defun ugly! ()
+   (/ 5 (print (* 4 (print (- 3 (print (+ 1 2))))))))
+
+  >> (ugly!)
+  :: 
+  3 
+  0 
+  0 
+  Attempt to divide 5 by zero.
+  :: Attempt to divide 5 by zero.
+</pre>
+Aha!  So (+ 1 2) gave us 3, which, when subtracted from 3 gave us 0;
+There's the culprit!  (Notice that the prints happen 'inside out', not
+'left to right', an important bit of Lisp knowledge to have).
+<p>
+Here's another great thing about Lisp:
+<pre>
+(defmacro !! (expr)
+  `(third (print (list ',expr '=> ,expr))))
+
+(defun ugly! ()
+   (/ 5 (!! (* 4 (!! (- 3 (!! (+ 1 2))))))))
+
+  >> (ugly!)
+  :: 
+  ((+ 1 2) => 3) 
+  ((- 3 (!! (+ 1 2))) => 0) 
+  ((* 4 (!! (- 3 (!! #)))) => 0) 
+  Attempt to divide 5 by zero.
+</pre>
+The !! macro displays both the expression and it's result, and then
+passes the result to the next expression!  If that's not way cool,
+then nothing is!  (The '#' in the last !! output is a subexpression
+that is nested so deeply that instead of printing it out, which would
+take up too much space, the printer decided to just put '#' to show
+you that there's something there.  This can be adjusted using Common
+Lisp global variable *PRINT-LEVEL*, but since we know what's there
+anyway, this isn't a big deal to us now.)
+
+<p>
+Call tracing:
+<p>
+
+You can tell Lisp to show you when it enters a function, the arguments
+to that function, when it leaves a function, and the value that
+function returns.  You do this by using TRACE.  Here's an example.
+
+<pre>
+(defun fred (x) (1+ x))
+(defun wilma (y) (1- (fred y)))
+(trace fred wilma)
+
+(fred 3)
+
+0[9]: (WILMA 3)
+   1[9]: (FRED 3)
+   1[9]: returned 4
+ 0[9]: returned 3
+ 0[9]: (FRED 3)
+ 0[9]: returned 4
+
+</pre>
+
+The first thing that happens is that WILMA gets called with 3 as its argument.
+Inside of WILMA (denoted by the indentation), FRED gets called, also with 3
+as its argument.  FRED returns 4, then WILMA returns 1- that, or 3 (again,
+denoted by the indentaton).  Finally, our outermost call to FRED can happen
+since we now know that value to pass it (again 3), and FRED returns 4.
+<p>
+The Listener will allow you to trace functions that you've defined for 
+yourself, but it will not allow you to trace functions that BioBike has
+defined for you, or standard Lisp functions.  This is because everyone is
+using those same functions, and if you traced, say, LOAD-ORGANISM, then
+every time anyone called LOAD-ORGANISM the trace printout would appear!
+<p>
+You can untrace using, strangely, enough, the UNTRACE function.
+You can untrace every function you are currently tracing by calling 
+UNTRACE with no arguments.
+<pre>
+(untrace)
+</pre>
+
+<p>
+<big><b>A few simple tools</b></big>
+<p>
+
+Recall above we typed
+<pre>
+(defun ugly! ()
+   (/ 5 (!! (* 4 (!! (- 3 (!! (+ 1 2))))))))
+</pre>
+This can more easily be entered using the BPE's 'end bracket'
+convention:
+<pre>
+(defun ugly! ()
+   (/ 5 (!! (* 4 (!! (- 3 (!! (+ 1 2]
+</pre>
+If a right bracket character is the last character you enter, then the
+BPE will 'expand' it with right parentheses until all unmatched left 
+parenthesesis have been matched.
+<p>
+Now suppose that yesterday you typed
+<pre>
+(defun frobnicate-and-computate (x y)
+  (exp (+ (* x x) (* y y) 0.25))
+</pre>
+into the BPE.  Its now today, and you realize you didn't save your function
+anywhere, and you either don't quite remember its definition or don't feel
+like typing it all again.  No problem.  If you type:
+<pre>
+(defun fr
+</pre>
+into the BPE in the one-line entry box and hit ENTER, the entire definition
+above will appear in the multi-line entry box!
+<p>
+What's going on is that the BPE saves everything you enter for posterity,
+and when you call upon posterity by typing in an incomplete form, it does
+a match of what you typed against the initial characters of your saved
+entries.  (This is otherwise known as history completion).
+<p>
+Now suppose that yesterday, after you defined frobinate-and-computate,
+you then typed in
+<pre>
+(defun frobnicate-and-obfuscate (x y)
+  (format t "There's no answer because it's obfuscated")) 
+</pre> 
+Again pretend it's today and you type 
+<pre> 
+(defun fr
+</pre>
+In the one-line entry box.  Now the definition of
+frobnicate-and-obfuscate will appear in the multi-line entry box
+because it matches and is chronologically more recent.  How to get
+what you really want, the definition of frobnicate-and-computate?
+Very simple!  Notice that nothing has changed in the one-line entry box.
+Simply do an ENTER again (making sure the focus is in the one-line box).
+Voila!  The definition of frobnicate-and-obfuscate will disappear from
+the multiline entry box and the definition of frobnicate-and-computate
+will take its place.
+<p>
+You can 'scroll back' in history as far as you want.  If you reach a point
+where there are no further matches, the history completion mechanism
+simply 'rolls' itself over and starts again from the most chronologically
+recent match.
+
+<p>
+<big><b>Using the Editor</b></big>
+<p>
+
+To write very simple functions, you can use the Multiline box of the
+Listener.  But if you need to write something more than a few lines
+long, and you are interested in easily saving it, you should consider
+using the Listener's simple editing facility. 
+
+<p>
+<font color = "red">
+Note: **** Some of the facilities described below require using a
+Netscape/Mozilla/Firefox flavored browser, not an Internet Explorer
+browser ****
+</font>
+
+<p>
+
+To use it, from the Listener click on the <big><font
+color="green">Browse BioFiles</font></big> link at the bottom of the
+page. On that page, the first text line after the long, thin,
+horizontal grey line should be a link to your home directory,
+something like
+
+<pre>
+/home/visitors/fred/
+</pre>
+
+(especially if your login name is fred...)
+<p>
+Click on this link.  You should see a list of subdirectories (if you
+have any) and a list of files you have in your BioBike home
+directory.  If you want to edit an existing file you can click on the
+<font color="green">edit</font> link to the left of the file name.  If
+you want to create a new file (or make a subdirectory), click on the
+link that says 'New file or subdirectory' just above the long, thin,
+horizontal grey line.  Go ahead and do that.  Enter the name of the
+file -- let's call it hyp.lisp.  then hit ENTER.  Shazam!  You now 
+have a Weblistener editor page.
+<p>
+Starting typing:
+<pre>
+(in-package :fred)  ;; or whatever your login name is
+</pre>
+
+Notice that like the Weblistener itself, when you type a close paren,
+it shows you the matching open paren (in the little box near the top
+right labelled 'Info:').
+<p>
+Now let's start typing in your function definition:
+<pre>
+(defun hypotenuse (side1 side2)
+</pre>
+Notice that when you type the space after 'defun' the 'Info:' display
+box shows you the argument names and syntax for this primitive.
+<p>
+Note also that when you hit ENTER, after it goes to the next line it
+automatically indents.  (It's a simple editor -- the indentation isn't
+perfect, and doesn't always conform to standard Lisp indentation
+standards, but it is useful nonetheless).
+<p>
+Let's continue typing:
+<pre>
+  (sqrt (+ (* side1 side1) (* side2 side2))))
+</pre>
+Okay, we're done with our function definition.
+Does it work?
+<p>
+Click on the 'Save-Compile-Load' button just above the big editor box.
+This brings you back to the Weblistener and, as you can see, has
+automatically executed the Lisp form
+
+<pre>
+(load (compile-file "/home/visitors/fred/hyp.lisp"))
+</pre>
+for you, which compiles your file (hyp.lisp), creating a binary file
+(hyp.fasl), and load that file so that you can execute your function.
+By the way, as the button's name implies, it has also saved your code
+to disk.
+<p>
+Now if you type into the single-line box:
+<pre>
+(hypotenuse 3 4)
+5.0
+</pre>
+If you want to get back to your editor window you can use the 'back'
+arrow button on your browser repeatedly and you will eventually get there.
+<p>
+The 'Reindent' button (which is also present below the Multiline box in the
+standard Weblistener) reindents your code according to a few simple
+heuristics.  This can be very useful, but it can also be deceptive in that
+it does not understand some of the more obscure indenting conventions that
+a standard Lisp-knowledgeable editor such as Emacs uses.      
+<p>
+If you reindent your code and it has too few or too many parentheses,
+the indenter will insert a comment to this effect into the editor box.
+This comment will automagically go away the next time you reindent if
+you have managed to correct your paren-balancing problem.
+
+
+<p><hr><p>
+<p align="right">Copyright (c) 2003-2006 by The BioBike Team.</p>
+

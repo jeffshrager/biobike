@@ -1,0 +1,970 @@
+
+
+                      BIOPIKE LANGUAGE SPECIFICATION VERSION 0.0.0.1
+
+Introduction.  
+
+This is a first attempt to define the language that will subsume or
+replace BioLite as the biologist's programming language to access Pike
+(the Programmable Integrated Knowledge Environment, nee Biolingua aka
+KnowOs).  Material in this document comes from the wish list document
+and various phone conversations, along with the fertile depths of
+JP's imagination...
+
+Nothing in this document should be taken as agreed upon or correct.
+Basically this document needs to develop by concensus into a
+reasonably detailed specification of what the language will look like.
+
+=======================================================================
+
+BASIC TERMINOLOGY:
+
+KnowOS -- Knowledge Operating System
+  Lisp, the frame system, and the integration with the underlying OS
+and independent programs.  On a secondary level the Weblistener and
+its OS-like capabilities; various utility functions.
+
+BIKE -- Big Integrated Knowledge Environment
+  Essentially, the ability to program the KnowOS.
+  Manifestations include BioLisp, BioLite and the proposed BioPike.
+  Also includes support tools for program development.
+
+BioLisp --
+  The set of Lisp routines currently loaded into a BioLingua instance
+that are not part of the KnowOS, generally biological-specific
+libraries and utilities, such as FASTA tools, Organism tools,
+Microarray table tools, etc.
+
+BioBike -- Biological BIKE.
+  The proposed successor to BioLite.  A language that will allow a
+non-programmer biologist to become a programmer biologist with a
+minimum (but non-zero) effort.  Also a set of libraries/tools that
+model the biologists' worlds, making it easy for them to translate
+biological concepts into code.
+
+Visual BioBike --
+  The theoretical graphical language possibily built on top of BioPike
+that would allow even non-programmer biologists to create programs of
+use in their analyses.
+
+DWIM -- Do What I Mean.  
+  The ability of a compiler or interpreter to figure out what a coder
+very likely intended, even if the directive is theoretically
+ambiguous, and execute that likely intention without intervention from
+the user.
+
+DWIMMM -- Do What I Might Mean Maybe.  
+  A dangerous form of DWIM, where a computer selects one of a set of
+possibilities when a directive is ambiguous and executes it,
+regardless of the consequences of selecting something the user did not
+intend and which might have bad consequences.
+
+SWIPM -- Suggest What I Probably Mean.  
+  A compiler / interpreter trapping ambiguous statements and, via some
+user-friendly mechanism, giving the user a choice of reasonable
+continuation options based of some metric of closeness in semantic or
+character-closeness space rather than erroring out with no reasonable
+way to continue.
+
+Lexical context awareness -- the ability of a compiler/macro to detect
+whether a symbol is lexically bound.  (BioLite suffers from its
+inability to do this at macroexpansion time)
+
+BPs -- Biologist Programmers -- Biologists who (hopefully) learn to
+program through BioBike enough to help them do their work.
+
+NPBs -- Non-programmer Biologists.  The people we'd like to turn into
+Biologist Programmers.
+
+-------------------------------------------------------------------------
+
+
+IDEAS THAT HAVE BEEN SUGGESTED FOR THE BIOBIKE LANGUAGE AND ITS ENVIRONMENT
+       AND BASIC CATEGORIES THESE IDEAS FALL UNDER
+
+Ideas that may make it easier for beginners to write code:
+
+  -- Array indexing using [] notation.
+     (syntax / compiler analysis)
+  -- Extend [] notation to any sequence, not just garrays
+  -- array indexing using arrays themselves as function objects (array i j)
+     (semantics / compiler analysis)
+  -- AREF allowed to take list of indices
+     (syntax, semantics)
+  -- Removing the need for QUOTE where it is not necessary 
+     (syntax / compiler analysis)
+  -- Providing aliases (synonyms) for functions and keywords.
+     (syntax / compiler analysis)
+  -- Providing a more english-like syntax for function calls.
+     (syntax / compiler analysis)     
+  -- Not having to use #$ notation to refer to frames.
+     (syntax / compiler analysis)
+  -- Removing the necessity to use ':' to denote keywords.
+     (syntax / compiler analysis)
+  -- 1-based arrays instead of 0-based arrays.
+     (semantics)
+  -- Handling multiple values more straightforwardly
+     (syntax)
+  -- Equivalence of SETQ and LET for local variables
+     (semantics / compiler analysis)
+  -- IF/THEN/ELSE syntactic sugar
+     (syntax)
+  -- Making the syntactic form of LOOP similar to the syntactic form
+     of DEFINE-FUNCTION, using keywords to denote various 'parts' of
+     the LOOP (initialization, repeat code, body code, etc)
+  -- Required arguments matched by type if possible
+     (e.g., either (NTH 1 <list>) or (NTH <list> 1) should work)
+
+Ideas that remove certain 'gotchas' and restrictions from Common Lisp:
+
+  -- functions which can naturally map over sequences in an unambiguous 
+     way should do so.
+     (semantics)
+  -- LOOP should be able to generically loop over sequences and any object
+     which has an iterator method.
+     (semantics)
+  -- More consistent LOOP syntax; removal of WITH vs AS confusion
+     (syntax, semantics)
+  -- if a function accepts a sequence naturally and is given an atom,
+     the atom should be converted to a singleton sequence unless there
+     is some kind of semantic problem in doing so.
+     (semantics)
+  -- if a function accepts a character and is given a length-one string,
+     it should use the single character of the string.
+     (semantics)
+
+Ideas that help users debug:
+
+  -- Clear and obvious stack trace explanations
+     (compiler output / internals)
+  -- SWIPM.  Try to figure out what user
+     is trying to do, especially when a function or variable does not exist.
+     (tools)
+  -- Catching and clearly explaining LOOP problems, especially failure to
+     include action verbs (DO, COLLECT, SUM, etc).
+     (compiler analysis)
+  -- error reports provide hyperlinks to possible help topics, doc pages, etc
+     when language is used in a web-enabled capacity (e.g., Weblistener)
+     (tools)
+  -- Analysis of previous errors and on-going analysis of errors to provide
+     better error messages and help as time goes by.
+     (tools, system staff)
+  -- Two modes:  error checking (default) or no error checking (optimization),
+     controllable by user.  (Common Lisp has at least 16 possible modes,
+     depending on the declared values of SPEED and SAFETY)
+  -- Better HELP facility (google-ize the doc strings and the documentation?)
+     Glossary of biological terms.
+     Remove matching scores; use word homology but not as main criterion
+     for matching.  Incorporate wordnet synonyms ?
+     (tools)
+
+Ideas for data structures:
+
+  -- Generalized arrays (garrays)
+     (semantics, libraries, compiler analysis)
+  -- slices of garrays
+     (syntax, semantics, compiler analysis?)
+  -- Generalized sequences (a la Python?)
+     (everything)
+  -- Specific biologically important data structures such as BLAST-RESULT,
+     FASTA-DATA
+     (tools, libraries)
+  -- No manipulation of lists per se within BioPike proper
+     (?)
+  -- Creation of a model of a biologist's world (cf GMOD)
+
+Other ideas:
+
+  -- compilation by default and always
+     (compilation issues)
+  -- compiler understands lexical environment
+     (compilation issues)
+  -- compiler understands BIKE environment
+     (semantics, compilation issues)
+  -- just-in-time compiler
+     (compilation issues)
+  -- decent web-based editor
+     (tools)
+  -- annotation-specific functions and tools
+     (tools, libraries)
+  -- 'Live tutorial' introductions that 'jump-start' the non-programmer 
+     biologist
+     (tools, system staff)
+  -- Better way to describe patterns (regular expressions)
+  -- design a more natural functional-style interface to biological
+     data and teach NPB's to program in a functional style.
+  -- Design of message-passing primitives a la Ajax to allow fancier
+     interactions between the Weblistener browser page, auxiliary 
+     browser pages, and the Weblistener server itself.
+
+Way out ideas:
+
+  -- Scrap the entire concept of BioBike as a language and write a
+python->Lisp interpreter/compiler and let people type python into
+the Weblistener.  Or Perl.  Or C, or Java, or Logo, or Cobol.
+
+
+
+DETAILED DESCRIPTIONS OF VARIOUS OF THE ABOVE IDEAS DIVIDED INTO
+SYNTAX, SEMANTICS, COMPILATION ISSUES, DATA STRUCTURES,
+TOOLS/LIBRARIES, MISCELLANEOUS
+
+
+I. SYNTAX
+
+The basic syntax will be lisp-like; that is, Lots of Infuriating,
+Silly Parentheses.  
+
+
+a.  Indexing.
+
+The one fundamental change in syntax will be that array indexing
+notation similar to that found in C-like languages (ie, array [i j])
+will be allowed.  (It is fundamental in that it is not prefix notation
+-- it is sort of infix, as the indexing 'operator' ('[') is in the
+middle)
+
+Implementation consequences: This means that standard Lisp reader
+mechanism cannot be used to do a complete parse into standard
+Lisp-like notation functional.  The lisp reader has no mechanism to
+affect previously read program structure, and the introduction of
+indexing notation means that previously read program structure must be
+modified (at least in an abstract sense). Example:
+
+(+ array [i j] 3) 
+
+needs to be transformed, at some level, into something like 
+
+(+ (aref array i j) 3)
+
+But a reader macro cannot do this transformation, it has to be done at
+a higher level either by creating a different reader whose reader
+macros have access to the form being created, or creating a post-read
+analysis phase, probably within the BioPike compiler itself (see
+below), to do the transformation.
+
+
+b. Quoting.
+
+Quoting (using a single quote) will only be required where it is 
+necessary.  Places where it is not necessary include: 
+
+  (first (1 2 3))
+
+where a constant list is clearly identifiable.  
+
+  (First (all1234 all1235)) 
+
+where the car of the list is a known constant (in this case, the name
+of a gene).  
+
+This brings up a number of issues.  The first is semi-constant forms,
+like (1 (+ x 3) 4).  The semantics is ambiguous, as it could be
+
+'(1 (+ x 3) 4)
+
+or
+
+`(1 ,(+ x 3) 4)
+
+I'm assuming the 2nd semantics is the desired behavior, and to get the 1st
+one would have to type
+
+(1 '(+ x 3) 4)
+
+The BioPike compiler should be able to determine if a form is
+constant, semi-constant, or a function call and generate the
+appropriate code to construct the list at runtime if necessary.
+
+
+c. Function definition -- aliases, definition syntax, keywords
+
+The syntax for defining functions/methods would be altered to provide
+for English-like syntax, synonyms, non-argument keywords, type
+information, and perhaps other components to aid with help and
+documentation.
+
+Strawman Example (Jeff E provided a similar example in the wish list):
+
+(define-function (find locate) 
+  required (object (%in %within) (seq lisp:sequence))
+  keywords (test &verbose)
+  summary "Brief documentation string..."	
+  examples example-1 example-2...
+  see-also (function-1 function-2...)
+  body 
+  (when verbose (print "Looking for ~A in ~A" object seq))
+  (lisp:find object sequence :test test)
+  ...
+  documentation "Extensive description of function..." "etc..." ...
+  )
+
+This defines a function (really a method) with two aliases, FIND and
+LOCATE.  It takes two required arguments: first OBJECT, of type T,
+followed optionally by either the word IN or WITHIN (without any
+prefix characters like ':'), and then SEQ, which must be of type
+LISP:SEQUENCE.  It takes a 'standard' keyword argument TEST and a
+'flag' keyword argument VERBOSE (which is not given an argument in the
+call sequence -- its value is T if the keyword is present in the call
+sequence and NIL otherwise).
+
+So a call to this might look like 
+
+(locate x within y test eql verbose)
+
+Implementation consequences:
+
+Such a call can only be fully processed by the BioPike compiler if the
+definition of LOCATE is known at compile time.  (However, assuming the
+compiler has lexical context awareness some information can be
+inferred given that it can know which arguments are lexically-bound
+variables and which are not). 
+
+One cannot expect to be able to write code and have it processed by
+the BioPike compiler correctly in all cases if it contains references
+to BioPike functions which have not yet been defined.  (Note that in
+current usage model, this is not an issue, since code is typed in to
+the Weblistener and immediately compiled and executed.  Therefore if a
+function is not defined an error would immediately be signalled in any
+case.  But if you attempt to load a file which has forward references
+or references to functions defined in other files which have not yet
+been loaded you are in trouble. 
+
+A two pass compilation would address forward references within a
+single file.  Some sort of just-in-time compiler might work in
+general.  Example of just-in-time compilation:
+
+(define foo required ((x fixnum)) body (locate x in *y* test eql))
+
+(define bar body (foo 3))
+
+Assume LOCATE has not yet been defined.
+
+Since LOCATE is not known when FOO is processed by the compiler,
+the compiler simply stores away the body of FOO to be compiled
+later.  When BAR is compiled, since the compiler knows that FOO
+is not yet compiled, it produces code for the call to FOO that
+first compiles FOO if it has not yet been compiled, then calls FOO.
+
+Another way of doing this is simply to have the compiler keep track
+of all functions that depend on not-yet-defined functions.  When
+a not-yet-defined function is compiled, the compiler checks to see
+if any of the dependent functions can now be compiled (that is, all
+undefined functions it uses are now defined).
+
+This immediately begs the question of whether the compiler can/should
+keep track of everything that uses and/or is used by everything else, and
+do appropriate recompilation when a function is defined or redefined.
+
+Note:
+
+It should be possible to use DEFINE (aka DEFUN) in a simple form that users
+could use without all the keyword goo:
+
+(define foo (x) (+ x 1))
+
+In order to achieve the ability to use English-like calling sequences
+as demonstrated by the call to LOCATE I believe it is probably
+necessary to eliminate &optional and &rest arguments (although I have
+not attempted to define an unambiguous syntax for function calls that
+includes them).  It seems like for a simplified language removing
+&optional and &rest arguments is a reasonable idea.
+
+Note:  see discussion of Just-In-Time Compiler in compiler section.
+
+d.  Frame notation
+
+It is assumed BP's don't want to type #$ to get at frames.  Further,
+some frames have long names which are impossible to type (like
+organisms).  Right now, these frames have alias symbols (such as npun
+for #$nostoc_punctiforme_whatever) whose symbol-value is the frame.
+
+We'd like a way to reference existing frames without using #$, and
+even to use nicknames (such as all1234, instead of the real frame
+name, syn.all1234).
+
+One question is how the compiler might know that all1234 is a known
+constant referring to a gene frame without having to predefine all 80
+billion possible gene names using DEFCONSTANT.
+
+One way is to say that the compiler operates in a particular Pike
+environment.  That is, if you compile some form in the context of the
+Pike cyanobacterial environment it may not have the same semantics as
+if you compile it in the context of a human genome environment.  This
+would imply that the compiler has to have access to the Pike
+environment (in the sense of having a table of all the frame names and
+'aliases' for frames, like 'all1234' is an alias for #$syn.all1234).
+
+This implies that the PIKE system must be able to deliver its complete
+environment at the beck and call of BioBike.
+
+While this would generally be considered insane for a language
+specification it may not be so unreasonable in the environment we are
+hypothetically dealing with.  With no .fasl files to bit-rot and
+possibly some sort of just-in-time compilation this may not be a big
+problem.  Further, it doesn't make sense for a biologist to share a
+program written specifically for cyanobacteria with another biologist
+working on the human genome assuming the program refers directly to
+specific cyanobacterial chromosomes or genes.  Programs that are
+written generally can still be shared; just not 'hard-coded' programs,
+as is always the case.
+
+e.  Multiple values.
+
+BioLite currently has simpler (shorter, anyway) syntax than
+MULTIPLE-VALUE-SETQ and MULTIPLE-VALUE-BIND to deal with multiple
+values, IIUC.  Something like
+
+(ASSIGN (X Y) (FLOOR 3 4))
+
+Further examination of this mechanism is necessary to insure that it
+is semantically robust but if so there is no obvious reason not to use
+it.  (A separate issue is whether BioBike should deal with multiple
+values at all.)
+
+
+f.  LOOP
+
+We'd really like
+
+(loop for j from 1 to 10 (print j))
+
+either produce a reasonable error message with restarts, or just work.
+Currently, Allegro produces the following:
+
+Error: (PRINT J) found where LOOP keyword expected.
+Current LOOP context: FOR J FROM 1 TO 10 (PRINT J).
+
+Which to a Lisp programmer's mind is not unreasonable but which to the
+budding biologist-programmer is (experimentally) total gibberish.
+
+We'd really like the confusion between WITH and AS to go away.
+One possibility would be to simply outlaw WITH -- allocate these variables
+outside the loop.  Similarly, one could make WITH and AS semantically
+equivalent, again insisting that former WITH variables be allocated outside
+the LOOP.  (This would confuse Lisp programmers beyond measure)
+
+We'd really like ONE way to loop over almost anything:
+
+(loop for obj in [ list | sequence | array | hash-table | package | 
+                   arbitrary object with iterator method ]
+
+
+One approach is to implement a BioBike version of Loop which compiles
+into LISP:LOOP as appropriate (or other LISP iteration constructs).
+
+LOOP seems to be the right word.  BioLite currently uses FOR-EACH as
+an alias for LOOP but that is overly-specific.  One can LOOP without
+implying FOR-EACH. (loop until var < 10
+
+This is a difficult problem but one of the single most important
+issues facing BioBike.  Since looping is ubiquitous, it must be
+reasonably easy to do and even more importantly easy for a neophyte
+programmer-biologist to understand the syntactic and semantic problems
+of his failed loop.
+
+(Some argue that the problem of looping can be made to just go away by
+implementing enough powerful collection utilities, but this is regarded
+by many others as utopian; there will always be good reasons to LOOP)
+
+
+g.  Garray slices
+
+Jeff Elhai has proposed that there be a syntax wrt [] to select arbitrary
+slices of N-dimensional tables; perhaps somewhat akin to APL (possibly
+PL/I, to which Jeff has been exposed, had this as well).
+
+Providing a full panoply of possibilities (notation for ranges,
+notation for all of a single dimension) is difficult and
+introduces additional syntax that could be confusing and daunting.
+
+(There currently exists a few functions in array-utils.lisp that do 
+some primitive slicing on two-dimensional arrays.)
+
+<< To be expanded >>
+
+h.  IF-THEN-ELSE syntactic sugar.
+
+This already exists in BioLite (along with IF-TRUE, etc).
+No further description of what this means should be needed...
+
+
+II.  Semantics
+
+a.  Sequence indexing starting at 1 or 0 ?
+
+The current BioLisp system is a mismash.  Gene coordinates are 1-based
+relative to their contiguous sequences (c.f. EXTRACT-CONTIG-SEQUENCE)
+(which are further complicated by the existence of wrapped contiguous
+sequences).  Some BioLite functions are 1-based.  Most everything else
+is 0-based, as of course is Common Lisp.
+
+Advantages of 1-based indexing:
+
+  -- More natural to BP's.
+
+Disadvantages:
+
+  -- Less efficient
+  -- Confusion about what index or offset 0 and -1 mean wrt, say, 
+     upstream sequences.
+  -- harder to interface BioBike code directly to Common Lisp.
+  -- There are a good number of Common Lisp functions which use
+     indices; all of these functions would have to be redefined
+
+
+b.  SETQ, SETF and LET vs. ASSIGN
+
+As I understand it, Jeff Elhai would like to see the distinction
+between initially binding and initially assigning local variables go
+away.  E.g.
+
+(defun foo (x) (assign y (1+ x)) (bar y))
+
+should be equivalent to
+
+(defun foo (x &aux y) (assign y (1+ x)) (bar y)))
+
+or
+
+(defun foo (x) (let ((y (1+ x))) (bar y))
+
+Basically, if a variable is assigned to which is not a global variable
+and is not already bound in the current lexical scope, then a binding is created
+and the assignment done.  If the variable is already bound in the current
+lexical scope, only the assignment is done.  The question arises as to
+the scope of the binding.
+
+(if condition (assign x 4) (assign x 5))
+
+Is there only one binding of X or are there two, one for each branch?
+Does it actually matter?  It can manner,  e.g.
+
+(defun foo ()
+  (when t (assign x 5))
+  (assign x (1+ x)))
+
+If the binding of X is local to the WHEN then the function makes no sense,
+but if it is treated as an &aux variable then the function will return 6.
+
+This brings up an interesting question of whether it would make life
+easier for both the programmer and the compiler if we simply did not
+allow the same variable name to be nestedly bound within a function,
+e.g. the equivalent of
+
+(let ((x 5))
+  (let ((x 3))
+    ...
+
+or
+
+(defun foo (x) ... (mapcar (lambda (x) (+ x 3)) x))
+
+would just be illegal.  
+
+
+c.  Implicit mapping over sequences and other data structures.
+
+In the simplest case, e.g.
+
+(assign x (1 -2 3))
+(abs x)
+
+--> (1 2 3)
+
+For all functions where such semantics would be unambiguous.
+
+Extend this idea to vectors and N-dimensional arrays.
+Extend this idea to any object which has an iterator method defined for it.
+
+
+d.  Atoms as singular lists.
+
+There are many situations now where one has to use a function like ENSURE-LIST,
+because the object being passed in is either an atom which needs to be a
+singleton list or a list.
+
+In cases where there are no semantic ambiguities, it might be appropriate to
+treat atoms as singleton lists.
+
+E.g.
+
+(union 'a '(b c d)) --> (a b c d)
+
+instead of erroring out.
+
+
+e.  For BPs, the concept of characters as distinct from single element strings
+may be confusing.  Therefore, any function which works on a character should
+also work on a single element string:
+
+(char-code "a") <-> (char-code #\a)
+
+Notice that this conflicts with c) above.  One would assume that since
+
+(char-code "abc") --> (97 98 99)
+
+then
+
+(char-code "a") --> (97)
+
+but now we are saying it should be 97.
+
+Proving once more that you cannot necessarily have your cake and eat
+it too.
+
+
+
+III.  Compilation/Evaluation Issues
+
+a.  Compilation by default and always.
+
+There will be no concept of evaluation of BioPike forms directly.
+Everything will be processed by the BioPike compiler.  When using
+BioPike from a Weblistener this will not be a problem because as
+things stand now everything the user types in is compiled by the lisp
+compiler and it is easy to switch that to be the BioPike compiler
+instead.
+
+It will not be possible to type in BioPike forms directly to a
+standard Lisp listener; either there would have to be a function we
+provide that put the user into a BioPike read/compile/eval/print loop
+or we simply do not provide a facility for independently running
+BioPike programs (Note that much of BioPike functionality will be
+dependent on having a Pike or KnowOs environment, so it's not clear
+whether useful BioPike programs could be written without this
+environment, although it is certainly possible to write programs in
+BioPike that have nothing to do with biology.)
+
+With respect to BioPike the function BIOBIKE:COMPILE-FILE is
+essentially a noop, equivalent to BIOBIKE:LOAD The way I envision
+things working is that BIOPIKE:LOAD will compile and load all the
+forms in a BioPike source file.  Thus there will be no concept of a
+.fasl file or equivalent (This is how at least one common lisp works
+-- Corman Common Lisp).
+
+The BioBike compiler produces as its output Lisp code, of course,
+which then gets compiled by the Lisp compiler.
+
+b.  Meaning of BioBIKE forms.
+
+The semantics of a conceptual BioBike interpreter are different than
+the semantics of Lisp execution.  In Lisp, to process a non-atomic
+form, it's CAR is examined and based on whether it is a symbol or a
+lambda form, further processing is done, otherwise an error is
+signalled.  If it is a symbol then whether the symbol has a special
+form, macro or function (or nothing) as its function binding
+determines what happens next.
+
+In BioBike what happens is more complicated.  If the CAR of a form is
+a constant (including a symbol declared constant, and possibly the
+name of a frame which is some sense a constant), or a known global
+variable then the form is treated as data (although subforms may be
+evaluated).  If the CAR of the form is a variable which is lexically
+bound in the current context (modulo possible array hacking as is
+being discussed in email) then the form is also treated as data,
+unless the symbol is also the name of a known function (macro, etc),
+in which case the known function takes priority (?).
+
+So
+
+(let ((x 4)) (reduce '+ (x 3 2))) --> 9
+(let ((x 2)) (x x 4)) --> (2 2 4)
+
+(let ((list 5)) (list 4 5)) --> (4 5) not (5 4 5)
+
+If the symbol is completely unknown then it is taken to be a
+forward-reference BioBike (or Lisp) function or macro reference.
+
+(This brings up the issue of a just-in-time compiler, dealing with
+these forward references.  See below.)
+
+
+c.  Lexical awareness.
+
+The above simple examples illustrate why the BioBike compiler must be
+lexically (and globally) aware.  This requires a code-walker, and/or
+the use of Allegro's ENVIRONMENTs facility, which enables macros to
+query the Lisp compiler as to whether something is a lexical variable,
+lexical function, etc.
+
+d.  Just-in-time compiler
+
+A Just-in-time compiler only compiles code when the system needs the
+code to execute.  In other words, if you load a file full of function
+definitions, those definitions are only processed enough to understand
+the calling signatures of the functions being defined and what
+functions (defined yet or not) these functions call (this is not
+completely possible because the function being defined may use macros
+not defined yet which expand into other macros or function calls)
+
+Consider a function FOO that has been loaded.  There is no reason to
+compile FOO until such time as some other code calls FOO.  At that
+time every variable and function that FOO uses better be defined
+(modulo things that occur in branches of conditionals that aren't
+executed) or an error must occur.  The problem of forward references
+preventing full compilation is therefore completely bypassed, because
+we never compile anything that has forward references.
+
+The reason this is especially useful for BioBike is that all
+BioBike function calls are essentially macros because they have
+the potential to all have special syntax.  So there is no way
+to completely compile a function with forward BioBike references
+as there is with a Lisp function with forward Lisp function 
+references.
+
+Furthermore it is reasonable to assume that such a compiler could keep
+track of dependencies and either tell you that various things might
+need to be (or must be) recompiled (or automagically just do it).
+
+The problem with a JIT-compiler is that it may not be able to
+catch some syntactic errors that otherwise could have been caught
+when FOO was loaded, rather than when some other function called it.
+
+Suppose we have
+
+(define-function foo (x) (blah (if x) 3 4))
+
+Since blah is not defined (yet) the compiler cannot tell you that the IF
+is malformed -- it might be part of BLAH's special syntax.
+
+Only once BLAH is defined could it (theoretically) tell you that FOO
+is not syntactically correct, and in practice it will only tell you
+this when FOO gets called (and hence compiled).
+
+
+IV.  Data structures.  
+
+We can somewhat logically separate the syntax and form that the
+language will take from the data structures that it will manipulate
+(although some data structures, such as frames, may require specific
+syntax to represent).  In other words the two are somewhat orthogonal
+discussions.
+
+The data structures BioPike may or must support are: 
+
+a.  Frames (must support).  Frames are, or at least are supposed to
+be, the basic unit of knowledge in BIKE  As such, they must be
+manipulatable within BioPike in an easy and transparent manner.  Frames
+currently are represented using the reader notation '#$'.
+
+A question is whether it might be possible to eliminate the need for
+this notation within BioPike.  This runs into issues with how the
+frame system is implemented currently and issues with how the frame
+system is to be integrated with AllegroCache.
+
+Most frames now and in the future are denoted using '.' notation to
+provide a unique prefix, much like package prefixes, e.g.
+
+  Bio.Protein
+  Sys.Isa
+  
+Frames are not required to have such a prefix.  (In the Allegrocache
+frames with a given prefix (no prefix is consdered a given prefix)
+are grouped into a FRAMESPACE, so there are many FRAMESPACE's in
+a BIKE environment)
+
+We could simply mandate that symbols with embedded '.'s will denote
+frames, and symbols without '.'s will not.  This would mean that one
+could not refer to #$S8102.SynW0001 using just Synw0001 as is now the
+case in certain Biolite functions.  Nor could you refer to #$Dog using
+just 'dog' (see below).
+
+The other option is to use the concept of the Pike environment to
+decide whether a particular symbol represents a frame.  This could get
+tricky or hopeless if someone decides to define #$dog as a frame and
+someone else wants to use dog as a global variable.  (We assume here
+that the BioPike compiler will be able to determine whether a
+reference to something like 'dog' is within lexical scope and
+therefore a local variable as opposed to a frame.)
+
+b. Generalized arrays and tables.
+
+These are the things which would be indexed using []-notation.  (Lisp
+arrays could be indexed with this notation as well -- the operators
+would just have to be methodized) 
+
+Currently generalized arrays manifest themselves as garrays.  There is
+some special hacking now which allows garrays to be created on the
+fly:
+
+  (setf (gref x 0 0) 3)
+
+If x is not currently a garray it will automatically assign to x the value 
+of a new garray with the appropriate element set.  
+
+Currently such tables (garrays) are quite inefficient.  
+
+Garrays currently allow you to specify the range of each axis.  This
+conveniently finesses the issue of whether the first element of an
+array is 0 or 1, as a user can specify a range of [1, 10] or [0, 9] as
+they wish.  But currently if a user does not specify the lower limit
+of a range, the first element is assumed to be indexed at 0.  
+
+Garrays provide a unification of hash tables and arrays.  One can
+simply have a garray whose index is an arbitrary collection of keys --
+i.e., a hash table.  (The mechanism currently allows one to say what
+the equality on the keys is, just as with MAKE-HASH-TABLE).
+
+Garrays do not currently provide any way of getting at an arbitrary
+slice of a garray.  There is no notation to select the 1st, 3rd, and
+C'th columns of a 2-dimensional garray, and all its rows, for example.
+
+Tables play a very important role in biological processing because much
+data that biologists use comes in the form of tab delimited tables often
+imported into or created with Excel.  
+
+One question that needs to be addressed is whether such tables will
+cause unacceptable inefficiences as opposed to using lisp arrays and
+therefore make the language pretty much useless for any serious
+computation.
+
+c. Generic sequences 
+
+Sequences could be considered just a subset of garrays.  On the other
+hand, not giving people access to more efficient sequences is even
+more likely cause the language to be performance-wise unacceptable than 
+having people use garrays instead of n-dimensional arrays or hash tables.  
+
+The question is what kind of sequences to provide: just a generic
+sequence type that could operate as a list or a 1-d array as necessary
+(or even as a hash table) or also provide access to lisp sequences
+including of course lists.  The issue of 0 or 1 indexing then comes up
+again.  I believe that Python offers users basically this data type --
+a generic sequence.  
+
+If we have a generic sequence type then we have to implement all the
+list and sequence operations of common lisp over this type.
+
+d.  Biologically specific data structures
+
+These things do not need to be specified as part of the language but
+we should have an understanding of how they fit into the data
+structures we provide with the language.  EG, suppose we decide in a
+library to create some kind of data structure known as a blast-result.
+Is this going to some sort of framelike object or some sort of CLOS
+object, or do we fit it somehow into a garray?
+
+GMOD is said to provide a model for data structures in a biological
+database.  I can't seem to find specifics of these data structures on
+their site, but they could be buried there somewhere.  Providing data
+structures isomorphic to those alleged defined by GMOD might be a good
+idea.
+
+
+V.  Tools.
+
+a.  Previous error analysis.
+
+It would be nice to have a facility that would log user errors and
+even recovery attempts by the perp in a standard representation for
+later analysis by humans.  The humans could then tweak the information
+that gets shown when that error occurs in a continuing feedback
+process to make it easier for the perp to understand and recover from
+the error.
+
+b.  We need a tool to provide as much information as possible about
+common errors without being overbearing.  We'd like hyperlinks to
+potentially relevant help and documentation, again, without being
+overwhelming.
+
+From preliminary error analysis we know that the a plurality of errors
+are either typos mispelling variable and function names, or attempts
+to use functions or variables which do not exist (perhaps like trying
+to use LOCATE instead of FIND).  
+
+Edit-distance algorithms can be used to find mispellings, although
+with the potential to have hundreds of thousands (if not billions)
+of frame names we must be careful not to attempt a brute-force search
+of the entire BIKE namespace.
+
+Using names that are synonymous is a different problem, one that could
+only be (partially) addressed by having something like WORDNET (which
+is essentially a database of synonymous concepts).  There would also
+be the issue of biologically-specific terms which would not be in
+WORDNET, and the fact that different biologists presumably use
+different terms for the same thing.
+
+c.  Live tutorial tool.
+
+This will theoretically allow non-implementors (aka grad students)
+to produce tutorial-level documentation for users of BioBike.
+
+(A 'live' tutorial is a browser page with buttons on it such that
+when you click on a button an expression gets sent to the Weblistener
+to be evaluated)
+
+This tool already exists to some degree; some more packaging could
+be done to make it even a little more automatic than it is now, but
+it is pretty concise as it is now to produce a simple live tutorial.
+
+The producer must understand HTML, and must understand how to write
+AllegroServe's Lisp HTML, and understand a few basic things about
+how to make a live tutorial button.
+
+d.  Annotation-specific tools.
+
+This is relevant to another portion of the NSF grant; we are supposed
+to build annotation tools (at a high level) for biologists.  To do
+this we presumably need to build some lower-level tools for annotation
+that we can build on.  Some things exist already in BioLisp and
+BioLite, but presumably there are a lot more tools that would be
+useful to the annotating biologist.
+
+We need to know what those are and come up with a reasonable set of
+them to implement.
+
+e.  General biological tools.
+
+Pretty much the same comments here as in d) above.
+
+
+f.  Web-based editor.
+
+Without some sort of editor it is very hard to write more than a few
+lines of code.  The existing system comes with a primitive editing
+facility.  As primitive as it is, it suffers from many problems:
+
+  -- it only works in a FireFox/Mozilla browser environment.
+  -- it doesn't allow you to edit more than a screenful of code
+       without jumping you back to the top of the page all the time.
+  -- it doesn't understand almost anything of Lisp syntax.
+  -- it doesn't understand the standard indenting conventions for Lisp.
+  -- it has no capacity to do the equivalent of Emacs' Meta-. (find source).
+
+The key facilities any editor that is used to edit Lisp-like code
+within a BioBike environment must have are, I believe:
+
+  -- paren matching
+  -- autoindenting
+  -- redindenting
+  -- save-compile-load (or better, incremental evaluation/compilation)
+  -- Meta-. functionality
+  -- Immediate help available on functions and variables, including argument
+     list display, documentation string display, etc.
+
+(Right now the first four are available, but only in primitive form)
+
+To do something like this in any reasonable way is a major undertaking due
+to serious limitations on the browser/server interaction.
+
+It is possible that what is known as 'Ajax' technology can remove some
+or all of these limitations, providing a much richer editing
+environment.  Nevertheless creating a reasonable editing environment
+through the web is a big project.
+
+
+VI.  MISCELLANEOUS
+
+A desire for a more reasonable way to represent regular expressions has
+been expressed.
+
+One possibility is to develop some sort of quasi-natural-language parser
+that could turn something like
+
+(any number of A's followed by GGCT followed by two or more C's)
+
+into the appropriate regular expression:
+
+"A*GGCTCCC*"
+

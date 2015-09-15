@@ -1,0 +1,174 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>The (Re)Birth of the Knowledge Operating System</title>
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US>
+
+<div class=Section1>
+
+<p class=MsoNormal style='text-align:justify'><b>The (Re)Birth of the Knowledge
+Operating System</b></p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>Mike Travers, JP Massar, and Jeff
+Shrager (corresponding: jshrager@stanford.edu)</p>
+
+<p class=MsoNormal style='text-align:justify'>Extended abstract for ILC 2005</p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>Abstract: This paper introduces the
+concept of a <i>Knowledge Operating System</i> (KnowOS).  Classical operating
+systems provide certain important services, including persistence of basic data
+objects, isolation from the underlying hardware and software details,
+application integration, user management, and both programming and user
+interfaces.  Whereas classical operating systems provide these services for
+simple data objects (files or tables), a KnowOS provides them for networks of
+complex objects.  The combination of these classical services – in particular
+the integration of an interactive high-level language – with a persistent
+object store, creates a powerful new type of environment for knowledge
+programming and exploration.</p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>An operating system is fundamentally
+an illusion.  It enables each user to believe that s/he has the computer all to
+themselves, that the memory is essentially infinite, that the heap of magnetic
+domains on a flat piece of plastic is a file system, and that the machine
+responds to high level commands, such as “copy those files onto that directory.” 
+Operating systems do this by spreading many layers of abstraction between
+applications and the real hardware.  These provide numerous fundamental
+services: process and memory management, data persistence and management,
+hardware abstraction, user management (i.e., time sharing and multi-user
+security), a user interface, and, importantly, programmability of its services
+– that is, a way for application programs to communicate with one another, and
+with the various operating system services.  </p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>Under this analysis, certain kinds
+of software are operating systems that we do not usually think of as such.  Consider
+a relational database server like Oracle. From the user’s point of view, Oracle
+is essentially an operating system whose data abstraction is tables; An Oracle instance
+is a virtual machine that allows users to interact with tables and relations as
+if these were persistent basic elements, and provides many of the
+above-described services to application programs that operate on tables and
+relations.  Similarly, Unix and Windows are operating systems whose data
+abstraction is files and directories.  </p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>One of the most important
+services provided by operating systems is application integration – the ability
+to pass the results of one application program on to another.  This is also a
+fundamental component of programming languages – allowing results from one
+function to be passed as input to another.  Indeed, programming languages are
+illusions in nearly the same sense as operating systems, offering the illusion
+that memory is a set of objects, and that the computer responds to high level
+commands like “copy those objects, and create pointers from the old ones to the
+new ones.”  Since the popularization of scripting languages such as shell
+scripts, Perl, and Python, Unix is treated by many software engineers as a
+somewhat clunky programming language, where pipes serve the role of
+inter-function communication. These have a close analog in the functional
+programming paradigm, where each function in the language returns one or more
+values which are passed as inputs to the next function.  </p>
+
+<p class=MsoNormal style='text-align:justify'>Although they overlap
+significantly, programming languages and operating systems provide different
+sets of capabilities, and emphasize different aspects of computation, esp. in
+terms of the complexity of the objects manipulated. Among the most important
+differences is persistence: In programming languages, programmers build up complex
+structures, calculate over these, and then drop them into the bit bucket.  Contrast
+this with operating system scripting where the data structures (the file system
+in Unix/Windows, or the table space in Oracle/MySQL) are never dropped, thus
+saving considerable effort in rebuilding them, and thereby significantly changing
+the nature of how they are treated.</p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>Now, although it is widely
+recognized that networks of complex, structured knowledge are critical to
+nearly every modern application, the practices that have developed to support
+knowledge computation consistent almost entirely of shoehorning complex
+knowledge into the relatively simple persistent structures supported by “classical”
+operating systems (e.g., Unix, Windows) or quasi-operating systems (e.g., Oracle).
+ Most of these proposals surround XML-like serializations that turn structured
+knowledge into text so that it can be passed around in a text-based operating
+system, and so that it becomes part of the persistent storage space – the files
+or tables. We feel that this is needlessly myopic; If one wants to work with
+complex, structured knowledge, one should not have to create it from flat
+representations, and then either drop the objects on the floor, or have to serialize
+them back to the flat OS.  Instead, complex objects should constitute the basic
+persistent storage entities that are the domain of the operating system. The result
+of doing this would be a true Knowledge Operating System – a KnowOS.</p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>In this paper we discuss an
+instance of just such an animal: The open source Knowledge Operating System
+that we call KnowOS which is designed to support the development of heavily knowledge-based
+applications.  KnowOS has been applied in a number of domains, including a
+number of biological domains (where it is called “BioLingua”), and in at least
+one very knowledge-heavy ‘natural’ information analysis application.  </p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>In the KnowOS paradigm, knowledge
+bases are threaded.  Threading is the way that pointers are maintained between
+complex objects that have their own first-class status; It differs from typical
+knowledge integration approaches, where multiple knowledge bases (or databases)
+are unified; Threading is more like pouring them all together but leaving them
+in their original state, and then sewing pointers between related objects. 
+Where knowledge integration forms an alloy, threading forms an amalgam.  This
+difference has important implications in reducing the loss of information, and
+simplifying analysis.</p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+<p class=MsoNormal style='text-align:justify'>The KnowOS is built on Lisp. 
+Indeed, it is the Grand Unifying Illusion: Turning a real programming language into
+an operating system by endowing it with persistence and multi-user
+capabilities, with the ability to integrate external applications, and
+web-accessibility.  And we are in process of integrating high-level knowledge
+tools, such as theorem-proving, into the KnowOS as a basic primitives.  The
+result is the birth of a completely new animal built of time-tested components:
+A Knowledge Operating System -- the next stage in operating systems evolution in
+what will certainly be the coming age of computational knowledge.</p>
+
+<p class=MsoNormal style='text-align:justify'>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

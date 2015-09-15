@@ -1,0 +1,45 @@
+Markvirus
+
+Chromosome is non-circular
+First line (1-60) does not encode
+Second line (61-120) encodes whole forward gene
+Second gene begins on third line and ends on fourth line
+Third and fourth genes overlap on the fourth line (FF)
+Fifth and sixth genes overlap (BB) on the sixth line
+Seventh and eighth genes overlap (FB) on the eighth line
+Ninth and tenth genes don't overlap but both exist entirely on the eleventh line with a gap
+11th and 12th genes are adjacent and exist entirely on the 12th line
+
+nextcontig is circular
+Two overlapping genes, both crossing the boundary
+
+
+
+
+
+
+
+
+
+Organism will need
+
+
+
+2 contigs, 1 circular, 1 non-circular
+
+then inside well test
+
+line with no genes
+line with 2 genes right next to each other
+line with 2 genes with a gap
+
+overlapping FF, BB, and FB
+
+test triple overlap?
+
+
+
+
+
+
+

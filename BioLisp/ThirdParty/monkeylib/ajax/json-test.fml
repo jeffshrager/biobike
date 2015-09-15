@@ -1,0 +1,28 @@
+(html
+  (head 
+   (title "JSON TEST")
+   (meta http-equiv "Content-Script-Type" content "text/javascript")
+   (css
+     (body  margin "1.5in" font-size 24 line-height 1.25)
+     (p padding ".25in" border "thin solid black"))
+   (script type "text/javascript" src "queue.js")
+   (script type "text/javascript" src "ajax.js")
+   (script type "text/javascript" src "http.js")
+   (script type "text/javascript" src "json.js")
+   (script type "text/javascript" src "json-test.js"))
+  ((body onload "startTransport(); showID();" onunload "shutdownTransport()")
+   (p "This page doesn't do much of anything except pop up a
+   dialog box. To drive it you need to go to your REPL and in
+   the " (code "com.gigamonkeys.ajax") " package
+   call " (code "send-json-test") " with any " (a
+   href "http://www.json.org/" "JSON") " encodable
+   objects (booleans, strings, numbers, sequences, and
+   hash tables) and then, after you dispose of the dialog box that
+   will pop up here, look for output (in
+   the " (code "*inferior-lisp*") " buffer if you're using SLIME)
+   showing what came back from the browser.")))
+
+
+
+
+

@@ -1,0 +1,8 @@
+*.removed
+*.fsl
+*.fasl
+*.txt
+*.dmp
+readme.txt
+gc.prt
+.hg

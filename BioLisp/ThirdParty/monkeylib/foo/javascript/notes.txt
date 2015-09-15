@@ -1,0 +1,72 @@
+Naming issues:
+
+The names of FOO/Javascript special operators and macros need to be
+available in two quite different contexts: in Common Lisp for writing
+FOO/Javascript macros and in the actual FOO/Javascript code which
+needs to be able to refer to macros and the special operators defined
+in Common Lisp. The constraints we operate under are that we don't
+want to have to write names in ALL-UPPER-CASE nor in
+|escaped-lower-case| in either context. Also, for code in Common Lisp
+we'd of course like to be able to use the Common Lisp package
+system. However in FOO/Javascript code it doesn't really make sense to
+use Common Lisp packages since Javascript only has one (compile-time)
+namespace. Another issue is that while we might write a number of
+different sets of FOO/Javascript macros, we won't necessarily want to
+use them all in every FOO/Javascript file. So 
+
+
+
+
+  (use-macros :com.whatever.whatever)
+
+special operator that loops through all the symbols in the Common Lisp
+package COM.WHATEVER.WHATEVER and for each symbol that is the name of
+a FOO/Javascript macro, creates a mapping from (intern
+(string-downcase name) :keyword) to the symbol. Then when a s-exp
+Javascript tree
+
+
+Case issues:
+
+Javascript is case sensitive so we want to set the readtable-case to
+:preserve before reading s-exp Javascript. However the user of
+FOO/Javascript also needs to be able to define Javascript macros in
+Common Lisp. We don't want to write our Common Lisp code in
+ALL-UPPER-CASE so we don't want to read those files with
+:preserve. And finally the FOO/Javascript language defines a somewhat
+large number of special operators (one for each unique bit of
+Javascript syntax basically.) The tricky bit arises because both
+FOO/Javascript macros (written in Common Lisp, with a case smashing
+reader) and FOO/Javascript code (written in s-exp Javascript with a
+case preserving reader) will likely need to refer to those special
+operators. For the purposes of writing Javascript macros, it would be
+best if the names of the Javascript special operators were in upper
+case and interned in and exported from COM.GIGAMONKEYS.FOO. (Hmmm, or
+maybe a different package.) But for the purposes of writing s-exp
+Javascript, we'd like the names to be lower-case and in
+COM.GIGAMONKEYS.FOO.JAVASCRIPT.
+
+Special operators--two names for each operator, one upper case, one
+lower case, both interned in COM.GIGAMONKEYS.FOO.JAVASCRIPT and
+exported. This makes them visible (via the upper-case name) to Common
+Lisp code that uses COM.GIGAMONKEYS.FOO.JAVASCRIPT (i.e. code writing
+Javascript macros). And in s-exp Javascript, which is read in the
+COM.GIGAMONKEYS.FOO.JAVASCRIPT package, the lower-case name will be
+found.
+
+Macros have the same problem--we may want to write macros in terms of
+other macros so their names 
+
+
+When we define Javascript macros, we convert 
+
+--names converted to all-lower-case and interned in
+COM.GIGAMONKEYS.FOO.JAVASCRIPT.0.
+
+
+When a macro is defined it's name is whatever it's actual symbol name
+is. But it is also 
+
+(define-javascript-macro foo (&body body) ...)
+
+(define-javascript-macro-package mystuff foo bar baz quux)

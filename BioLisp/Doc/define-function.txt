@@ -1,0 +1,998 @@
+
+
+                      SPECIFICATION FOR BIOBIKE DEFINE-FUNCTION
+
+
+While several of the basic BioBike language features will be provided
+by the form processor, there are a number of features that will be
+provided by a new DEFINE-FUNCTION macro. These include:
+
+    * Handling of keyword arguments such that they are not specified
+using ':', but rather just with names, and no preceding characters.
+    * Allowing keywords to have aliases.  
+    * Allowing syntactic tokens (words that make a call seem more
+English like, and/or optionally appear in a specific place between
+required arguments.  These token variables are like flag variables
+(see below) but they must appear in a specific place.)
+    * "Flag" arguments--keyword arguments that take no subsequent
+value but are simply present or not (and their value is T or NIL.)
+    * Allowing aliases for the function name
+    * Specification of argument types and return value (using syntax
+simpler than DECLARE syntax) 
+    * Runtime checking of argument types and generation of meaningful
+error messages.
+    * Runtime coercion of arguments by type.
+    * Implicit mapping of required arguments declared atomic but given
+as lists.
+    * Declaration of local variables (equivalent to &aux or initial
+LET*) using simple syntax
+    * Retained ability to define simple functions simply using a
+DEFUN-like syntax.
+    * Allowing, but not requring, various kinds of documentation such
+as a doc-string, examples, see-also, synonyms, etc (which will get
+passed through to the now-specified DOCUMENT-FUNCTION function).
+    * Provision to allow export of the symbol being defined from the
+Biobike package, or the current package.
+    * Automatically generating documentation of allowed argument types. [1]
+    * Providing infrastructure for better error messages. [2] 
+
+Simple examples of all these features are defined below. 
+
+Restrictions on DEFINE-FUNCTION:
+
+    * No equivalent to &optional arguments are allowed to be defined.  [3]
+    * No equivalent to an &rest argument is allowed. [3]
+    * The incredibly obscure full semantics of lisp's keyword
+arguments is not permitted. Also, keywords are simply textual and
+cannot be passed 'by value.'
+    * No 'provided' arguments.  
+
+[1] - This is now taken care of by DOCUMENT-FUNCTION.  
+
+[2] - This is now handled by the biobike form-processor to some
+extent.  There may be a small amount of effort that DEFINE-FUNCTION
+needs to do to help.
+
+[3] - If the user uses DEFINE-FUNCTION in 'DEFUN-syntax' mode, then 
+the user can specify any legal common lisp argument list.  
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+The new DEFINE-FUNCTION is actually slightly misnamed because it's
+going to define a macro (and an associated function).  The basic idea
+is that DEFINE-FUNCTION will allow the function author to specify
+declaratively how the argument list is to be parsed and will generate
+a macro to do the parsing, binding the parameters appropriately before
+invoking an auxiliary function containing the actual code. For
+instance, the following definition:
+
+(define-function foo 
+  required x
+  keyword y
+  flag z
+  body (if z (do-stuff x y) (do-other-stuff x y)))
+
+will generate both a function and a macro.  The function will implement
+the semantics of FOO, while the macro will check the syntax of a call
+to FOO, and if it is valid, generate a call to the function.  
+
+The macro looks like:
+
+(DEFMACRO FOO (&WHOLE WHOLE &BODY BODY)
+     (DECLARE (IGNORE BODY))
+     (VERIFY-DF-CALL
+       'DF-FUNCTION-FOR-FOO WHOLE (GET 'FOO :DEFINE-FUNCTION-PARSE)))
+
+while the function looks like: 
+
+(DEFUN DF-FUNCTION-FOR-FOO
+       (X Z &KEY (Y NIL) &AUX (*DF-NAME* 'FOO) (=USER-STACK= *USER-STACK*)
+          (=USER-STACK-IL= *USER-STACK-INDEX-LIMIT*))
+  (DECLARE (TYPE (SIMPLE-ARRAY T (*)) =USER-STACK=))
+  (DECLARE (FIXNUM =USER-STACK-IL=))
+  (DECLARE (IGNORABLE =USER-STACK= =USER-STACK-IL=))
+  (WITHOUT-CODE-WALKER
+	 (FLET ((BODY-FUNCTION (&AUX #:RESULT-75512)
+                  (SETQ #:RESULT-75512
+                        (BLOCK FOO (IF Z (DO-STUFF X Y) (DO-OTHER-STUFF X Y))))
+                  #:RESULT-75512))
+           (BODY-FUNCTION))))
+ 
+FOO can then be called like this:
+
+(foo 10)
+(foo 10 y 20)
+(foo 10 y 20 z)
+(foo 10 z y 20)
+    
+
+More elaborate functions will specify that certain arguments must be
+of certain types and the function will generate code that checks the
+types at runtime, generating uniform error messages in the case of a
+type mismatch. It will also generate code that knows how to coerce
+actual arguments to the required types in well-defined ways. For
+instance we might define that a coding gene can be coerced to the
+protein that it codes for. Then the following definition:
+
+(define-function bar
+  required p
+  type p = (or gene protein)
+  convert p from gene to protein
+  summary "Does stuff with a protein."
+  body (do-stuff p))
+
+will cause the generated function to make sure that P 
+is a gene or protein, and then convert P to a protein 
+if it is a gene.  
+
+The type information attached to the function parameters will also be
+used to automatically generate part of the function documentation. For
+instance the summary documentation for BAR will read: 
+
+Function BAR
+    
+Summary: Does stuff with a protein.
+    
+With respect to type conversion, the language provides DEFCONVERSION:
+
+(defconversion (gene to protein) (g) ...)
+
+where ... is the code that does the conversion. This defines the
+default conversion which will be used when a DEFINE-FUNCTION contains
+a clause like "convert p from gene to protein" and the actual type of the
+argument is a gene. Always using the same conversion obviously
+increases the overall consistency of the language and its libraries.
+However there may be times when the default conversion is
+inapproriate. Because we need to support other conversions we allow
+DEFCONVERSION to define named conversions, like this:
+
+(defconversion (gene to protein named foo) (g)
+  ...)
+    
+and then in DEFINE-FUNCTION change the convert clause to:
+
+convert p from gene to protein using foo
+    
+In general the hope is that as we develop the library of standard
+BioBike functions we'll converge on a small set of useful conversions
+which can then be used consistently in the standard functions and in
+new user-defined functions. 
+
+We do expect that new programmers are going to use DEFINE-FUNCTION to
+write their functions. Indeed part of the point of providing a
+declarative syntax for argument types and conversions is to minimize
+the amount of code folks have to write--by specifying:
+
+type p (or gene protein)
+convert p from gene to protein
+    
+the programmer will get a whole pile of code generated for them that
+will check the actual types of arguments passed to the function, will
+convert arguments to the expected type in a consistent and correct
+way, and will emit comprehensible error messages if the function is
+called with incorrect argument types or with objects that can't be
+converted to the desired type. Additionally, programmers who think
+clearly about what types of arguments their functions are supposed to
+be called with will be well on their way to writing functions that
+actually work.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+Examples of the different proposed features of DEFINE-FUNCTION:
+
+
+    * Handling of keyword arguments such that they are not specified
+using ':', but rather just with names, and no preceding characters.
+
+(define-function frob 
+   required (x y)
+   keywords verbose? = nil
+   body (when verbose? (print 'foo)) (+ x y)
+  )
+
+;; All the following are legal ways to use the VERBOSE keyword
+;; (Actually, VERBOSE would probably be defined as a FLAG variable).
+
+(frob 3 4 verbose? t) 
+(frob 3 4)
+(frob 3 4 :verbose? nil)
+(frob 3 4 massar::verbose? t)			
+	
+
+    * Allowing keywords to have aliases.  
+
+(define-function frob 
+   required (x y)
+   keywords (fraction multiplier) = 1.0
+   body (* fraction (+ x y))
+  )	
+
+;; Legal ways to use the FRACTION keyword with its attendant alias
+;; called MULTIPLIER
+
+(frob 3 4 fraction 0.5)
+(frob 3 4 multiplier 0.25)
+(from 3 4)
+
+
+    * Allowing syntactic tokens
+
+(define-function search-for 
+   required (x (in within) (the) y)
+   body (find x y)
+  )
+
+(search-for x in y)
+(search-for x within y)
+(search-for x in the y)
+(search-for x within the y)
+(search-for x y)
+
+
+    * Allowing aliases for the function name.
+
+(define-function (search-for look-for hide-n-go-seek) 
+   required (x (in within) (the) y)
+   body (find x y)
+  )
+
+(search-for x in y)
+(look-for x in y)
+(hide-n-go-seek x in the y)
+
+
+    * "Flag" arguments--keyword arguments that take no subsequent
+argument but are simply provided or not (their value is T or NIL.)
+
+(define-function frob 
+   required (x y)
+   flags (verbose? safely)
+   body (when verbose? (print 'foo))
+	(when safely (when (zerop y) (print "Division by 0!!")))
+	(/ x y))
+
+
+    * Specification of argument types and return value (using syntax
+simpler than DECLARE syntax) 
+    * Runtime checking of argument types and generation of meaningful
+error messages.
+
+(define-function frob 
+   returns integer
+   required (x y)
+   types (x = integer y = gene)
+   body (+ x y[.from]) 
+  )	
+
+(frob 3 npr9090) ;; OK
+(frob 4.0 npr9090) ;; Oops, generates an error.  
+(frob 3 4) ;; Oops, second argument is wrong
+
+
+    * Runtime coercion of arguments by type.
+
+(defconversion (gene to protein) (g) (first g[.proteins]))
+
+(define-function frob
+   required p 
+   type p (or gene protein)
+   convert p from gene to protein
+   body (sequence-of p)
+ )
+
+(frob npr3182)
+"MNKGELVDAVATKTNITKKQADEVISAFLSVVTEAVAN..."
+(frob p-npr3182)
+"MNKGELVDAVATKTNITKKQADEVISAFLSVVTEAVAN..."
+
+
+    * Implicit mapping of required arguments declared atomic but whose
+value is a list when called
+
+(define-function frob 
+   required g 
+   map g
+   body (sequence-of g) [1] 
+  )
+
+(frob {npr3182 npr9090 npr9080})
+("a" "g" "t")
+(frob npr3182)
+"a"
+
+
+    * Declaration of local variables (equivalent to &aux or initial
+LET*) using simple syntax
+
+(define-function frob 
+   required g 
+   initialize (temp1 temp2) = nil
+   initialize fred = 4
+   body (assign temp1 (sequence-of g) [1])
+        (assign temp2 (sequence-of g) [2])
+        (print fred)
+        (equal temp1 temp2))
+
+
+    * Retain ability to define simple functions simply using a
+DEFUN-like syntax.
+
+(define-function frob (x y &rest z) (lisp:apply '+ x y z))
+
+
+    * Allowing, but not requiring, various kinds of documentation such
+as a doc-string, examples, see-also, synonyms, etc (which will get
+passed through to the now-specified DOCUMENT-FUNCTION function).
+
+(define-function (find locate) 
+    required (arg1 arg2)
+    summary "Brief documentation string..."	
+    examples (example-1 example-2...)
+    see-also (function-1 function-2...)
+    documentation "Extensive description of function..." "etc..." ...
+    author "Jeff Elhai"
+    body ...
+  )
+
+;; all of the above fields except for REQUIRED and BODY will be fed
+;; to a DOCUMENT-FUNCTION macro for FIND
+
+
+    * Provision to allow export of the symbol being defined from the
+Biobike package.
+
+(define-function global-frob
+   required (x y)
+   public
+   body (+ x y)
+  )
+
+;; now all users of the biobike system will be able to call
+;; GLOBAL-FROB from their own packages (since each user's package
+;; will use the BIOBIKE package)
+
+
+===============================================================================
+===============================================================================
+
+ 
+         SYNTAX AND SEMANTICS FOR EACH DEFINE-FUNCTION OPTION
+
+
+General syntax:
+
+DEFINE-FUNCTION consists of the function name specifier (which may
+include aliases), followed by a series of 'reserved words' (such as
+'required', 'body', 'examples') and their clauses.  The reserved words
+may be in any order (although a standard order will probably develop),
+except that the BODY reserved word must be the last reserved word.
+
+Generally, a reserved word may be used more than once.  The exact
+semantics of combining the data for two reserved word clauses is
+specific to the reserved word.  The BODY reserved word may only be
+used once. 
+
+Some reserved words have aliases, such as allowing either 'return' or
+'returns' when specifying the type of the return value of the
+function.  In general, if a plural form makes sense, it will be an
+allowed alias.
+
+A reserved word is followed by a reserved clause.  A reserved clause
+is either atomic, or a triple, or a set of triples, or a set of atomic
+reserved clauses enclosed by parentheses.  So, for example,
+
+required a 
+
+;; a is an atomic reserved clause
+
+required (a b)
+
+;; (a b) contains two atomic reserved clauses 
+
+type a = integer
+
+;; 'a = integer' is a triple
+
+type a = integer b = fixnum 
+
+;; the above is a set of triples
+
+type (a b) = fixnum
+
+;; the above is a single triple, declaring multiple variables
+
+type (a = integer b = fixnum) 
+
+;; the above is a set of triples
+
+It follows that an atomic reserved clause can never be a non-nil list;
+Although in certain cases an atomic reserved clause can be a set of
+tokens, one or more of which is a list.  E.g.,
+
+  keyword (fred freddy) = 3
+
+A number of clauses have the form 'x = y'.  To prevent people from
+making the obvious typos 'x =y', 'x= y', and 'x=y' we will allow
+people to type any of these forms and have them be treated exactly as
+if they were 'x = y'.  To do this, we must disallow the use of '=' as
+a character in any symbol defined as an argument or local variable in
+DEFINE-FUNCTION.  (This syntactic addition is not specified below in
+the various BNF clauses.)
+
+
+General semantics: 
+
+DEFINE-FUNCTION creates a macro, an auxiliary function, a call to the
+DOCUMENT-FUNCTION macro, and possibly other forms such as calls to
+EXPORT.  The auxiliary function contains the 'body' code, which is
+executed in the binding context of the required, token, keyword, and
+flag arguments, along with run-time coercion and type-checking code.
+The macro generates a call to the auxiliary function after parsing the
+required, flag and optional token arguments (converting token and flag
+arguments to required arguments in the auxiliary function call), and
+converting keyword arguments to common lisp keyword arguments in the
+auxiliary function call.  The DOCUMENT-FUNCTION call stores auxiliary
+information about the function.
+
+
+
+    * Required arguments and syntactic token arguments
+
+Syntax: required req-arg | 
+        required (req-arg-or-token-spec &rest req-arg-or-token-spec)
+
+        req-arg ::= variable 
+        req-arg-or-token-spec ::= req-arg | token-spec 
+        token-spec ::= (variable &rest variable) 
+
+Basically this says that a parenthetical expression found within the
+required arguments' specifiers is considered a syntactic token
+specifier.  Each such form must contain a list of possible token
+variables, only one of which can be literally present at that position
+in the call sequence.
+
+These optional token variables can be specified to occur anywhere
+before the first keyword argument (that is, before the first required
+argument, between two required arguments, or after the last required
+argument but before any keyword arguments).  It is not possible to
+specify that these words occur anywhere within the required arguments,
+rather each word group must occur if it does at all in a specific
+place.
+
+Examples: 
+
+required (x (in within) y)
+
+Calling sequences: 
+
+(frob x y)
+(frob x in y)
+(frob x within y)
+
+(frob in x y) --> error!
+
+required ((of) x (merrily cheerfully) (in within) y (happily lovingly))
+
+Calling sequences: 
+
+(frob x y)
+(frob of x within y lovingly)
+(frob x cheerfully within y happily)
+
+(frob x happily within y) --> error!
+
+Semantics: The required arguments are treated as normal common-lisp
+arguments.  Token arguments are optional; exactly one of the variables
+in parentheses may be present at the position indicated.  
+
+If a token variable is present, it is replaced by T in the call
+sequence.  If a token variable is not present, it is replaced by
+NIL in the call sequence.  Every token variable (including all the
+'aliases' within a specific token-spec) is replaced by either
+T or NIL in the call sequence.  This is best explained by example.
+
+(define-function frob
+   required ((of) x (merrily cheerfully) (in within) y (happily lovingly))
+   keyword foo = 5
+   ...)
+
+The call to 
+
+(frob x y) 
+
+is translated by the biobike form processor into 
+
+(frob nil x nil nil nil nil y nil nil)
+
+The call to 
+
+(frob of x within y lovingly)
+
+is translated into
+
+(frob t x nil nil nil t y nil t)
+
+and the call to 
+
+(frob x cheerfully within y happily)
+
+is translated into
+
+(frob nil x nil t nil t y t nil)
+
+The definition of the auxiliary function for FROB begins something like
+
+(defun frob-aux 
+	(of x merrily cheerfully in within 
+	y happily lovingly 
+	&key (foo 5))
+  (declare (ignorable of merrily cheerfully in within happily lovingly))
+  ... )
+
+So we see that every possible token variable is passed as T or NIL
+into the auxiliary function, and within the auxiliary function each
+possible token variable has a value of T or NIL.  Since these
+variables may be being used as 'noise words', not as meaningful
+variables, DEFINE-FUNCTION declares them as 'ignorable' so that if
+they are not referenced in the body of the function, no warnings will
+be issued by the common lisp compiler.  
+
+Required clauses are combined left to right going from top to bottom, 
+just as keyword clauses are.  
+
+
+    * Keyword arguments.
+
+Syntax: keyword keyword-spec | 
+        keyword (keyword-spec &rest keyword-spec) 
+
+keyword-spec ::= variable | 
+                 variable = initial-value | 
+                 (variable &rest aliases) = initial-value
+
+A keyword specifier is either simply a variable, or a variable with an
+initial value, or a variable and a set of aliases with an initial
+value.  (It is not possible to specify a keyword and a set of aliases
+without an initial value because each element of the variable and
+alias list would be taken as specifying different keywords.)
+
+Note: The presence of the '=' is necessary because otherwise an
+initial-value-symbol could be interpreted as a clause name.  
+
+Note: The use of '=' begs users to make the conceivable syntactic error 
+
+keyword foo=5
+
+and similar such errors.  Biobike remedies this by declaring that it
+is illegal to have the character '=' appear in the name of any
+required, flag, init, or keyword variable.  If the parser sees
+something like the above: 'keyword foo=5', it parses it out into
+'keyword foo = 5'.  It does similar unpacking for 'keyword foo =5' and
+'keyword foo= 5'.  This parsing out of '=' applies to most, if not
+all, uses of '=' in non-body define-function clauses.  
+
+Semantics: A keyword with no initial value is equivalent to an initial
+value of NIL.  
+
+A keyword or one of its aliases may be used in the call sequence; but
+only one of each keyword or its aliases may be used.  (It is the
+keyword itself that is the bound variable in the DEFINE-FUNCTION body,
+and the usage of an alias is not allowed in the body -- only in the
+call sequence is an alias allowed.)  
+
+All keywords and all their aliases along with all required, token, and
+flag arguments must be uniquely named.
+
+Otherwise keywords obey standard common lisp semantics particularly
+regarding the context of the evaluation of their initial values.  
+
+If more than one keyword clause is provided, it is as if all the
+keyword clauses were combined into a single clause with each
+successive clause from top to bottom of the define-function definition
+going respectively from left to right.  This means that a keyword
+initial value form defined below another keyword X but above a keyword
+Y can use the value of X but not the value of Y, just as in standard
+common lisp a keyword initial value form can use the value of a
+keyword defined preceding it but not one following it.  Any keyword
+initial value form can use the value of any required, token, or flag
+argument.
+
+
+    * Flag arguments	
+
+Syntax: flag variable | 
+        flag (variable &rest variable) 
+
+Semantics: Flag variables are either present or not; there is no need
+to give them a value as with keyword variables.  Each flag variable is
+bound to T or NIL.  If the flag variable is not provided in the call
+it is bound to NIL, otherwise it is bound to T.  Flag variables are
+bound before keyword variables (thus it is possible to use the value
+of a flag variable when initializing a keyword variable).
+
+(Note: It thus makes sense for the 'standard' behavior of any
+function defined with DEFINE-FUNCTION to be that with all its flag
+arguments having NIL values)
+
+Example: 
+
+(define-function frob 
+   required (x y)
+   flag (foo? bar?)
+   keyword baz = (if foo? 3 4)
+   ...)
+
+The auxiliary function would look something like 
+
+(defun frob-aux (x y foo? bar? (baz (if foo? 3 4)))
+   ...)
+
+We see that the initial value of baz can depend on foo? since flag
+arguments are always defined in the lambda list of the auxiliary
+function before other keyword arguments.  
+
+Note: The order in which flag arguments is specified is irrelevant.  
+
+
+    * Function name aliases
+
+Syntax: (define-function (function-name &rest aliases) ...)
+
+The function name and the aliases must be unique.  The aliases must not
+name an existing function or alias. 
+
+Semantics: An alias which was previously processed by DEFINE-FUNCTION
+but which was subsequently removed from the aliases list is no longer
+a valid alias and the results are undefined if an attempt is made to
+use that alias.
+
+An alias is implemented by defining a macro for that alias which simply 
+expands into a call to the FUNCTION-NAME.  
+
+Example: (define-function (fred freddy) ...)
+
+This will cause something very similar to: 
+
+(defmacro freddy (&body body) `(fred ,@body))
+
+The system keeps track of aliases and does not allow two DEFINE-FUNCTION
+names to have the same alias, nor to have an alias which is also defined
+as some other DEFINE-FUNCTION or other functional form.  
+
+
+    * Argument types and return types
+
+General discussion: Unless we want to redefine the entire common lisp
+type system, types will be as in common lisp (such as integer,
+single-float, string, etc), along with newly defined type specifiers
+for certain kinds of frames such as gene, protein, and organism.
+(There will be a way to add to this list of symbolic frame types, 
+but this gets into issues with the old versus new frame system).  
+
+Note: There has been some talk of adding more specialized types such as 
+
+(list-of gene), (set-of organism)
+
+but those ideas are not included in this specification.  
+
+Note: Common lisp allows types such as (or gene protein), (and gene
+protein), or (not gene).  We will only allow the OR syntax, not AND or
+NOT, and we will treat this type syntax somewhat specially (see
+below).
+
+Return type syntax: 
+   	
+   returns <type> | return <type>
+  
+Argument type syntax: 
+   
+   type typespec | 
+   type typespec1 typespec2 typespec3 ... |
+   type (typespec &rest typespec)
+   
+   typespec ::= argument-name = <type> | (argname &rest argnames) = <type>
+
+Example: 
+
+(define-function frob 
+  required (x y z q r)
+  type (x = integer y = gene)
+  type (z q) = float r = complex
+  returns integer 
+  body (+ x y[.from])
+ )
+
+Note: The same syntactic problems with using '=' (e.g., x=integer)
+apply here as with keyword initial values.  
+
+Semantics: When argument types and/or return types are specified, and
+when a DEFINE-FUNCTION function is processed (compiled) with *safety*
+non-nil (the default) then code to check that the type declarations
+are satisifed will be generated in the auxiliary function.  A
+hopefully clear error message will be generated if a type declaration
+is not satisfied.  (Only one such error is guaranteed to be generated;
+the code will not necessarily test all the arguments and then report
+on each one that is invalid, although it will endeavor to do so with
+respect to all the required arguments).
+
+
+    * Coercion of arguments.
+
+Syntax: 
+  convert cvspec | 
+  convert cvspec1 cvspec2 cvspec3 ... |
+  convert (cvspec &rest cvspec) 
+
+  cvspec ::= <variable> from <type> to <type> [ using <defconversion-name> ] |
+             (var &rest vars) from <type> to <type> [ ... ]
+
+Semantics: Any required or keyword variable may have specified for it
+a set of conversions.  Each conversion states that if the variable is
+of type T1 when it is passed in, it is converted to type T2 before the
+body of the function is executed (and before any type-checking of the
+argument is done).  The conversion set types are tested in the order
+that they are defined in the DEFINE-FUNCTION definition.
+
+Conversion algorithms are specified by using DEFCONVERSION (see above).
+If no DEFCONVERSION algorithm has been specified for types T1 and T2
+then the common lisp COERCE is used.  
+
+(There may be more than one way to convert something of type T1 to type T2.
+This is why the USING clause is provided and why the NAMED option to 
+DEFCONVERSION is allowed.)  
+
+Example: 
+
+(define-function foo
+	required (x y)
+	convert x from fixnum to single-float 
+	convert x from integer to (complex single-float)
+	body (+ x y)
+	)
+
+(foo 4 5) -> 9.0
+
+In this case the value of X, 4, is converted to a single-float, not a
+complex number, because the value of X is of type fixnum and that test
+is executed before the test to determine whether X is of type integer.
+(The ordering restriction is used mainly to prevent us from having to 
+deal with complex issues of the common lisp type system calculus.)
+
+(defconversion (float to integer) (f) (round f))
+(defconversion (float to integer named bb-truncate) (f) (truncate f))
+(defconversion (float to integer named bb-ceiling) (f) (ceiling f))
+
+(define-function foo 
+	required (x y)
+	convert x from float to fixnum 
+	convert y from float to fixnum using bb-ceiling
+	body (+ x y))
+
+(foo 1.3 1.4) --> 3
+
+Here we define a number of different methods for converting
+floats to integers and then we use two of them (the default one
+and a named one) in FOO.  The X argument (value 1.3) uses the default
+conversion (rounding) while the Y argument (value 1.4) uses the 
+ceiling conversion, bringing its value to 2, and the overall result
+therefore to 3. 
+
+Coercion of arguments is done after all keyword initial value forms
+have been evaluated (thus one will get the non-coerced value of a
+required argument if one accesses the required argument in the
+initialization form for a keyword initial value).
+
+Biobike will, at a minimum, define a small number of 'biological'
+types: gene, protein, organism, and contiguous-sequence.  These types
+will in fact be defined as common lisp types using DEFTYPE and SATISFIES,
+and these types may be used in the conversion clauses.  
+
+Note: It's not clear whether this is the best semantics or whether the
+keyword initial value forms should receive the coerced argument value.
+
+
+    * Implicit mapping
+
+Introduction: There are four types of mapping we will allow.  The
+first is standard MAPCAR semantics, where successive elements are
+taken from specified arguments.  The second is standard MAPCARNN (a
+utilities function) semantics, wherein null results are removed and
+only non-nil results are returned.  The third is what might be referred
+to as MAPTREE, although no such common lisp operator exists.  The
+fourth is specific to two arguments, iterating over the mathematical
+CROSS-PRODUCT of those arguments.  (MAPCAR and MAPTREE can be
+specified over any number of required arguments.)
+
+Examples: 
+
+MAPCAR semantics:
+
+(define-function my+
+   required (x y)
+   map (x y)
+   body (+ x y))
+
+(my+ '(1 2 3) '(4 5 6)) -> (5 7 9)
+(my+ '(1 2 3) 4) -> (5 6 7)
+(my+ 1 '(1 2 3)) -> (2 3 4)
+(my+ 4 5) -> 9
+
+(define-function my-abs
+   required x
+   map x
+   body (abs x))
+
+(my-abs {-2 3 -4}) -> (2 3 4)
+
+MAPCARNN semantics:
+
+(define-function foo
+   required (a b)
+   mapcarnn (a b)
+   body (and a b))
+
+(foo '(t t nil t nil) '(1 nil 2 3 4)) --> (1 3)
+(foo '(t t nil t nil) 2) --> (2 2 2)
+
+MAPTREE semantics: 
+
+(define-function my++
+   required x
+   maptree x
+   body (1+ x))
+
+(my++ '((1 2) (3 (4 5)) 6)) -> ((2 3) (4 (5 6)) 7)
+
+(define-function merge-strings 
+   required (x y)
+   maptree (x y)
+   body (concatenate 'string x y))
+
+(merge-strings '("ab" ("cd" "ef")) '("gh" ("ij" "kl"))) -> 
+  ("abgh" ("cdij" "efkl"))
+
+(merge-strings '("ab" ("cd")) "x") -> ("abx" ("cdx"))
+
+CROSS-PRODUCT semantics:
+
+(define-function pairs
+   required (x y)
+   cross-product (x y)
+   body (list x y))
+
+(pairs 3 4) -> (3 4)
+(pairs '(1 2) '(3 4)) -> ((1 3) (1 4) (2 3) (2 4))
+(pairs 4 '(1 2 3)) -> ((4 1) (4 2) (4 3))
+
+Mapcar Syntax: 
+  { mapcar | map | map-over | mapover } required-arg | 
+  { mapcar | map | map-over | mapover } (required-arg &rest required-arg) 
+
+Mapcarnn Syntax: 
+  { mapcarnn | mapnn | map-over-nn | mapovernn } required-arg | 
+  { mapcarnn | mapnn | map-over-nn | mapovernn } 
+	(required-arg &rest required-arg) 
+
+Maptree Syntax: 
+  { maptree | mapinto | map-into | ? } required-arg | 
+  { maptree | mapinto | map-into | ? } (required-arg &rest required-arg)
+
+Cross-product Syntax:
+  { cross-map | crossmap | cross-product | crossproduct } 
+	(required-arg-1 required-arg-2)
+
+At most one of mapcar, maptree, and crossproduct can exist in a single
+define-function definition.  
+
+General semantics: Only required arguments are allowed to be mapped.  
+
+Mapcar semantics: If any of the arguments declared to be mapped is in
+fact a list then mapping takes place.  If so, any argument which is
+not a list is treated as if it were a list of the argument as long as
+the longest list argument.  The result list is as long as the shortest
+list argument (standard mapcar semantics).  
+
+Maptree semantics: If any of the arguments declared to be mapped is in
+fact a list then mapping takes place.  If so any argument which is not
+a list is in effect converted to a tree of the same form as the first
+mapped argument which is a list, whose leaves are the non-list
+argument.  The result is a tree of the same form as all the list
+arguments (which must all have exactly the same shape, otherwise an
+error is signalled -- however if any of the mapped arguments is NIL,
+then NIL is returned and no operation is actually performed).
+
+Since MAPTREE descends into list structure, the basic DEFINE-FUNCTION
+function specified using a MAPTREE declaration must operate on a
+non-list.
+
+Crossproduct semantics: Two and only two required arguments may be
+declared as subject to crossproduct mapping.  If at least one of the
+arguments being mapped is a list then the crossmapping will take
+place.  If the other argument is not a list, it is treated as a
+singleton list.  If the first argument is of length N, and the second
+argument is of length M, then the result is a list of N*M elements.
+The order of the resulting list is determined by the ordering of each
+argument list and is what one would expect.
+
+Implementation note: When one or more arguments are declared mapped,
+the auxiliary function that is generated will have to contain an FLET
+with the mapping done by calling the flet from the main body of the
+auxiliary function (or something like that...).
+
+Note: This does not map over elements of vectors (including strings).
+
+
+    * Local variables.
+
+Syntax: { init | initialize } binding
+        { init | initialize } binding1 binding2 binding3...
+        { init | initialize } (binding &rest bindings) 
+
+        binding ::= variable = initial-value
+
+Note: The same problem with '=' as discussed above exists.         
+
+Semantics: These are semantically equivalent to &aux variables in
+common lisp.  It is as if these bindings were done after all the
+keyword initialization forms have been evaluated.  The initial value
+forms for these local variables are only evaluated once regardless of
+whether any arguments are mapped or not.
+
+Note: The same question as to whether the initialization forms access
+the coerced or 'raw' form of the required (and keyword) variable
+values comes up.  Here, it seems clearer that the correct semantics is
+the coerced form, but it turns out that this is very difficult to do,
+so we define the semantics such that initialization forms are executed
+before any conversions are done.
+
+
+    * DEFUN-like syntax.
+
+Syntax: (define-function frob <arglist> &body body)
+
+Semantics: If the form immediately following the function name (the
+<arglist>) is a list then the DEFINE-FUNCTION form is taken to be
+equivalent to a DEFUN form.  None of the reserved words allowed by a
+standard DEFINE-FUNCTION form are allowed (or at least they will not
+be interpreted as starting standard DEFINE-FUNCTION clauses,
+everything will be taken as the function body).  The documentation
+string, if any, will be passed appropriately to DOCUMENT-FUNCTION
+as will the necessary argument list information.
+
+Note: We could pass type information defined by DECLAREs to
+DOCUMENT-FUNCTION but this would involve writing code to parse out all
+the type declarations.  
+
+
+    * Documentation reserved words.
+
+Syntax: As usual, either a single non-list or a single list, generally 
+strings.  
+
+Semantics: The list of reserved words specifically for documentation
+will be provided by the implementor of DOCUMENT-FUNCTION (aka
+Peter) All the data in these clauses will be passed directly to a
+DOCUMENT-FUNCTION macro which will be created at the same time the
+DEFINE-FUNCTION macro and auxiliary function are created.
+
+Note: Other information (such as the arglist) needs to be passed to
+DOCUMENT-FUNCTION.  
+
+
+    * Export
+
+Syntax: public |
+	export-from <package-name> |
+	export-from (<package-name> &rest <package-name>)
+
+Semantics: If 'public' is specified, then the name of the function
+being defined and all its aliases will be imported into the BIOBIKE
+package and then exported from the BIOBIKE package.  This will
+immediately cause all biobike users to have access to this function.  
+
+If 'export-from' is used, the user can specify the package instead of
+having it necessarily be BIOBIKE.  (This would allow private packages
+to be set up consisting of useful functions that do not 'pollute' the
+biobike package.

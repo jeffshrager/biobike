@@ -1,0 +1,505 @@
+Statistical functions in Common Lisp.
+
+This documentation is copyright (c) 2000 by Larry Hunter
+(Larry.Hunter@uchsc.edu).  It is released under the GNU General Public
+License.  See the file statistics.copyright-notices for license details.
+
+1. Introduction.
+
+This code is intended to be used as an internal library to provide
+statistical functions for GPL'd common lisp code.  It may not be used
+in proprietary software.  Also, this code has NO WARRANTEE; see the
+accompanying file statistics.copyright-notices for more information. 
+
+The code was written for a biostatistics course I teach at the
+University of Colorado Health Sciences Center.  The course web site
+may also be useful in understanding the code here.  See:
+http://porsche.uchsc.edu/pharm/Courses/PHCL7610
+
+In addition, the course textbook, Bernard Rosner's "Fundamentals of
+Biostatistics," 5th edition, Duxbury, CA, ISBN 0-534-37068-3 is an
+excellent introduction to biostatistics.  The formulae used in this
+code are taken largely from this book, and specific page number
+references are included in many of the functions. 
+
+A few of the numeric functions were adopted from the CLASP package, by
+Paul Cohen.  Please see the web site
+http://eksl-www.cs.umass.edu/clasp.html and the attached
+copyright-notices file for more information about that package.
+
+I am interested in bug reports, corrections, and other relevant
+feedback.  Please send any comments to Larry.Hunter@uchsc.edu.
+
+2. Naming conventions
+
+Most of the functions and variable names are spelled out fully, with
+hyphens in place of spaces.  In the interests of brevity, the
+following abreviations used in function and variable names:
+
+   ci = confidence interval
+   cdf = cumulative density function
+   ge = greater than or equal to
+   le = less than or equal to
+   pdf = probability density function
+   sd = standard deviation
+   rxc = rows by columns
+   sse = sample size estimate
+
+3.  The functions.
+
+This section is a list of the functions provided, the arguments that
+the functions take, and the values that they return, along with other
+useful commentary.   There are some additional comments in the source
+files. 
+
+
+3.1 Descriptive statistics
+   
+The following functions take a sequence of numbers as an argument and
+return the named descriptive statistic:
+
+  MEAN
+  MEDIAN
+  MODE
+  GEOMETRIC-MEAN
+  RANGE
+  VARIANCE
+  STANDARD-DEVIATION
+  COEFFICIENT-OF-VARIATION
+  STANDARD-ERROR-OF-THE-MEAN
+
+The function SD is a synonym for standard-deviation.
+
+The function PERCENTILE takes a sequence and a percent (a number
+between 0 and 100) as arguments and returns the percentile. 
+
+3.2 Distributional functions 
+
+    The following distributional functions compute densities and
+    cumulative probabilities for binomial, Poisson, Normal and Chi-square
+    distributions.
+
+BINOMIAL-PROBABILITY takes three arguments, N, K and p, and returns
+the probability of seeing exactly K out of N events under the binomial
+distribution with probability p.  N and K must be fixnums K <= N, and
+p must be a number between 0 and 1.  The calculation is exact unless
+N>100 and p<0.01, in which case the Poisson approximation is used.
+
+BINOMIAL-CUMULATIVE-PROBABILITY takes three arguments N, K and p, and
+returns the probability of seeing fewer than K events in N trials
+under the binomial distribution with probability p.
+
+BINOMIAL-GE-PROBABILITY takes three arguments N, K and p, and returns
+the probability of seeing K or more events in N trials under the
+binomial distribution with probability p.
+
+BINOMIAL-LE-PROBABILITY takes three arguments N, K and p, and returns
+the probability of seeing K or fewer events in N trials under the
+binomial distribution with probability p.  It is the cumulative
+probability plus the binomial probability of K.
+
+POISSON-PROBABILITY takes two arguments mu and K, and returns the
+probability of seeing k events over a time period under a Poisson
+distribution with an expected number of events mu.  Mu must be
+positive number and K must be a positive integer.
+
+POISSON-CUMULATIVE-PROBABILITY is the probability of seeing fewer than
+K events over a time period under a Poisson distribution with an
+expected number of events over that time period of mu.  Mu must be
+positive number, and K must be a positive integer.
+
+POISSON-GT-PROBABILITY is the probability of seeing K or more events
+over a time period under a Poisson distribution with an expected
+number of events over that time period of mu.  Mu must be positive
+number, and K must be a positive integer.
+
+NORMAL-PDF takes three arguments X, mu and sigma, and returns the
+probability density for a normal distribution with mean mu and
+standard deviation sigma at point X.  Mu and X must be numbers and
+sigma must be a positive number. 
+
+CONVERT-TO-STANDARD-NORMAL takes three arguments, X, mu and sigma and
+converts the values of the random variable X from a normal distribution
+with mean mu and standard deviation sigma to a random variable
+distributed as the standard Normal (mean 0, sd 1). 
+
+PHI is the cumulative density function of the Normal distribution.  It
+takes one argument, X, and returns the probability that a standard normal
+variable is less than X. 
+
+Z is the inverse Normal function.  It takes one argument, percentile, and
+returns the value X such that Phi(x) = percentile.  Percentile must be
+between 0 and 1. 
+
+T-DISTRIBUTION takes two arguments, degrees of freedom and a percentile,
+and returns the point which is the indicated percentile in the t
+distribution with dof degrees of freedom. 
+
+CHI-SQUARE takes two arguments, degrees of freedom and a percentile, and
+reutnrs the point which is the indicated percentile in the chi square
+distribution with dof degrees of freedom. 
+
+CHI-SQUARE-CDF takes two arguments, degrees of freedom and X, and returns
+the probability that a Chi-square distributed variable with dof degrees
+of freedom is less than X. This is the left hand tail area under the chi
+square distribution with dof degrees of freedom up to X, and is generally
+used to calculate the significance of a chi square test. 
+
+3.3 Confidence interval functions
+
+    The following functions calculate confidence intervals around various
+    estimates of parameters in the binomial, Poisson and Normal
+    distributions.  The all end in "-CI"
+
+BINOMIAL-PROBABILITY-CI takes 3 arguments, N, p and alpha and returns the
+upper and lower bounds on the 1-alpha confidence interval on the p
+parameter of the binomial distribution.  N is the number of trials, p is
+the observed probability, and alpha defines the confidence interval.
+This function approximates using the Normal theory when N*p*(1-p) >= 10,
+unless the keyword argument :exact? is non-nil.  N must be a positive
+integer, and p and alpha must be numbers between 0-1.
+
+POISSON-MU-CI takes two arguments, an observed number of events X in a
+unit of time, and alpha, and returns the upper and lower bounds on the
+1-alpha confidence interval on the mu parameter of a Poisson
+distribution.  Mu must be a positive number and alpha must be between
+0-1. 
+
+NORMAL-MEAN-CI takes four arguments, mean, standard deviation, N and
+alpha, and returns the upper and lower bounds of the 1-alpha confidence
+interval on the mean of the Normal distribution with parameters mean and
+standard deviation.  Mean must be a number, standard deviation a positive
+number, N a positive integer and alpha between 0-1.
+
+NORMAL-MEAN-CI-ON-SEQUENCE takes two arguments, a sequence of numbers and
+alpha, and returns the 1-alpha confidence interval on the mean of the
+sequence, assuming that it was drawn on a Normal distribution. 
+
+NORMAL-VARIANCE-CI takes three arguments, a variance, N and alpha, and
+returns the 1-alpha confidence interval on the variance of a normal
+distribution.  Variance must be a positive number, N a positive integer
+and alpha between 0-1. 
+
+NORMAL-VARIANCE-CI-ON-SEQUENCE takes two arguments, a sequence of numbers
+and alpha, and returns the 1-alpha confidence interval on the variance of
+the sequence, assuming that it was drawn on a Normal distribution. 
+
+NORMAL-SD-CI and NORMAL-SD-CI-ON-SEQUENCE are similar to the
+NORMAL-VARIANCE functions, but return the confidence interval on the
+standard deviation instead of the variance. 
+
+3.4 Parametric Hypothesis tests.  
+
+    These functions generally take a :tails keyword argument, which
+    determines whether they test for any difference, or a specifically
+    positive (or specifically negative) difference.  One sample tests
+    look at a set of observations and test whether they are compatible
+    with some given parameters.  Two sample tests compare two different
+    sets of observations.  The "-ON-SEQUENCE(s)" suffix take sequence
+    arguments and compute the necessary test statistics.  Without the
+    suffix, the user supplies the test statistic.
+
+Z-TEST takes two required arguments, x-bar and N, and three optional
+keyword arguments, mu, sigma and tails; it returns the p value which is
+the significance of a one sample test for the mean of a normal
+distribution with known variance.  Mu is the null hypothesis mean
+(default 0), sigma is the standard deviation (default 1), and N is the
+number of observations.  If tails is :both, the p value reported is the
+significance of any difference between x-bar and mu; if tails is
+:positive, the significance is of a test that x-bar is greater than mu,
+and if negative, the significance of a test that x-bar is less than mu.
+
+Z-TEST-ON-SEQUENCE takes one required argument, sequence, and three
+optional keyword arguments, mu, sigma, and tails; it returns the p value
+which is the significance of a one sample test for the mean of a normal
+distribution with known variance.   This is the same as Z-TEST, but
+calculates x-bar and N from the sequence. 
+
+T-TEST-ONE-SAMPLE takes four arguments, x-bar, sd, n, mu and one optional
+keyword argument, tails.  It returns the p value which is the
+significance of a one sample t test for the mean of a normal distribution
+with unknown variance.  X-bar is the observed mean, sd is the observed
+standard deviation, N is the number of observations, and mu is the test
+mean.  If tails is :both, the p value reported is the significance of any
+difference between x-bar and mu; if tails is :positive, the significance
+is of a test that x-bar is greater than mu, and if negative, the
+significance of a test that x-bar is less than mu.
+
+T-TEST-ONE-SAMPLE-ON-SEQUENCE takes two arguments, a sequence and a test
+mean mu, and an optional keyword argument, tails.  It returns the p value
+which is the significance of a one sample t test for the mean of a normal
+distribution with unknown variance.  This is the same as
+T-TEST-ONE-SAMPLE, but calculates the x-bar, sd and N from the sequence. 
+
+T-TEST-PAIRED takes three arguments, d-bar, sd and N, and one optional
+keyword argument, tails.  It returns the p value which is the
+significance of a paried t test for the means of two normal distributions
+in a longitudinal study.  D-bar is the mean difference between the before
+and after conditions, sd is the standard deviation of the differences, N
+is the number of observations.  If tails is :both, the p value reported
+is the significance of any difference between the means; if tails is
+:positive, the significance is of a test that the difference is positive,
+and if negative, the significance of a test that difference is negative.
+
+T-TEST-PAIRED-ON-SEQUENCES takes two arguments, before, a sequence of
+numbers, and after, an equal length sequence of numbers, such that the
+first element of before corresponds to the first element of after, etc.
+It returns the p value which is the significance of a paired t test on
+the two sequences.  This is the same as the above, but the difference
+mean, sd and N are calculated from the sequences. 
+
+T-TEST-TWO-SAMPLE takes six required arguments, x-bar1, sd1, N1, x-bar2,
+sd2 and N2, which are the mean, standard deviation and size of the first
+and second sample respectively.  Optional keyword arguments include
+variances-equal? variance-significance-cutoff and tails.  This function
+returns the p value which is the significance of the test of whether the
+sample means are equal or not.  The test done depends on whether the
+sample variances are equal.  The variance variances-equal? can be t (or
+:yes or :equal), nil (or :no or :unequal) or :test.  If it is :test, an F
+test is conducted on the variances, and if the significance of the F test
+is less or equal to the value of the variance-significance-cutoff
+(default 0.05), then the variances are assumed to be different.  If the
+variances are equal, the exact two sample t test is computed.  If the
+variances are not equal, the Satterthwaite method is used to approximate
+the p value.  This method has good type I error properties (at the loss
+of some power).  The tails variable determines if the test is for any
+difference, for the mean of the first sample being greater than the
+second (:positive tails) or the mean of the first sample being less than
+the second (:negative tails).  X-bar1 and X-bar2 must be numbers, sd1 and
+sd2 positive numbers, N1 and N2 positive integers, variances-equal? must
+be one of (t, :yes, :equal, nil, :no, :unequal, or :test), and
+variance-significance-cutoff must be a number between 0 and 1. 
+
+T-TEST-TWO-SAMPLE-ON-SEQUENCES takes two required variables, sequence1
+and sequence2, and optional variances as T-TEST-TWO-SAMPLE.  It returns
+the p value which is the significance of the test of whether the two
+sample means are equal.  The sequences must be sequences of numbers.
+
+F-TEST takes four required arguments, variance1, N1, variance2 and N2,
+and one optional keyword argument, tails.  It returns the p value which
+is the significance of a test for the equality of the two variances.  If
+tails is both, the p value is the significance of any difference.  If
+tails is :positive, it is the significance of a test that the first
+variance is larger than the second; if :negative, that the first variance
+is smaller than the second.  Variances must be positive numbers and Ns
+must be positive integers. 
+
+CHI-SQUARE-TEST-ONE-SAMPLE takes three arguments, a sample variance, N
+and the test sigma-squared, and one optional keyword argument, tails.  It
+returns the p value which is the significance of a one sample chi-square
+test for the variance of a normal distribution (i.e. whether the observed
+sample variance is equal to sigma-squared).  Tails specifies whether the
+test is for any difference (:both), for variance being less than
+sigma-squared (:negative) or for the variance being greater than
+sigma-squared (:positive). 
+
+BINOMIAL-TEST-ONE-SAMPLE takes three required arguments, p-har, N and p,
+and two optional keyword arguments, tails and exact?.  It returns the
+significance of a one sample test for the equality of an observed
+probability (p-hat) to an expected probability (p) under a binomial
+distribution with N observations.   It uses an exact test of either the
+:exact? argument is true or if N*p*(1-p) <= 10, and the Normal theory
+approximation otherwise.   P-hat and p must be probabilities, and N must
+be a positive integer.  If tails is :both, than the p value is for any
+difference; if it is :positive, it if for the observed probability being
+greater than the expected, and if it is :negative, then it is for the
+observed probability being less than expected.  
+
+BINOMIAL-TEST-TWO-SAMPLE takes four required arguments: p-hat1, N1,
+p-hat2 and N2, and the optional keyword arguments tails and exact?.  It
+returns the p value which is the significance of the test for equality of
+the two observed probabilities in the specified number of trials.  The
+Normal theory approximation will be used when the products of
+n*p-hat*(1-p-hat) are greater than 5 for both samples and the value of
+the exact? keyword is not t; otherwise, Fisher's exact test is used.  The
+tails variable specifies whether the test is for any difference (:both),
+the first probability being larger than the second (:positive) or the
+first being smaller than the second (:negative).
+
+FISHER-EXACT-TEST takes one required arguments, a 2x2 array of numbers,
+and returns the probability of observing a different matrix given that
+the row and column margins are fixed. Optional :tails argument determines
+whether the probability is for any different arrangement (both),
+different arrangments where the probability of the least frequently
+occurring cell is less than the observed (:positive) or greater than the
+observed (:negative).  Used to calculate exact p values for the two
+sample binomial test.
+
+MCNEMARS-TEST is a two sample test for correlated proportions, used in
+longitudinal studies.  It ignores the number of concordant pairs (same
+outcome), and looks only at the difference between the number of
+A-discordant pairs (pairs where A is preferred) vs. B-discordant pairs.
+Takes two required arguments, counts of the a- and b- discordant pairs,
+respectively, and and optional :exact? argument, and returns the p value
+which is the significance of the difference.  If N is greater than 20,
+and the exact? flag is not true, then we use a chi-square approximation.
+Otherwise, we use the exact binomial calculation. 
+
+POISSON-TEST-ONE-SAMPLE takes two arguments, a number of observed events
+in a period of time, and mu, the number of expected events in the period
+of time, and returns the p value which is the significance of difference
+between the expected and observed under the Poisson distribution.  Tails
+determines whether the test will be for any difference (:both), observed
+being greater than expected (:positive), or observed being less than
+expected (:negative).  There is a mediocre normal theory approximation
+for large values, but it's not very good, so it is only used when the
+:approximation? flag is true. 
+
+3.5 Non-parametric hypothesis tests
+
+    The following tests do not require underlying distributional
+    assumptions.   Generally, they are less powerful than their
+    distributional counterparts. 
+
+SIGN-TEST takes two required arguments, a plus-count and a minus-count,
+and returns the p value of the significance of the difference between
+them.  This is really just a special case of the binomial one sample test
+(with p = 1/2).  If the optional keyword argument tail is :both, then the
+p value is for any difference between the positive and negative counts.
+If it is :positive, it is for a test if the positive-count is larger, and
+if :negative, for the positive-count to be smaller.   If N is >= 20 and
+the optional keyword argument exact? is not true, it will use a Normal
+theory approximation. 
+
+SIGN-TEST-ON-SEQUENCES takes two equal length sequences, and returns the
+p-value which is the significance of the signs of the differences between
+their elements.  It is the same as the above, but it computes the
+differences between each element of the sequences and counts the number
+of positive and negative differences.
+
+WILCOXON-SIGNED-RANK-TEST takes a list of difference values, and returns
+the p value of the significance of the differences.  The values of the
+differences are ranked (i.e. are the negative differences smaller in
+magnitude than the positive differences?), so it assumes a sontinuous and
+symmetric distribution of differences in the null, although not a Normal
+distribution.   It is equivalent to the Mann-Whitney test.   This version
+is a Normal theory approximation, and is only valid when N > 15, but does
+handle tied ranks correctly. 
+
+WILCOXON-SIGNED-RANK-TEST-ON-SEQUENCES takes two equal length sequences
+and performs the Wilcoxon signed rank test, as above.
+
+CHI-SQUARE-TEST-RXC takes one required argument, a RxC contingency table,
+and returns the p value which is the significance of relationship between
+the row and column variable.  Any difference in proportion will cause
+this test to be significant.  Consider using the
+chi-square-test-for-trend instead if you are looking for a consistant
+change.  This is a Normal theory approximation, and requires that no
+expected value be less than 1, and that no more than 1/5 of the expected
+values be less than 5. 
+
+CHI-SQUARE-TEST-FOR-TREND takes two equal sized sequences of numbers
+(representing a 2xK table) and assesses if there is an increasing or
+decreasing trend in the differences, returning the p value of the
+significance.  Optionally, provide a list of scores, which represent
+numeric relationships among the columns; if not provided, scores default
+to be 1 to k.
+
+3.6 Sample size estimates.  These functions all take (as keyword
+  arguments) a desired significance alpha (default 0.05) power (1-beta,
+  default .95) and tails (default :both), as well as required estimates
+  of the parameters of a distribution, and return the number of subjects
+  necessary to find those parameters from a sample.
+
+T-TEST-ONE-SAMPLE-SSE takes three arguments, the estimated experimental
+mean (mu), the null mean (mu-null) and the null variance (variance), and
+returns the number of subjects necessary to find a difference with
+significance alpha and power 1-beta in a one sample t test. 
+
+T-TEST-TWO-SAMPLE-SSE takes four arguments, the estimated means and
+variances for two normally distributions, and returns the number of
+samples necessary to distinguish them with the alpha 1-beta and tails
+specified.  It is optionally possible to define sample-ratio, which
+allows for unequal sized samples (SS2 = sample-ratio * SS1).
+
+T-TEST-PAIRED-SSE takes two arguments, a difference mean and variance,
+and returns the number of samples necessary to distinguish the
+differences from zero, with alpha, 1-beta and tails as specified.
+
+BINOMIAL-TEST-ONE-SAMPLE-SSE takes two arguments, the estimated p and the
+null p, and returns the number osamples needed to test whether they are
+different under the binomial distribution with alpha, 1-beta and tails as
+specified. 
+
+BINOMIAL-TEST-TWO-SAMPLE-SSE takes two estimated probabilities as
+arguments, and returns the number of samples needed to distinguish
+between them (assuming binomial distributions) with the specified alpha,
+1-beta and tails.  It is optionally possible to define sample-ratio,
+which allows for unequal sized samples (SS2 = sample-ratio * SS1).
+
+BINOMIAL-TEST-PAIRED-SSE takes two arguments, the expected proportion of
+discordant pairs (pd) and the expected number of type A discordand pairs
+(pa), and returns the number of samples (that is, twice the number of
+pairs) needed to find a difference between type A and type B discordant
+pairs in McNemar's test parameters alpha, 1-beta and tails. 
+
+CORRELATION-SSE takes one argument, rho, the expected correlation
+coefficient, and returns the number of samples necessary to distinguish
+rho from zero with parameters alpha, 1-beta and tails. 
+
+3.7  Correlation and regression
+
+LINEAR-REGRESSION takes a list of points (e.g. ((x1 y1) ... (xk yk))) and
+computes the regression equation for a least squares fit of a line.  It
+returns five values, the intercept, slope, correlation coefficient, R^2,
+and p value which is the significance of the difference of the slope from
+zero. 
+
+CORRELATION-COEFFICIENT takes a list of points and returns just r from
+above (also called the Pearson correlation). 
+
+CORRELATION-TEST-TWO-SAMPLE takes two correlation coefficients, and two
+sample sizes, and returns the p value which is the significance of the
+difference between the coefficients.   This uses fisher's Z test. 
+
+CORRELATION-TEST-TWO-SAMPLE-ON-SEQUENCES takes two lists of points, and
+returns the p value which is the significance of the difference between
+the correlation coefficients of the two sequences.   As above, but
+calculates the correlation coefficients and Ns from the lists of points. 
+
+SPEARMAN-RANK-CORRELATION takes a list of points (where one or both
+variables are ordinal, or have a distribution that is far from normal)
+and returnes two values, the spearman correlation coefficient and the p
+value which is the significance of its difference from zero. 
+
+3.8 Significance functions.  These functions take test statistics (and
+  sometimes other parameters, like degrees of freedom) and return p
+  values.  Chi square and Normal (Gaussian) significance are not separate
+  functions, but should be calculated from their respective CDF
+  functions. 
+
+T-SIGNIFICANCE takes a t statistic and degrees of freedom (and optionally
+tails, default :both), and returns the significance.   This is the
+computational equivalent of a T table.
+
+F-SIGNIFICANCE takes an f statistic, numerator- and denominator- degrees
+of freedom, and returns the significance. 
+
+4 Utilities.  Some of these functions may be of potential external use,
+and are exported. 
+
+RANDOM-SAMPLE takes a sequence as an argument, and returns a random
+element of that sequence. 
+
+BIN-AND-COUNT takes a sequence and N, creates N equal width bins (between
+the minimum and maximum of the sequence), and returns a list of length N
+containing the number of elements of the sequence in each of the bins
+(smallest to largest).
+
+FISHER-Z-TRANSFORM takes a correlation coefficient and returns the Fisher
+Z transform of it, which is approximately distributed as the Standard
+Normal. 
+
+PERMUTATIONS takes two arguments, N & K, and returns the number of ways
+to take N things K at a time, when order matters. 
+
+CHOOSE takes two arguments, N & K, and returns the number of ways to take
+N thinks K at a time, when order does not matter. 
+
+MEAN-SD-N takes a sequence of numbers and returns three values, the mean,
+standard deviation and size of the sequence. 
+
+SQUARE takes a numeric argument and returns its square.
+
+ROUND-FLOAT takes a numeric argument and an optional precision (default
+5) and rounds the number to precision significant digits. 

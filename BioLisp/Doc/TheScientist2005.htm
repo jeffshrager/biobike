@@ -1,0 +1,257 @@
+<html>
+<head>
+<title>Biobike/The Scientist/5/3/05</title>
+</head>
+
+<body lang=EN-US link=blue vlink=purple>
+
+<div class=Section1>
+
+<center><b>Tools for Thought in the Age of Biological Knowledge</b>
+
+<p>
+
+By Nina Fedoroff, Steve Racunas, and Jeff Shrager</center>
+
+<p>
+
+Experimental biologists today have access to an enormous body of
+information. Although much of it still resides in journals, primary
+data are increasingly available in electronic form. Knowledge bases,
+which represent facts and experimental observations using abstractions
+such as metabolic pathways and regulatory networks, are growing in
+sophistication, and organismal databases, varying in complexity from
+simple information repositories to constellations of highly integrated
+knowledge, are proliferating rapidly.
+
+<p>
+
+But the volume and complexity of available
+information far exceeds the synthetic and reasoning capacities of any
+individual. Unaided, we humans are poor at reasoning meaningfully about the
+complex dynamic systems that make up even the simplest organism.  To augment
+our limited capabilities in a way that creates understanding, we need new tools
+for thought -- formal representational systems appropriate for biological
+modeling, and computational tools that can manipulate, check, and use these
+models to make predictions and to form explanations. We have recently begun to
+develop such a computational toolkit for checking the consistency of hypotheses
+with existing knowledge and data. Such tools will help experimentalists
+formulate, organize, think about, and modify their ideas about biological
+systems in the light of all available information. Moreover, they’ll aid in
+designing sensible experimental approaches in the rapidly evolving data and
+knowledge environment.
+
+<p>
+<p>
+
+<b>BEYOND THE BASES</b>  Biological databases and knowledge bases serve as excellent
+repositories, but they don’t provide the ability to analyze and manipulate
+models. Pathway knowledge bases are, in essence, sophisticated electronic
+textbooks, but they only capture the static state of what is known.  They do
+not provide the means to use existing
+knowledge to build new knowledge. Even data analysis programs, such as
+Blast, cannot be called tools for thought. They are tools for
+manipulating data, just as a pipette or a PCR machine is a tool for
+manipulating DNA, but they cannot assist the experimentalist in formulating and
+thinking about models. 
+
+<p>
+
+Engineers have used mathematical tools for thought
+since at least the 17<sup>th</sup> century. Electronic computers were designed
+in large part to support engineering analyses. Today’s engineering students
+learn how to create mathematical models and how to use computers to analyze
+them. Biologists, who are essentially engaged in the "reverse engineering" of
+biological systems, should similarly be able to create models and use software
+tools for simulating, manipulating, and analyzing their models. 
+
+<p>
+
+Tools for thought provide two functions: simulation
+and analysis. Simulation allows scientists to make predictions from precisely
+expressed models of the system (usually using a computer). Analysis provides
+guidance and feedback about validity of the models through comparison,
+manipulation, and validation against available data and knowledge. Combined,
+these functions enable scientists to ask "what if" questions about a system,
+form explanations, and make and test predictions. The
+ability to run thought experiments would help experimental biologists to decide
+which models make the most sense and how best to test them experimentally. 
+The main limiting factor, however, is formal representation -- the "mathematics"
+of biological models.
+
+<p>
+<p>
+
+<b>THE RIGHT REPRESENTATION</b> There are many efforts to mathematically capture the
+essential features of biological systems, whether a MAP kinase phosphorylation
+cascade, the cell cycle, or a beating heart. A time will perhaps come when this
+will be possible for entire organisms.  But for the moment, biologists are
+still engaged in discovering the qualitative workings of biological machines. 
+
+<p>
+
+We have just discovered, for example, that organisms
+have RNA-based feedback systems that can finely adjust gene-expression levels --
+a process that a few years ago we didn’t even know existed. Because we have not
+yet achieved a complete qualitative description of biological systems,
+quantitative equations are likely to have limited utility in experimental
+design in the near future.  Instead, what experimental biologists need are ways
+to work with the available qualitative information: the knowledge of genes and
+their promoters and enhancers; of proteins, their structures, and how they
+interact with each other and other macromolecules; where things are in cells
+and how these locations change over time; how information is communicated
+within and between cells, and within the whole organism, and between the
+organism and its environment. 
+
+<p>
+
+Moreover, experimental biologists need to know what
+other experimentalists have done.  Rarely do they get such information from
+textbooks, whether printed between hard covers or contained in pathway diagrams
+in an electronic database.  This is because the process of abstraction that
+underlies the representations usually excludes supporting and contradictory
+data and knowledge -- the "provenance" for the knowledge is gone.  But it is
+precisely by exploring the underlying evidence for a conclusion, especially
+evidence that doesn’t fit the prevailing paradigm, that scientists formulate
+new ideas that lead to discoveries.
+
+<p>
+
+There are alternatives to differential
+equations that make it possible to write down and reason about complex systems
+in the way that biologists think about them.  One such method is a branch of
+artificial intelligence called "qualitative processes theory."<sup>1</sup>  QP
+models are composed of qualitative assertions cast in a formal syntax.  An
+example of such a statement is: "Increasing light increases the efficiency of
+carbon fixation to a point, after which the rate of reaction decreases." QP
+models are qualitative, not quantitative, and their terms can be uncertain,<i> </i>but
+this does not mean that they are informal. Qualitative values have a precise
+mathematics, and it is possible to run simulations on such models.<sup>2</sup> 
+Their uncertainties can be managed in ways similar to the way that uncertainty
+is managed in statistics.  
+
+<p>
+
+Principles of qualitative modeling, together with a
+collection of qualitative biological model components and a qualitative
+simulator, provide the simulation part of a toolbox for thought. Analysis is
+harder. It requires integrating and comparing models with one another in the
+light of what is known and then enabling the scientist to manipulate the models
+to form new ones that might lead to discovery -- a previously unknown subsystem,
+a hidden relationship, a process or player that might revise and deepen our
+current understanding.
+
+<p>
+
+Let us consider, for a moment, the craft of modeling
+and model analysis. The simplest thinking tool at the experimentalist’s
+disposal is the hypothesis -- a statement that postulates the existence of
+certain relationships within the system. Each hypothesis is a simple model and
+a "system-level" model can be thought of as a collection of interrelated
+hypotheses. Expressed using formal QP-like representations, hypotheses can
+provide the foundation for computational biological modeling. We can then
+create tools for thought that perform the requisite simulation<i> </i>and
+analysis operations upon hypotheses. 
+
+<p>
+
+Using a rules library that encodes biological requirements and
+prerequisites for biological events, it is possible to generate a
+"required background and history" for each hypothesis, together with
+the set of relationships that must hold true in the wake of each
+hypothesized event.  This is the qualitative analog of simulation. The
+components of each hypothesis can be checked against literature and
+data residing in electronic databases, providing the experimentalist
+with links to the information that supports the hypothesis as well as
+information that contradicts it.  If the interaction with this
+hypothesis-checking tool were sufficiently intuitive -- using diagrams
+to represent sets of hypotheses -- one could use this interface to
+craft increasingly complex system-level models comprising hypotheses
+that survive both validity checks and subsequent experimental
+testing.  From there it is a small step to imagine that the
+model-checking tool could itself assist the experimentalist to
+identify, by structural homology between models of other biological
+systems, changes that might improve the model’s fitness.  This, then,
+would constitute analysis.
+
+<p> 
+<p>
+
+<b>HYBROW AND BIOBIKE</b> We have begun a collaborative project to
+develop such a toolkit which we call the Hypothesis Space Browser or
+HyBrow.<sup>3</sup> HyBrow considers hypotheses entered in either
+structured text or pictorial format, decomposes them into their atomic
+assertions, and tests these against stored knowledge and data, as well
+as for logical consistency. In addition to checking validity, HyBrow
+provides<b> </b>links to the data or knowledge that both supports and
+contradicts assertions (both explicit and implicit) in the model. The
+HyBrow vision is not only to enable the individual experimentalist to
+represent and check hypotheses and models, but also to collect the
+hypotheses that survive experimental testing in a new kind of
+knowledge base indexed by the constituent hypotheses themselves and
+containing links to all of the supporting and contradictory data and
+knowledge. This would enable a community of biologists to develop
+complex biological models that are firmly based in knowledge and
+experimentation, while retaining the flexibility to respond to
+changing concepts and new information. 
+
+<p>
+
+The platform for this vision is Biobike,<sup>4</sup>
+a persistent qualitative knowledge base and knowledge-based programming
+environment.  Biobike enables users to write simple programs to compare,
+contrast, and update models, as well as to piece together models, extract
+knowledge from literature, and guide searches in the space of possible models --
+the panoply of knowledge manipulation. The HyBrow-Biobike partnership is
+larger than the sum of its parts.  Users will compose hypotheses and models in
+an intuitive text or diagram-based format, and the hypotheses will be stored
+and analyzed against the integrated knowledge base.  The result will be both feedback to the individual about the
+consistency of the hypothesis (model) with what is already known and suggested
+modifications to improve the viability of the hypothesis. But the bigger whole
+is building a dynamic knowledge base of biological hypotheses and models, formed
+by the community and expressed in a common language.  
+
+<p>
+
+Tools for thought use formal representation and
+computational methods to enable scientists to turn complex models over in their
+hands and heads.  Engineers have refined their tools over centuries.  Perhaps
+through projects such as these it will not take long for the biological
+community to become as comfortable with computational tools for thought as they
+are with pipettes and PCR.  
+
+<p>
+
+<p>
+
+<b>References</b>
+
+<ol>
+<li>K. Forbus "Qualitative reasoning," <i>CRC Handbook of Computer
+Science and Engineering</i>. CRC Press, 715-33, 1996.
+<li>B. Kuipers "Qualitative simulation," In R. A. Meyers (Ed.) <i>Encyclopedia of
+Physical Science and Technology, Third Edition</i>, NY: Academic Press,
+287-300, 2001.
+<li>S.A. Racunas et al., "HyBrow: a prototype system for computer-aided hypothesis
+evaluation," <i>Bioinformatics</i>, 20 (supplement): i257-64, 2004.
+<li>J.P. Massar</a><span
+style='font-family:Times'> et al., "BioLingua: a programmable knowledge
+environment for biologists," <i>Bioinformatics</i>, 21: 199-207, 2005.
+</ol>
+<p>
+<p>
+
+<i>Nina Fedoroff is the Willaman Professor of Life Sciences and an Evan
+Pugh Professor in the Department of Biology and the Huck Institutes of
+the Life Sciences at Penn State University. She is a member of the
+National Academey of Sciences and currently serves on the National
+Science Board. Steve Racunas is a post-doctoral fellow in the Huck
+Institutes of the Life Sciences at Penn State.  Jeff Shrager is a
+research fellow at the Carnegie Institution of Washington’s Department
+of Plant Biology at Stanford University. The authors are collaborating
+to create a biological tool for thought that they call the Hypothesis
+Space Browser or HyBrow and which can be accessed at www.hybrow.org.</i>
+
+</div>
+</body>
+</html>

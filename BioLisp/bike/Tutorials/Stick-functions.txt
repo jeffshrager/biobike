@@ -1,0 +1,16 @@
+
+; ****************** TOUR FUNCTIONS ************
+(DEFUN One-more-than (bundle)
+ "(ONE-MORE-THAN bundle-of-sticks)
+   - Returns a bundle with one more stick
+   - A bundle of sticks consists of 0 or more 
+       instances of \"|\"
+   - EXAMPLE:
+       (ONE-MORE-THAN \"||||\")   ==> \"|||||\"
+ "
+   (IF-FALSE (STRINGP bundle)
+       THEN (ERROR "Input to ONE-MORE-THAN must be a string!"))
+   (LET* ((count (COUNT-OF "|" IN bundle))
+          (new-bundle (MAKE-STRING (1+ count) :INITIAL-ELEMENT #\|)))         
+      new-bundle))
+(EXPORT 'ONE-MORE-THAN)

@@ -1,0 +1,244 @@
+<title>BioBike: More Specific Natural Language Anlaysis</title>
+
+<p>
+
+<h2>
+BioBike: More Specific Natural Language Anlaysis
+</h2>
+
+<p>
+<i>Copyright 2006 by Ben Newman</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+Install and explain the norvig parser.
+
+
+Take the pretty-names as noun-phrases
+
+(defvar *nps* (loop for gc in *go-frames*
+      as name = (#^go.prettyname gc)
+      when name
+      collect name))
+
+(defparameter *nps* (loop for gc in *go-frames*
+      as name = (#^go.prettyname gc)
+      when (and name (stringp name) (< (length name) 10))
+      collect (s+ " " name " ")))
+
+227 of these
+
+(defun nparse-go (&optional (n 100))
+  (loop for gc in *go-frames*
+      as j from 1 to n
+      as defn = (#^go.definition gc)
+      when (and defn (stringp defn))
+      collect (break-on-phrases defn)))))
+
+(defun break-on-phrases (defn)
+  (loop for np in *nps*
+        when (search np defn)
+        collect (list np (break-phrase np defn))))))
+
+(defun break-phrase (word defn)
+  (let ((pos (search word defn)))
+    (cond ((null pos) (list defn))
+          (t (cons (subseq defn 0 pos)
+               (break-phrase word (subseq defn (+ (length word) pos))))))))
+
+;;;; -*- Mode: Lisp; Syntax: Common-Lisp -*-
+
+;;; Simplified Norvig's PAIP parser.
+
+;;; A rule is just a model of the grammar rules. (The -> is syntactic sugar)
+;;; We make these type list so that we can read them results.
+(defstruct (rule (:type list)) lhs -> rhs)
+
+;;; A tree (actually a tree node) represents a set of subnodes that
+;;; resolve a particular rule's lhs (so the rule is included in the tree)
+(defstruct (tree (:type list) (:include rule) (:copier nil)))
+
+;;; A parse has a tree and a remainder (rem).  The remainder
+;;; hold the words not covered by the tree.
+(defstruct (parse) tree rem)
+(defun parse-lhs (parse)
+ (tree-lhs (parse-tree parse)))
+
+;;; Grammar is set in the call (to PARSER) and is then globally
+;;; available by all subordinate functions.
+(defvar *grammar* nil)
+
+;;; These two fns find different types of rules from the grammar
+;;; when we need to assign a rule for a word or a tree node.
+(defun lexical-rules (word)
+ "Return a list of rules with word on the right hand side.
+ This is the list of the categories of WORD."
+ (loop for rule in *grammar*
+       as (nil nil rhs) = rule
+       when (equal word rhs)
+       collect rule))
+
+(defun rules-starting-with (cat)
+ "Return a list of rules where cat starts the rhs."
+ (loop for rule in *grammar*
+       as (nil nil rhs) = rule
+       when (and (listp rhs) (equal cat (first rhs)))
+       collect rule))
+
+;;; PARSER is the top level fn (and it has a simple cleanup helper).
+(defun parser (words *grammar*)
+ "Calls PARSE to create all possible parses, and then filter out any
+ that have remainers (i.e., that don't cover the given words)."
+ (loop for parse in (complete-parses (parse words))
+       collect (parse-tree parse)))
+
+(defun complete-parses (parses)
+ "We only want parses that cover the sentence, that is, that have
+ no remainder, so filter out parses with remainders."
+ (loop for parse in parses
+       when (null (parse-rem parse))
+       collect parse))
+
+;;; The core parser really is just these two mutually-recursive functions:
+
+(defun parse (words)
+ "This is the core of the bottom-up parser. It returns all parses of
+ any prefix of words by fanning up from the lexical rules."
+ (unless (null words)
+   (loop for rule in (lexical-rules (first words))
+         append (extend-parse (rule-lhs rule)
+                  (list (first words)) (rest words) nil))))
+
+(defun extend-parse (lhs rhs rem needed)
+ "Look for the categories needed to complete the parse."
+ (if (null needed)
+     ;; If nothing is needed, then we've reached the end of the rule,
+     ;; return this parse and upward extensions.
+     (let ((parse (make-parse :tree (make-tree :lhs lhs :rhs rhs) :rem rem)))
+       (cons parse
+         (loop for rule in (rules-starting-with lhs)
+               append
+               ;; Here is the key recursion, expanding the rest of
+               ;; the rule against the remainder of the words.
+               (extend-parse (rule-lhs rule)
+                 (list (parse-tree parse))
+                 rem
+                 (rest (rule-rhs rule))))
+         ))
+     ;; Otherwise the rest of a rule is needed, try to extend rightward,
+     ;; parsing the remainder.
+     (loop for p in (parse rem)
+           append
+           (if (eq (parse-lhs p) (first needed))
+               (extend-parse lhs
+                 (append rhs (list (parse-tree p)))
+                 (parse-rem p)
+                 (rest needed))))
+     ))
+
+;;;; Grammars
+
+(defparameter *piggies*
+ '((s -> (np vp np))
+   (s -> (np vp))
+   (vp -> (v))
+   (vp -> (adv vp))
+   (vp -> (v vfunc))
+   (vfunc -> to)
+   (adv -> quickly)
+   (adv -> slowly)
+   (s -> (s s))
+   (np -> (pn np))
+   (np -> (pn))
+   (np -> (np np))
+   (np -> (n))
+   (pn -> this)
+   (pn -> none)
+   (n -> piggy)
+   (n -> home)
+   (n -> (pn))
+   (n -> market)
+   (np -> (adj np))
+   (np -> (art np))
+   (art -> this)
+   (art -> that)
+   (art -> the)
+   (v -> went)
+   (v -> rode)
+   (v -> had)
+   ))
+
+(defun piggies ()
+ (mapcar #'(lambda (words)
+             (format t "~%~%~%--- ~a ---~%" words)
+             (mapcar #'pprint (parser words *piggies*)))
+   '((the piggy rode home)
+     (piggy went to market)
+     (this piggy went to market)
+     )))
+
+(defparameter *gsgram*
+ '((np -> (ap np))
+   (ap -> (adj ap))
+   (ap -> (adj))
+   (np -> (n))
+   (n -> girls)
+   (adj -> girls)
+   (n -> school)
+   (adj -> pretty)
+   (adj -> little)
+   ))
+
+(defun testgs ()
+ (mapcar #'pprint (parser '(pretty little girls school) *gsgram*)))
+
+The recursion itself was quite straightforward; getting the nonterminal names to be unique (but to match themselves when used more than once!) constituted most of the effort.  Anyways, I believe these two functions implement what you want: 
+
+
+(defun do-subtree (nonterm subtree)
+  (let ((subtree-root (gensym (symbol-name (car subtree)))))
+    (cons (list nonterm '-> subtree-root)
+          (munge-tree (cons subtree-root (cdr subtree))))))
+
+(defun munge-tree (norvig)
+  (let ((nonterm (car norvig)))
+    (mapcan #'(lambda (child)
+                (if (atom child) (list (list nonterm '-> child))
+                  (do-subtree nonterm child)))
+            (third norvig)))) 
+
+
+You'd call munge-tree like so
+
+
+(munge-tree '(S NIL
+      ((NP NIL ((ART NIL (THIS)) (NP NIL ((N NIL (PIGGY))))))
+       (VP NIL ((V NIL (WENT)) (VFUNC NIL (TO))))
+       (NP NIL ((N NIL (MARKET)))))))) 
+
+
+to get the slightly ugly but seegraph-able
+
+
+((S -> #:NP3934)
+ (#:NP3934 -> #:ART3935)
+ (#:ART3935 -> THIS)
+ (#:NP3934 -> #:NP3936)
+ (#:NP3936 -> #:N3937)
+ (#:N3937 -> PIGGY)
+ (S -> #:VP3938)
+ (#:VP3938 -> #:V3939)
+ (#:V3939 -> WENT)
+ (#:VP3938 -> #:VFUNC3940)
+ (#:VFUNC3940 -> TO)
+ (S -> #:NP3941)
+ (#:NP3941 -> #:N3942)
+ (#:N3942 -> MARKET))

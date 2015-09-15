@@ -1,0 +1,151 @@
+               
+               Formal syntax description for XLOOP
+
+
+Notation:  '::=' means 'expands into'
+           * means 'zero or more'
+           [] means what's inside is optional.
+           {} is used to embed a set of choices (or's)
+           | is used to mean 'or'
+           <var> means a symbol
+           <form> means any lisp form
+           <nothing> means no text
+
+Loop form ::=
+  init-clause *
+  { while-clause | until-clause | for-clause } *
+  { implied-do-clause | do-clause | nothing }
+  { aggregation-clause | nothing } 
+  { finally-clause | nothing } 
+
+In English:
+
+A LOOP form consists of zero or more INIT forms, followed by zero or
+more iteration specifiers, followed optionally by a do body (which may
+or may not begin with the token DO), followed optionally by an
+aggregator clause (e.g., COLLECT, SUM, MAXIMIZE ...), optionally
+followed by a FINALLY clause.  The DO and aggregator bodies may be
+preceded by the conditional statements WHEN or UNLESS.
+
+Extended BNF:
+
+with-clause ::= { init | initialize } <with-vars> = <form>
+
+<with-vars> ::= <var> | <destructure-list>
+
+while-clause ::= while <form>
+
+until-clause ::= until <form>
+
+for-clause ::= for-in-clause | for-on-clause | 
+               for-from-clause | for-equals-clause
+
+for-in-clause ::= for-var-in-clause | for-vars-in-clause
+
+for-on-clause ::= { for | as } <var> on <form> [ by <function designator> ]
+
+for-var-in-clause ::= { for | as } <var> in <form> [ by <function-designator> ]
+
+for-vars-in-clause ::= { for | as } <destructure-list> 
+		          in <form> [ by <function-designator> ]
+
+destructure-list ::= a standard Lisp destructuring list.  Note:
+Standard LOOP does not handle &rest in destructuring lists the way
+DESTRUCTURING-BIND does, but our loop does.
+
+<vn> ::= { <var> | nil | () }
+
+for-from-clause ::= for-from | for-from-to 
+
+for-from ::= { for | as } <var> [ fixnum ] from <form> [ by <form> ]
+
+for-from-to ::= { for | as } <var> [ fixnum ]
+		 from <form> { to | upto | downto | below } <form> [ by <form> ]
+
+for-equals-clause ::= for-var-equal-clause | for-vars-equal-clause
+
+for-var-equal-clause ::= { for | as } <var> [ fixnum ] = <form> [ then <form> ]
+
+for-vars-equal-clause ::= 
+  { for | as } <destructure-list> = <form> [ then <form> ]
+
+implied-do-clause ::= [ condition-clause ] <form> <form>*
+
+do-clause ::= [ condition-clause ] do <form> <form>*
+
+aggregation-clause ::= 
+
+  [ condition-clause ]
+  { collect | collecting |  sum | summing | nconc | nconcing | 
+    append | appending | count | counting | max | maximizing |
+    min | minimizing }
+  <form> 
+
+finally-clause ::= <nothing> | finally <form> <form>*
+
+condition-clause ::= { when <form> } | { unless <form> }
+
+=========================================================================
+
+Constraints and semantics:
+
+All INIT clauses must come first, followed by all WHILE, UNTIL and FOR
+clauses, following by the DO or implied DO, if present, followed by
+the aggregation clause, if present, followed by the FINALLY clause, if
+present.  The one exception is that the DO or implied DO and the 
+aggregation clause may appear in either order.  
+
+All WITH, FOR and INTO variables must be uniquely named.
+
+FOR-IN clauses iterate over the elements of lists, vectors, arrays, 
+  hash tables, frames and other things which have iterator methods 
+  associated with them.
+
+A FOR-ON clause can only iterate over lists.
+FOR-ON clauses always iterate over sublists.
+
+One can tell LOOP the type of object a FOR-IN clause is iterating over
+using, e.g. 
+
+  for (key value) in (the hash-table h)
+
+For any FOR-FROM-CLAUSE, the <var> is assumed to be a fixnum, as are
+the limit forms.  The way to tell LOOP this is not true is by, e.g.,
+
+  for (the integer j) from 1 to (expt 10 100)
+  for (the number j) from 1.0 to 10.5
+
+Suppose we have 
+
+(loop for j from 1 to 10
+      for k from 1 to 20
+      do 
+      (funcall 'identity t)
+      finally
+      (print k))
+
+If you execute this code in allegro, the printed value will be 10; but
+if you execute this in some other lisps the value might be 11.  This
+is because apparently the semantics of LOOP do not specify whether all
+the iteration variables are stepped before any end condition tests are
+done, or whether each end-condition test is done after each step.  The
+semantics of our LOOP will be clear: the value printed out must be 10,
+not 11 (that is, the end-condition test is done after each step).
+
+Note:  In certain cases BioBike LOOP can determine that the form
+is equivalent to LISP:LOOP and will just macroexpand trivially
+into LISP:LOOP
+
+It is an error in XLOOP to change the value of an iteration variable
+inside the body or aggregation clause of the loop.
+
+E.g.
+
+(xloop for j from 1 to 10 do (print j) (incf j))
+
+Using LOOP instead of XLOOP this is perfectly legal, and prints out
+
+1 3 5 7 9
+
+Using XLOOP, the results are undefined -- modifying J is not allowed.
+

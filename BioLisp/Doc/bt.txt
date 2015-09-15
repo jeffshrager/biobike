@@ -1,0 +1,191 @@
+Testing of biotools 
+
+I yoinked this DNA information http://www.sciencebuddies.org/mentoring/project_ideas/Genom_p004.shtml?from=Home
+
+human-cftr, orangutan-cftr, chimpanzee-cftr, gorilla-cftr
+human-bmp7, pig-bmp7, rabbit-bmp7, sheep-bmp7
+
+
+BLAST
+
+produces two reasonable frames when givesn two genes
+
+(cross-blast-long (subseq (#^genes npun) 2 4) (subseq (#^genes npun) 6 8))
+:: (#$BlastOutput1 #$BlastOutput2)
+
+(cross-blast-long (subseq (#^proteins npun) 2 4) (subseq (#^proteins npun) 6 8))
+:: (#$BlastOutput3 #$BlastOutput4)
+
+Can use http://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi?0 to compare Blast sequences...how do I get at these
+specific sequences 
+
+Cross-blast-long says it can handle ordinary strings, but I got a NOT
+A FRAME error.  
+
+"Given two lists of genes, proteins, etc. (all must be of the same"
+"type!)  [i.e., things that can be passed to EXTRACT-SEQUENCE] or"
+"sequences as strings, this function passes them to the appropriate"
+"tablular blast program and returns a list of frames representing their"
+"cross-blast. "
+
+same thing after defining some frames
+(cross-blast-long (list (#^cftr #$human)) (list (#^cftr #$orangutan)))
+
+CLUSTALW
+(align (list human-cftr orangutan-cftr)) --> #$ClustalWResult1
+
+(setq align-cftr-concensus
+"**** * ************************************************************************************* ********  *************************************************** ************************************************************************************ **** ************************************************ *")
+(setq ebi-cftr-concensus
+"**** * ************************************************************************************* ********  *************************************************** ************************************************************************************ **** ************************************************ *")
+
+(string= align-concensus ebi-concensus) --> T
+
+(align (list human-bmp7 pig-bmp7 rabbit-bmp7 sheep-bmp7)) --> #$ClustalWResult3
+
+(setq align-bmp-concensus
+"**** ********* * *********** ** ** *****  ********** ***** *********** ****** ******* ** ***** ** ** ** ** *********** ************** ** ******** ** ** ******** ************** ***** ***** ********") length 196
+
+(setq ebi-bmp-concensus
+"*********** ****** ******* ** ***** ** ** ** ** *********** ************** ** ******** ** ** ******** ************** ***** ***** ********") length 137
+
+These are way different, not even the same length.  
+
+meme
+
+(meme (list orangutan-cftr gorilla-cftr) :nmotifs 1) -->((#$motif13)) has a "matches" slot
+#$motif-match15 has a sequence slot (not a string) 
+"GCAGGGAGAGGCGATACTGCCTCGCATCAGCGTGATCAGCACTGGCCCCATGCTTCAGGCACGAAGGAGG"
+
+and then this is the same thing from http://meme.sdsc.edu/meme/website/cgi-bin/meme.cgi which is linked off prof e's site
+"GAGCAGGGAGAGGCGATACTGCCTCGCATCAGCGTGATCAGCACTGGCCC"
+
+they arent the same
+
+
+
+
+
+
+
+
+
+
+(setq human-cftr "ATATTTGAAAGCTGTGTCTGTAAACTGATGGCTAACAAAACTAGGATTTTGGTCACTTC
+TAAAATGGAACATTTAAAGAAAGCTGACAAAATATTAATTTTGAATGAAGGTAGCAGCT
+ATTTTTATGGGACATTTTCAGAACTCCAAAATCTACAGCCAGACTTTAGCTCAAAACTC
+ATGGGATGTGATTCTTTCGACCAATTTAGTGCAGAAAGAAGAAATTCAATCCTAACTGA
+GACCTTACACCGTTTCTCATTAGAAGGAGATGCTCCTGTCTCCTGGACAGAAACCAATC
+TTTTAAACAGACTGGAGAGTTTGGGGAAAAAAGGAAGAATTCTATTCTCAATCCAATCA
+ACTCTATACGAAAATTTTCCATTGTGCAAAAGACTCCCTTACAAATGAATGGCATCGAA
+GAGGATTCTGATGAGCCTTTAGAGAGAAGGCTGTCCTTAGTACCAGATTCTGAGCAGGG
+AGAGGCGATACTGCCTCGCATCAGCGTGATCAGCACTGGCCCCACGCTTCAGGCACGAA
+GGAGGCAGTCTGTCCTGAACCTGATGACACACTCAGTTAACCAAGGTCAGAACATTCAC
+CGAAAGACAACAGCATCCACACGAAAAGTGTCACTGGCCCCTCAGGCAAACTTGACTGA
+ACTGGATATATATTCAAGAAGGTTATCTCAAGAAACTGGCTTGGAAATAAGTGAAGAAA
+TTAACGAAGAAGACTTAAAGG")
+(setq orangutan-cftr "ATATCTTAAAGCTGTGTCTGTAAACTGATGGCTAACAAAACTAGGATTTTGGTCACTTC
+TAAAATGGAACATTTAAAGAAAGCTGACAAAATTTTAATTTTACATGAAGGTAGCAGCT
+ATTTTTATGGGACATTTTCAGAACTCCAAAATCTACGGCCAGACTTTAGCTCAAAACTC
+ATGGGATGTGATTCTTTCGACCAATTTAGTGCAGAAAGAAGAAATTCAATCCTAACTGA
+GACTTTACGCCGTTTCTCATTAGAAGGAGATGCTCCTGTCTCCTGGACAGAAACCAACC
+TTTTAAACAGACTGGAGAGTTTGGGGAAAAAAGGAAGAATTCTATTCTCAATCCAATCA
+ACTCTATACGAAAATTTTCCATTGTACAAAAGACTCCCTTACAAATGAATGGCATCGAA
+GAGGATTCTGATGAGCCTTTCGAGAGAAGGGTGTCCTTAGTTCCAGATTCTGAGCAGGG
+AGAGGCGATACTGCCTCGCATCAGCGTGATCAGCACTGGCCCCATGCTTCAGGCACGAA
+GGAGGCAGTCTGTTCTGAACCTGATGACACAGTCAGTTAACCAAGGTCAGAACATTCAC
+CGAAAGACAACAGCATCCACACGAAAAGTGTCACTGGCCCCTCAGGCAAACTTGACTGA
+ATTGGATATATATTCAAGAAGGTTATCTCAAGAAACTGGCTTGGAAATAAGTGAAGAAA
+TTAATGAAGAAGACTTAAAGG")
+(setq chimpanzee-cftr "ATATTTGAAAGCTGTGTCTGTAAACTGATGGCTAACAAAACTAGGATTTTGGTCACTTC
+TAAAATGGAACATTTAAAGAAAGCTGACAAAATATTAATTTTGCATGAAGGTAGCAGCT
+ATTTTTATGGGACATTTTCAGAACTCCAAAATCTACGGCCAGACTTTAGCTCAAAACTC
+ATGGGATGTGATTCTTTCGACCAATTTAGTGCAGAAAGAAGAAATTCAATCCTAACTGA
+GACCTTACGCCGTTTCTCATTAGAAGGAGATGCTCCTGTCTCCTGGACAGAAACCAATC
+TTTTAAACAGACTGGAGAGTTTGGGGAAAAAAGGAAGAATTCTATTCTCAATCCAATCA
+ACTCTATACGAAAATTTTCCATTGTGCAAAAGACTCCCTTACAAATGAATGGCATCGAA
+GAGGATTCTGATGAGCCTTTAGAGAGAAGGCTGTCCTTAGTACCAGATTCTGAGCAGGG
+AGAGGCGATACTGCCTCGCATCAGCGTGATCAGCACTGGCCCCACGCTTCAGGCACGAA
+GGAGGCAGTCTGTTCTGAACCTGATGACACACTCAGTTAACCAAGGTCAGAACATTCAC
+CGAAAGACAACAGCATCCACACGAAAAGTGTCACTGGCCCCTCAGGCAAACTTGACTGA
+ACTGGATATATATTCAAGAAGGTTATCTCAAGAAACTGGCTTGGAAATAAGTGAAGAAA
+TTAACGAAGAAGACTTAAAGG")
+(setq gorilla-cftr "ATATCTTAAAGCTGTGTCTGTAAACTGATGGCTAACAAAACTAGGATTTTGGTCACTTC
+TAAAATGGAACATTTAAAGAAAGCTGACAAAATATTAATTTTGCATGAAGGTAGCAGCT
+ATTTTTATGGGACATTTTCAGAACTCCAAAATCTACGGCCAGACTTTAGCTCAAAACTC
+ATGGGATGTGATTCTTTCGACCAATTTAGTGCAGAAAGAAGAAATTCAATCCTAACTGA
+GACCTTACGCCGTTTCTCATTAGAAGGAGATGCTCCTGTCTCCTGGACAGAAACCAATC
+TTTTAAACAGACTGGAGAGTTTGGGGAAAAAAGGAAGAATTCTATTCTCAATCCAATCA
+ACTCTATACGAAAATTTTCCATTGTACAAAAGACTCCCTTACAAATGAATGGCATCGAA
+GAGGATTCTGATGAGCCTTTAGAGAGAAGGCTGTCCTTAGTACCAGATTCTGAGCAGGG
+AGAGGCGATACTGCCTCGCATCAGCGTGATCAGCACTGGCCCCACGCTTCAGGCACGAA
+GGAGGCAGTCTGTTCTGAACCTGATGACACACTCAGTTAACCAAGGTCAGAACATTCAC
+CGAAAGACAACAGCATCCACACGAAAAGTGTCACTGGCCCCTCAGGCAAACTTGACTGA
+ACTGGATATATATTCAAGAAGGTTATCTCAAGAAACTGGCTTGGAAATAAGTGAAGAAA
+TTAACGAAGAAGACTTAAAGG")
+(setq human-bmp7 "AGAACCGCTCCAAGACGCCCAAGAACCAGGAAGCCCTGCGGATGGCCAACGTGGCAGAG
+AACAGCAGCAGCGACCAGAGGCAGGCCTGTAAGAAGCACGAGCTGTATGTCAGCTTCCG
+AGACCTGGGCTGGCAGGACTGGATCATCGCGCCTGAAGGCTACGCCGCCTACTACTGTG
+AGGGGGAGTGTGCCTTCCC")
+(setq pig-bmp7 "AGAACCGCTCCAAGACGCCCAAGAACCAGGAAGCCCTGCGGGTGGCCAACGTCGCAGAG
+AACAGCAGCAGTGACCAGCGGCAGGCCTGTAAGAAGCATGAGCTCTACGTCAGCTTCCG
+GGACCTGGGCTGGCAAGACTGGATCATCGCGCCCGAAGGCTATGCCGCCTACTACTGCG
+AGGGGGAGTGCGCCTTCCC")
+(setq rabbit-bmp7 "AGAACCGCTCCAAGGCACCCAAGAACCAAGAGGCGCTGCGAGTGGCCAACGTGGCAGAA
+AACAGCAGCAGTGACCAGCGGCAGGCGTGCAAGAAACACGAACTGTACGTCAGCTTCCG
+CGACCTGGGCTGGCAGGATTGGATCATTGCCCCGGAAGGCTACGCCGCCTACTACTGCG
+AGGGAGAGTGCGCCTTCCC")
+(setq sheep-bmp7 "AGAATCGCTCCAAGGCGCCCAAGAACCAAGAAGCCCTGCGGGTGGCCAACGTCGCAGAA
+AACAGCAGCAGTGACCAGAGGCAGGCATGTAAGAAGCACGAGCTATACGTCAGCTTCCG
+GGACCTGGGCTGGCAGGATTGGATCATCGCACCCGAAGGCTATGCCGCCTACTACTGCG
+agggggagtgcgccttccc")
+
+;; tests for clustal  
+
+(align (list (first (#^genes npun)) (second (#^genes npun))))
+:: #$ClustalWResult1
+
+;; i guess ALIGN uses spaces instead of dashes for no match on that nucleotide
+(count-if-not (lambda (x) (char= x #\Space)) (#^consensus #$ClustalWResult1))
+:: 529
+
+(align (list (first (#^genes npun)) (first (#^genes s6803))))
+:: #$ClustalWResult3
+
+(count-if-not (lambda (x) (char= x #\Space)) (#^consensus #$ClustalWResult3))
+:: 286
+
+
+;;should error out?
+<36>> (align (list (first (#^genes npun)) (first (#^genes med4))) :safe? nil)
+:: 
+Dropped: NIL because it had no sensible sequence.
+;; The command "/usr/local/biotools/clustalw/clustalw1.83/clustalw -infile=/tmp/biotmp/MDSLUP-3340218642-7754.fa" returned 4!
+> NIL
+
+<38>> (align (list (list 'g1 (first (#^genes npun))) (list 'g2 (second (#^genes npun)))))
+:: #$ClustalWResult4
+
+<39>> (string= (#^consensus #$ClustalWResult4) (#^consensus #$ClustalWResult1))
+:: T
+
+<49>> (align (list sheep-bmp7 rabbit-bmp7))
+:: #$ClustalWResult6
+
+
+ClustalW
+align genes as frames
+align genes as strings
+
+Gnuplot
+test plot-array 
+
+GoogleAPI
+test with string
+test with list of strings
+
+MEME
+test with different #s of motifs
+
+Phylip
+test

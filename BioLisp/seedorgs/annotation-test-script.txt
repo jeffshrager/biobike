@@ -1,0 +1,696 @@
+			Seed Annotation Page Script
+
+
+Log in to the VPL with the username testannotator, no password, 
+  even though you will be asked for one, leave it blank.  
+Other-commands --> Annotate-seed-feature
+In the box, type "fig|543939.2.peg.1"
+Execute the box.  The seed annotation page opens.  
+
+TITLE BAR
+The top line is Sputnik_gp01.
+
+The line below is a link that says Sputnik-virophage.
+Click the link.  The Seed-Organism frame Sputnik-Virophage opens.
+
+
+ORGANISM
+Click the Sputnik-virophage (sputnik) link in the Organism field.  
+(The organism prefix should be in parentheses)
+The Seed-Organism frame Sputnik-Virophage opens.  
+
+REPLICON/CONTIG
+Click the Sputnik.chromosome link.  
+The Seed-Contiguous-Sequence frame Sputnik.Chromosome opens.
+
+FROM COORDINATE
+Move your mouse over the blue box with the E in the From coordinate field.
+The cursor changes to a hand with extended finger 
+  and a green bubble with an evidence citation appears.
+Click the blue box with the E and an evidence popup window opens
+(this is a random page depending on exactly what was put into the
+evidence link when the data was entered)
+
+Move your mouse over the blue with the H in the From coordinate field.
+The cursor changes to a hand with extended finger, and 
+  a green bubble with a history citation appears.
+Click the blue box with the H.
+A history popup window opens 
+(you can tell it's a history popup window because it says 
+  "History of Annotations...")
+
+Click the yellow box in the From Coordinate field.  
+The From coordinate field expands.  
+In the yellow box, change the value to 100.
+In the green box labeled evidence, change the value 
+  to Test Script 1
+In the green box labeled Evidence link/PubMed ID,
+ change the value to http://www.google.com
+
+Move your mouse over the 'Test your new link' button.  A green bubble appears
+ that says Click here to test whether the link the Evidence link/PubMed works
+Move your mouse over the 'Go to Pubmed' button.  
+A green bubble appears that says Click here to open a Pubmed page window.  
+
+Click the Test link button.  Google opens in a new windows.  
+Click the Pubmed button.  Pubmed opens in a new window.  
+Press the Green save button.  
+The From coordinate field shrinks back to normal size, with
+the value in the yellow box saying 100.  
+
+Click the Sputnik-virophage link in the Organism field.
+A seed-organism frame appears.  
+Click the Genes link.
+Click the Sputnik.Sputnik_Gp01 link.
+The From coordinate is now 100.
+(this doesnt work and probably won't work for some time)
+
+Return to the main annotation page.
+
+Move your mouse over the blue box with the E in the From coordinate field.
+A green bubble that says Test Script 1 appears (verifying the change you made)
+Move your mouse over the blue box with the H in the From coordinate field.
+A green bubble with your user name and timestamp bubble appears 
+ (make sure it's your username!)
+
+Click the blue box with the E.  Google opens in a new window.  
+Click the blue box with the H.  A history window opens.
+Go to the bottom of the page and verify that your change 
+ is (presumably) the last one (unless someone else changed it 
+immediately after you did).  
+
+Click the yellow box containing 100 in the From Coordinate field.
+Change the 100 to 200.  
+Change Test Script 1 to Test Script 2.
+Change http://www.google.com to http://www.yahoo.com
+Click the Green save button.
+
+The From coordinate shrinks back to normal size.  
+Move your mouse over the blue box with the E.  
+A green bubble that says Test Script 2 appears.  
+Click the blue box with the E.  Yahoo opens in a new window.
+
+Click the blue box with the H.  A history window opens.  
+Find the record with the Evidence "Test script 1" and the link
+ "http://www.google.com".
+Click the Restore button in this record.  
+The bottom of the popup window says Successfully restored.  
+Close the popup window.
+
+Refresh the main annotation page.
+The value in the yellow box of the From coordinate says 100.  
+Mouse over the blue box with the E.  
+A green bubble that says Test Script 1 appears.  
+Click the blue box with the E.  
+Google opens in a new window.  
+
+In the From coordinate field, click the blue box with the H.  
+Find the record with the Evidence "Test Script 2" and the link
+ "http://www.yahoo.com".
+Click the Restore button in this record.
+The bottom of the popup window says Successfully restored.
+Close the popup window.  
+Refresh the main annotation page.  
+The value of the From coordinate field is 200.
+Click the blue box with the E.  Yahoo opens in a new window.
+
+TO COORDINATE
+In the To coordinate field, move your mouse over the blue box with the E.
+A green bubble with an evidence citation appears.
+Move your mouse over the blue box with the H.
+A green bubble with a history citation appears.  
+
+Click the blue box with the E. 
+An evidence link opens in a new window.  
+Click the blue box with the H.
+A history popup appears.  
+
+SEQUENCE  
+Click the nucleotide link.
+A SEED viewer page showing the basepairs opens.  
+Click the Download Sequences button.  
+An option to download the file appears, press cancel.  
+Select the radio button "DNA Sequuence with flanking 500 bases"
+Click the Show Fasta button.
+The sequence changes to show the extra basepairs.  
+Click the radio button that says Protein Sequence.
+Click the Show Fasta button.  
+The sequence changes to show the proteins.  
+Click the DNA sequence radio button. 
+Click the Show Fasta button.
+The original sequence appears.  
+Close the seed viewer page.  
+
+Click the amino acid link.  
+A SEED viewer page (the same as before) showing the amino acids appears.
+Return to the main annotation page.
+
+Click the Genome Region link.
+A biobike seed viewer showing the basepairs opens in a separate window.  
+It should say Sputnik-virophage - Chromosome (1 -> 6000 of 18343) as the title
+
+GENETIC NAME
+In the genetic name field, click the yellow box.  
+The genetic name field expands.
+In the yellow box, type "Test Script Genetic Name".
+In the green evidence box, type "GN evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+Click the Green save button.
+
+
+The yellow box of the genetic name field now says "Test Script Genetic Name".
+(*** This does not work yet!  Page refresh is the problem)
+Move your mouse over the blue box with the E.  
+A green bubble that says GN evidence appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup appears.
+
+Click the Sputnik-Virophage link at the top of the page.
+Click the list of the genes in the genes slot.
+Click Sputnik.Sputnik_Gp01
+The genetic name slot reads "test script genetic name".
+
+Still in the frame viewer click the text "Genetic-name" 
+ (not the text "test script genetic name")
+Change the value in the box to "newer genetic name"
+Click the Enter button.  
+Close the frame viewer.  
+Close the main annotation page.  
+Go to the VPL window
+  (from which you originally invoked the main annotation page)
+Other-commands --> Annotate-seed-feature
+In the box, type "fig|543939.2.peg.1"
+Execute the box.  The seed annotation page opens.  
+Verify that the genetic name field is now "newer genetic name"
+
+Click the blue box with the H.  
+The name of the Annotator at the bottom should be TESTANNOTATOR.
+Hover over the TESTANNOTATOR text.  
+the mailto: link should be biobiketester@gmail.com
+
+ALIASES
+In the aliases field, click the yellow box.  
+The aliases field expands.
+In the yellow box, type "Test Script Aliases".
+In the green evidence box, type "Evidence for aliases".
+In the green Evidence link/Pubmed ID box, type http://www.yahoo.com
+Click the Green save button.
+
+Move your mouse over the blue box with the E.
+A green bubble that says "Evidence for aliases" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.
+Yahoo opens in a new window. 
+Click the blue box with the H.
+A history popup appears.
+
+OTHER DATABASES
+Move your mouse over the green circle with the plus sign.  
+The cursor should change to a hand with an extended finger.  
+Click the green circle with the plus sign.  
+The Other databases field expands.
+Click the SEED link.  A SEED features page for the gene opens in a new window. 
+Click the NCBI link.  An NCBI page for the gene opens in a new window.
+
+MAIN ANNOTATION
+In the Main annotation field, click the yellow box.  
+The Main annotation field expands. 
+In the Evidence inferred from section, click the "computation" radio button.
+In the yellow box, change the value to "Test Script MA".
+In the green evidence box, change the value to "MA EV".
+In the green Evidence link/PubMed ID, 
+ change the value to 15308539
+Click 'Test your new link'.  
+The webpage http://www.ncbi.nlm.nih.gov/pubmed/15308539 opens
+ and the value in the evidence link/pubmed id box changes to that website
+Click the Green save button.  
+
+The Main annotation field now reads "Test Script MA".
+Move your mouse over the blue box with the E.
+A green bubble that says "MA EV" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+The webpage http://www.ncbi.nlm.nih.gov/pubmed/15308539 opens
+Click the blue box with the H.
+A history popup appears.
+
+Click the Sputnik-virophage link at the top of the page.  
+A seed-organism frame appears.  
+Click the Genes link.
+Click the Sputnik.Sputnik_Gp01 link.
+The description slot should read "Test Script MA"
+
+SUBSYSTEM ROLE
+In the Subsystem Role field, click the yellow box.  
+The Subsystem Role field expands. 
+In the yellow box, change the value to "New Subsystem Role"
+In the green evidence box, change the value to "SR EV"
+In the green Evidence link/PubMed ID, 
+ change the value to "http://www.google.com"
+Click the Green save button.  
+
+The Subsystem Role field now reads "New Subsystem Role"
+Move your mouse over the blue box with the E.
+A green bubble that says "SR EV" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup appears.
+
+Click the yellow box that says "New Subsystem Role".
+Change the value in the yellow box to "Cancel".
+Click the Cancel button.  
+The value in the yellow box should remain New Subsystem Role.
+
+Click the yellow box in the Subsystem role field.
+Change the value to "New subsystem"
+Click Save.  
+Click the yellow box again.
+Change the value to "Newer subsystem"
+Click Save. 
+Click the Sputnik-virophage link at the top of the page.
+The frame viewer opens.  Click the value of the Genes slot.
+Click Sputnik.Sputnik_Gp01.  
+The subsystem-role slot is "newer subsystem"
+Close the frame viewer.  
+Click the blue box with the H in the subsystem role field.
+Find the most recent record that has "new subsystem".
+Click Restore.  
+The bottom of the page now says Successfully restored.  
+Click the Sputnik-virophage link at the top of the page.
+The frame viewer opens.  Click the value of the Genes slot.
+Click Sputnik.Sputnik_Gp01.  
+The subsystem-role slot is "new subsystem"
+
+
+MEMBRANE SPANS
+In the Membrane Spans field, click the yellow box.  
+The Membrane spans field expands. 
+In the yellow box, change the value to "Test membrane spans"
+In the green evidence box, change the value to "Membrane evidence"
+In the green Evidence link/PubMed ID, 
+ change the value to "http://www.google.com"
+Click the Green save button.  
+
+The Membrane Spans field now reads "Test membrane spans"
+Move your mouse over the blue box with the E.
+A green bubble that says "Membrane evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup appears.
+
+SIGNAL SEQUENCE
+In the Signal Sequence field, click the yellow box.  
+The Signal Sequence field expands. 
+In the yellow box, change the value to "Test Signal Sequence"
+In the green evidence box, change the value to "Sequence Evidence"
+In the green Evidence link/PubMed ID, 
+ change the value to "http://www.google.com"
+Click the Green save button.  
+
+The Signal sequence field now reads "Test Signal Sequence"
+Move your mouse over the blue box with the E.
+A green bubble that says "Sequence Evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup appears.
+
+ANNOTATIONS
+
+In the Annotations section, click the green circle with the plus sign
+ next to Biochemical Function and Operon structure.  
+The biochemical function and operon structure fields open
+ in the Annotations section.
+Move your mouse over the minus sign next to Close All.  Verify
+ that the cursor is a hand with an extended finger.
+Click the red circle with the minus sign next to Close All.
+The biochemical function and operon structure fields disappear
+ from the Annotations section.
+
+Click the green circle with the plus sign next to Open All.
+Six new annotation sections appear, some potentially with more than 
+one field per section.  These sections are demarcated by the 'Add another' link.
+Click the red circle next to Close All.
+The six sections disappear.
+
+PHYSIOLOGICAL ROLE
+Remember the number in parentheses after Physiological Role.
+Click the green circle with the plus sign next to Physiological Role.
+The Physiological Role section opens.
+Click the (add another) link.
+
+In the yellow box labeled Physiological Role type "Test Phys Role".
+In the green evidence box, type "Phys evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+
+Click the Test link button.  
+Google opens in a new window.  
+Click the Pubmed button.
+Pubmed opens in a new window.
+Click the Green save button.
+The number in parentheses next to Physiological Role should increment by 1.
+
+Click the green circle with the plus sign next to Physiolocal Role.
+The Physiological Role section expands.   
+The last entry contains a yellow box that says "Test Phys Role".
+
+Mouse over the blue box with the E.
+A green bubble that says "Phys evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup window appears.
+
+Click the red circle with the minus sign next to Physiological Role
+in the Annotations section.  
+The Physiological Role section disappears.
+
+Click the green circle with the plus sign next to Physiological Role.
+The Physiological Role field appears.
+Click the (add another) link.
+
+In the yellow box, type "Physiological Role 2".
+In the green evidence box, type "Physiological Evidence 2".
+In the Evidence link/PubMed ID, type "http://www.yahoo.com".
+Click the Green save button.
+
+The Physiological role field disappears, and the number in
+ parentheses next to Physiological Role increments by 1.
+
+Click the green circle with the plus sign next to Physiological Role.
+Click the red circle with the minus sign next to Physiological Role.
+
+;; maybe test reverting
+
+
+BIOCHEMICAL FUNCTION
+Remember the number in parentheses next to Biochemical Function.
+Click the green circle with the plus sign next to Biochemical Function.
+The Biochemical Function field opens.
+Click the (add another) link.
+
+In the yellow box labeled Biochemical Function, type "Test Biochem"
+In the green evidence box, type "Biochem evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+
+Click the Test link button.  
+Google opens in a new window.  
+Click the Pubmed button.
+Pubmed opens in a new window.
+Click the Green save button.
+The number in parentheses next to Biochemical Function should increment by 1.
+
+Click the green circle with the plus sign next to Biochemical Function.
+The Biochemical Function field expands.   
+The last entry contains a yellow box that says "Test Biochem".
+
+Mouse over the blue box with the E.
+A green bubble that says "Biochem evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup window appears.
+
+Click the red circle with the minus sign next to Biochemical Function
+in the Annotations section.  
+The Biochemical Function section disappears.
+
+OPERON STRUCTURE
+Click the green circle with the plus sign next to Operon Structure.
+Remember the number in parentheses next to Operon Structure.
+The Operon Structure field opens.
+Click the (add another) link.
+
+In the yellow box labeled Operon Structure, type "Test Operon"
+In the green evidence box, type "Operon evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+
+Click the Test link button.  
+Google opens in a new window.  
+Click the Pubmed button.
+Pubmed opens in a new window.
+Click the Green save button.
+The number in parentheses next to Operon Structure should increment by 1.
+
+Click the green circle with the plus sign next to Operon Structure.
+The Operon Structure field expands.   
+The last entry contains a yellow box that says "Test Operon".
+
+Mouse over the blue box with the E.
+A green bubble that says "Operon evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup window appears.
+
+Click the red circle with the minus sign next to Operon Structure
+in the Annotations section.  
+The Operon Structure section disappears.
+
+MUTANTS
+Click the green circle with the plus sign next to Mutants.
+Remember the number in parentheses next to Mutants.
+The Mutants field opens.
+Click the (add another) link.
+
+In the yellow box labeled Mutants, type "Test Mutants"
+In the green evidence box, type "Mutants evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+
+Click the Test link button.  
+Google opens in a new window.  
+Click the Pubmed button.
+Pubmed opens in a new window.
+Click the Green save button.
+The number in parentheses next to Mutants should increment by 1.
+
+Click the green circle with the plus sign next to Mutants.
+The Mutants field expands.   
+The last entry contains a yellow box that says "Test Mutants".
+
+Mouse over the blue box with the E.
+A green bubble that says "Mutants evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup window appears.
+
+Click the red circle with the minus sign next to Mutants.
+in the Annotations section.  
+The Mutants section disappears.
+
+REGULATION
+Click the green circle with the plus sign next to Regulation.
+Remember the number in parentheses next to Regulation.
+The Regulation field opens.
+Click the (add another) link.
+
+In the yellow box labeled Regulation, type "Test Regulation"
+In the green evidence box, type "Regulation evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+
+Click the Test link button.  
+Google opens in a new window.  
+Click the Pubmed button.
+Pubmed opens in a new window.
+Click the Green save button.
+The number in parentheses next to Regulation should increment by 1.
+
+Click the green circle with the plus sign next to Regulation.
+The Regulation field expands.   
+The last entry contains a yellow box that says "Test Regulation".
+
+Mouse over the blue box with the E.
+A green bubble that says "Regulation evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup window appears.
+
+Click the red circle with the minus sign next to Regulation.
+in the Annotations section.  
+The Regulation section disappears.
+
+OTHER
+Click the green circle with the plus sign next to Other.
+Remember the number in parentheses next to Other.
+The Other field opens.
+Click the (add another) link.
+
+In the yellow box labeled Other, type "Test Other"
+In the green evidence box, type "Other evidence".
+In the green Evidence link/PubMed ID box, type "http://www.google.com".
+
+Click the Test link button.  
+Google opens in a new window.  
+Click the Pubmed button.
+Pubmed opens in a new window.
+Click the Green save button.
+The number in parentheses next to Other should increment by 1.
+
+Click the green circle with the plus sign next to Other.
+The Other field expands.   
+The last entry contains a yellow box that says "Test Other".
+
+Mouse over the blue box with the E.
+A green bubble that says "Other evidence" appears.
+Move your mouse over the blue box with the H.
+A green bubble with your username and timestamp appears.
+
+Click the blue box with the E.  
+Google opens in a new window.
+Click the blue box with the H.
+A history popup window appears.
+
+Click the red circle with the minus sign next to Other.
+in the Annotations section.  
+The Other section disappears.
+
+
+Close the annotation page.  
+Execute the Annotate-seed-feature box from the VPL.
+Copy the text in the address bar and break up the text by &'s.  
+
+Verify that: 
+* the genetic-name text in the address bar matches the text in the
+  genetic name field, with %20 instead of spaces
+* the email text in the address bar is biobiketester@gmail.com
+* the affilation text in the address bar is Annotation University
+* the protein length in the address bar matches the number of
+  amino acids in the Size field
+* The mw in the address bar is the same as the MDal number
+  in the Size field rounded to an integer
+
+Email
+
+In the drowssap file, make sure the email addresses of
+testannotator, testannotator2, and testannotator3 are respectively
+ biobiketester@gmail.com, biobiketester2@gmail.com, and biobiketester3@gmail.com
+the password for all 3 gmail accounts is: annotation
+Log in to all 3 accounts and delete all new messages.  
+Log in to bioike as testannotator (no password needed)
+ and bring up the main annotation page for the test gene via the VPL.  
+
+Click the yellow box in the genetic name field.  
+Change the value to "test annotator"
+Click the green save button.
+Check biobiketester@gmail.com, there should be a new email saying
+ that testannotator made a change 
+ (this may take a minute or two for some reason)
+Delete this email.  
+Kill the main annotation page and the VPL.
+
+Log in as testannotator2, bring up the annotation page again via the VPL.  
+Change the value of the genetic name field to "test annotator 2"
+Click the green save button.
+Check biobiketester@gmail.com, there should be a new email, delete it.
+Check biobiketester2@gmail.com, there should be a new email, delete it.
+Check biobiketester3@gmail.com, there should be a new email, delete it.
+Kill the main annotation page and the VPL.
+
+Log in as testannotator3, bring up the annotation page again via the VPL.    
+Change the value of the genetic name field to "test annotator 3"
+Click the green save button.  
+Kill the main annotation page and the VPL.
+
+Log in as testannotator2, bring up the annotation page again via the VPL.  
+Change the value of the genetic name field to "test annotator 4"
+Click the green save button.  
+Each of the gmail accounts should receive a single new email.
+Delete each email as you check them
+(what we're really testing here is that testannotator2 only gets 1)
+Kill the main an notation page and VPL.  
+
+Log in as testannotator, bring up the annotation page again via the VPL.  
+Change the value of the genetic name field to "test annotator 5"
+Click the green save button.  
+Check biobiketester@gmail.com, there should be a new email, delete it.
+Check biobiketester2@gmail.com, there should be a new email, delete it.
+Check biobiketester3@gmail.com, there should be a new email, delete it.
+Kill the main an notation page and VPL.  
+
+
+one for testannotator, two for testannotator2, and one for testannotator3.
+
+1 - testannotator gets a mail
+2 - testannotator gets a mail (as the previous changer),
+    and testannotator2 gets a mail (bc he's the one who changed it)
+3 - testannotator gets a mail (historically previous changer)
+    testannotator2 gets a mail (bc he's the previous changer)
+    testannotator3 gets a mail (bc he's the changer)
+4 - testannotator gets a mail (as historical)
+    testannotator3 gets a mail (as previous changer)
+    testannoator2 gets a single mail 
+	;; he both changed it AND is a historical changer
+5 - testannotator gets a SINGLE mail as the changer AND historical
+    testannotator2 gets a single mail as the previous and historical changer
+    testannotator 3 gets a mail as a historical changer
+
+"fig|543939.2.peg.1"
+
+email = biobiketester@gmail.com
+pw = annotation
+bday = 6/12/50
+
+email = biobiketester2@gmail.com	
+pw = annotation
+bday = 8/12/60
+
+email = biobiketester3@gmail.com
+pw = annotation
+bday = 1/23/70]
+
+
+COMPARE REGIONS
+You need to get to the real page if it's not being used.  
+To do this, change part of the url from:
+"~jmyers/test46.php"
+ to
+"PhageSeed/annotations.php"
+
+Mouse over a green arrow in the box at the bottom of the page.  Note the ID.
+Click the green arrow.  
+It should bring up a seed viewer page for the gene that you clicked on, 
+make sure the ID matches.  
+
+===============================================================================
+
+
+;; once we figure out the radio button issue, put a test in for that
+
+

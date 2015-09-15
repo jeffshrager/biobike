@@ -1,0 +1,145 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2005 Jeff Shrager, Richard Waldinger, and JP Massar       |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>SNARK in BioBike</title></head>
+<body>
+<h2>Using SRI's SNARK Theorem Prover</h2>
+</b><p>
+All contents Copyright 2005
+<a target="_blank" href="http://nostoc.stanford.edu/jeff/personal/index.html">
+Jeff Shrager</a>, JP Massar, and Richard Waldinger (unless otherwise specified)
+</b></p><p>
+</p>
+
+MOST OF THIS HAS BEEN MOVED INTO A TUTORIAL; THE ONLY REMAINING INFO
+IS INTERNAL NOTES FOR BIOBIKE SUPPORT.
+
+<h3>Installing SNARK in your BioBike Server</h3>
+
+Snark is setup as a BioBike <i>MODULE</i>. The simplest was to set it
+up is to just copy the whole module directory from an existing BioBike
+server. You can find out where that is by evaluating 
+
+<pre>  (find-module :snark)</pre> 
+
+in a server that already has it.  This will return something like:
+
+<pre>
+#P"/home/BioDemo/snark/load.lisp"
+:DIRECTORY
+("/home/BioDemo/" #P"/home/BioDemo/visitors/jshrager/"
+ #P"/usr/local/biolisp/" #P"/usr/local/BioLisp/lib/"
+ #P"/usr/local/BioLisp/Lib/" #P"/usr/local/BioLisp/"
+ #P"/home/BioDemo/visitors/shared-files/")
+</pre>
+
+Indicating that the relevant subdirectory is (in this case)
+/home/BioDemo/snark/load.lisp. If you just copy over that whole
+subdirectory to the analogous place in your new server, then
+
+<pre>
+  (use-module :snark)
+</pre>
+
+should now work on your new server.
+
+<p>
+
+(On Nostoc, the main BioBike server, everything is actually in
+/usr/local/biotools/snark, and then each individual server has a
+symbolic link from the "virtual" location in their home directories,
+to that central location.)
+
+<p>
+
+If you need to setup SNARK from scratch, first download it from
+SRI. SNARK info, including where to get the current code, is here:
+
+<pre>
+  http://www.ai.sri.com/~stickel/snark.html
+</pre>
+
+!!! IMPORTANT::: When you get a new release make sure that you compile
+it by adding the optional t arg to (make-snark-system) in load.lisp,
+and then removing it.  (Or just do the right thing by hand.)
+
+  (load "snark-system.lisp")
+  (make-snark-system t)
+
+<p>
+
+(You might have to remove the export of #:it from snark-pkg.lisp
+because it appears to be breaking the server upon use-module. We
+don't know why.)
+
+<p>
+
+Create a "load.lisp" file in the snark directory that looks something like:
+
+<pre>
+(in-package :cl-user)
+(load "/usr/local/biotools/snark/current/snark-system.lisp")
+(make-snark-system)
+</pre>
+
+Create a unix symbolic link in the ../snark directory to the latest
+version top directory, and call the link "current". (The snark top
+directory usually has a date format, as: "snark-20031012f".)
+
+You'll need to dyke out these lines from make-snark-system in
+snark-system.lisp:
+
+<pre>
+;  (setf *package* (find-package :snark-user))
+;  (setf *print-pretty* nil)
+</pre>
+
+In src/useful.lisp, 
+
+In the function INITIALIZE-HASH-DOLLAR-READER you'll find these two similar lines:
+
+<pre>
+(set-dispatch-macro-character #\# #\$ #'hash-dollar-reader *hash-dollar-readtable*)
+(set-dispatch-macro-character #\# #\$ #'hash-dollar-reader)
+</pre>
+
+Comment out the SECOND one:
+
+<pre>
+;   (set-dispatch-macro-character #\# #\$ #'hash-dollar-reader)
+</pre>
+
+In snark-system.lisp comment out the load entry for "cycl" (in the long list
+of loaded modules).
+
+<p>
+
+You'll also need an auxilliary code from the BioBike system in a file
+called "biosnark.lisp", which you can get from the BioBike sources.
+
+<p>
+
+Snark should now compile normally, and you can go on to the top of
+this lesson.

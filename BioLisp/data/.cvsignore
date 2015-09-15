@@ -1,0 +1,6 @@
+*.removed
+*.fsl
+*.fasl
+.hg
+flat-ortholog-data.lisp
+flat-ortholog-index.lisp

@@ -1,0 +1,156 @@
+;;; example code proposed to push through VPL
+
+#||
+
+Analysis of requirements to implement this in VPL
+
+Icons: LOOP, NEW-TABLE, {}, /, GENES-OF, LENGTH-OF, FLOOR, >, INCREMENT, 
+[], GRAPH (?), DEFINE, COMMON-ORTHOLOGS-OF, DEFINE-FUNCTION, PATTERN-MATCH-ALL,
+DISPLAY-LINE, SEQUENCE-OF, +, RETURN
+
+
+LOOP: For this code we need INIT, FOR, IN, DO, AS, FINALLY and destructuring of
+the variable binding.  
+
+NEW-TABLE: This is a BBL defined function.  It has required flag and
+keyword arguments.  We are using the INITIALIZE keyword and DISPLAY-OFF flag.
+
+{}: We use the notation.  We could use (list ...).  In either case we 
+have to implement the &rest concept (presumably essentially implemented because
+the implicit PROGN concept already exists).  If we need to do {} then we need
+a way of displaying them with holes appropriately.  
+
+/: (There is also a BBL DIVIDE function we could use.)  We only need the
+2-argument version, but of course, in can take one arg or many args. 
+
+GENES-OF: This is an alias for GENE-OF, so we need to have that concept.  This
+DEFINE-FUNCTION takes multiple flag and keyword arguments but we aren't using
+any of them here.  
+
+Note: GENE-OF is mapped (via maptree), but that is not relevant to
+this example code.
+
+LENGTH-OF: This DEFINE-FUNCTION takes a token argument but we are not using it.
+
+FLOOR: A Common Lisp function which takes an optional argument (we aren't using 
+the optional argument, but it seems plausible that we will need to have 
+optional arguments so we might as well implement that capability).  
+
+>: Common Lisp &rest function, used here in standard 2-argument mode.
+
+INCREMENT: A BBL DEFINE-MACRO!  Takes a keyword.  
+
+[]: Need to figure out how this will be represented in the VPL.  Note that
+it is effectively an &rest.  
+
+GRAPH: Simple function call for the moment.
+
+DEFINE: This is a DEFINE-MACRO with a flag argument.  Currently it only allows
+a single variable to be defined, but Jeff E wants it to be able to define
+multiple variables, similarly to ASSIGN: 
+(ASSIGN T1 [AS | =] V1 T2 [AS | =] V2 ... [DISPLAY-OFF])
+If it became like ASSIGN then it would turn into a DEFMACRO with 
+similarly complicated syntax.  
+
+We are only using the simplest form of DEFINE here.
+
+COMMON-ORTHOLOGS-OF: A DEFINE-FUNCTION with keywords and flags.  We are using
+both here. 
+
+DEFINE-FUNCTION: For this code all we need is REQUIRED, INIT, and BODY. 
+
+PATTERN-MATCH-ALL: Currently a biolite macro; presumably would be a BBL
+define-function with keywords and flags.
+
+DISPLAY-LINE: Currently a biolite function which takes an &rest argument;
+presumably this would become a BBL function which would take an &rest argument.
+
+SEQUENCE-OF: A define-function with numerous keywords and flags.  
+
++: A Common Lisp &rest (0 or more) function. 
+
+RETURN: A Common Lisp macro with special syntax. 
+
+Summary of capabilities essential to these examples:
+  -- Partial implementation of LOOP
+     INIT, FOR, IN, DO, AS, FINALLY and destructuring of the variable binding.  
+  -- Partial implementation of DEFINE-FUNCTION
+     REQUIRED, INIT, and BODY. 
+  -- Token, flag, and keyword arguments for BBL define-function calls
+  -- [] notation
+  -- {} notation
+  -- templates for various macros and define-macros 
+  -- &rest handling
+  -- various constants defined, and thus icons for them 
+
+||#
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; we defined the foo function here for convenience; we would
+;; expect the VPL user to just start out with the loop, not defining
+;; a function
+
+(defun foo ()
+  (loop
+    init binsize = 25
+    init max-gene-length = 5000
+    init length-table = 
+    (new-table  { (/ max-gene-length binsize) } initialize 0)
+    for org in *all-organisms*
+    do
+    (loop for gene in (gene-of org) 
+        as gene-length = (length-of gene)
+        as bin = (floor (/ gene-length 25))
+        do
+          (unless (> gene-length max-gene-length)
+            (increment length-table[bin])
+            ))
+    finally (return (graph length-table))))
+
+;; utility function, not part of code user would write
+(defun graph (one-dimensional-garray)
+  (bio:line-plot
+   (list 
+    (cons "gene length distribution"
+          (utils:gmap 'lisp:identity one-dimensional-garray)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+
+;; lists which are presumably predefined, but not now in BBL
+
+(define *heterocystous-cb* (list npun a7120 syn6803))
+
+(define *nonheterocystous-cb* (list Ana29413))
+
+;; here's the code from the powerpoint presentation
+
+(define het-protein as
+        (common-orthologs-of
+         *heterocystous-cb* not-in *nonheterocystous-cb* no-display))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; taken from some earlier sample programs, this finds alternative 
+;; protein sites in a gene.
+
+;; this defparameter would be a define, but we make it a defparameter
+;; to shut compiler up.  this variable could be predefined because it is a 
+;; standard biological concept (?) but it isn't now. 
+
+(defparameter start-codon-pattern "(ATG)|(GTG)|(TTG)")
+
+(define-function 
+ alternative-protein-sites
+ required gene
+ init gene-sequence = (sequence-of gene)
+ body 
+ (loop for (start end) in
+       (pattern-match-all start-codon-pattern in gene-sequence)
+       do 
+       (display-line 
+        gene *tab* start *tab*
+        (sequence-of gene-sequence from (+ start 1) to end))
+       ))
+

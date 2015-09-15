@@ -1,0 +1,476 @@
+<title>BioBike: Metabolic Simulation using Gene Ontology Models</title>
+
+<p>
+
+<h2>
+BioBike Tutorial: Metabolic Simulation using Gene Ontology Models
+</h2>
+
+<p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+In a previous lesson we used the <i>relational</i> knowledge captured
+in the Gene Ontology ISA and SUBCLASS slots to do some interesting
+analysis of the relationships between biological functions.
+
+<p>
+
+Let's look once again at a gene ontology frame in BioBike:
+
+<pre>
+>> (df #$GO.NadphDehydrogenaseActivity)
+::
+Slots of #$GO.NadphDehydrogenaseActivity:
+#$GO.goid: 3959
+#$Source: :GO
+#$GO.prettyname: "NADPH dehydrogenase activity"
+#$GO.Namespace: #$Go.Molecular_Function
+#$GO.definition: "Catalysis of the reaction: NADPH + H+ + acceptor = NADP+ + reduced acceptor."
+#$isA:  (#$Go.Reaction #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+         #$GO.ElectronTransporterActivity)
+#$GO.ECRef: (#$EC.1.6.99.1)
+#$GO.DBXRefs: (("EC" "1.6.99.1"))
+#$Go.reactants: (#$MOL.Nadph #$MOL.H+ #$MOL.Acceptor)
+#$Go.products: (#$MOL.Nadp+ #$MOL.ReducedAcceptor)
+</pre>
+
+In that previous lesson we were working with the ISA and SUBCLASS
+slots of GO frames. We can say that the GO <i>represents</i> the
+relationships between biological functions, and we used that
+representation to reason (compute) about the relationships between
+those functions. This time we're going to work with two other slots:
+#$GO.REACTANTS, and #$GO.PRODUCTS. 
+
+<p>
+
+Recall from the lesson on metabolic simulation that we had created a
+reaction structure and a molecular structure, and two global
+variables: *reactions* and *molecules*, and then we wrote simple code
+to simulate the metabolic chemistry for a few specific enzymes. (If you
+don't remember, this, you should go back and review that lesson.) 
+
+<p>
+
+Now we want to do the same thing, but instead of defining our own
+reactions and molecules, we're going to use the ones already built
+into BioBike by virtue of the Gene Ontology.
+
+<p>
+
+You'll recall that after we had defined all our reactions and
+molecules, we defined a "environment" consisting of a bunch of
+molecules, and a goal, which told us to stop when we find a particular
+molecule in the environment.  Here these will be nearly the same, but
+instead of using simple names, as we did in the previous less, we'll
+refer to the MOL. frames for the molecules we're interested
+in. Otherwise these functions are mostly the same, although we're not
+going to include the enzymes in the environment (we'll assume that all
+enzymes are available for now):
+
+
+<pre>
+>> (defvar *env* nil)
+
+>> (defun init-env ()
+>>   (setq *env* 
+>>     '(#$MOL.Atp #$MOL.Adp #$mol.gtp #$mol.gdp #$mol.phosphate
+>>       #$MOL.Nad+ #$mol.fad #$MOL.Fructose #$MOL.d-Glucose)))
+</pre>
+
+We also need a way to figure out that we're done (otherwise we can
+just keep running reactions forever!)  To do that we'll define a
+specific goal molecule, which, when it shows up in the environment,
+indicates that we're done.  For now we'll set up the goal to be malate:
+
+<pre>
+>> (defvar *goal* nil)
+
+>> (defun init-goal ()
+>>   (setq *goal* #$MOL.Malate))
+</pre>
+
+And the master init function:
+
+<pre>
+>> (defun init ()
+>>   (init-env)
+>>   (init-goal))
+</pre>
+
+And remember to call it:
+
+<pre>
+>> (init)
+</pre>
+
+Okay. Now we need the equivalent of the function that finds all the
+reactions that could possibly take place given the current
+environment. It turns out that that's pretty easy because the
+molecules tell us what reactions operate on them.  For example, let's
+look at:
+
+<pre>
+>> (df #$MOL.Glucose)
+::
+Slots of #$MOL.Glucose:
+#$isA:  (#$GO.Molecule)
+#$Go.reactantIn: (#$GO.1-PhenanthrolGlycosyltransferaseActivity
+                  #$GO.9-PhenanthrolGlycosyltransferaseActivity
+                  #$GO.PhenanthrolGlycosyltransferaseActivity)
+#$Go.productIn: (#$GO.6-Phospho-Beta-GlucosidaseActivity
+                 #$GO.InulosucraseActivity #$GO.LevansucraseActivity)
+#$GO.KEGGFrame.s: (#$KEGG.C00293)
+</pre>
+
+So glucose reacts in those 6 (3+3) reactions, and if you look at one
+of those:
+
+<pre>
+>> (df #$GO.6-Phospho-Beta-GlucosidaseActivity)
+:: 
+Slots of #$GO.6-Phospho-Beta-GlucosidaseActivity:
+#$GO.goid: 8706
+#$Source: :GO
+#$GO.prettyname: "6-phospho-beta-glucosidase activity"
+#$GO.Namespace: #$Go.Molecular_Function
+#$GO.definition: "Catalysis of the reaction: 6-phospho-beta-D-glucoside-(1,4)-D-glucose + H2O = D-glucose 6-phosphate + glucose."
+#$isA:  (#$Go.Reaction #$GO.Beta-GlucosidaseActivity)
+#$GO.ECRef: (#$EC.3.2.1.86)
+#$GO.DBXRefs: (("EC" "3.2.1.86"))
+#$Go.reactants: (#$MOL.6-Phospho-Beta-D-Glucoside-[1,4]-D-Glucose
+                 #$MOL.H2o)
+#$Go.products: (#$MOL.D-Glucose6-Phosphate #$MOL.Glucose)
+</pre>
+
+you'll see that, indeed, it has #$MOL.Glucose as one of its products.
+
+<p>
+
+So all that we need to do is to go through all the GO frames and find
+ones where either all of their reactants as in the environment. Here's
+the specific test:
+
+<pre>
+>> (defun go-reaction-can-go-forward? (go-frame env)
+>>   (loop for reactant in (#^go.reactants go-frame)
+>>         when (not (member reactant env))
+>>         do (return nil)
+>>         finally (return t)))
+
+;;; And here's the function that finds all possible reactions:
+
+>> (defun possible-reactions (env)
+>>   (loop for frame in *go-frames*
+>>         when (go-reaction-can-go-forward? frame env)
+>>         collect frame))
+
+;;; And let's try it:
+
+>> (possible-reactions *env*)
+:: [...a HUGE long list of GO frames! ...]
+</pre>
+
+Oops! Obvious not ALL of those can react in the present setting.  One
+thing that we neglected to check is that the GO frame actually
+represents a reaction; most of the ones in the long list turn out not
+to be reactions at all, but because they have no #^go.reactants slot,
+they can go forward in a sort of "degenerate" condition. We can tell
+whether a frame represents a reaction by looking to see if its has
+#$GO.REACTION in its ISA slot, so here a new version of
+GO-REACTION-CAN-GO-FORWARD? that takes this into account:
+
+<pre>
+>> (defun go-reaction-can-go-forward? (go-frame env)
+>>   (when (member #$go.reaction (#^isa go-frame))
+>>     (loop for reactant in (#^go.reactants go-frame)
+>>           when (not (member reactant env))
+>>           do (return nil)
+>>           finally (return t))))
+
+;;; And let's try again:
+
+>> (possible-reactions *env*)
+:: 
+(#$GO.GtpDiphosphokinaseActivity 
+ #$GO.GuanylateCyclaseActivity
+ #$GO.Hydrogen-TransportingAtpSynthaseActivity,RotationalMechanism
+ #$GO.ReceptorGuanylateCyclaseActivity
+ #$GO.AtpAdenylyltransferaseActivity 
+ #$GO.Nad+KinaseActivity
+ #$GO.2'-5'-OligoadenylateSynthetaseActivity
+ #$GO.AdenylateCyclaseActivity)
+</pre>
+
+Ahhhhh. Much better!
+
+<p>
+
+Now, we actually need a very slightly different form called
+(previously) possible-reactions-from which lets us specify that we've
+come from a particular molecule:
+
+<pre>
+>> (defun possible-reactions-from (from env)
+>>   (loop for frame in *go-frames*
+>>         when (and (member from (#^go.reactants frame))
+>>                   (go-reaction-can-go-forward? frame env))
+>>         collect frame))
+</pre>
+
+<p>
+
+Okay, we should be ready to find paths based upon the Gene Ontology
+reaction definitions, instead of our couple of dozen manually
+installed reactions.  We'll actually have to make two very small
+changes to FPATHSTO, and its underlying functions to use built-in Gene
+Ontology frames instead of the structures we used in the previous lesson:
+
+<pre>
+;;; These are identical to the way it was done before:
+
+>> (defun apply-reaction (reaction-frame env)
+>>   (append env
+>>           (loop for product in (#^go.products reaction-frame)
+>>                 collect product)))
+
+>> (defun paths (env goal &optional path)
+>>   (cond ((find goal env) (list path)) ; Found the goal: Done!
+>>         (t (loop for reaction in (loop for reaction in (possible-reactions env)
+>>                                        when (not (member reaction path))
+>>                                        collect reaction)
+>>                  append (paths (apply-reaction reaction env) 
+>>                                goal 
+>>                                (cons reaction path))))
+>>         ))
+
+>> (defun superset? (s1 s2)
+>>   (and (>= (length s1) (length s2))
+>>        (every #'(lambda (s) (member s s1 :test #'equal)) s2)))
+
+>> (defun paths-between (from to &optional (env *env*) path)
+>>   (cond ((member to env) (list path))
+>>         (t (loop for reaction in (possible-reactions-from from env)
+>>                  when (not (member reaction path))
+>>                  append (paths-via (cons reaction path) to 
+>>                                    (apply-reaction reaction env))))
+>>         ))
+
+;;; This is the same, although we don't have the S-type constraint anymore:
+>> (defun paths-via (path to env)
+>>   (loop for link-mol in (#^go.products (car path))
+>>         append (paths-between link-mol to env path)))
+
+;;; This is simpler (and is a function, not a macro) 
+;;; because we are giving specific molecule frames:
+
+>> (defun fpathsto (from to)
+>>   (length (setq *pathways* 
+>>                  (remove-duplicates
+>>                     (paths-between from to *env*)
+>>                     :test #'superset?))))
+
+</pre>
+
+Notice that the changes we've made above in no way change the
+<i>logic</i> of the old dynamic pathway creation code; They are just
+fixes that enable us to use the new reaction representation that we
+scraped out of the Gene Ontology!
+
+<p>
+
+Also notice that I've added back the old REMOVE-DUPLICATE-PATHS call, which
+I couldn't decide on whether we wanted it or not in the first Pathway
+Logic section.  That's  because there are so many possible paths now that
+it helps to just have the minimal pathway in order to see what's going
+on.  
+
+<p>
+
+Okay, so now we're ready to give it a go!  (I've repeated the whole
+sequence here; You probably don't have to re-do the initializations if
+you've been working through this whole section line-by-line, although
+it can't hurt!)
+
+<pre>
+>> (init-env)
+
+;;; Testing the thing:
+
+>> (fpathsto #$MOL.d-Glucose #$MOL.D-Glucose6-Phosphate)
+:: 1
+
+;;; Okay, let's take a look:
+
+>> *pathways*
+:: ((#$GO.GlucokinaseActivity))
+
+;;; Prefect! Let's try going a little farther:
+
+>> (fpathsto #$MOL.d-Glucose #$MOL.D-Fructose6-Phosphate)
+:: 1
+
+;;; Again, lets see it
+
+>> *pathways*
+:: ((#$GO.Glucose-6-PhosphateIsomeraseActivity #$GO.GlucokinaseActivity))
+
+;;; Looking good! (Remember that the last reaction to run 
+;;; appears at the head (first) in this list!)
+
+>> (fpathsto #$mol.d-glucose #$MOL.AcetylPhosphate )
+:: 1
+
+>> *pathways*
+
+::
+((#$GO.Fructose-6-PhosphatePhosphoketolaseActivity
+  #$GO.Glucose-6-PhosphateIsomeraseActivity #$GO.GlucokinaseActivity))
+
+;;; Excellenta!
+
+;;; Let's try to go someplace we think we can't get to:
+
+>> (fpathsto #$mol.d-glucose #$MOL.N6-Acetyl-L-Lysine)
+:: 
+*** TIMEOUT ! TIMEOUT ! TIMEOUT ***
+*** COMPUTATION ABORTED AFTER 10 SECONDS ***
+*** YOU CAN: 
+***   - contact support for help: BioLinguaSupport@lists.Stanford.EDU
+***   - use SET-TIMELIMIT to extend your timeout up to 1 hour
+***   - use RUNJOB to run your code in a separate process
+***   - type (explain-timeout) at the weblistener for detailed info.
+
+</pre>
+
+Hmmm. Well, I suppose that's what we would expect: It's trying every
+possible pathway in the whole GO to get to where you've asked it to
+go, and can't find its way. 
+
+<p>
+
+We could expand this by adding various sorts of search constraints to
+make the search faster, or to have it bottom out at a certain length
+of pathway, but those are nuances. This is good enough for a single
+lesson.
+
+
+<p><hr><p>
+<a name=exer>
+<h2>Exercises</h2>
+
+<p><hr></p>
+
+<font color=brown>NOTE: These exercises refer to the <i>previous
+tutorial</i> -- that is, where *env* is a list of symbols, <i>NOT</i>
+the GO entries! They are here because the previous tutorial was so
+long that I figured you needed a break. You may want to go back and
+"press the DOITs" through that tutorial in order to get back to that
+state in order to do these.</font>
+
+<p><hr></p>
+
+1. Here's most of a function that gives you all the subsets a set:
+
+<pre>
+  (defun all-subsets (l)
+        (if (null l)
+            (list nil)
+            (append (loop for i in (all-subsets (cdr l))
+                          collect (cons (car l) i))
+                    ?????????????????????)))
+
+Example:
+>> (all-subsets '(a s d f))
+:: 
+((A S D F) (A S D) (A S F) (A S) (A D F) (A D) (A F) (A) 
+ (S D F) (S D) (S F) (S) (D F) (D) (F) NIL)
+
+</pre>
+
+Finish off the missing recursive call, and test this function. (Hint,
+the number of question-marks in the missing piece represents the
+correct number of characters in the solution!) 
+
+<p>
+
+Use your new function to determine how many combinations are there of
+the original 9 environment variables?
+
+<p>
+
+Now use all-subsets to find the minimum possible environment for
+glucose to pyruvate metabolism in the current enzymatic environment
+(that is, given the reaction set that we have). 
+
+<p>
+
+Next, you'll want to write a function that loops over all the subsets
+(that is, loops over the results of ALL-SUBSETS, as above), and sets
+the *env* to each one in turn, and sees if there's a path between glu
+and pyr (just like we did above). If there is, collect it, and when
+you're done, find the smallest of these (by sorting, for example). How
+many of the subsets of the orignal *env* work to take glucose to
+pyruvate? What is the minimal environment?
+
+<p>
+
+Here's a useful trick: If you want to temporarily set the value of a
+DEFVAR -- that is, a special or global variable (as *ENV* is -- note
+that we DEFVAR'ed it above!) all you need to do is to "LET" bind
+it. That is:
+
+<pre>
+  (let ((*env* whatever-its-new-value-is))
+     whatever-computation-you-want-to-do)
+
+Example:
+>> (defvar glb1)
+
+>> (defvar glb2)
+
+>> (defun dumb-function ()
+>>   (* glb1 glb2))
+
+>> (setf glb1 '(a s d f)  glb2 "this is a string, not a number!")
+
+This will cause an error:
+
+>> (dumb-function)
+   Error: Evaluation failed. Actual error:
+         `(A S D F)' is not of the expected type `NUMBER'
+          Use (EXPLAIN) to see a stack trace.
+
+But if we let bind glb1 and glb2, it will work!
+
+>> (let* ((glb1 (+ 5 7))
+>>        (glb2 (expt glb1 3)))
+>>    (dumb-function))
+:: 20736
+
+And the values of glb1 and glb2 are not affected:
+
+>> (list glb1 glb2)
+:: ((A S D F) "this is a string, not a number!")
+
+</pre>
+
+Note that the values of glb1 and glb2 were LOCALLY BOUND by the
+LET*. You can do the same thing for *ENV*, and then call your new
+defun version of fpathsto
+
+<p><hr></p>
+
+2. Do the same thing to find the minimum set of <i>reactions</i>.
+
+<p><hr></p>
+
+3. What aspects of this tutorial could be improved? Does it fit well with
+the previous tutorials? Does it need something introduced before hand
+that we failed to introduce? Any typos or confusing parts? Were the
+exercises useful? Any other feedback?
+
+<p><hr><p>
+<p><hr><p>
+<i>Copyright 2002-20065 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

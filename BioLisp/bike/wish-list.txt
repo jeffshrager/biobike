@@ -1,0 +1,626 @@
+                   WISH LIST
+
+*** Jeff E Aug 19, 2005
+
+1. COMPREHENSIBLE ERROR MESSAGES
+2. RETHINK DOCUMENTATION AND HELP
+3. UNIFORM FEEL OF LANGUAGE - Keywords
+4. UNIFORM FEEL OF LANGUAGE - Behavior of functions
+5. EASY CREATION OF NEW MACROS THAT ASSUME THE GENERAL FEATURES OF THE LANGUAGE
+6. MAKING TABLE NAMES AND INDEX LIST FUNCTION JOINTLY AS AN ATOM
+7. IMPLEMENT TABLE SLICES 
+8. UNIFORM SYNTAX FOR ASSIGNMENTS IN LOOPS AND FUNCTIONS
+9. NATURAL LANGUAGE HELP FACILITY
+10. INTUITIVE PATTERN MATCHING SYNTAX
+
+================================================================
+1. COMPREHENSIBLE ERROR MESSAGES
+
+By far the biggest complaint voiced by users is incomprehensible error
+messages. They're right.
+
+1A. Errors should be caught by us, not Lisp, whenever possible
+
+1B. BioLite functions usually define a Command Line, i.e. the line
+entered by the user that got him to the function. For this to work
+right, internal calls should pass the command line to other biolite
+functions. Alternatively, perhaps the listener has a way of knowing
+what the user typed in. In any event, all error messages should
+contain a reference to the logical path leading to the error.
+
+1C. BioLite functions generally define a list of domains for each
+argument, by which I mean the kind of values the argument can take.
+They may be something like:
+
+    (STRING #$GENE #$PROTEIN)
+
+indicating that the argument may be the name (or frame) of a gene or
+protein or any string. This information could be (but isn't at
+present) used for type checking. If the type is wrong, an error
+message should be issued alerting the user of the mismatch. The
+internal function *APPROPRIATE-FRAME-OF should check for type match
+but doesn't.
+
+1D. Error messages should be accompanied by links to an appropriate
+help screen (see #2 below)
+
+1E. If an error is raised by LISP, we should catch the error,
+translate the message into something comprehensible, and add the
+logical path leading to the error.
+
+================================================================
+
+2. RETHINK DOCUMENTATION AND HELP
+
+Right now there is an overwhelming amount of help screens, making it
+next to impossible to find what you want. The help is often set in
+narrative form, making it difficult to use as a reference. I've tried
+to make more human-accessible and focused help screens for specific
+functions, but the labor-intensive way I'm doing it means it doesn't
+get done.
+
+2A. Documentation for every function should be compact and
+well-formatted, accessible through a single command or click
+
+2B. Documentation for every function should include multiple examples
+of use under common circumstances.
+
+2C. I think it's best for help screens to appear in separate windows. 
+
+2D. Error messages should provide links to plausible help screens.
+
+2E. Help screens should include general topics, like How to Search for
+Sequences?
+
+2F. The current HELP command is a good first-line tool, but it would
+be nice to have something more intelligent, perhaps a real-language
+parser (something like Richard is working on?) that can take the vague
+pleas of new users and through interactive queries get the user to a
+useful place.
+
+=================================================================
+
+3. UNIFORM FEEL OF LANGUAGE - Keywords
+
+3A. Certain keywords should work for all functions (where appropriate), e.g.:
+
+      VERBOSE: Shut off warnings
+      DISPLAY [ON | OFF | T | NIL | ...]: 
+          Suppress display of output to history window
+      IN-EACH: Apply function to each element of list rather than to list
+          as a whole. Example:
+
+              (COUNT-OF "A" IN ("A" "ABC" "AAA"))
+                     ==> 1
+              (COUNT-OF "A" IN-EACH ("A" "ABC" "AAA"))
+                     ==> (1 1 3)
+      FLATTEN: Determines whether output complex list is flattened
+      ...
+
+3B. Routinely allow synonyms for keywords
+
+    Example (the following should be equivalent):
+
+      (BLAST-OF sequence1 AGAINST sequence2 CUTOFF 1E-3)
+      (BLAST-OF sequence1 AGAINST sequence2 THRESHOLD 1E-3)
+
+3C. Allow keywords without values, e.g.:
+
+      (INSERT gene1 INTO list-of-genes NONDESTRUCTIVELY DISPLAY off)
+
+    [NONDESTRUCTIVELYis a keyword that does not require or allow a value;
+     DISPLAY is a keyword that requires a value]
+
+3D. Nicknames and bare lists should be allowed after any keyword, if appropriate.
+
+Right now, adherance to this principle is spotty. For example:
+
+   (GET-ELEMENT (from to direction) FROM all4312)
+
+works. GET-ELEMENT interprets the value of FROM as the name of a gene
+and translates it into a frame. But this ability has been implemented
+or not individually for each function, and many functions don't have
+it.
+
+==================================================================
+
+4. UNIFORM FEEL OF LANGUAGE - Behavior of functions
+
+Examples:
+
+4A. If a function returns a list of results if given a list as input,
+what if a list is not given? Is the result a single value or a list
+consisting of a single value? I think this should be global behavior
+modifiable by the user.
+
+4B. If a function returns a list of results if given a list as input,
+and one element of the input list gives a nonsensical result, then
+should the function:
+
+    1. Insert NIL into the result list?
+    2. Insert NIL into the result list and issue a warning?
+    3. Pass over the result, inserting nothing?
+    4. Crash with an appropriate error message?
+
+Different functions may have different default behavior, but users
+should be able to modify the result of all functions through the same
+mechanism. The keyword VERBOSE may play a part.
+
+4C. The base for strings, lists, arrays, and tables should be the same
+for all functions and setable by the user (I propose a default of 1,
+not 0).
+
+4D. (JP will be disgusted by this after all his warnings, but,...) I
+have not always taken care to insulate BioLite macros from the world.
+Most don't use GENSYM. Some that don't are susceptible to leakage of
+symbol names from the outside, leading to unpredictable results. This
+unfortunate situation needs to be fixed.
+
+==================================================================
+
+5. EASY CREATION OF NEW MACROS THAT ASSUME THE GENERAL FEATURES OF THE LANGUAGE
+
+Something like:
+
+  (DEFINE-BIKE-MACRO name-of-function [RELEASE-TO-ALL]
+      DOCUMENTATION 
+         "documentation string"
+      SYNONYMS 
+         list-of-alternative-names-of-function
+      ARGUMENTS
+         ((argument1 optional-default-value1 optional-list-of-legal-domains1)
+          (argument2 optional-default-value2 optional-list-of-legal-domains2)
+          ...)
+      KEYWORDS
+         ((keyword1 optional-default-value optional-list-of-synonyms)
+      BODY
+         [forms that defines what the function does after the arguments and
+          keywords have been evaluated and error-checked as standard for
+          the language]
+      )
+
+If RELEASE-TO-ALL is specified, then the macro is placed in the BIKE
+package and exported, UNINTERNING the users own symbol if necessary.
+Otherwise, the symbol is placed in the user's package.
+
+====================================================================
+
+6. MAKING TABLE NAMES AND INDEX LIST FUNCTION JOINTLY AS AN ATOM
+
+(Repeat of what I suggested in biolangdiscuss)
+
+Let my-table[index list] function predictably in the same way as a variable.
+For example:
+
+    (ASSIGN my-table[index list] = 47)
+    (PRINT my-table[index list])
+
+====================================================================
+
+
+
+For example, I want to make a table of occurrences for each letter in
+each column:
+
+    my-sequences
+          seq 1: A C G T G T G ... T T
+          seq 2: A C G T T T G ... G A
+          seq 3: A T G T G C G ... A G
+          seq 4: T T G G G T G ... C C
+   
+to produce:
+
+                 1 2 3 4 5 6 7 ... 59 60
+              A: 3 0 0 0 0 0 0 ...  1  1
+              C: 0 2 0 0 0 1 0 ...  1  1
+              G: 0 0 4 1 3 0 4 ...  1  1
+              T: 1 2 0 3 1 3 0 ...  1  1
+
+   (FOR-EACH sequence IN my-sequences
+        (FOR-EACH letter IN (SPLIT sequence)    ; wishful thinking: 
+                                                ;    Implied DO is automatically put in
+             FOR position FROM 1
+             DO (INCREMENT table[position letter])))
+
+   (DISPLAY table)
+
+This is too long to take in, and I decide to display what I think is
+the most interesting portion, the middle twenty columns:
+
+   (DISPLAY table[(20 .. 39) @])
+
+where @ functions as a wild-card (unfortunately, can't use *).
+
+To make it easier to manipulate the table slice:
+
+   (DEFINE interesting-table AS table[(20 .. 39) @])
+
+Syntax: () within the list of indices defines the slice to be taken
+and may consist of a collection of legal indices for that dimension,
+in any order, and/or a range, e.g.:
+
+    table[(1 15 4 (10 .. 20)) "A"]
+    table[(10 .. 20) "A"]
+    table[((10 ..20)) "A"]        synonymous with previous
+
+====================================================================
+
+8. UNIFORM SYNTAX FOR ASSIGNMENTS IN LOOPS AND FUNCTIONS
+
+Arguably, the biggest hurdle for new programmers is the concept of
+loop. BioLite tries as hard as it can to shield the users from loops,
+but so long as users don't confine themselves to preconceived
+capabilities, there is no escape.
+
+One major difficulty is Lisp's assortment of ways to define variables:
+
+ SETF SETQ LET AS WITH
+
+each with their own syntax. I propose something like this:
+
+(DEFINE-LOOP
+   [iteration specifications]
+   INITIALIZE
+      (ASSIGN local-variable1 = value)
+      (ASSIGN local-variable2 = value) 
+   SET
+      (ASSIGN local-variable3 = value)
+      (ASSIGN local-variable4 = value) 
+   BODY [or DO]
+      [forms]
+   )
+
+(DEFINE-FUNCTION name-of function [RELEASE-TO-ALL]
+   DOCUMENTATION 
+       "documentation string"
+   SYNONYMS 
+       list-of-alternative-names-of-function
+   ARGUMENTS
+       ((argument1 optional-default-value1 optional-list-of-legal-domains1)
+        (argument2 optional-default-value2 optional-list-of-legal-domains2)
+          ...)
+   KEYWORDS
+       ((keyword1 optional-default-value optional-list-of-synonyms)
+   INITIALIZE
+      (ASSIGN local-variable1 = value)
+      (ASSIGN local-variable2 = value) 
+   SET [here equivalent to INITIALIZE]
+      (ASSIGN local-variable3 = value)
+      (ASSIGN local-variable4 = value) 
+   BODY [or DO]
+      [forms]
+   )
+
+This lets users do everything with just one form of assignment:
+ASSIGN.  One benefit is that users can build loops and functions after
+trying out the forms one by one:
+
+(DEFINE-LOOP
+   [iteration specifications]
+   INITIALIZE
+      (FORMS (27 .. 29))
+   SET
+      (FORM 33)
+   BODY
+      (FORMS 34 37 38 39))
+
+and similarly with a function.
+
+====================================================================
+====================================================================
+====================================================================
+
+JP.  08/20/05
+
+
+JP's DESIGN NOTES, WISH LIST, ETC.
+
+
+I.  IMPLICIT MAPPING.
+
+Is there any good reason for many standard functions not to implicitly map?
+E.g,
+
+(+ '(1 2 3) 4) --> (5 6 7)
+(+ '(1 3 5) '(5 7 9)) -> (6 10 14))
+(+ #(1 2 3) 4) -> #(5 6 7))
+
+What about
+
+(+ '(1 2 3) '(3 4)) --> (4 6) or is it an error?
+
+There are functions that cannot implicitly map without more information,
+because they already operate on sequences.  LENGTH is our canonical example.
+But any function that operates on numbers, characters or symbols could
+in principle map implicitly.
+
+II.  LOOP
+
+The biggest problems with LOOP are
+
+      -- No way to iterate over a generic sequence.  And the same
+construct should be able to loop over a hash table, and the symbols
+of a package, perhaps.  ((Advanced: No way to iterate over an object of your
+own creation using a method.))
+      -- The confusion with WITH, FOR and AS.
+      -- The unintelligble error messages that result from syntax problems.
+      -- The lack of an implicit DO.
+
+Side note: A problem with FOR-EACH as opposed to LOOP is that you can say
+
+(FOR-EACH until (hell-freezes-over) do (blah))
+
+One aspect of the graphical language that could serve as a test and would
+be extremely useful would be to write a 'LOOP' assistant with all the funky
+colored boxes, whiz-bang help, etc.
+
+III. EVALUATION and QUOTE
+
+Why does Lisp insist on trying to evaluate lists that can't be 
+evaluated?  E.g., why isn't
+
+(mapcar '+ (1 2 3) (4 5 6))
+
+perfectly acceptable?  Is this not a throwback to some pre-Common Lisp
+lisp that allowed other things to be in function position, or even allowed
+you to
+
+(defun 2 (x) (+ x 5))
+
+?
+
+Why shouldn't any list that cannot be interpreted as a function, macro
+or special-form application recursively evaluate all its elements
+instead of blowing up?
+
+(let ((x 10))
+  (second (1 (+ 3 x) 10))) --> 13
+
+(let ((x 10))
+  (second '(1 (+ 3 x) 10))) --> (+ 3 x)
+
+(let ((x 10))
+  (second (1 '(+ 3 x) 10))) --> (+ 3 x)
+
+What if we say we can do this (where PI is a defconstant)
+
+(list (pi 4 1.0)) --> (3.141492 4 1.0)
+
+And suppose we define a universe of constants, say, the name of all the genes,
+proteins, organisms.  Now we have lists
+
+(sll1023 sll1034 sll1035)
+
+that don't need to be quoted to prevent evaluation.
+
+This gets into issues of not allowing any symbol to have more than one
+meaning (aka Lisp 1), vs standard lisp semantics of allowing LIST to
+mean a function and the name of a local variable and a type, etc.
+But what if we just don't allow constants to be used otherwise (except T,
+which is a type).
+
+What kind of horrible semantics troubles do we run into?
+
+
+IV.  COUPLING OF LANGUAGE AND ENVIRONMENT
+
+The language we are considering could be seen as very tightly coupled
+not only to Biology, but to the Weblistener environment and even to
+the particular set of organisms it happens to be operating on.  While
+this may in fact be a good thing we want to keep the distinctions in
+mind.  It's probably not correct to design a language for
+cyanobacteriologists alone.  It may be correct to design a language
+assuming you'll have browser and hyperlink capabilities, I don't know.
+
+We may want to define the language such that there is no such thing as the
+equivalent of a .fasl file.  Code is always compiled as its loaded, assuming
+it is stored in files.  (We can also store code in frames).
+
+
+V.  EFFICIENCY
+
+It might be theoretically interesting to define the perfectly usable
+language, but if that language can only be executed at a cost of 100 -
+1000 times that of Lisp it is almost certainly a useless exercise.  A
+factor of 10-20 is probably acceptable.
+
+It would be a very bad mistake, IMHO, to design the language such that
+straight Lisp could not be embedded directly and trivially.  We
+neither can, nor should we, nor do we have money to, reimplement most
+or all of Common Lisp.
+
+
+VI.  RESOURCES
+
+We have significant constraints on the amount of effort that can be put
+into the language design and implementation.  We also have to do a number
+of other tasks.  An infinitely desireable language will take an infinite
+amount of time and money.  And even then many people will claim it sucks.
+
+
+VII.  USERS AND THEIR NEEDS
+
+The language will be a tenth as useful as it might be unless we have some
+sort of friendly web-based editing environment.
+
+
+VIII.  DOCUMENTATION, etc.
+
+The primitives of the language should be self-documenting, in the sense
+that web pages, examples, argument list presentations, blah blah blah
+should all be computable from the source.  One way of looking at it is
+that processing the source creates a frame that holds all this information
+in persistent store.
+
+==================================================================
+
+9. NATURAL LANGUAGE HELP FACILITY
+
+More often than not, new users have only the vaguest notion of what they 
+want to do. Or, they can explain in biological terms what they want, but
+not in a way that uses *BioLingua functions. How can they learn how to 
+use the resource to answer their question?
+
+In many commercial programs, you can type in a natural looking sentence
+like "I want to sort my data by the second column" and... well I just 
+tried this in Word and got a list of links, one of which was useful (the
+to sorting traditional Chinese text was not). I can't imagine that 
+a single pass would give the user much help, no matter how clever the
+parser was, but perhaps through a series of interactive queries the
+user could be directed to help screens that are appropriate. Of course,
+those help screens would need to exist, another job for highly 
+intelligent slave labor.
+
+So my wish is that an interactive help facility exist, powered by
+a biology-cognizent language parser better than anything I've ever
+seen (though I admit I've not seen the fruits of Richard's efforts).
+My related wish is that help screens exist aiding users in accomplishing
+common tasks.
+
+==================================================================
+
+*** Jeff E Sep 16, 2005
+
+10. INTUITIVE PATTERN MATCHING SYNTAX
+
+As JP makes clear again and again, the CL-PPCRE pattern-matching
+syntax (the part taken from Perl), is noise. If so for him, how much
+more so for those without prior exposure! (Unless you take the view
+that each additional exposure increases the degree of loathing).
+
+I believe it would not be difficult to create a map of a more
+intuitive syntax onto CL-PPCRE syntax, so that the input patterns
+would be intelligible to the average user, but the function accepting
+them would need to do no more than some simple parsing before handing
+the task over to CL-PPCRE.
+
+Here's what I have so far:
+
+                  EXAMPLES
+
+PROBLEM: Recognize social security numbers
+
+OLD:
+    "\\d{3}-\\d{2}-\\d{4}"
+or  "\d\d\d-\d\d-\d\d\d\d"
+
+NEW:
+    "#{3}-#{2}-#{4}'
+or  "###-##-####"
+   - - - - - - - - - -
+
+PROBLEM:
+    ;;; Parse Genbank sequences of the format
+    ;;;    1 gttaacggtg ctttattgat ttttcaggtg tattcttagg taattagttt ttagtttttt
+          61 gttattccgg cattgggtag gggaagggag atgatcgtga cacaagataa ggccctagca
+            ...
+
+OLD: 
+    "\\s*\\d+ ([acgt ]+)"
+
+NEW:
+    " ...#... <<[acgt ]...>>"
+   - - - - - - - - - - -
+
+PROBLEM:
+    ;;; Find palindromic sequence separated by gap of length n
+    ;;; Example (n = 3): GAGTCGGATTTTCCGAA
+    ;;;            --->       GGATTTTCC
+    ;;;                       <<<...>>>
+    ;;;       since the double stranded form is:
+    ;;;                       -->   -->
+    ;;;                  GAGTCGGATTTTCCGAA
+    ;;;                  CTCAGCCTAAAAGGCTT
+    ;;;                       <--   <--
+
+    ; code presumes existence of biolite INVERSION-OF,
+    ; which takes a sequence to its complementary strand
+    ;   e.g. (INVERSION-OF "GGATT") --> "AATCC"
+
+OLD (actually Perl, since I don't know enough CL-PPCRE): 
+   /(([GATC]+).{$n}(??{inversion-of $2}))/;
+
+NEW:
+   "([GATC]...)*{<n>}<(INVERSION-OF <1>)>"
+
+    ; any number of nucleotides
+    ; followed by a gap (any nucleotide) of length n
+    ; followed by the inversion of the first group of nucleotides
+   - - - - - - - - - - -
+
+                       SYMBOLS and CONVENTIONS
+
+CHARACTER CLASSES:
+      New       Old       Explanation
+   ---------  --------  ------------------------------------
+       $         \w      Word character [a-zA-Z0-9_] (perhaps add - to the list?)
+       #         \d      digit [0-9]
+       *         .       anything except newline
+     [   ]      [   ]    arbitrary set, e.g. [ACGT]
+     [~  ]      [^  ]    excluded set, e.g. [~ACGT] (e.g., to look for typos in sequences)
+      ~$         \W      Anything except a word character
+      ~#         \D      Anything except a digit
+
+
+REPETITION:
+      New       Old       Explanation
+   ---------  --------  ------------------------------------
+      ?          ?       Zero or one iteration
+      ...        *       Maximum possible of repetitions from 1 to infinity
+      ..         *?      Minimum possible of repetitions from 1 to infinity
+      ?...       +       Maximum possible of repetitions from 0 to infinity
+      ?..        +?      Minimum possible of repetitions from 0 to infinity
+      {n}        {n}     n repetitions
+      {m..n}     {m,n}   Anywhere from m to n repetitions, inclusive
+      {m..?}     {m,}    At least m repetitions
+      {?..n}     {0,n}   At most n repetitions, equivalent to {0..n}
+
+POSITIONING:
+      New       Old       Explanation
+   ---------  --------  ------------------------------------
+     <BEGIN>      ^      Fixes pattern to begin at start of string
+      <END>       $      Fixes pattern to terminate at end of string
+
+SPECIAL:
+      New       Old       Explanation
+   ---------  --------  ------------------------------------
+      (  )      (  )     Logical grouping
+      << >>     (  )     Capture values
+      <var>      $var    Interpolate variable
+       <n>       $n      Backwards reference to captured value
+      <( )>    (??{ })   Function call returning pattern
+        |         |      Or within a logical grouping, e.g. (s|es)
+    ` or \\       \      Escape character, e.g. '$ to get a literal $
+                             (of course, '" and '\ won't work)
+
+
+Acid test: (the dreaded noise to define table[indices])
+
+OLD:
+      /([$delimiter]|^)([^$delimiter]+)\\s*\\[(.*?)\\]/
+                          table-name         [indices]
+NEW:
+      "([<delimeter>]|<BEGIN>)<<~<delimeter>...>> ?...'[<<*..>>']"
+                                  table-name           [ indices]
+
+Still pretty complicated. Perhaps use spaces purely for formatting,
+and use underscore to represent spaces, e.g.:
+
+      "([<delimiter>]|<BEGIN>)      ; Precede by delimiter or start of string 
+                                    ;    [this specification isn't necessary]
+       <<~<delimiter>...>>          ; Capture table-name = contiguous legal characters
+       _?...                        ; Follow by any number of spaces
+       '[                           ; Square bracket
+          <<*..>>                   ; Capture any number of characters
+                  ']"               ; Until first end bracket
+
+
+Well, still not exploding with meaning, I confess, but: 
+
+    (a) It's a bit of a complex thing to try to do;
+    (b) String parsing (as opposed to sequence parsing) is not the main
+        point of the language;
+    (c) The code is still a darn sight simpler than the Perl version.
+
+The best solution is graphical.
+

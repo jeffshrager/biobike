@@ -1,0 +1,589 @@
+<title>BioBike: Lisp Functions</title>
+
+<p>
+
+<h2>
+BioBike: Lisp Functions -- This is what makes Lisp special!
+</h2>
+
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction: What is a function?</a>
+<a href=#firstclass><li>Functions are First Class!</a>
+<a href=#metafunctions><li>Meta-Functions do things with other functions!</a>
+<a href=#Lambda><li>Lambda creates anonymous functions</a>
+<a href=#myownmeta><li>Writing your own meta-functions</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction: What is a function?</h2>
+
+This lesson discusses the concept of "functions" in Lisp. This is
+probably the hardest, and most important lesson in the whole
+series. If you study it carefully, and understand it, you will be on
+the path toward true enlightenment (at least as far as programming
+goes....)
+
+<p>
+
+So, what <i>is</i> a function?
+
+<p>
+
+A function is just a little piece of code that does a little thing.
+
+<p>
+
+The plus sign (+) is a function that adds things together and returns the result:
+
+<pre>
+>> (+ 3 4)
+:: 7
+</pre>
+
+Of course, you can create your own functions too:
+
+<pre>
+>> (defun pi-times (n) (* n 3.14159))
+:: PI-TIMES
+>> (pi-times 2.71828)
+:: 8.5397215
+</pre>
+
+<i>Okay, that wasn't so hard! Is that all there is to enlightenment?</i>
+
+<p>
+
+Well, pretty close, actually, but it's really a way of thinking that
+we're talking about, not just what you do, precisely.
+
+<p>
+
+<p><hr><p>
+<a name=firstclass>
+<h2>Functions are First Class!</h2>
+
+Functions in Lisp have a sort of life of their own. In computer
+jargon, they are called "first class objects", which means that in
+addition to using them, like we did just above when we used the +
+function, or creating new ones like pi-times, you can
+<i>manipulate</i> functions -- pass them around, apply them to things
+under program control, and even create new functions in the middle of
+running programs!
+
+<p>
+
+<i>Huh?</i>
+
+<p>
+
+Okay, let's start with something simple. Suppose that you had a whole
+series of numbers that you wanted to do the same thing to each one.
+Here are some numbers:
+
+<pre>
+>> (setf my-numbers '(1 3 5 7 9))
+</pre>
+
+Now, suppose that you wanted to do pi-times to each one of them.  One
+way to do it would be to write a loop and call pi-times over and over,
+like this:
+
+<pre>
+>> (loop for n in my-numbers
+>>       collect (pi-times n))
+:: (3.14159 9.42477 15.707951 21.99113 28.274311)
+
+</pre>
+
+Or, you could write a recursive function that did the same thing (sort
+of like the factorial function from another lesson, only it collects
+up the results):
+
+<pre>
+>> (defun pi-times-all (list)
+>>    (cond ((null list) nil)
+>>          (t (cons (pi-times (first list))
+>>                (pi-times-all (rest list))))))
+
+>> (pi-times-all my-numbers)
+:: (3.14159 9.42477 15.707951 21.99113 28.274311)
+</pre>
+
+The point is that you want to take some function, in this case pi-times
+and apply it over and over to every number in my-list.
+
+<p>
+
+Lisp has a special function for applying the same function to every
+element in a list (and returning a list of the results, which is what
+we're after). Let's see it in action first, and then examine how we
+use it:
+
+<pre>
+>> (mapcar #'pi-times my-numbers)
+:: (3.14159 9.42477 15.707951 21.99113 28.274311)
+</pre>
+
+All that mapcar does is the exact same thing that either the
+collecting loop or the recursive function did above, but notice that
+there's a weird new piece of syntax: #' (called "pound quote"). #' is
+a function constructor -- it takes whatever is after it, and gets the
+function associated with it. If you do #'pi-times separately, you'll
+get this weird-looking thing:
+
+<pre>
+>> #'pi-times
+:: #&lt;Function PI-TIMES&gt;
+</pre>
+
+Now, let's think about what that MAPCAR did up there, because if you
+think about a little, it did something pretty amazing -- we gave it an
+arbitrary function (pi-times, in this case), and it applied that
+function to every element in the list. Think about that for a
+moment.... <i>A function that takes a function and applies it.</i>
+
+<p>
+
+<i>So, you mean, we could have given mapcar <b>any</b> function?</i>
+
+<p>
+
+That's right -- any function that expects just one argument. Let's try
+some others:
+
+<pre>
+>> (mapcar #'- my-numbers)
+:: (-1 -3 -5 -7 -9)
+
+>> (mapcar #'sqrt my-numbers)
+:: (1.0 1.7320508 2.236068 2.6457512 3.0)
+
+>> (mapcar #'list my-numbers)
+:: ((1) (3) (5) (7) (9))
+
+>> (mapcar #'oddp my-numbers)
+:: (T T T T T)
+
+;;; [ODDP returns true (T) if the number it's given is odd.]
+
+</pre>
+
+<p><hr><p>
+<a name=metafunctions>
+<h2>Meta-Functions do things with other functions!</h2>
+
+
+So, mapcar is a sort of "<i>meta</i>-function" -- it's a function that takes
+another function, applies it to every element in a list, and returns a
+new list of the results of the applications.
+
+<p>
+
+Now, maybe that doesn't seem too weird to you, in which case either
+you're not paying attention, or you may already have reached The Zen
+of Lisp -- true enlightenment.... (I'm guessing the former! :-) 
+
+<p>
+
+So, let's look at some other meta-functions:
+
+<p>
+
+Another common meta-function is SORT. Sort takes a list, and ... well,
+sorts them. (Duh!) Sort needs to know <i>how</i> to sort them --
+low-to-high, or high-to-low, so one of its arguments is the
+<i>function</i> that compares two numbers, and tells sort which way to
+arrange them.
+
+<p>
+
+Watch (and notice the #' use!):
+
+<pre>
+>> (sort '(1 3 2 4 3 5 4 6) #'>)
+:: (6 5 4 4 3 3 2 1)
+
+>> (sort '(1 3 2 4 3 5 4 6) #'<)
+:: (1 2 3 3 4 4 5 6)
+
+;;; Here's a good one:
+
+>> (sort '("jeff" "sue" "dave" "andy" "walt") #'string> )
+:: ("walt" "sue" "jeff" "dave" "andy")
+
+>> (sort '("jeff" "sue" "dave" "andy" "walt") #'string< )
+:: ("andy" "dave" "jeff" "sue" "walt")
+
+</pre>
+
+You probably don't really see why we need this; can't sort just figure
+out that what it's sorting is a set of numbers, and use > or <, or
+that it's sorting a set of strings and use string> or string< ....
+couldn't sort just "do the right thing"? Why couldn't we just have a
+sort-up and a sort-down that just "do the right thing"?
+
+<p>
+
+Yes, we (or, rather, the designers of Lisp) could very easily have
+done that, but let's take a slightly more complex case. Suppose that
+we have a set of genes... Let's get a small set just to play with:
+
+<pre>
+>> (setf genes (first-n 5 (#^genes s6803)))
+:: (#$S6803.slr0612 #$S6803.slr0613 #$S6803.sll0558 #$S6803.sll1214
+    #$S6803.sll1213)
+</pre>
+
+If you examine these, you'll see that they have many properties, like
+a "From" and "To" property that indicates where they are in the
+genome, and a property that tells us how many transmembrane spans
+there are, and many other properties. Also, there are all kinds of
+functions that you can apply to genes, for example to get their
+sequence:
+
+<pre>
+>> (extract-sequence (first genes))
+:: "TTGATTGCGTTGAATAAAACTCCCCAAACCATTGTTTTTTACAAA..."
+</pre>
+
+Let's say that we wanted to sort these genes (or <i>all</i> genes) by
+some weird property, like, say, the sequence length.
+
+<p>
+
+One way to do this might be to use mapcar to get the sequences, and
+then mapcar again to get the length of the sequences, like this:
+
+<pre>
+>> (mapcar #'extract-sequence genes)
+:: 
+("TTGATTGCGTTGAATAAAACTCC..."
+ "ATGTCCTATCTAATCGCTGTGGT..."
+ "ATGTCTGATAATTTGACCGAACT..."
+ "ATGGTTAATACCCTCGAAAAGCC..."
+ "ATGCTTTCCCTAGAAAATCAACG...")
+
+>> (mapcar #'length *)
+:: (693 522 702 1077 939)
+
+;;; Which, of course, is just the same as:
+
+>> (mapcar #'length (mapcar #'extract-sequence genes))
+:: (693 522 702 1077 939)
+</pre>
+
+A slightly nicer way to do that is to make a function that gets the
+length of a gene sequence:
+
+<pre>
+>> (defun genelen (gene) (length (extract-sequence gene)))
+
+And mapcar that:
+
+>> (mapcar #'genelen genes)
+:: (693 522 702 1077 939)
+
+</pre>
+
+(Not only is this nicer, but it's more efficient because it doesn't
+have to run down the list twice!)
+
+<p>
+
+Then we could use this function to sort the list of genes, just like we did above:
+
+<pre>
+>> (sort * #'>)
+:: (1077 939 702 693 522)
+</pre>
+
+...Hmmmm...Okay, but wait a minute... how are we going to get back to
+the genes themselves -- we don't know how sort rearranged
+them.... This is going to be a bit of a problem.
+
+<p>
+
+Think about it for a minute, and then come back....
+
+<p>
+
+Figured out a way to do it yet?  Maybe so, but I'll bet it's not as simple as this:
+
+<pre>
+>> (sort genes #'> :key #'genelen)
+:: (#$S6803.sll1214 #$S6803.sll1213 #$S6803.sll0558 #$S6803.slr0612
+    #$S6803.slr0613)
+
+[It's right, you can check it out from the above lengths, if you like.]
+</pre>
+
+I can hear you thinking: <i>WHOA! What the hey was that?!</i>
+
+<p>
+
+This time we gave SORT <i>two</i> functions. The first one was the way
+to sort (by #'> -- that is, so that the largest things are first). The
+second function is indicated by the optional argument :KEY. :KEY tells
+sort <u>what function to use on each element in the list in order to
+get the value that will be used to sort</u>. That is, we told sort to
+take each gene, get it's sequence length (using our function GENELEN)
+and then sort the genes based upon the #'> function applied to those
+values (i.e., the gene lengths).
+
+<p>
+
+The :KEY argument to sort is <i>very</i> useful! Let's say, for
+example for some weird reason you want to alphebetize the genes by
+their sequence:
+
+<pre>
+>> (sort genes #'string< :key #'extract-sequence)
+:: (#$S6803.sll1213 #$S6803.sll1214 #$S6803.slr0613 #$S6803.sll0558
+    #$S6803.slr0612)
+
+[Check this yourself!]
+</pre>
+
+<p><hr><p>
+<a name=Lambda>
+<h2>Lambda creates anonymous functions</h2>
+
+So that's the first step along the path to Lisp Nirvana. Now let's
+take the second step.
+
+<p>
+
+One thing that you might well ask is: Do I have to create my functions
+separately, and then pass the names to mapcar and sort all the time,
+like we did with pi-times and genelen? What if I just want to do a
+<u>one-time-only</u> complex calculation, and apply that?
+
+<p>
+
+There are a number of answers to this, some simple and some
+complex. (The simplest answer is: You can always do it by creating a
+separate function, so if you don't get what's about to come next,
+don't worry too much.)
+
+<p>
+
+There <i>is</i> a way to create what are called "anonymous functions"
+-- that is, functions that don't have names -- that are just created
+for one-time use. The way that you do this is by using a special lisp
+function called <i>LAMBDA</i>. (Don't worry about <i>why</i> it's
+called lambda -- that's a very long and mostly irrelevant story.) Just
+like #' makes functions, lambda makes functions too, but lambda
+doesn't need the name of the function -- it can just make a function
+<i>in place</i>!
+
+<p>
+
+Let's revisit some of our examples using LAMBDA instead of having to
+create functions.
+
+<p>
+
+Here's how you might do PI-TIMES without having to create a separate
+function:
+
+<pre>
+>> (mapcar #'(lambda (n) (* 3.14159 n)) my-numbers)
+:: (3.14159 9.42477 15.707951 21.99113 28.274311)
+
+Notice the anonymous Lambda function:
+
+   (mapcar #'(lambda (n) (* 3.14159 n)) my-numbers)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+</pre>
+
+And here's our gene length sort, but without having to create the
+genelen function:
+
+<pre>
+>> (sort genes #'> :key #'(lambda (gene) (length (extract-sequence gene))))
+:: (#$S6803.sll1214 #$S6803.sll1213 #$S6803.sll0558 #$S6803.slr0612
+    #$S6803.slr0613)
+</pre>
+
+"Lambda functions" (i.e., anonymous functions) look <i>exactly</i>
+like normal functions, but the don't have names. They have some other
+useful properties that we'll see in a moment.
+
+<p>
+
+(By the way, sometimes you'll see lambda without #' It turns out that
+you don't need to use #' if you have lambda, but we do it as a
+convention, and it makes it easier to see where the functions are in
+reading through the code.)
+
+<p>
+
+Cool! So, see, you don't need to create a function every time you need
+to do something fancy, just rev one up on the fly, using Lambda!
+
+<p><hr><p>
+<a name=myownmeta>
+<h2>Writing your own meta-functions</h2>
+
+Above we used the meta-functions MAPCAR and SORT. There are lots of
+built-in meta-functions, but you can also write your own; that is,
+write a function that takes another function as an argument, like
+MAPCAR takes a function to map over the argument, and SORT takes a
+sorting function and a key function.
+
+<p>
+
+<i>Why</i> (you might well ask) <i>would I want to write my <u>own</u> meta
+function?!</i> 
+
+<p>
+
+Good question. There are lots of situations where this is extremely
+useful. A common example is where you want to write a function that
+operates on frames. Recall from previous lessons that the slots in
+frames are accessed by accessors, like #^genes, or #^organism. These
+are <i>functions</i>, which is why you can write:
+
+<pre>
+>> (#^genes s6803)
+:: ...long list of genes...
+</pre>
+
+Let's say that we wanted to write a function (here just in the sense
+of DEFUN'ing it) that operates on an arbitrary slot of a
+frame. Suppose, for example, that selected genes based on some
+calculated property, say the length, or the GC v. AT ratio, or some
+such thing. We saw an example of that above when we sorted by length
+(using SORT and passing in a lambda function that computed the length
+of the sequence).
+
+<p>
+
+Basically what we want to do is:
+
+<pre>
+  (loop for gene in list-of-genes
+        when (THE-GIVEN-TEST gene)
+        collect gene)
+</pre>
+
+When a function is executed, we say that the function is
+<i>applied</i> to its arguments. For example, when you do: (+ 1 2) and
+get 3, the #'+ function is applied to a list of two arguments: 1 and 2
+(or, in list form: '(1 2)). Another way to say this is that the
+function #'+ is <i>called</i> with its two arguments. Unsurprisingly,
+Lisp has functions that do both of these things, called APPLY and FUNCALL:
+
+<pre>
+>> (+ 1 2)
+:: 3
+
+>> (apply #'+ '(1 2))
+:: 3
+
+>> (funcall #'+ 1 2)
+:: 3
+</pre>
+
+Which one you use (APPLY or FUNCALL) depends on whether you have all
+the arguments, or you have a list of arguments, but generally speaking
+it doesn't matter -- whichever one is convenient.  
+
+<p>
+
+Given this, we can translate the above code to make it a little more
+specific:
+
+<pre>
+  (loop for gene in list-of-genes
+        when (funcall THE-GIVEN-TEST gene)
+        collect gene)
+</pre>
+
+And so here's our function:
+
+<pre>
+>> (defun get-genes (organism test)
+>>   (loop for gene in (#^genes organism)
+>>         when (funcall test gene)
+>>         collect gene))
+</pre>
+
+Note that the argument TEST will be given either a #'... or #'(lambda
+...) form, just like we did with SORT or MAPCAR, and that function
+will be expected to accept just one argument, run the test, and return
+T or NIL. (Recall that anything but NIL counts the same as T.)
+
+<p>
+
+Examples using our new function (pay careful attention to when we use
+#'... when #^... (only on slot accessors!) and when we need
+#'(lambda...)):
+
+<pre>
+;;; Find the genes in Synechococcus pcc. 6803 that start at a position
+;;; greater than 3.5M nt into the genome.
+
+>> (get-genes s6803 
+>>      #'(lambda (gene) 
+>>            (> (#^from gene) 3500000)))
+:: ...a long list of genes...
+;;; (Check these by inspecing the FROM slots of a few of them!)
+;;; (Actually, this is a little silly because these genomes are 
+;;;  circular, so position is a little arbitrary.)
+
+;;; Create a function that computes the GC/AT content of the nt 
+;;; sequence of a gene:
+
+>> (defun gc/at (gene)
+>>   (let* ((sequence (extract-sequence gene)))
+>>     (/ (count #\C sequence)
+>>        (1+ (count #\A sequence)))))
+;;; (The 1+ protects against division by zero.)
+
+
+;;; Now use it to find genes with abnormally high (much greater than 1.0)
+;;; or low (much less than 1.0) gc/at content:
+
+>> (get-genes s6803 
+>>      #'(lambda (gene) 
+>>            (< (gc/at gene) 0.25)))
+:: ... list of genes ...
+
+;;; Inspect these genes. See anything interesting about them?
+
+</pre>
+
+Notice a pattern in the above: We have a function that does a
+calculation on a gene, and then we use either > or < and a value to
+compare. This suggests that we can simplify our function as follows:
+
+<pre>
+>> (defun get-genes-2 (organism calcfn comparefn limit)
+>>   (loop for gene in (#^genes organism)
+>>         as value = (funcall calcfn gene)
+>>         when (funcall comparefn value limit)
+>>         collect gene))
+
+;;; Now we can do the same thing more simply:
+
+>> (get-genes-2 s6803 #^from #'> 3500000)
+
+>> (get-genes-2 s6803 #'gc/at #'< 0.25)
+
+</pre>
+
+So, we've written our own meta-functions! Now what? Well, we'll see
+meta functions used over and over throughout these lessons... At least
+now you'll know what you're looking at, even if you don't ever
+actually write your own.
+
+<p><hr><p>
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>

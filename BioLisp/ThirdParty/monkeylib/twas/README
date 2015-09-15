@@ -1,0 +1,4 @@
+TWAS was Allegro Serve. Ultimately my goal is that this code will
+eventually contain a major refactoring/rewrite/whatever of
+(Portable)AllegroServe. In the meantime it's a place for me to throw
+various useful extensions to AllegroServe.

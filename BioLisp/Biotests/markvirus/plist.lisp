@@ -1,0 +1,7 @@
+((Date (2009 09 09))
+ (Completed T)
+ (Submitter ("Mark"))
+ (Sequencer ("Mark"))
+ (Organism-prefix "Mark.")
+ (Nicknames ("markv" "mark"))
+ )

@@ -1,0 +1,693 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001-2005 JP Massar, Jeff Shrager, Mike Travers              |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+
+<html><head><title>Interacting with the BioBike Web Listener</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Interacting with BioBike and some very simple biological computing</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2005 by The BioBike Team (contact
+<a href="mailto:jshrager@stanford.edu">Jeff Shrager (jshrager@stanford.edu)</a> for more
+information)</p>
+
+<p>
+
+To use BioBike, first fire up your favorite web browser.  Go to this
+URL: <a target=_blank
+href=http://www.biobike.org>www.biobike.org</a>. Select or scroll down
+to the "Servers" section, and select a server. We'll use the Demo
+server for everything in this section.
+
+<p>
+
+Once you agree to all the legalese and get to the demo server login
+page you'll choose a userid and optionally give your email
+address. (To use the main servers you must have a userid and password
+assigned to you. You can get on by emailing <a
+href="mailto:jshrager@stanford.edu">Jeff Shrager
+(jshrager@stanford.edu)</a>, or by clicking on the "Request a login
+name/password" link on the login page.)
+
+<p>
+
+Note that there are two buttons: [New Login], and [Previous
+Session]. For now let's use [New Login]. 
+
+<p>
+
+Once you've successfully logged in, you'll be talking directly to the
+BioBike <i>Web Listener</i>.  It's called a <i>Listener</i> because it
+"listens" to your commands and executes them.  
+
+<p>
+
+Aside from the buttons on the bottom, there are three basic parts to
+this page:
+
+<ul>
+<li>The top is the HISTORY/OUTPUT AREA, and extends all the way up the page.
+<li>The first (one line) text box is the COMMAND ENTRY BOX (also called the "ENTER" box)
+<li>The larger text box is the EXPRESSION ENTRY BOX. (also called the "EVAL" box)
+</ul>
+
+<p>
+
+The command entry (Enter) and expression entry (Eval) boxes do nearly
+the same thing.  Anything that you can type into one, you can type
+into the other, and it will work just the same way. The only
+differences are how many lines you can enter, and how you get the
+listener to evaluate what you've entered. To get commands that you've
+entered into the command entry box evaluated you hit the ENTER key
+<i>or</i> press the [ENTER] button on the right of the box.  To get
+what you type into the larger, expression entry box, evaluated you
+have to click on the [EVAL] button that's just underneath it.
+
+<p>
+
+There are a couple of good reasons for this seemingly weird
+replication of entry methods. First, sometimes you'll want to enter
+multiple lines and it's convenient to do that in the larger expression
+entry box. Also, you'll find out soon enough that when you are
+entering a complex expression, it's often convenient to test parts of
+it immediately, while you're formulating the more complex one. The
+twin entry box format of the BioBike Web Listener enables you to work
+on a large, complex expression for eventual evaluation in the larger
+(expression/Eval) box, while at the same time testing little pieces in
+the smaller (command/Enter) box. (There's some subtlty to actually
+doing this that we'll get to a bit later.)
+
+<p>
+
+Anyway, let's try some simple things from the previous tutorial:
+
+<p>
+
+Type:
+<pre>
+  >> (+ 1 2 3 4 5)
+</pre>
+into the command entry box and press ENTER (or click [Enter] -- same thing).
+<p>
+
+<font color="brown">
+(Don't enter the ">>" part; That's just there to show you
+what should be input.  Begin with the first open parenthesis!)
+</font>
+
+<p>
+
+Notice that in the output area you get both the command (prefixed with
+a number, as: "<1>>"...) and the result (prefixed by "::").  Notice
+also that both the "<1>>" and the "::" are hot (that is, you can click
+on them).
+
+<p>
+
+Try this: Clear the command entry box, and then click the <1>> link.
+It puts the command displayed there back into the command entry box.
+Edit it by changing some of the numbers, or maybe multiply them
+together instead of adding them by changing the '+' to a '*', and then
+<i>evaluate</i> your revised expression by hitting the ENTER key again.
+
+<p>
+
+Now you've got two evaluations in the history: <1> and <2>, and each
+one's result.
+
+<p>
+
+<i>This is the general interaction that you'll have with BioBike: You
+enter commands, and it evaluates them when you press ENTER.</i>  (In Lisp
+this is called the READ-EVAL-PRINT Loop, or REPL; Lisp was the first
+programming language to ever use this, way back in the 60's!)
+
+<p>
+
+Okay, let's do something a little more complex that requires the
+expression entry box. One of the most important BioBike constructs
+is the LOOP construct, which iterates (that is, does something a
+number of times over). To repeat something a specific number of
+times, you use this construction:
+
+<p>
+<pre>
+  (loop STUFF THAT CONTROLS THE LOOP
+        do (or collect)
+        STUFF TO DO EACH TIME THROUGH THE LOOP)
+</pre>
+<p>
+
+For example, type (or cut-and-paste) this into the expression (Eval)
+box:
+
+<p>
+<pre>
+  (loop for i from 1 to 10
+        do (print i))
+</pre>
+<p>
+
+Now press the [Eval] button.  Notice that you got the 10 numbers, one
+per line (because it did 10 separate PRINTs).  Then there's a NIL at
+the end. The last thing that appears when you evaluate an expression
+is always the <i>final result</i> of the expression itself -- in this case,
+NIL.  That is, the loop gave no result, it just printed out a bunch of
+numbers, and returned a list with no contents, i.e., "the empty list"
+or "nothing".  (NIL in Lisp mean "the empty list": NIL = ( ) = nothing
+between the parens = the empty list = a list with nothing in it!)
+
+<p>
+
+Clear the expression entry box and enter (or paste in) this
+expression:
+
+<p>
+<pre>
+  (loop for i from 1 to 10
+        collect i)
+</pre>
+<p>
+
+Eval it, as above.
+
+<p>
+
+Whereas the previous loop just printed out results and then gave us
+NIL as the final result (the empty list), this one actually gives you
+the results back as a list of the ten numbers!  There were two
+changes: we removed the print (so we don't see the ten numbers along
+the way), and we changed DO to COLLECT. DO does things; COLLECT does
+them and then collects the results into a list and gives that list
+back to us, which is what it did!
+
+<p>
+
+It's very important to understand the concept of the final result of
+an expression because this is how you combine expressions together in
+Lisp: By passing the final result of one function as the argument of
+the next.  Remember the recursive evaluation procedure from the last
+lesson? There we did:
+
+<pre>
+  >> (* (+ 1 2) (+ 3 4))
+  :: 21
+</pre>
+<p>
+<font color="brown">(Remember not to type the ">>" part.)</font>
+<p>
+That's exactly the same as doing:
+
+<pre>
+  >> (+ 1 2)
+  :: 3
+  >> (+ 3 4)
+  :: 7
+  >> (* 3 7)  ; (We've just used the result of the previous two evaluations here)
+  :: 21
+</pre>
+
+So, the final result (or, more simply, just: the result) of any
+expression can be passed to any other expression! 
+
+<p>
+
+For your convenience in testing things out, the result of the previous
+calculation is always in a temporary variable called * ("star", or
+"asterisk").  So, right now, * should have that list of ten numbers.
+Try entering just a single star (asterisk):
+
+<p>
+<pre>
+  >> *        
+</pre>
+<p>
+
+into the command field and hit enter.  It should be the same list of
+ten numbers (unless you typed something else in between).
+
+<p>
+
+[[Unfortunately, this is slightly confusing as the '*' in the
+expression (* 3 7) means multiply, but the '*' in a value position
+means: the last result.  For example:
+
+<pre>
+  >> (+ 1 2)
+  :: 3
+  >> *
+  :: 3   ; The last result
+  >> (* * *)
+  :: 9   ; Multiply the last result by itself (i.e., square it)
+</pre>
+
+<p>
+
+Let's save the result in a symbol's value and play with it a little.
+Here's a series of commands to try.  What does each give as the final
+result?
+
+<p>
+<pre>
+  >> (loop for i from 1 to 10
+           collect i)
+  >> (setf mylist *)    ; Remember SETF from the last lesson?!
+  >> (reverse mylist)
+</pre>  
+
+Remember the thing just above about passing results as arguments?
+Well, you could just as well have done this:
+
+<pre>
+  >> (reverse (setf mylist (loop for i from 1 to 10 collect i)))
+</pre>
+
+And it would have been the same as the above three commands!
+
+<p>
+
+Now let's do some slightly more biologically interesting things!
+
+<p>
+
+The first thing that we need to do is to get access to the knowledge
+about an organism.  Let's use Synechocystis (pcc 6803) as our example
+organism.  Before referring to knowledge about an organism, you may
+have to "load" it, using the LOAD-ORGANISM function.  We'll also save
+the result in a variable for easy reference:
+
+<p>
+
+<pre>  
+  >> (setf syn (load-organism "syn6803"))
+  ... maybe lots of junk printed out here ...
+  :: #$synechocystis_pcc6803
+</pre>
+
+<p>
+
+Notice that you got back a lot of uninterpretable output, and the
+final result is this odd looking thing with a #$ in front of it.  This
+is another data type (along with numbers, symbols, and lists), called
+a "frame", and is special to BioBike.  A frame is a unit of knowledge.
+We'll work a lot more with frames as we get into biological examples.
+
+<p>
+
+So, we've seen that load-organism loads up the knowledge for
+Synechocystis, and we got back this frame thing, which is now the
+value of the symbol SYN.  Now all you need to do to get to the
+organism knowledge is to use SYN.
+
+<p>
+
+Example:
+
+<p>
+<pre>
+  >> (length (#^genes syn))
+  :: 3721
+</pre>
+
+You can always also just type out the whole frame name, as:
+
+<pre>
+  >> (length (#^genes #$synechocystis_pcc6803))
+  :: 3721
+</pre>
+<p>
+
+These are equivalent, but typing SYN is a lot simpler, which is why we
+bound it above!
+
+<p>
+
+Notice another new piece of syntax that goes along with the #$ frame
+syntax: "#^" This translates to "The value of the slot..."  So
+(#^genes syn) translates to: "The value of the slot called 'genes' in
+the frame representing the knowledge about Synechocystis 6803."
+
+<p>
+
+Slot?  I'm lost! What's a slot?!  
+
+<p>
+
+Frames are little packets of knowledge, and the knowledge is stored in
+things called "slots."  For example, your address is a packet of
+knowledge that has a slot for the street you live on, the city, the
+zip code, the country, and all that sort of thing.  Like this, in an
+abstract sense:
+
+<pre>
+  #$my-address:
+      #^number 123
+      #^street "Construction lane"
+      #^city "Lost City"
+      ... etc ...
+</pre>
+
+If there really was a frame called #$my-address, you'd get to the name
+of the city by using the expression: (#^city #$my-address) -- that is:
+"The value of the slot called 'city' in the frame representing the
+knowledge about my address."; just like above we used (#^genes syn) to
+mean: "The value of the slot called 'genes' in the frame representing
+the knowledge about Synechocystis 6803."
+
+<p>
+
+Notice that in the output above, #$synechocystis_pcc6803 is a live
+(web) link. If you click on it you can browse the contents of the SYN
+organism's knowledge!  Go ahead and click it!  Notice that there are
+LOTS of slots and they have LOTS of things in them, including <i>other
+frames!</i>.  Specifically, each gene is another frame that you can
+click on to explore <i>its</i> slots, and the things that it connects
+to, etc.  Find the GENES slot of the #$synechocystis_pcc6803 frame and
+click on the first gene (#$S6803.slr0612).  Notice that the gene has a
+slot called "GO-ID", and that <i>its</i> value is a list with one
+entry: #$Go.LyaseActivity.  If you click on that you'll be browsing
+the Gene Ontology knowledge backbone.
+
+<p>
+
+Explore, but don't get too lost, and back up to the BioBike Listener
+eventually using repeated BACKs or the 'Listener' link under the page
+title.
+
+<p>
+
+<i>How did all that information get in there?!</i> When you call
+LOAD-ORGANISM it loads up all the gene information for that organism,
+and builds the association between the gene frames and the Gene
+Ontology backbone frames. You can do some pretty interesting stuff as
+a result of this association.  For example, suppose that you wanted to
+know which genes in Synechocystis are related to Potassium Ion
+Transport.  Let's try to find a frame related to that concept:
+
+<pre>
+  >> (all-similarly-named-frames "Potassium Ion Transport")
+  :: (#$Go.PotassiumIonTransport)
+</pre>
+
+There are a number of ways to search frames, depending on exactly
+what you're looking for and how you want to look for it.  Two other
+functions are GOOGLE-FRAMES and the very general SEARCH-FRAMES.
+Here's GOOGLE-FRAMES in action:
+
+<59>> (google-frames "Potassium" "Ion" "Transport")
+:: (#$GO.PotassiumIonTransport #$GO.RegulationOfPotassiumIonTransport
+ #$GO.PositiveRegulationOfPotassiumIonTransport
+ #$GO.PotassiumIon-TransportingAtpaseComplex
+ #$GO.PotassiumIonTransporterActivity
+ #$GO.NegativeRegulationOfPotassiumIonTransport)
+
+All of these results are Gene Ontology (GO) frames, and all seem relevant.
+Lets go (pun intended) with #$Go.PotassiumIonTransport and see what
+information it contains:
+
+<p>
+<pre>
+  >> (df #$Go.PotassiumIonTransport)
+
+:: Slots of #$Go.PotassiumIonTransport:
+#$go.related-genes: (#$S6803.slr1664 #$S6803.sll0536 #$S6803.sll0493
+                     #$S6803.sll0556 #$S6803.slr0773 #$S6803.sll0261
+                     #$S6803.slr1730 #$S6803.slr1729 #$S6803.slr1728
+                     #$S6803.sll0993 #$S6803.sll0640)
+#$Subclasses: (#$Go.PotassiumIonImport
+               #$Go.HighAffinityPotassiumIonImport)
+#$GO.DBXRefs: (("InterPro" "IPR000388") ("InterPro" "IPR000402")
+               ("InterPro" "IPR000844") ("InterPro" "IPR001475")
+	       <<<<< lots and lots of stuff here >>>>>
+               ("Pfam" "PF03185 CaKB") ...)
+#$isA:  (#$Go.MetalIonTransport #$Go.MonovalentInorganicCationTransport)
+#$GO.definition: "The directed movement of potassium ions (K+) into, out of, within or between cells."
+#$GO.prettyname: "potassium ion transport"
+#$GO.goid: 6813
+#$fName: "Go.PotassiumIonTransport"
+</pre>
+<p>
+
+DF (short for DESCRIBE-FRAME) is a function that describes a frame.
+Notice that a bunch of Synechocystis genes have been assigned to this
+GO category.
+
+<p>You might see something a little different here.  If other
+organisms have been accessed by other users (using LOAD-ORGANISM) then
+some of those organisms' genes might show up as well in the
+#$go.related-genes slot.  That's ok! These organisms have been
+coexisting for a billion years or so, and they can coexist in our
+database too!
+
+<p>
+
+Let's look at one of the genes a little closer:
+
+<p>
+<pre>
+  >> (df #$s6803.slr1730)
+  :: Slots of #$S6803.slr1730:
+#$Proteins: (#$S6803.pSlr1730)
+#$To:   1497878
+#$From: 1497306
+#$Direction: :F
+#$Encodes-Protein: T
+#$Start-Unknown: NIL
+#$End-Unknown: NIL
+#$BEST-HIT-ACCESSION: "ref|NP_488283.1|"
+#$BEST-HIT-ID-PCT: "74"
+#$ANNOTATION: "potassium-transporting P-type ATPase C chain"
+#$GENE-NAME: "kdpC" 
+<font color=red>#$GO-ID: (#$Go.HydrolaseActivity #$Go.IntegralToMembrane
+          #$Go.InnerMembrane #$Go.Transport
+          #$Go.Potassium-TransportingAtpaseActivity #$Go.Membrane
+          #$Go.PotassiumIonTransport)</font>
+#$cog-id: "COG2156"
+#$COG-GENE: "kdpC"
+#$COG-DESCRIPTION: "potassium-transporting ATPase C chain"
+#$ec-id: "3.6.3.12"
+#$EC-GENE: "kdpC"
+#$EC-DESCRIPTION: "potassium-transporting ATPase C chain"
+#$TRANSMEMBRANE-SPANS: "1"
+#$TRANSMEMBRANE-COORDINATES: "((8 30))"
+#$Contiguous-Sequence: #$S6803.chromosome
+#$organism: #$synechocystis_pcc6803
+#$Organism-Entity-Type: #$Gene
+#$fName: "S6803.slr1730"
+</pre>
+<p>
+
+This gives us lots of information, as well as confirming that this gene
+is indeed assigned to the Potassium Ion Transport GO category, and a
+bunch of other categories.  (The part I've highlighted in red, above.)
+
+<p>
+
+Let's try to find the Synechocystis gene for gluokinase, using yet
+another searching function:
+
+<p>
+<pre>
+  >> (find-frames "Glucokinase")
+  :: (#$Go.GlucokinaseActivity
+      #$Go.PhosphoglucokinaseActivity)
+</pre>
+<p>
+
+FIND-FRAMES returns a list of all the frames that contain the exact
+string we gave (whereas ALL-SIMILARLY-NAMED-FRAMES doesn't require an
+exact match).  It looks like the frame we want is called
+#$Go.GlucokinaseActivity.
+ 
+<p>
+<pre>
+  >> (df #$go.GlucokinaseActivity)
+:: Slots of #$Go.GlucokinaseActivity:
+#$go.related-genes: (#$S6803.sll0593)
+#$GO.products: (#$Mol.Adp #$Mol.D-Glucose6-Phosphate)
+#$GO.reactants: (#$Mol.Atp #$Mol.D-Glucose)
+#$GO.DBXRefs: (("EC" "2.7.1.2") ("MetaCyc" "GLUCOKIN-RXN")
+               ("InterPro" "IPR003836") ("InterPro" "IPR004654")
+               ("HAMAP" "MF_00524") ("Pfam" "PF02685 Glucokinase")
+               ("TIGR_TIGRFAMS" "TIGR00749 glucokinase"))
+#$GO.ECRef: (#$Ec.2.7.1.2)
+#$isA:  (#$GO.Reaction #$Go.CarbohydrateKinaseActivity
+         #$Go.PhosphotransferaseActivity,AlcoholGroupAsAcceptor)
+#$GO.definition: "Catalysis of the reaction: ATP + D-glucose = ADP + D-glucose 6-phosphate."
+#$GO.prettyname: "glucokinase activity"
+#$GO.goid: 4340
+#$fName: "Go.GlucokinaseActivity"
+</pre>
+  
+Notice that there's only one gene for Synechocystis in this category
+(which makes some sense), and that the GO frame actually has a lot of
+information at this point, including the reactants and products for
+the reaction for Glucokinase!  </pre> <p>
+
+<p>
+
+Now let's do something a little more interesting than just looking at
+knowledge, let's <i>use</i> it for something:
+
+<p>
+
+Try:
+
+<pre>
+  >> (df #$S6803.sll0593)
+</pre>
+
+Notice that one of the GO-ID entries in the GO-ID slot is
+#$go.glycolysis.  The Gene Ontology has information about all the
+processes in the organism.  Suppose that we want to find all the genes
+in Synechocystis 6803 that are involved in glycolysis.  We know how to
+do that already by carefully examining the slot names in the above,
+and using what we've learned:
+
+<pre>
+  >> (#^go.related-genes #$go.glycolysis)
+  :: (#$S6803.slr0752 #$S6803.sll1342 #$S6803.sll0745 #$S6803.sll0587
+     ...etc...
+</pre>
+
+But what if we wanted only the kinases involved in glycolysis?  We can
+get the kinases like this (you should be able to figure this out by
+yourself by now):
+
+<pre>
+  >> (#^go.related-genes #$go.kinaseactivity)
+  :: ... a really long list ....
+</pre>
+
+How can we find those that are on BOTH lists?  That is, the
+intersection of those lists?  Well, as it turns out, Lisp has an
+INTERSECTION function called, oddly enough, INTERSECTION, so let's use
+it:
+
+<pre>
+  >> (setf glycolytic-genes (#^go.related-genes #$go.glycolysis))
+  >> (setf kinases (#^go.related-genes #$go.kinaseactivity))
+  >> (intersection glycolytic-genes kinases)
+  :: (#$S6803.sll1196 #$S6803.sll1275 #$S6803.slr0394 #$S6803.sll0593
+     ... etc ...
+</pre>
+
+Et Voila! (As they say in France!)
+
+<p>
+
+Even more simply, we could have done this in the large expression box:
+
+<pre>
+  >> (intersection (#^go.related-genes #$go.glycolysis)
+                   (#^go.related-genes #$go.kinaseactivity))
+</pre>
+
+<p>
+
+By the way, watch your parens! If you fail to type enough closing
+parens, the Weblistener can sometimes help you -- e.g. if you type the
+above expression without the last paren the Weblistener will
+understand what you mean and when it prints out what you typed it will
+tell you you failed to close your expression:
+
+<pre>
+  >> (intersection (#^go.related-genes #$go.glycolysis)
+        (#^go.related-genes #$go.kinaseactivity) ; closing paren(s) added
+</pre>
+
+This can be a handy feature but can also get you into trouble if
+you've created a fairly complication expression which isn't quite
+right somewhere in the middle -- the Weblistener will close all your
+parens but it can't necessarily put them all in the right places!
+(You might notice the little box near the bottom labelled 'Matched
+paren:' which, when you type a right paren, shows you the matching
+left paren.  This can be very handy.)
+
+<p><hr><p>
+
+In later tutorials we'll see a lot more interesting calculations like
+this one, but this should be enough to give you a taste of the way one
+interacts with BioBike, and what it does.
+
+<p>
+
+Before leaving it's worth learning a few additional useful functions:
+
+<p>
+
+<b>(clear-history)</b> -- This function erases all of the inputs and
+output in the output area.  Once you do this, you won't be able to get
+any of those results back unless you've stored them in a variable (via
+setq or setf).  If you do (clear-history -N) [where N is some number,
+as: (clear-history -5)] it will erase the last N [last 5 in the given
+example] entries and results.  The [Clear History] button at the
+bottom the browser does the same thing as just typing (clear-history),
+and which clears everything except the very last thing you did. (It's
+often useful to do (clear-history -1) to get rid of something you just
+typed in that was wrong and made a mess.)
+
+<p>
+
+<b>(result N)</b> refers to the Nth output. For example (result 5) refers
+to the result of the 5th entry.  This is often useful if you forgot to
+save the result of a calculation. For example:
+
+<pre>
+  &lt;1>> (+ 1 2 3 4)
+  :: 10
+  &lt;2>> (+ 5 6 7 8)
+  :: 26
+  &lt;3>> (+ (result 1) (result 2))
+  :: 36
+</pre>
+
+<p>
+
+You can see which organisms are available by typing
+
+<pre>
+  >> (available-organisms)
+</pre>
+
+and you can determine which organisms have already been loaded by typing
+
+<pre>
+  >> *loaded-organisms*
+</pre>
+<p>
+
+Okay, we're done for now!  To logout, you can just close your browser, or you
+can type:
+
+<pre>
+  >> (logout)
+</pre>
+
+<p>
+
+<i>Logout now, and take a nap!</i>

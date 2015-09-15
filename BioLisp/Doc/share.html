@@ -1,0 +1,149 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2005 JP Massar, Jeff Shrager, Mike Travers           |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>Collaboration and code-sharing techniques</title></head>
+<body>
+
+<h3><center>Collaboration</center></h3>
+<p>
+The easiest way to collaborate with a fellow BioLingua user is to have both of you
+log in to one or the other of your accounts.  Coupled with a telephone, this 
+provides one of you with a way of watching what the other person is doing and
+the other of you with a way to do something and have your colleague watch what you 
+are doing while you are verbally explaining  what you are doing.
+<p>
+If you are the person in control of the action, once you've typed an expression
+and gotten a result back, tell your colleague to refresh his WebListener browser 
+window.  He will then immediately see what you've typed and the result. 
+<p>
+This technique is especially valuable when used for mentoring and can also be 
+used for remote debugging.  
+
+<h3><center>Sharing code</center></h3>
+<p>
+There are a number of ways of sharing code among BioLingua users.  These include
+simply using a function someone else has written, loading a file of BioLingua     
+code another user has saved, and using the 'module system.' 
+<p>
+Suppose you have written a function: 
+<pre>
+(defun magicword () "XYZZY")
+</pre>
+and you are enamored enough with this function that you would like someone else
+to use it.  That's very easy.  Suppose you are logged in with the user name
+FRED, and your buddy is logged in as BARNEY.  For BARNEY to use your MAGICWORD
+function, all he has to do is type: 
+<pre>
+(fred::magicword)
+</pre>
+This will work as long as a) You have defined the function and b) The BioLingua
+system has not been rebooted since you defined the function.  (If it has been
+rebooted, then in order for either of you to use it, you'll have to define it 
+again.)
+<p>
+A more permanent mechanism is to use the BioLingua editor to save your 
+functions to a file in your BioLingua home directory.  Then your colleagues
+can access this file themselves.  For instance, if you create a file
+called mystuff.lisp in your BioLingua home directory, then others can view that
+file by using the 'Browse BioFiles' link from the main WebListener page.
+One of the links on the page brought up by this link is a directory 
+called something like  '/home/visitors/' or '/home/biovcu/users/'.
+Clicking on this link will show a listing of the home directories of all 
+BioLingua users.  Further clicking in a similar vein will get your colleague
+to the mystuff.lisp file that you have saved.  
+<p>
+Another place to put files you want to share is the shared directory which 
+can also be accessed from the top-level links of the Browse BioFiles page.  
+<p>
+The best way to share code, however, is to use the BioLingua module system. 
+This allows you to save out a set of function and variable definitions to a 
+file in a format that will allow your colleagues to easily load and use the code
+you have written.  
+<p>
+<b>The Module System</b>
+<p>
+The module system is composed of the following functions:
+<ul>
+<li> LOAD-MODULE </li>
+<li> USE-MODULE </li>
+<li> CREATE-LOADABLE-MODULE </li>
+</ul>
+The CREATE-LOADABLE-MODULE function is what you use to create your module.
+You give it a module name, a list of functions, and optionally a list of 
+variables.
+<p>
+It then creates a file in the shared directory whose name is the name 
+you provided with a .lisp extension.  
+<p>
+To use this code, a colleague need only then type:
+<pre>
+(load-module :module-name)
+</pre>
+(The LOAD-MODULE command automatically calls the USE-MODULE function)
+<p>
+The reason this mechanism is preferable to all others is that it avoids
+what are known as 'package problems.'  These occur when two functions or
+variables are accidentally given the same name and then you try to
+have access to both at once.  The module mechanism goes out of its way to
+insure that these kinds of problems do not occur.  
+<p>
+Another thing the module mechanism does is to allow the user of a module
+not to have to prefix the names of functions he wants to use.  Recall above that
+your colleague had to type fred::magicword instead of just magicword.
+If you had used the module system, your colleague could have accessed the 
+magicword function without using the 'fred::' prefix.
+<p>
+<b> Module System Example </b>
+<p>
+Suppose you have defined two functions, F1 and F2, and a variable V1. 
+<pre>
+(defparameter V1 23)
+(defun F1 (x) (+ 1 x))
+(defun F2 (x) (+ 2 x))
+</pre>
+Now you wish to create a module with these definitions in it called 
+<b>fredstuff</b>.
+Executing
+<pre>
+(create-loadable-module :fredstuff '(F1 F2) :variable-list '(V1))
+</pre>
+will create the module, creating the file fredstuff.lisp in the shared 
+directory.  
+<p>
+Your colleague, Barney, then simply needs to type:
+<pre>
+(load-module :fredstuff)
+(use-module :fredstuff)
+</pre>
+Once he does this, he can then use F1, F2, and V1.  e.g., 
+<pre>
+(F1 3)
+4
+</pre>
+
+</body>
+</html>
+
+

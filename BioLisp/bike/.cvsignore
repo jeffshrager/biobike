@@ -1,0 +1,8 @@
+*.removed
+*.fsl
+*.fasl
+.hg
+*level.lisp
+*functions.lisp
+display-context-of.lisp
+load-private-organisms.lisp

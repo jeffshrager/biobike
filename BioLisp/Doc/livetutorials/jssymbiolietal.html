@@ -1,0 +1,727 @@
+<title>BioBike: Simulation of Regulatory Networks</title>
+
+<p>
+
+<h2>
+BioBike: Simulation of Regulatory Networks
+</h2>
+
+<p>
+<i>Copyright 2005 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction</a>
+<a href=#Representing><li>Representing the Network</a>
+<a href=#Basic><li>The Basic Algorithm</a>
+<a href=#Programming><li>Programming the Internal Functions</a>
+<a href=#Self-Degradation><li>Programming The Self-Degradation Algorithm</a>
+<a href=#Initializing><li>Initializing and Testing the Simulation</a>
+<a href=#exer><li>Exercises</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+This tutorial approximates the results of: <a
+href=http://www.pnas.org/cgi/content/abstract/0305937101v1
+target=_blank>Li, et al. (2004) The yeast cell-cycle network is
+robustly designed. PNAS, 101(14), 4781-4786</a>. The free full text of
+this paper is online through the above link.  For the rest of this
+tutorial, I'll call all the authors just "Li".
+
+<p>
+
+Briefly put, Li analyzed the "dynamical properties" of the molecular
+network comprising the "interactions between proteins, DNA, and RNA in
+living cells [that] govern various cellular functions." Specifically,
+they did a sort of simple simulation of the ON/OFF behavior of the
+components of the network that forms a subset of the cell cycle, and
+then did some meta-analyses to show that most of the trajectories
+through this network end up at the same, stable sequence. (Thus the
+argument that the cell cycle is "robust" -- meaning that no matter
+where you start off, you always end up in the same cycle.)
+
+<p>
+
+In this tutorial we're going to write Li's simulator. We won't
+actually do the robustness calculation, but that's actually a simple
+extension to what I've done here.
+
+<p>
+
+To do this we're going to need to represent Li's
+network. Specifically, we're going to duplicate their Figure 1b:
+
+<p>
+<img src=livetutorial-files/jssymbiolietal/jssymbiolietalfig1b.jpg>
+<p>
+
+Each node has only two states: active (1) or inactive (0). The protein
+states in the next time step are determined by the protein states in
+the present time step via simple summation of positive (green) and
+negative (red) interactions (inputs), represented by the green and red
+arcs in the figure above.  Any node that has no negative (red) inputs,
+"self-degrades", shown by the yellow loops in the figure. If such a
+protein gets no positive input for a period of time (d), it becomes
+inactive (0).
+
+<p>
+
+Li used 1 for the positive and negative activation parameters, and
+claim that "the overall dynamic properties of the network are not very
+sensitive to the choice of these parameters." This, combined with the
+fact that everything is either active (1) or inactive (0) makes our
+life very easy! (It's actually very easy to put real values into this
+instead of 1 and 0, but the behavior will be much more complex.)
+
+<p> 
+
+<p><hr><p>
+<a name=Representing>
+<h2>Representing the Network</h2>
+
+So, the first thing that we need is a representation for the model,
+and then to use it to create the network of figure 1b. Let's let each
+edge in the graph of Figure 1 be represented by a triple:
+(from-protein plus-or-minus to-protein). [Note that the yellow
+self-degradation loops aren't in this model. We'll list them specially
+later on.]
+
+<pre>
+>> (defparameter *model-graph* ; (fig 1b)
+>>   '((size + cln3)
+>>     (cln3 + mbf)
+>>     (cln3 + sbf)
+>>     (sbf + cln12)
+>>     (cln12 - sic1)
+>>     (cln12 - cdh1)
+>>     (sic1 - clb56)
+>>     (sic1 - clb12)
+>>     (mbf + clb56)
+>>     (clb56 + mcm1/sff) ; weird yellow/green in the paper
+>>     (clb56 - sic1)
+>>     (clb56 + clb12) ; weird yellow/green in the paper
+>>     (clb56 - cdh1)
+>>     (cdh1 - clb12)
+>>     (clb12 - cdh1)
+>>     (clb12 + mcm1/sff)
+>>     (clb12 + cdc20&14)
+>>     (clb12 - sic1)
+>>     (clb12 - swi5)
+>>     (clb12 - mbf)
+>>     (clb12 - sbf)
+>>     (mcm1/sff + cdc20&14)
+>>     (mcm1/sff + swi5)
+>>     (mcm1/sff + clb12)
+>>     (cdc20&14 + swi5)
+>>     (cdc20&14 + cdh1)
+>>     (cdc20&14 - clb12)
+>>     (cdc20&14 + sic1)
+>>     (cdc20&14 - clb56)
+>>     (swi5 + sic1)
+>>     ))
+</pre>
+
+Most of the problems I had when I was developing this simulation were
+caused by errors in the above table, so it's very useful to visualize
+the graph executing this command: 
+
+<pre>
+Do: (seegraph *model-graph*)
+</pre>
+
+We're going to need a global list of all the proteins to work with. We
+could just put them into a variable, but it's a little more general to
+get the list from the model, and anyway, we learned how to do this in
+the previous lesson:
+
+<pre>
+>> (defun graph-proteins (graph)
+>>   (remove-duplicates 
+>>     (xloop for (from +- to) in graph
+>>            append (list from to))))
+
+Let's try it:
+
+Do: (graph-proteins *model-graph*)
+
+:: (SIZE CLN3 CLN12 MBF SBF MCM1/SFF CDH1 CLB12 CDC20&14 CLB56 SWI5 SIC1)
+
+Looks good. Let's save that in a global variable:
+
+>> (defparameter *proteins* (graph-proteins *model-graph*))
+</pre>
+
+Unfortunately, defparameter doesn't tell us the list, so let's look at
+it to be sure we got the list of proteins:
+
+<pre>
+  *proteins*
+</pre>
+
+<p>
+
+<p><hr><p>
+<a name=Basic></a>
+<h2>The Basic Algorithm</h2>
+
+Okay, now we can think about the basic algorithm. Essentially what we
+want to do is this:
+
+<ul>
+
+<li>Initialize the current states of all the proteins.
+
+<li>Turn on a set of initial proteins (cell size, and maybe others).
+
+<li>Run one cycle of the simulation.
+
+<li>Turn off the initial proteins.
+
+<li>Run the simulation for as many additional cycles as you like.
+
+</ul>
+
+So we need to be able to record the current state of a given
+protein. There are various ways to do this. Let's use a hash table for
+that:
+
+<pre>
+>> (defvar *protein->current-state* (simple-hash-table))
+</pre>
+
+The keys for the above table will be the name of a protein, and the
+value will be the current state of that protein, either 1 or 0.
+
+<p>
+
+[If you need a refresher on hash tables, which can be somewhat
+obscure, they are explained in some detail in <a
+href="http://nostoc.stanford.edu/Docs/iteration.html"
+target=_blank>the lesson on iteration in the main BioBike
+documentation</a>.]
+
+<p>
+
+Now let's write the basic algorithm above into a function. This
+follows the above plan, except that there's some additional printout
+at various points. Note that I simply made up functions when I needed
+them (like INITIALIZE-CURRENT-STATES and SET-PROTEINS and
+others). These are called "stubs" -- stand-ins for functions that
+we're going to write later on:
+
+<pre>
+>> (defun litest (&key (initially-on-proteins '(size))
+>>                     (cycles-to-run 50))
+>> 
+>>     ;; Initialize the current states of all the proteins:
+>>     (initialize-current-states)
+>> 
+>>     ;; Turn on a set of initial proteins:
+>>     (set-proteins initially-on-proteins 1)
+>> 
+>>     ;; Print out a header for the report:
+>>     (format t "~8,f" "Cycle")
+>>     (loop for p in *proteins* do (format t "~9,f" p)) 
+>>     (format t "~%")
+>> 
+>>     ;; Report the initial state of things:
+>>     (report-states 0)
+>> 
+>>     ;; Run one cycle of the simulation, and report again:
+>>     (run-one-cycle)
+>>     (report-states 1)
+>> 
+>>     ;; Turn off the initial proteins:
+>>     (set-proteins initially-on-proteins 0)
+>> 
+>>     ;; Run the simulation reporting as we go:
+>>     (loop for cycle from 2 to cycles-to-run
+>>           do (run-one-cycle)
+>>              (report-states cycle)
+>>           ) ; end loop
+>> 
+>>     ) ; end defun
+</pre>
+
+This obviously isn't going to work until we have the functionality
+programmed, so let's get to it!  
+
+<p><hr><p>
+<a name=Programming></a>
+<h2>Programming the Internal Functions</h2>
+
+We're going to skip the first stub: INITIALIZE-CURRENT-STATES because
+we don't know how to do that yet. (We don't know what tables or
+variables define the current state, because we haven't written them
+yet, so we're actually going to have to write this function LAST!)
+
+<p>
+
+The next missing function, SET-PROTEINS, sets specific proteins in our
+hash table to a given value. That one we can do easily:
+
+<pre>
+>> (defun set-proteins (proteins state)
+>>  (loop for protein in proteins
+>>        do (setf (gethash protein *protein->current-state*) state)))
+</pre>
+
+Given that, and a reporting function:
+
+<pre>
+>> (defun report-states (cycle)
+>>   (format t "~8,f" cycle)
+>>   (loop for p in *proteins*
+>>         do (format t "~9,f" (gethash p *protein->current-state*)))
+>>   (format t "~%")
+>>   )
+</pre>
+
+We can try a few experiments:
+
+<pre>
+Do: (set-proteins *proteins* 0)
+
+Do: (report-states 'should-all-be-zero)
+
+Do: (set-proteins *proteins* 1)
+
+Do: (report-states 'should-all-be-one)
+</pre>
+
+Okay. So we can set the states of all the proteins to whatever we
+like, and report what they are. Let's go on to the next, and most
+important stub: RUN-ONE-CYCLE.
+
+<p>
+
+Conceptually, to run one cycle, all we need to do is:
+
+<ul>
+
+<li>Make sure all the influences are clear from previous cycles.
+
+<li>Add up the influences across the red and green arcs for this cycle.
+
+<li>Change everyone's state to whatever they should be.
+
+<li>Figure out self-degraded proteins and set them to 0.
+
+</ul>
+
+And that's it!
+
+<p>
+
+And here it is in <i>stub-ese</i>:
+
+<pre>
+>> (defun run-one-cycle ()
+>>   (zero-sum-influences)
+>>   (add-up-influences)
+>>   (change-state)
+>>   (do-self-degradation)
+>>   )
+</pre>
+
+Adding up the influences implies that we'll need someplace to store
+the sum. Let's use another table for this:
+
+<pre>
+>> (defvar *protein->sum-influences* (simple-hash-table))
+</pre>
+
+And given that, we know how to do (zero-sum-influences), right; it's
+just like set-proteins, but using our new table:
+
+<pre>
+>> (defun zero-sum-influences ()
+>>   (loop for p in *proteins*
+>>         do (setf (gethash p *protein->sum-influences*) 0)))
+</pre>
+
+Adding up the influences isn't too hard. We just go through the model,
+and when there's a + we add whatever the value of the FROM protein is
+to the sum of the TO protein, and the opposite for a - model entry:
+
+<pre>
+>> (defun add-up-influences ()
+>>   (loop for (p1 +- p2) in *model-graph*
+>>         do (case +-
+>>              (+ (incf (gethash p2 *protein->sum-influences*)
+>>                   (gethash p1 *protein->current-state*)))
+>>              (- (decf (gethash p2 *protein->sum-influences*)
+>>                   (gethash p1 *protein->current-state*)))
+>>              )))
+</pre>
+
+Once everything's added up, changing state is seeing if you have a
+positive or negative value in the sum table, and setting the new state
+of each protein to a 0 or 1:
+
+<pre>
+>> (defun change-state ()
+>>   (loop for p in *proteins*
+>>         as sum-influence = (gethash p *protein->sum-influences*)
+>>         do (cond ((> sum-influence 0)
+>>                   (setf (gethash p *protein->current-state*) 1))
+>>                  ((< sum-influence 0)
+>>                   (setf (gethash p *protein->current-state*) 0))
+>>                  )))
+</pre>
+
+<p><hr><p>
+<a name=Self-Degradation></a>
+<h2>Programming The Self-Degradation Algorithm</h2>
+
+Okay, so we're into the home stretch. (Unfortunately, this is also the
+hardest part!) So far nothing has depended upon the <i>history</i> of
+activation. Unfortunately self-degradation <i>does</i> depend upon the
+history. Recall that is states that: If a self-degrading protein gets
+no positive input for a period of time (d), it becomes inactive
+(0). Let's say that d is 5, then we need to figure out whether these
+proteins have had any input for 5 steps back in the
+history. Unfortunately, this means that we'll have to keep a history.
+
+<p>
+
+First off, let's make a list of the self-degrading proteins, because
+they aren't in the model as we have represented it above:
+
+<pre>
+>> (defparameter *self-degrading-proteins*
+>>  '(cln3 cln12 mcm1/sff swi5 cdc20&14))
+</pre>
+
+The abstract (stubbed) function for self-degradation is:
+
+<pre>
+>> (defun do-self-degradation ()
+>>    (do-self-degradations)
+>>    (update-degradation-histories))
+</pre>
+
+We'll use another table to keep the history. This is required for
+self-degradation algorithm, and could be useful as well if we wanted
+to look at the history of a particular protein:
+
+<pre>
+>> (defvar *protein->history* (simple-hash-table))
+</pre>
+
+Entries in this table are going to be lists of pairs, representing the
+history of the state of a given protein, and the sum of the influences
+that went into that state. Each individial pair will look like this:
+
+<pre>
+  (state-at-some-time sum-of-influences-at-that-time)
+
+For example:
+
+  (0 4)    -- or whatever the state and sum of influences was at that time
+</pre>
+
+The latest (which will call "now") will come first, followed by the
+next-to-latest (now-1) etc: (now-2, now-3, ...)  So, the list of pairs
+for each protein will look like: 
+
+<pre> 
+  ((state-now sum-influence-now)
+   (statet-now-1 sum-influencet-now-1) 
+   ... etc))
+
+For example:
+
+  ((0 2) (1 5) ...)
+</pre>
+
+Remember that that latest value is the FIRST in this list (or (0 2) in
+the above example).
+
+<p>
+
+Given this, the self-degradation algorithm isn't too bad: This list
+of protein histories tells us (in reverse order) the state and
+sum-influences for each protein. So, according to the paper, if the
+first 5 history entries read '(1 0), then we force the state to 0,
+regardless of the current influences. In other words, if a proteins
+has been 1 for 5 cycles (or more, but we only care about the first 5),
+and there has been no influence during that time, then we force it to
+be 0 this time around.
+
+<p>
+
+Here it is in code that fits into the stubs above:
+
+<pre>
+>> (defun do-self-degradations ()
+>>   (loop for p in *self-degrading-proteins*
+>>         when (time-to-degrade? p)
+>>         do (format t "Self-degrading ~a~%" p)
+>>            (setf (gethash p *protein->current-state*) 0)))
+
+;;; We'll use a global to set the degradation length:
+
+>> (defvar *degrade-after* 5)
+
+>> (defun time-to-degrade? (p)
+>>   "If we find 5 (1 0) at the head of the history, return T, else NIL."
+>>   (let ((history (gethash p *protein->history*)))
+>>     (when (> (length history) 4) ; Make sure that there are at least 5 entries
+>>       (loop for history-entry in history
+>>             as time from 1 to *degrade-after*
+>>             when (not (equal '(1 0) history-entry))
+>>             do (return nil)
+>>             finally (return t)))))
+
+>> (defun update-degradation-histories ()
+>>   "Add each protein's current state to the history."
+>>   (loop for p in *proteins*
+>>         do (push (list (gethash p *protein->current-state*)
+>>                        (gethash p *protein->sum-influences*))
+>>                  (gethash p *protein->history*))
+>>         ))
+</pre>
+
+Those look complex, but a little study will tell you that it's really
+just trying to see if the first 5 entries in the history (that is, the
+most recent 5) are (1 0), and setting the protein state to 0 if so.
+
+<p>
+
+<p><hr><p>
+<a name=Initializing></a>
+<h2>Initializing and Testing the Simulation</h2>
+
+Okay, so now we know what we have to do in order to initialize.  We
+have to set all the protein current states to 0, and clear their
+histories (set them to nil):
+
+<pre>
+>> (defun initialize-current-states ()
+>>   "This is only done at the beginning of the run."
+>>   (loop for p in *proteins*
+>>         do
+>>         (setf (gethash p *protein->current-state*) 0)
+>>         (setf (gethash p *protein->history*) nil)
+>>         ))
+</pre>
+
+So, we should be ready to try it out: 
+
+<pre>
+Do: (litest :cycles-to-run 50)
+</pre>
+
+Here's what Li et al got:
+
+<p>
+<img src=http://nostoc.stanford.edu/Docs/livetutorials/jssymbiolietaltable2.gif>
+<p>
+
+Note that they specifically state that "the number of time steps in
+each phase do [sic] not reflect its actual duration." Given that, can
+you confirm that your results are the same as theirs? (Hint: Start
+from the <i>end</i> of the trace and work backwards, and also from the
+end of the Li et al table.)
+
+<p>
+
+Here's an exercise (that will make your life much simpler): By making
+the order of the proteins in *proteins* the same as the order in the
+Li et al table, and running the simulation again, it will be
+<i>much</i> simpler to make this comparison! Fill in and execute this
+SETF (replace the ----- with the proteins in the order you want to see
+them), then call litest again, just like before.:
+
+<pre>
+Do: (setf *proteins* '(----------------))
+</pre>
+
+
+Note that the cycle conceptually wraps around, so that to get their
+table, you have to think about the end state (which they call
+"Stationary G1" wrapping around to the beginning again, and getting
+mixed with the start state. 
+
+<p>
+
+In order to test whether this actually works in a cycle, we need to
+"pump" it by making the cell size increase. That is, the theory in
+the PNAS paper is that cell size is the trigger for all of this
+machinery (and you can see that in the diagram -- it's thing that
+starts off the cascade). But cell size doesn't have any inputs that
+would turn it back on after its turned off, so we have to turn is back
+on "by hand" (sort of -- actually, by program). That's what I'm
+calling "pumping" here: turning the cell size signal back on after a
+while to restart the process.
+
+<p>
+
+Let's modify LITEST to "pump" the initially-on proteins (just cell
+size at the moment) every so often:
+
+<p>
+
+Here's the old litest (with the comments stripped out)::
+
+<pre>
+ (defun litest (&key (initially-on-proteins '(size))
+                     (cycles-to-run 50))
+     (initialize-current-states)
+     (set-proteins initially-on-proteins 1)
+     (format t "~8,f" "Cycle")
+     (loop for p in *proteins* do (format t "~9,f" p)) 
+     (format t "~%")
+     (report-states 0)
+     (run-one-cycle)
+     (report-states 1)
+     (set-proteins initially-on-proteins 0)
+     (loop for cycle from 2 to cycles-to-run
+           do (run-one-cycle)
+              (report-states cycle)
+           ) ; end loop
+ 
+     ) ; end defun
+</pre>
+
+<pre>
+>> (defun litest-pumped (&key (initially-on-proteins '(size))
+>>                        (cycles-to-run 50) (pump-frequency 50))
+>>     (initialize-current-states)
+>>     (set-proteins initially-on-proteins 1)
+>>     (format t "~8,f" "Cycle")
+>>     (loop for p in *proteins* do (format t "~9,f" p)) 
+>>     (format t "~%")
+>>     (report-states 0)
+>>     (run-one-cycle)
+>>     (report-states 1)
+>>     (set-proteins initially-on-proteins 0)
+>>     (loop for cycle from 2 to cycles-to-run
+>>       do (run-one-cycle)
+>>          (report-states cycle)
+>>          ;; Here's the new code:
+>>          (when (= 0 (mod cycle pump-frequency))
+>>           (format t "~8,f" "Cycle")
+>>           (format t "Pumping ~a~%" initially-on-proteins)
+>>           (loop for p in *proteins* do (format t "~9,f" p)) 
+>>           (set-proteins initially-on-proteins 1)
+>>           (run-one-cycle)
+>>           (report-states (incf cycle))
+>>           (set-proteins initially-on-proteins 0)
+>>          )))
+</pre>
+
+The part that ways:
+
+<pre>
+    (when (= 0 (mod cycle pump-frequency))
+      ...)
+</pre>
+
+Is a slightly obscure way of testing when to pump. If pump-frequency
+is, say, 23, then (mod cycle 23) will be zero on 23, 46, 69, etc --
+every multiple of 23. When it is, we turn on the
+initially-on-proteins, run a cycle, and then turn them off. (We also
+put out the proteins label every time the pumping happens.)
+
+<p>
+
+To test this we have to run many more cycles than the pump frequency:
+
+<pre>
+Do: (litest-pumped :cycles-to-run 220 :pump-frequency 50)
+</pre>
+<p>
+
+It should be much more clear by examining the behaviors of the system
+after the first (or any) pumping event because the cycle will have
+wrapped around on itself.
+
+<p><hr></p>
+<a name=exer></a>
+<h2>Exercises</h2>
+
+<p><hr><p>
+
+1. We used a global variable called *degrade-after* to tell when to
+self-degrade proteins with no input. We set it to 5 because that's the
+value in Li et al's paper, but it's interesting to experiment with it
+and see how things change when you setf *degrade-after* to different
+values. Try setting this to 2, 4, 6, and 8 and describe some of the
+differences you see in the resulting behavior of the simulation.
+
+<p><hr></p>
+
+2. Note that the *protein->history* table records the entire history
+of the run (although we only use the last 5 data points in the
+degradation algorithm). Write a function that calls litest-pumped with
+some arguments, and then collects up the histories of the proteins
+from this table, and return a list, something like:
+
+<pre>
+  Call: (meta-litest-pumped :cycles-to-run 220 :pump-frequency 50)
+  Returns:
+     ((cln3 0 1 1 0 1 0 ...etc...)
+      (sbf ...etc...)
+      ...etc...)
+</pre>      
+
+Use your new function to save the "default" behavior of the system in
+the global variable: *WILD-TYPE*
+
+<p>
+
+Next write a function called PHENOTYPE-DIFFERENCE that counts the
+number of differnce between two set of behaviors. This should return 0
+if you call it with the *WILD-TYPE* twice, but a positive value if
+you, for example, reverse the result, as:
+
+<pre>
+  (phenotype-difference *wild-type* *wild-type*)
+     0
+  (phenotype-difference *wild-type* (reverse *wild-type*))
+     [some large positive number ... maybe ~100]
+</pre>
+
+<p>
+
+Now write a function to perform "knockout" experiments. It will 
+<i>locally</i> remove each edge -- one by one -- from the
+*model-graph* -- that is, remove one entry that looks like: (from +/-
+to). (Remember how we LET bound *env* in a previous tutorial!) Then,
+for each "knockout" model call your new function to return a new
+behavior record (like the one in *WILD-TYPE*. [Warning, don't knock
+out the size -> cln3 edge! Obviously the model won't work if you do
+that!]
+
+<p>
+
+Your function should call on PHENOTYPE-DIFFERENCE to score each new
+behavior trace against the wild type. It might return something like:
+
+<pre>
+  (test-knockouts)
+  ==> (((sbf + cln12) 50) ; meaning that there are 50 difference when you 
+                          ; knock out the + edge between sbf and cln12.
+       ((sic1 - clb56) 36) 
+       ...etc...)
+</pre>
+
+Which knockout makes the least difference? Which makes the most difference?
+
+<p>
+
+3. What aspects of this tutorial could be improved? Does it fit well with
+the previous tutorials? Does it need something introduced before hand
+that we failed to introduce? Any typos or confusing parts? Were the
+exercises useful? Any other feedback?
+
+<p><hr><p>
+<p><hr><p>
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>

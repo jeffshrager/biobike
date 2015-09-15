@@ -1,0 +1,763 @@
+<title>Introductory Symbolic BioComputing with the Gene Ontology</title>
+
+<p>
+
+<h2>
+Introductory Symbolic BioComputing with the Gene Ontology
+</h2>
+
+<p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+
+In the last tutorial we learned about representing graphs and walking
+around in them using recursive functions. The recursive function part
+probably went right over your head, so in this lesson we'll do it
+again in order to make the lesson sick. Actually, we're going to be
+working with a much more interesting graph this time: The Gene
+Ontology graph.
+
+
+<p>
+
+The Gene Ontology (usually called "GO" for short) is an explicit
+representation of some aspects of the many biological processes that
+can be implemented by proteins, which are, of course, coded for by
+genes.  Using such knowledge, we can do a variety of interesting
+knowledge-based analyses.  For example, we might want to ask whether
+one process is a kind of another process: for example, is glucokinase
+activity is a kind of kinase activity?  In this case it's sort of
+obvious from the name, but that's not always true.  The Gene Ontology
+lets you asked questions of that sort, and many others besides.
+
+<p>
+
+GO is intended to capture the concepts related to the functions of
+biological entities (such as enzymes) and their relationships to one
+another.  We might want to ask specific sorts of questions, like: "Is
+Thioredoxin-Disulfide Reductase a transporter?" (Yes) "Is it an
+oxidoreductase?"  (Yes) "Is it an atp-ase?"  (No) In this lesson we'll
+develop code to do just that, and along the way, learn about how the
+Gene Ontology is represented in BioLingua.
+
+<p>
+
+These sorts of questions can be answered by using an explicit
+representation of biological function. In this case, we used a popular
+representation called the "Gene Ontology" (or "GO"). GO is intended to
+capture the concepts related to the functions of biological entities
+(such as enzymes) and their relationships to one another.
+
+<p>
+
+The Gene Ontology is built into BioBike as a frame network, so you
+don't have to do anything at all in order to use it. There's also a
+global variable that contains <i>all</i> of the GO frames:
+
+<pre>
+>> (length *go-frames*)
+:: 23080      ; This may vary for you if the GO has been updated
+</pre>
+
+There are around 20 thousand "terms" in the gene ontology (as of the
+point at which we downloaded that particular instance, which is
+sometime in 2005).
+
+<p>
+
+You can click on any of them to see what's inside. Let's see how many
+have "nadph" in their name:
+
+<pre>
+>> (search-frames '("go." "nadph") :slots #$fname)
+:: 
+(#$GO.[Hydroxymethylglutaryl-CoaReductase[Nadph]]KinaseActivity
+ #$GO.SulfiteReductase[Nadph]Activity #$GO.NadphDehydrogenaseActivity
+ #$GO.NadphDehydrogenase[Quinone]Activity #$GO.NadphPeroxidaseActivity
+ #$GO.Nadph-AdrenodoxinReductaseActivity
+ #$GO.[Hydroxymethylglutaryl-CoaReductase[Nadph]]-PhosphataseActivity
+ #$GO.MevaldateReductase[Nadph]Activity
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph,WithOxygenAsAcceptor
+ #$GO.Enoyl-[Acyl-CarrierProtein]Reductase[Nadph,B-Specific]Activity
+ #$GO.Enoyl-[Acyl-CarrierProtein]Reductase[Nadph,A-Specific]Activity
+ #$GO.Hydroxymethylglutaryl-CoaReductase[Nadph]Activity
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph,QuinoneOrSimilarCompoundAsAcceptor
+ #$GO.Indole-3-AcetaldehydeReductase[Nadph]Activity
+ #$GO.Nadph:QuinoneReductaseActivity #$GO.NadphRegeneration
+ #$GO.Superoxide-GeneratingNadphOxidaseActivatorActivity
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph,DisulfideAsAcceptor
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph,NadOrNadpAsAcceptor
+ #$GO.GlutamateBiosynthesis,UsingGlutamateSynthase[Nadph]
+ #$GO.Nadph-HemoproteinReductaseActivity
+ #$GO.NitrateReductase[Nadph]Activity
+ #$GO.1,2-DehydroreticuliniumReductase[Nadph]Activity
+ ...)
+
+;; I've abbreviated long stuff with "...", and added dashes to 
+;; make it more clear where the breaks are in the display.
+
+>> (length *)
+</pre>
+
+Oh my, that's quite a list! We'll just pick one to work on for the
+moment:
+
+<pre>
+>> (setq np #$GO.NadphDehydrogenaseActivity)
+
+>> (df np)
+
+Slots of #$GO.NadphDehydrogenaseActivity:
+#$GO.goid: 3959
+#$Source: :GO
+#$GO.prettyname: "NADPH dehydrogenase activity"
+#$GO.Namespace: #$Go.Molecular_Function
+#$GO.definition: "Catalysis of the reaction: NADPH + H+ + acceptor = NADP+ + reduced acceptor."
+#$isA:  (#$Go.Reaction #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+         #$GO.ElectronTransporterActivity)
+#$GO.ECRef: (#$EC.1.6.99.1)
+#$GO.DBXRefs: (("EC" "1.6.99.1"))
+#$Go.reactants: (#$MOL.Nadph #$MOL.H+ #$MOL.Acceptor)
+#$Go.products: (#$MOL.Nadp+ #$MOL.ReducedAcceptor)
+
+</pre>
+
+First, notice that the real name of this concept (the value of the
+PRETTYNAME slot) is "NADPH dehydrogenase <i>activity</i>" --
+"Activity" is what the GO uses to talk about biological processes or
+functions.
+
+<p>
+
+The most important slot is ISA (for "is a").  "ISA" -- that is: "Is an
+instance of..."  is <i>the fundamental relationship</i> of the GO
+database.  Notice that ISA contains a lot of other GO
+frames. Basically, it's saying that the current concept (NADPH
+dehydrogenase activity) <i>is an example of</i> each of these
+others. That is, it <i>is a</i> REACTION, and it <i>is an</i>
+OXIDOREDUCTASE ACTIVITY, and so forth.
+
+<p>
+
+Now, the important thing here is that each of <i>those</i> concepts
+also has an ISA slot. Let's look at one (you can just click through to
+it, but we'll DF it here for show):
+
+<pre>
+>> (df #$GO.ElectronTransporterActivity)
+
+Slots of #$GO.ElectronTransporterActivity:
+#$Go.Related-Genes: (#$S6803.slr1562 #$S6803.sll0741 #$S6803.slr0623
+                     #$S6803.ssr1041 #$S6803.sll0685 #$S6803.slr0233
+                     ...
+                     #$S6803.slr1846 #$S6803.sll1057)
+#$GO.goid: 5489
+#$Source: :GO
+#$subClasses: (#$GO.MethaneMonooxygenaseActivity
+               #$GO.PhthalateDioxygenaseReductaseActivity
+               #$GO.RubredoxinReductaseActivity
+               ...
+               #$GO.NadhDehydrogenaseActivity)
+#$GO.prettyname: "electron transporter activity"
+#$GO.Namespace: #$Go.Molecular_Function
+#$GO.definition: "Enables the directed movement of electrons into, out of, within or between cells."
+#$isA:  (#$GO.TransporterActivity)
+#$GO.DBXRefs: (("GO" "ai"))
+</pre>
+
+Notice that this has a slot called SUBCLASSES which contains our
+original #$GO.NadhDehydrogenaseActivity. These are all the things that
+<i>is a</i> ELECTRONTRANSPORTERACTIVITY... so we've got siblings! If
+we looked at each of those, each would have
+#$GO.ElectronTransporterActivity in their ISA slot (possibly among
+other things).
+
+<p>
+
+The other thing to notice is that this isn't the end of the ISA line;
+#$GO.ElectronTransporterActivity ISA #$GO.TransporterActivity, and so
+on up. (Demonstrate this to yourself: Click up the isa tree -- how
+many more steps can you go up ISAs before you run out of them?
+
+Now, you can obviously repeat tracing the references and continue up
+the chain of abstract functions.  Let's follow up from 
+#$GO.TransporterActivity:
+
+<pre>
+>> (#^isa #$GO.TransporterActivity)
+:: (#$GO.Molecular_Function)
+>> (#^isa #$GO.Molecular_Function)
+:: NIL
+</pre>
+
+So molecular function is the end of the isa chain -- or, put another
+way: the top of the ISA tree.
+
+<p>
+
+Our first goal will be to write a function that crawls up this ISA
+chain (usually called an "isa hierarchy"), just like we just did by
+hand! Here's the function that does that:
+
+<pre>
+>>(defun walk-isas (child)
+>>  (loop for parent in (#^isa child)
+>>        do (walk-isas parent)))
+</pre>
+
+This doesn't do any printing or collecting of the results, so we have
+to trace it in order to see it run:
+
+<pre>
+>> (trace walk-isas)
+
+>> (walk-isas np)
+
+ 0[7]: (WALK-ISAS #$GO.NadphDehydrogenaseActivity)
+   1[7]: (WALK-ISAS #$Go.Reaction)
+   1[7]: returned NIL
+   1[7]: (WALK-ISAS #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph)
+     2[7]: (WALK-ISAS #$GO.OxidoreductaseActivity)
+       3[7]: (WALK-ISAS #$GO.CatalyticActivity)
+         4[7]: (WALK-ISAS #$Go.Molecular_Function)
+         4[7]: returned NIL
+       3[7]: returned NIL
+     2[7]: returned NIL
+   1[7]: returned NIL
+   1[7]: (WALK-ISAS #$GO.ElectronTransporterActivity)
+     2[7]: (WALK-ISAS #$GO.TransporterActivity)
+       3[7]: (WALK-ISAS #$Go.Molecular_Function)
+       3[7]: returned NIL
+     2[7]: returned NIL
+   1[7]: returned NIL
+ 0[7]: returned NIL
+</pre>
+
+If you carefully examine that trace, you'll see that it walked all the
+way up each branch of the ISA hierarchy leading up from our friend,
+#$GO.NadphDehydrogenaseActivity, the thioredoxin reductase.  Let's put
+in some informational printing so that we can see what it's doing a
+little more clearly:
+
+<pre>
+>> (defun walk-isas (child &optional (depth 0))
+>>   (loop for space from 1 to (* 2 depth) do (format t " "))
+>>   (format t "~a: ~a~%" depth (#^go.prettyname child))
+>>   (loop for parent in (#^isa child)
+>>         do (walk-isas parent (incf depth))))
+</pre>
+
+>> (untrace)
+
+>> (walk-isas np)
+
+0: NADPH dehydrogenase activity
+  1: NIL
+    2: oxidoreductase activity, acting on NADH or NADPH
+      3: oxidoreductase activity
+        4: catalytic activity
+          5: molecular_function
+      3: electron transporter activity
+        4: transporter activity
+          5: molecular_function
+</pre>
+
+Reading backwards, you can see that there are two separate function
+chains leading to NADPH dehydrogenase activity.  One deals with its
+transportation function, and the other deals with its function as an
+oxidoreductase.
+
+<p>
+
+It's a very short way, now, to being able to answer rather complex
+questions about biological concepts, like those at the beginning of
+this lesson! We know where to get the information, all we need now is
+to get it in a useable form, and use it the right way.
+
+<p>
+
+Let's start by rewriting WALK-ISAS to actually give them back instead
+of just printing them out:
+
+<pre>
+>> (defun ancestors-of (child)
+>>  (cons child
+>>         (loop for parent in (#^isa child)
+>>               collect (ancestors-of parent))))
+</pre>
+
+This is just like our WALK-ISAS function from above, except that it it
+returns the path as a tree (a Lisp list with recursive sublists).
+Let's see how it works:
+
+<pre>
+>> (ancestors-of np)
+:: (#$GO.NadphDehydrogenaseActivity (#$Go.Reaction)
+ (#$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+  (#$GO.OxidoreductaseActivity
+   (#$GO.CatalyticActivity (#$Go.Molecular_Function))))
+ (#$GO.ElectronTransporterActivity
+  (#$GO.TransporterActivity (#$Go.Molecular_Function))))
+</pre>
+
+That long complex list of lists of lists is just a numerical form of
+the result of WALK-ISA from above!
+
+<p>
+
+Okay, so we should be ready to ask (and answer) the question: "Is
+nadph dehydrogenase a transporter?"  We'd like to be able to say
+something like: (is? "nadph dehydrogenase" a "transporter").  The
+function to do that is just the same as ANCESTORS-OF, except that it
+doesn't have to collect the results, just say YES (T) or NO (NIL):
+
+<pre>
+>> (defun isa? (child target-parent)
+>>  (or (equal child target-parent) ; Got it!
+>>      (loop for parent in (#^isa child)
+>>            do (if (isa? parent target-parent)
+>>                   (return t)))))
+
+>> (isa? np #$GO.TransporterActivity)
+:: T
+>> (isa? np  #$MOL.ReducedAcceptor)
+:: NIL
+</pre>
+
+Tada!
+
+<p>
+
+By the way, we don't have to start at a "ground" object (like "nadh
+dehydrogenase"); we can just as easily ask:
+
+<pre>
+>> (isa? #$GO.ElectronTransporterActivity #$GO.TransporterActivity)
+</pre>
+(Of course it is!)
+
+<p>
+
+Now, unfortunately, all of this good work doesn't let us type the
+questions in in English; we have to be very precise about indicating
+exactly which concepts -- that is, which frames -- we're referring
+to. But that's life in computational biology. In another lesson we'll
+see how to do some simple "natural language" processing -- that will
+help you be able to ask questions in a more natural way, but for now,
+this is a pretty good start.
+
+<p>
+
+Now, suppose that, instead of walking "up" the GO hierarchy as we did
+above, we wanted to walk "down" it.  That is, for example,
+suppose that we wanted to know what all of the oxidoreductases are.
+
+<p>
+
+Recall that there was a SUBCLASSES slot in each frame that contained
+the frames immediate children.  So, walking DOWN is straightforward;
+all we have to do is use that slot to recursively find all the
+children, grandchildren, great grand children, great great .... you
+get the idea.  In Lisp this sort of thing is simple:
+
+<pre>
+>> (defun descendants-of (me)
+>>     (cond ((null me) nil) ; Stop when there are no children.
+>>          (t (cons me 
+>>                   (loop for child in (#^subclasses me)
+>>                         collect (descendants-of child))))
+>>     ))
+
+>> (descendants-of #$GO.ElectronTransporterActivity)
+:: 
+(#$GO.ElectronTransporterActivity
+ ...
+ (#$GO.MethaneMonooxygenaseActivity)
+ (#$GO.PhthalateDioxygenaseReductaseActivity)
+ (#$GO.RubredoxinReductaseActivity
+  (#$GO.Rubredoxin-Nad[P]+ReductaseActivity)
+  (#$GO.Rubredoxin-Nad+ReductaseActivity))
+ (#$GO.LeghemoglobinReductaseActivity)
+ (#$GO.Trypanothione-DisulfideReductaseActivity)
+ (#$GO.ElectronCarrierActivity
+  (#$GO.GlutathioneDehydrogenase[Ascorbate]Activity)
+  (#$GO.Plastoquinol-PlastocyaninReductaseActivity))
+ (#$GO.ElectronAcceptorActivity) (#$GO.ElectronDonorActivity)
+ (#$GO.FerredoxinReductaseActivity
+  (#$GO.Nadph-AdrenodoxinReductaseActivity)
+  (#$GO.Ferredoxin-Nad+ReductaseActivity)
+  (#$GO.Ferredoxin-Nadp+ReductaseActivity))
+ (#$GO.Thioredoxin-DisulfideReductaseActivity)
+ (#$GO.SulfiteReductase[Nadph]Activity)
+ (#$GO.Glutathione-DisulfideReductaseActivity)
+ (#$GO.DihydrolipoylDehydrogenaseActivity)
+ (#$GO.Cytochrome-B5ReductaseActivity)
+ (#$GO.NadphDehydrogenaseActivity)
+ (#$GO.Nadph-HemoproteinReductaseActivity)
+ (#$GO.NadhDehydrogenaseActivity
+  (#$GO.NadhDehydrogenase[Quinone]Activity
+   (#$GO.NadhDehydrogenase[Ubiquinone]Activity))))
+</pre>
+
+Long list -- or, rather, big tree!
+
+<p><hr><p>
+
+<b>Slightly More Complex Symbolic Computing</b>
+
+<p>
+
+Now, given our capabilities to find all the ancestors and descendants
+of a given node, we can do some simple and interesting calculations.
+For example, we can find the concepts that are shared between a number
+of concepts; That is, those along all the paths up the tree.  You'd
+expect that concepts that are close together would share lots of
+common ancestors, whereas one that are farther apart would share
+fewer.
+
+<p>
+
+Here's a function that does this intersection:
+
+<pre>
+>> (defun parent-intersection (concepts)
+>>   (reduce 'intersection 
+>>          (loop for concept in concepts
+>>                collect (flatten (ancestors-of concept)))))
+</pre>
+
+This does this The Hard Way, that is, by successive flattened
+intersections, which is pretty inefficient.  Let's try it out:
+
+<pre>
+>> (parent-intersection '(#$GO.PhosphoglucokinaseActivity #$GO.GlucokinaseActivity))
+:: 
+(#$Go.Molecular_Function #$GO.CatalyticActivity
+ #$GO.TransferaseActivity
+ #$GO.TransferaseActivity,TransferringPhosphorus-ContainingGroups
+ #$GO.KinaseActivity #$Go.Molecular_Function #$GO.CatalyticActivity
+ #$GO.TransferaseActivity
+ #$GO.TransferaseActivity,TransferringPhosphorus-ContainingGroups
+ #$GO.PhosphotransferaseActivity,AlcoholGroupAsAcceptor #$Go.Reaction)
+
+;;; Let's try some concepts that are farther apart:
+
+>> (parent-intersection '(#$GO.PhosphoglucokinaseActivity #$GO.MicrofilamentMotorActivity))
+:: (#$GO.Molecular_Function #$GO.Molecular_Function)
+
+</pre>
+
+The last two share only the topmost node of the tree:
+#$GO.Molecular_Function.  Oops. Why'd we get #$GO.Molecular_Function
+twice? If you look carefully, what this function is doing is to
+FLATTEN the paths returned by ANCESTORS-OF. But those are redundant!
+Watch again:
+
+<pre>
+>> (ancestors-of np)
+:: (#$GO.NadphDehydrogenaseActivity (#$Go.Reaction)
+ (#$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+  (#$GO.OxidoreductaseActivity
+   (#$GO.CatalyticActivity (#$Go.Molecular_Function))))
+ (#$GO.ElectronTransporterActivity
+  (#$GO.TransporterActivity (#$Go.Molecular_Function))))
+
+>> (flatten *)
+:: 
+(#$GO.NadphDehydrogenaseActivity #$Go.Reaction
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+ #$GO.OxidoreductaseActivity #$GO.CatalyticActivity
+ #$Go.Molecular_Function #$GO.ElectronTransporterActivity
+ #$GO.TransporterActivity #$Go.Molecular_Function)
+</pre>
+
+If you look carefully, you'll see that #$GO.Molecular_Function appears
+<i>twice</i> in this list!  Well, that's okay, we can just remove the
+duplicates:
+
+<pre>
+>> (remove-duplicates *)
+:: 
+(#$GO.NadphDehydrogenaseActivity #$Go.Reaction
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+ #$GO.OxidoreductaseActivity #$GO.CatalyticActivity
+ #$GO.ElectronTransporterActivity #$GO.TransporterActivity
+ #$Go.Molecular_Function)
+</pre>
+
+And now modify our function:
+
+<pre>
+>> (defun parent-intersection (concepts)
+>>   (remove-duplicates 
+>>      (reduce 'intersection 
+>>          (loop for concept in concepts
+>>                collect (flatten (ancestors-of concept))))))
+
+;;; And check it out:
+
+>> (parent-intersection '(#$GO.PhosphoglucokinaseActivity #$GO.MicrofilamentMotorActivity))
+:: (#$GO.Molecular_Function)
+</pre>
+Voila!
+
+<p>
+
+Now, this actually gives is a pretty interesting tool; we can ask, for
+any two GO concepts, what their distance is from one another, in these
+terms.  Let's rank the GO concepts in terms of this 'distance'
+(actually, it's sort of an inverse distance -- the bigger the number,
+the closer the nodes are in 'go space'). Conceptually that's just two
+loops, one inside the other running PARENT-INTERSECTION on every GO
+concept against every other GO concept, collecting the distances and
+then sort the result:
+
+<pre>
+<font color=red>;;; DO NOT EXECUTE THIS !!!</font>
+
+    (sort 
+      (loop with result = nil
+            for go1 in *go-frames*
+            do 
+            (loop for go2 in *go-frames*
+                  unless (eq go1 go2)
+                  do 
+                  (push (list go1 go2 
+                             (length (parent-intersection (list go1 go2))))
+                        result))
+           finally (return result))
+     #'> :key #'third)
+
+</pre>
+
+<font color=red> WAIT!  Don't do it! Unfortunately, nested loops like
+this take a very long time because it will do about 20-thousand times
+20-thousand comparisons! (This is called an "N-squared" operation:
+20,000-squared)</font>
+
+<p>
+
+Instead, let's try it on a small subset of GO nodes:
+
+<pre>
+>> (setq 10gos 
+>>      (loop with l = (length *go-frames*) 
+>>            for i from 1 to 10 
+>>            collect (nth (random l) *go-frames*)))
+:: 
+(#$EC.3.1.27.5 #$GO.AcetoinMetabolism #$EC.1.8.1.11
+ #$GO.IcosanoidBiosynthesis #$EC.6.3.4.9
+ #$GO.MaleGenitaliaMorphogenesis #$GO.Katanin
+ #$GO.PropionateCoa-TransferaseActivity #$GO.Beta-1,6GlucanBiosynthesis
+ #$GO.ProtoporphyrinogenIxBiosynthesis)
+
+;;; (You'll probably get a different list than I did since this 
+;;;  gets a random set of go frames.)
+
+>> (sort 
+>>    (loop with result = nil
+>>          for go1 in 10gos
+>>          do 
+>>          (loop for go2 in 10gos
+>>                unless (eq go1 go2)
+>>                do 
+>>                (push (list go1 go2 
+>>                           (length (parent-intersection (list go1 go2))))
+>>                      result))
+>>          finally (return result))
+>>    #'> :key #'third)
+:: 
+((#$GO.Beta-1,6GlucanBiosynthesis #$GO.IcosanoidBiosynthesis 9)
+ (#$GO.IcosanoidBiosynthesis #$GO.Beta-1,6GlucanBiosynthesis 9)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$GO.Beta-1,6GlucanBiosynthesis
+  8)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$GO.IcosanoidBiosynthesis 8)
+ (#$GO.Beta-1,6GlucanBiosynthesis #$GO.ProtoporphyrinogenIxBiosynthesis
+  8)
+ (#$GO.IcosanoidBiosynthesis #$GO.ProtoporphyrinogenIxBiosynthesis 8)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$GO.AcetoinMetabolism 6)
+ (#$GO.Beta-1,6GlucanBiosynthesis #$GO.AcetoinMetabolism 6)
+ (#$GO.IcosanoidBiosynthesis #$GO.AcetoinMetabolism 6)
+ (#$GO.AcetoinMetabolism #$GO.ProtoporphyrinogenIxBiosynthesis 6)
+ (#$GO.AcetoinMetabolism #$GO.Beta-1,6GlucanBiosynthesis 6)
+ (#$GO.AcetoinMetabolism #$GO.IcosanoidBiosynthesis 6)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$GO.MaleGenitaliaMorphogenesis
+  1)
+ (#$GO.Beta-1,6GlucanBiosynthesis #$GO.MaleGenitaliaMorphogenesis 1)
+ (#$GO.MaleGenitaliaMorphogenesis #$GO.ProtoporphyrinogenIxBiosynthesis
+  1)
+ (#$GO.MaleGenitaliaMorphogenesis #$GO.Beta-1,6GlucanBiosynthesis 1)
+ (#$GO.MaleGenitaliaMorphogenesis #$GO.IcosanoidBiosynthesis 1)
+ (#$GO.MaleGenitaliaMorphogenesis #$GO.AcetoinMetabolism 1)
+ (#$EC.6.3.4.9 #$EC.1.8.1.11 1) (#$EC.6.3.4.9 #$EC.3.1.27.5 1)
+ (#$GO.IcosanoidBiosynthesis #$GO.MaleGenitaliaMorphogenesis 1)
+ (#$EC.1.8.1.11 #$EC.6.3.4.9 1) (#$EC.1.8.1.11 #$EC.3.1.27.5 1)
+ (#$GO.AcetoinMetabolism #$GO.MaleGenitaliaMorphogenesis 1)
+ (#$EC.3.1.27.5 #$EC.6.3.4.9 1) 
+ (#$EC.3.1.27.5 #$EC.1.8.1.11 1)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis
+  #$GO.PropionateCoa-TransferaseActivity 0)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$GO.Katanin 0)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$EC.6.3.4.9 0)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$EC.1.8.1.11 0)
+ (#$GO.ProtoporphyrinogenIxBiosynthesis #$EC.3.1.27.5 0)
+ ...
+</pre>
+
+Hmmmm.  Pretty interesting; Not sure what significance it could
+have....?
+
+<p><hr><p>
+
+<b>Getting Abstract</b> (optional section)
+
+<p>
+
+It turns out that both our ANCESTORS-OF and DESCENDANTS-OF functions
+are examples of the more general concept of a "transitive closure":
+ANCESTORS-OF walks the "tree" using #^ISA, and DESCENDANTS-OF walks
+the tree using #^SUBCLASSES, but in all other respects, they are the
+same exact function!
+
+<p>
+
+It would be nice to have a generalized function, called something
+like: TREE-WALKER which took a place to start, and a <i>function</i>
+-- either #^ISA or #^SUBCLASSES depending upon which way we wanted to
+go -- and just did the right thing. It turns out that that's pretty
+easy to write in Lisp:
+
+<pre>
+>> (defun tree-walker (here by)
+>>   ;; by is the function to use to walk, example: #^ISA, etc.
+>>   (cond ((null here) nil) ; Stop when the well runs dry
+>>         (t (cons here
+>>                  (loop for there in (funcall by here)
+>>                        collect (tree-walker there by)
+>>                        )))))
+
+>> (tree-walker np #^isa)
+:: 
+(#$GO.NadphDehydrogenaseActivity (#$Go.Reaction)
+ (#$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+  (#$GO.OxidoreductaseActivity
+   (#$GO.CatalyticActivity (#$Go.Molecular_Function))))
+ (#$GO.ElectronTransporterActivity
+  (#$GO.TransporterActivity (#$Go.Molecular_Function))))
+
+>> (tree-walker #$GO.ElectronTransporterActivity #^subclasses)
+:: 
+(#$GO.ElectronTransporterActivity
+ ...
+ (#$GO.MethaneMonooxygenaseActivity)
+ (#$GO.PhthalateDioxygenaseReductaseActivity)
+ (#$GO.RubredoxinReductaseActivity
+  (#$GO.Rubredoxin-Nad[P]+ReductaseActivity)
+  (#$GO.Rubredoxin-Nad+ReductaseActivity))
+ (#$GO.LeghemoglobinReductaseActivity)
+ ...
+ (#$GO.Nadph-HemoproteinReductaseActivity)
+ (#$GO.NadhDehydrogenaseActivity
+  (#$GO.NadhDehydrogenase[Quinone]Activity
+   (#$GO.NadhDehydrogenase[Ubiquinone]Activity))))
+</pre>
+
+The only thing new in this function is this line: 
+<pre> 
+  (funcall by here) 
+</pre> 
+
+All that that does is to apply the function in BY to the current frame
+(HERE). Notice that the value that we assigned to BY in each call was
+either #^ISA or #^SUBCLASSES -- that is, the functions that get the
+values from the frames. So all that the funcall is doing is applying
+whatever function you gave as the BY argument to the TREE-WALKER
+call. This is exactly the same thing as calling it by have. Watch:
+
+<pre>
+>> (#^isa #$GO.NadphDehydrogenaseActivity)
+:: (#$Go.Reaction #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+ #$GO.ElectronTransporterActivity)
+>> (funcall #^isa #$GO.NadphDehydrogenaseActivity)
+:: (#$Go.Reaction #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph
+ #$GO.ElectronTransporterActivity)
+</pre>
+
+See! Same thing! The only thing that FUNCALL does for us is to let us
+use a variable to stand in for the function -- BY in the case of
+TREE-WALKER. This seems like a samll thing, but it's actually a
+<i>huge</i> thing because if lets you generalize any function to take
+<i>other functions</i> as arguments!
+
+<p>
+
+Some day you'll learn to appreciate these simple lovely little things
+about in Lisp! :-)
+
+<p><hr></p>
+<p><hr></p>
+
+<p><hr><p>
+<a name=exer>
+<h2>Exercises</h2>
+
+<p><hr></p>
+
+1. Note that some GO concepts tell you which genes they are associated with. For example:
+
+<pre>
+>> (#^Go.Related-Genes #$GO.GlucokinaseActivity)
+:: (#$S6803.slr0329 #$S6803.sll0593 #$A7120.alr2973 #$PRO1375.Pro1065
+    #$TeBP1.tlr2355 #$TeBP1.tll1495 #$Cwat.Cw?3086)
+</pre>
+
+Use what we've done in this tutorial to write a function that
+intersects, appends, and removes the duplicates of the <i>genes</i>
+associated with all the GO parents and children associated with a
+given GO node (you can use #$GO.GlucokinaseActivity as your test
+case). That is, you give it something like: 
+
+<pre>
+>> (my-function #$GO.GlucokinaseActivity)
+</pre>
+
+and it returns a long list of genes being collected via the
+#^Go.Related-Genes slots of all the go frames that are all the parents
+and children of #$GO.GlucokinaseActivity. (Make sure that you remove
+duplicates on this list.)
+
+<p>
+
+Remember the SCORE-ALIGNMENT version of SUBSETS-BY-BEST that we just
+wrote in the last tutorial? Try passing these genes to it.
+
+<p><hr></p>
+
+2. In addition to being able to get from GO concepts to genes through the
+#^Go.Related-Genes slot of some GO concepts, some (though not all) of
+these genes also have the inverse relationship as well, called #^go-id:
+
+<pre>
+>> (#^Go-Id #$A7120.alr2973)
+:: (#$GO.KinaseActivity #$GO.TransferaseActivity #$GO.GlucokinaseActivity
+    #$GO.AtpBinding #$GO.Glycolysis)
+</pre>
+
+Create a new function that calls on the above function, but instead of
+reporting the genes themselves, collects up the #^go-ids referred to
+by those genes. (This should be easy, given the above function -- it
+just uses the above function's result and does some further
+manipulation to it!)
+
+<p><hr></p>
+
+4. What aspects of this tutorial could be improved? Does it fit well with
+the previous tutorials? Does it need something introduced before hand
+that we failed to introduce? Any typos or confusing parts? Were the
+exercises useful? Any other feedback?
+
+<p><hr><p>
+<p><hr><p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

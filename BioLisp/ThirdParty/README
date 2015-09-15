@@ -1,0 +1,13 @@
+This directory contains various third party libraries that are used by
+the BioLisp project. (N.B. In a perfect world the cl-ppcre library
+that lives in the top-level ppcre/ directory would be moved in
+here. However, due to CVS lossage, this is seen as being not worth the
+hassle so it will get grandfathered in in it's current location.)
+
+For libraries that are loaded with ASDF, add a (register ...)
+expression in load.lisp to register the library directories containing
+.asd files.
+
+If for some reason you need to change any of this code, please try to
+send a patch to the upstream author so we will be able to accept new
+versions from them down the line.

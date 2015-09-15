@@ -1,0 +1,1630 @@
+<title>BioBike: How Alignment Works</title>
+
+<p>
+
+<h2>
+BioBike: How Alignment Works
+</h2>
+
+<p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+
+(This tutorial is based upon lisp sequence matching code originally
+written and contributed by Russ Altman, although it has been almost
+entirely rewritten for this presentation.)
+
+<p>
+
+Blast is the most important tool (at the moment) in the computational
+biologist's kit. But most people don't actually know how it works!
+
+
+<p>
+
+Blast finds all the sequences that <i>match</i> a particular given sequence
+from a database. But what do we mean by "match"? The answer to this
+has a long and interesting history.  Although we're going to survey
+some of this history here, and look at some of the algorithms in
+detail, there's a huge literature in sequence matching (more
+generally: 'string matching') -- most of which is interesting only to
+computer scientists.  But a basic understanding of how Blast and other
+related algorithms work is useful.  (All of this is discussed in great
+detail in D. Gusfield: <i> Algorithms on Strings, Trees, and
+Sequences</i>, 1997, Cambridge University Press. So if you want more
+info, get that book.)
+
+<p>
+
+We'll approach BLAST in three stages.  First, we'll look at a
+relatively simply string-matching problem known as edit distance, and
+develop the code for it.  Then we'll discuss a set of general
+string-matching algorithms known in the BioInformatics literature as
+"Needleman-Wunsch" and "Smith-Waterman".  Finally, with this as
+background, we'll look at how the inner kernel of BLAST works.
+
+<p>
+
+Let's stop using the word 'matching,' which is vague, and
+instead use the word 'alignment', or, in our case: 'sequence
+alignment'. The sequence alignment problem is this:
+
+<p>
+
+Given two sequences (i.e, in our case: strings of letters), arrange
+them with respect to one another such that places in each subsequence
+that are similar to subsequences in the other are maximized.  Let's
+take, for example, the two sentences:
+
+<pre>
+I like peanut butter and jelly sandwiches.
+I don't like to put peanut butter on ham sandwiches.
+</pre>
+
+Here's a plausible alignment of these sentences:
+
+<pre>
+I       like        peanut butter a nd jelly     sandwiches.
+I don't like to put peanut butter  on        ham sandwiches.
+</pre>
+
+Notice that in doing the alignment we added a number of 'gaps'
+(spaces) to each sequence, and that there are no mismatches -- that
+is, there are no letters that are aligned with the wrong letter in the
+other sentence.  (Except for spaces, which we'll consider the same as
+gaps for this example. Once we get to doing DNA sequences, this won't
+matter because they don't have spaces.) 
+
+<p>
+
+Now, the first thing to notice about alignments is that there are
+many ways to make an alignment.  Here's another one:
+
+<pre>
+I       like    peanut       butter        a nd jelly     sa    ndwiches.
+I don't like to p   ut peanu   t    butter  on        h    am sandwiches.
+</pre>
+
+There are still no mismatches, but there are lot more broken up words.
+Here's another, this time allowing mismatches among letters that sound
+sort of alike:
+
+<pre>
+It's hard to  rec  ognize speech.
+It's hard to wreck a nice  beach.
+</pre>
+
+The point of these examples is just that sequence alignment isn't
+something that has one 'correct' answer; instead there are many ways
+to put two sequences into alignment with one another.  Given this
+flexibility, how are we to decide which alignment to report as 'the'
+alignment?  One way to do this is to 'score' each alignment.  That is,
+give it a numerical score based on the amount of mismatch allowed and
+the amount of gapping that you do, and then report the alignment with
+the best score.
+
+<p>
+
+It's pretty easy to see how you would do that: Just try every possible
+way to align the two sequences, score each one, and then select the
+best one.  This is pretty much what the sequence alignment algorithms
+we're going to look at do, but they do it in a fancy way that is very
+computationally efficient.
+
+<p>
+
+A form of this problem is called the 'edit distance' problem.  That
+is, figuring out the minimum number of insertions, deletions and
+replacements necessary to turn string A into string B.
+
+<p>
+
+For instance, here's one way to turn "FIREMAN" into "POLICEMAN":
+
+<pre>
+1. Insert P:         -> PFIREMAN
+2. Insert O:         -> POFIREMAN
+2. Replace F with L: -> POLIREMAN
+3. Replace R with C: -> POLICEMAN
+</pre>
+
+This (and many other solutions) can be conveniently found through a
+method called 'Dynamic Programming.' For two sequences that we'll call
+A and B, dynamic programming typically uses an array (S) of dimensions
+LENGTH(A)+1 by LENGTH(B)+1.  That is, it's one longer on each side
+than the strings we're comparing.  One side of the array represents
+the letters in sequence A and the other side represents the letters in
+sequence B, like this:
+
+<pre>
+    P O L I C E M A N 
+  . . . . . . . . . .
+F . . . . . . . . . .
+I . . . . . . . . . .
+R . . . . . . . . . .
+E . . . . . . . . . .
+M . . . . . . . . . .
+A . . . . . . . . . .
+N . . . . . . . . . .
+</pre>
+
+The idea is to fill in the array with numbers representing the edit
+distance between the substrings upward and to the left of the location
+in the array.  That is, more formally: For all i and j, S(i,j)
+represents the edit distance of the two substrings A[1...i], B[1...j].
+Therefore, when we are done, the lower righthand corner cell of the
+array will be our answer: The final edit distance between the two
+strings.
+
+<p>
+
+In general, a dynamic programming algorithm specifies initial
+conditions on this array and a recursion relationship defining the
+value of S(i,j) in terms of one or more previously computed elements
+S(k<=i,l<=j) of the array.
+
+<p>
+
+For the edit distance problem, the initial conditions are
+
+<pre>
+S(i,0) = i
+S(0,j) = j
+
+That is:
+
+    P O L I C E M A N 
+  0 1 2 3 4 5 6 7 8 9 
+F 1 . . . . . . . . .
+I 2 . . . . . . . . .
+R 3 . . . . . . . . .
+E 4 . . . . . . . . .
+M 5 . . . . . . . . .
+A 6 . . . . . . . . .
+N 7 . . . . . . . . .
+
+</pre>
+
+The recursion relationship is:
+
+<pre>
+S(i,j) = MIN (S(i-1,j)+1, S(i,j-1)+1, S(i-1,j-1) + mismatch(A[i],B[j]))
+
+where mismatch(c1,c2) = (if (= c1 c2) 0 1)
+</pre>
+
+Or, in English: To find the edit distance for A[1...I] and B[1...J],
+we can use the edit score of A[1...(I-1)] and B[1...J] and insert a
+character between A[I-1] and A[I], increasing the edit distance by 1;
+or, alternatively, we can use the edit score of A[1...I] and
+B[1...J-1] and delete A[I], also increasing the edit distance by 1;
+finally we use the edit score of A[1...I-1] and B[1...J-1], and see if
+A[I] and B[J] match.  If they match, the edit distance is not
+increased, while a mismatch means we substitute B[I] for A[I] and
+increase the edit distance by 1.
+
+<p>
+
+Here's what we'd get if we do that for FIREMAN -> POLICEMAN:
+
+<pre>
+    P O L I C E M A N 
+  0 1 2 3 4 5 6 7 8 9 
+F 1 1 2 3 4 5 6 7 8 9 
+I 2 2 2 3 3 4 5 6 7 8 
+R 3 3 3 3 4 4 5 6 7 8 
+E 4 4 4 4 4 5 4 5 6 7 
+M 5 5 5 5 5 5 5 4 5 6 
+A 6 6 6 6 6 6 6 5 4 5 
+N 7 7 7 7 7 7 7 6 5 4 
+</pre>
+
+Notice that the upper lefthand is a zero (initial condition!), and
+that as we proceed downward and to the left in the array, the numbers
+generally increase, because each time we find a mismatch the edit
+distance increases, and it cannot descrease.  Notice also that the
+lower righthand corner has the value of the edit distance that we
+predicted above!  In fact, all we need to do to get the edit distance
+after filling the array is to read off the lower righthand entry!
+
+<p>
+
+Here's Lisp code that does this for us:
+
+<pre>
+>> (defvar *edt* nil)
+
+;;; Main routine.
+
+>> (defun find-edit-distance (s1 s2)
+>>   (let ((s1len (length s1)) (s2len (length s2)))
+>>     ;; Create the dynamic programming array.
+>>     (setq *edt* (make-array (list (1+ s1len) (1+ s2len)) :initial-element 0))
+>>     (set-initial-conditions)
+>>     (run-recurrence s1 s2 s1len s2len)
+>>     (aref *edt* s1len s2len) ; Read off the edit distance!
+>>     ))
+
+;;; Fill in the dynamic programming array, using the initial conditions.
+
+>> (defun set-initial-conditions ()
+>>   (let ((edt *edt*))
+>>     (dotimes (i (array-dimension edt 0)) (setf (aref edt i 0) i))
+>>     (dotimes (j (array-dimension edt 1)) (setf (aref edt 0 j) j))
+>>     ))
+
+;;; Fill in the array, using the recurrence relationship above.
+
+>> (defun run-recurrence (s1 s2 s1len s2len)
+>>   (let ((edt *edt*))
+>>     (loop for i fixnum from 1 to s1len do
+>>           (loop for j fixnum from 1 to s2len do
+>>                 (let ((prev-i (the fixnum (1- i)))
+>>                       (prev-j (the fixnum (1- j))))
+>>                   (setf (aref edt i j)
+>>                         ;; Here's the MIN just as in the formula.
+>>                         (min 
+>>                          (the fixnum (1+ (aref edt prev-i j)))
+>>                          (the fixnum (1+ (aref edt i prev-j)))
+>>                          (the fixnum
+>>                           (+ (aref edt prev-i prev-j)
+>>                              (if (eql (schar s1 prev-i) (schar s2 prev-j)) 0 1)
+>>                              )))))))))
+
+;;; This is just a convenience to show the resulting array.
+
+>> (defun pp-edt (s1 s2)
+>>   (terpri) (terpri)
+>>   (format t "    ")
+>>   (loop for ch across s2 do (format t "~A " ch)) (terpri)
+>>   (loop for i from 0 to (length s1) do
+>>         (if (zerop i)
+>>             (format t "  ")
+>>           (format t "~A " (aref s1 (1- i))))
+>>         (loop for j from 0 to (length s2) do
+>>               (format t "~A " (aref *edt* i j)))
+>>         (terpri)
+>>         )
+>>   (terpri)
+>>   )
+
+</pre>        
+
+Let's try it:
+
+<pre>
+
+>> (find-edit-distance "FIREMAN" "POLICEMAN")
+:: 4
+</pre>
+
+Looks good.  Let's look at the array:
+
+<pre>
+>> (pp-edt "FIREMAN" "POLICEMAN")
+
+    P O L I C E M A N 
+  0 1 2 3 4 5 6 7 8 9 
+F 1 1 2 3 4 5 6 7 8 9 
+I 2 2 2 3 3 4 5 6 7 8 
+R 3 3 3 3 4 4 5 6 7 8 
+E 4 4 4 4 4 5 4 5 6 7 
+M 5 5 5 5 5 5 5 4 5 6 
+A 6 6 6 6 6 6 6 5 4 5 
+N 7 7 7 7 7 7 7 6 5 4 
+</pre>
+
+<p>
+
+Okay, so that's looks right, but we're after the actual steps of the
+transformation, not just the edit distance!  It turns out that we're
+most of the way to having that with what we've already done.  Take a
+look at the final array again, just above. Let's see if we can read
+the actual edits off of this array.  To do this, we start at the lower
+right corner (4), and try to find the cheapest path back to the upper
+left.  From the lower righthand corner, there are three possibile ways
+to move: straight left to 5, up and to the left to 4, or straight up
+to 5.  Only one of those possibilities is minimal: up and left to 4.
+
+<p>
+
+Everytime we go up-and-left we will replace the corresponding letter
+of FIREMAN with a letter of POLICEMAN, but in this case, we're just
+replacing N with N, so there's no change.  Now what?  Well, we have to
+go up-and-left three more times in order to keep our score at 4, so we
+take another three letters without change to get EMAN (remember, we're
+going <i>backwards</i> through the word -- follow along in the array!)
+Now we're at the R/C row and column in the array (the R and C are not
+for Row and Column; they're the letters -- just a coincidence!)  In
+order to keep along the cheapest path we need to go up-and-left again,
+which means replacing C for R: CEMAN, and our score is 3.
+
+<p>
+
+So far so good, but now we're in trouble: We have several ways that we
+could go and retain a score of 3: up-left, left, or down-left (but
+we're not allowed to go down or right, so this last one isn't really
+an option).  These have different implications.  Let's keep going
+up-left until we run out of room: I->I (ICEMAN = 3), F->L (LICEMAN =
+2), and now we're at the top of the array and the only way to go is to
+the left -- each time we go left, we insert a letter: Insert O
+(OLICEMAN = 1), Insert P (POLICEMAN = 0), and we're done!  
+
+<p>
+
+So reversing our steps, and ignoring exact match steps, our
+transformation sequence is:
+
+<pre>
+1. Insert P: -> PFIREMAN
+2. Insert O: -> POFIREMAN
+2. F->L:     -> POLIREMAN
+3. R->C:     -> POLICEMAN
+
+And here's the path we followed (starting from the lower right):
+
+    P O L I C E M A N 
+  0 1 2 . . . . . . .
+F . . . 3 . . . . . .
+I . . . . 3 . . . . .
+R . . . . . 4 . . . .
+E . . . . . . 4 . . .
+M . . . . . . . 4 . .
+A . . . . . . . . 4 .
+N . . . . . . . . . 4 
+</pre>
+
+There are a bunch of other ways that we could have walked backwards
+through the same array, each of them making a different edit that gets
+us to the same point.  Some of these are just as inexpensive as the
+one we followed, while many are much more expensive.  In fact, there
+are a huge number of possible solutions implicit in the array: i.e,
+every possible path from the lower righthand corner to the upper left
+that does not go down or right. And each one of them is a solution to
+the alignment, although most of them are much more complex than the
+one that we found above, and only a small number of them minimize the
+edit distance.
+
+<p>
+
+(By the way, we never went straight up; if we did go straight up, the
+operation would be to <i>delete</i> a letter. Exercise for the reader:
+Figure out some other paths through this array that give different
+edit sequences.  For fun, try not being constrained by finding the
+cheapest path.  For example, first go straight up to the top, and then
+straight over to the left on the top line.  What's the sequence of
+edits for that path?!)
+
+<p>
+
+That's the basic idea behind the principal sequence alignment
+algorithm, called "Needleman-Wunsch" (after the folks who invented
+it).  Here's the <a
+href=http://www.cs.umd.edu/class/spring2003/cmsc838t/papers/needlemanandwunsch1970.pdf>
+original Needleman-Wunsch paper</a>. We'll refer to the algorithm as
+NW from this point on.
+
+<p>
+
+NW is nearly the same as the edit distance algorithm.  The main
+differences are: a) In the edit distance problem, inserting, deleting
+and replacing characters all cost 1, while an exact match costs 0; NW
+generalizes this to let you specify the costs of insertion, deletion,
+replacement and exact matches; Furthermore, gaps can be scored as an
+arbitrary function of gap length, not just a cost times the number of
+spaces in the gap, as in edit distance.  b) As the matrix is filled
+in, NW keeps track of the optimal backpaths, whereas our edit distance
+code didn't do that and we later computed backpaths from the
+lower-right of the matrix by hand.
+
+<p>
+
+You can find the NW algorithm coded up in Lisp in the Biolisp release
+in the file "matching/needleman-wunsch.lisp".  We will not develop the
+code itself here, but we will give a detailed description of how it
+works.
+
+<p>
+
+We're going to change notation just slightly now in order to add some
+flexibility to the method.  We're still aligning two sequences (A and
+B), given by: A[0...N], and B[0...M], and we're looking for a solution
+set consisting of:
+
+<ul>
+
+<li>The elements of A, possibly interspersed with gaps (denoted by '-').
+
+<li>The elements of B, possibly interspersed with gaps (denoted by '*').
+
+<li>An alignment of A (with gaps, as needed) over B (with gaps, as
+needed), such that for at least one i and j, A(i) is aligned with
+some B(j).
+
+</ul>
+<p>
+For example:
+
+<pre>
+A = CGAGGAA
+B = ACGTGA
+</pre>
+
+(From here on in we'll be using the DNA alphabet, {A,C,G,T}.)
+
+<p>
+
+Here's one solution where there is a single gap in B, while A is
+shifted by one position to the right with respect to B:
+
+<pre>
+A:     CGAGGAA
+       || | |
+B:    ACGTG*A
+</pre>
+
+Another solution is:
+
+<pre>
+A:     AC-GTCA
+       |  |  |
+B:   CGA*GG**AA
+</pre>
+
+This actually has more gaps and less matches, so it's not likely to
+rank as high as the first solution using any kind of reasonable
+metric, and therefore probably would not be a 'best match'.
+
+<p>
+
+What constitutes a 'best match' solution depends on how one defines what
+constitutes a good match.  There are three parameters generally
+employed to determine a good match:
+
+<ul>
+
+<li> How much to reward element alignment;
+
+<li> How much to penalize the existence of a gap;
+
+<li> How much to penalize a gap as it gets longer.
+
+</ul>
+
+<p>
+
+It is possible to specify different rewards for different matching
+alignments (e.g., a match of T on top with T on bottom could be given
+a higher value than matching G on top with G on bottom).  It is also
+possible to reward aligments that don't 'match': e.g., having T on top
+and T on the bottom could generate a very high score, while T on top
+and A on the bottom a somewhat lesser score, and T on top and either C
+or G on the bottom a poor score; that is: TT > TA > TC = TG.
+
+<p>
+
+(It's also theoretically possible to specify different penalties for
+gaps and gap lengths in the first sequence vs in the second sequence,
+although we don't provide that option in the code.)
+
+<p>
+
+Determining the reward for element alignment is done by constructing
+what is known in the literature as a SUBSTITUTION MATRIX, and, in the
+code, the corresponding SUBSTITUTION FUNCTION (SUBF).  For any two
+sequence elements X and Y, (SUBF X Y) is used to obtain the reward for
+X and Y being aligned.  Similarly, determining the penalties for a gap
+is done by providing a GAP-PENALTY-FUNCTION or providing parameters
+that allow construction of a function which increases linearly with
+increasing gap length.
+
+<p>
+
+Typical gap functions are one of:
+
+<ul>
+
+<li>No gap penalty (i.e., 0.0);
+
+<li>Constant gap penalty (e.g., -1.0);
+
+<li>Gap penalty proportional to gap length, e.g., gaplength * 0.5;
+
+<li>One penalty for opening a gap and another one for extending it,
+e.g., 1.0 + 0.25 * (gaplength - 1).
+
+</ul>
+
+<p>
+
+This last expression is referred to as the 'affine gap penalty
+function', and is commonly used.
+
+<p>
+
+The NW algorithm to find the set of best alignments consists of
+three parts:
+
+<ol>
+
+<li>Generate and fill the NxM SCORE matrix, just as we did previously,
+but now the matrix values are determined by reward and penalty
+parameters.
+
+<li>Generate and fill another NxM BACKPOINTER matrix.  Each (I,J)
+element of the BACKPOINTER matrix points back to a set of optimal
+alignment paths for the subsequences A[0...I] and B[0...J].
+
+<li>Use the generated matrices to figure out a set of best alignments.
+
+</ol>
+
+<p>
+
+The first two steps are done concurrently.
+
+<p>
+
+The first step of this algorithm is <i>conceptually</i> nearly
+identical to the edit distance algorithm we went through above,
+although there are some important differences (aside from the keeping
+of the backpointer matrix).  We'll go through this carefully so that
+you can see these differences clearly.
+
+<p>
+
+The SCORE matrix initially looks like this, assuming it's elements
+have been initialized to zero.
+
+<pre>
+
+                  B -->
+
+          A   C   G   T   G   A      
+
+      C  0.0 0.0 0.0
+   
+      G  0.0 0.0 0.0
+ 
+      A  0.0 0.0 0.0 . . .
+ 
+ A    G           .
+                  .
+ |    G           .
+ |
+\ /   A
+ .
+      A
+</pre>
+
+Given an index (i,j) into this matrix, we can compute what are called
+the <i>RESIDUES</i>, (the symbols above the jth column and the symbols
+to the left of the ith row) So, for example, the RESIDUES for position
+(3,5) are G and A, while the RESIDUES for (0,0) are C and A. (These
+are just the elements of our sequences, A[I] and B[J].)
+
+<p>
+
+(One difference from the edit distance array example: Here the first
+two characters are at (0,0) of the array and we index the sequences
+starting, in normal Lisp fashion, at 0. If you intend to look at the
+NW code, note that in it the SCORE matrix is always indexed using (i =
+ROW, j = COLUMN).  Further, I is always the first index and J the
+second index.  In the code sequence A is called 'SEQ-DOWN-ROWS' and
+sequence B is named 'SEQ-ACROSS-COLS', for clarity.)
+
+<p>
+
+The substitution matrix, SUB, for our sequences might look like this:
+
+<pre>
+    A   C   G   T
+ 
+ A  1   0   0   0
+
+ C  0   1   0   0
+
+ G  0   0   1   0
+
+ T  0   0   0   1
+</pre>
+
+In this case, all matches are rewarded equally, and all non-matches
+are neutral (neither rewarded nor penalized).  (If we changed the
+entry for (A,A) to 2 from 1, then AA matches would score higher than
+CC, GG and TT matches.  And if we changed the entries for GC and CG
+to -1, then GC/CG alignments would be penalized, while other mismatches
+would be neutral.)
+
+<p>
+
+Now to the details of the algorithm.
+
+<p>
+
+For any (i,j), A[I] and B[J] give us the RESIDUES (as above) for
+position (i,j).  Given the residues, we can (conceptually) index into
+the substitution matrix to determine the score for alignment of the
+two sequences at position (i,j).  (Of course to index into an actual
+matrix one needs numerical indices, so we really need the mapping A ->
+0, C -> 1, G -> 2, T -> 3, given our example SUB matrix.  (This
+mapping is provided transparently in the code by the function
+CREATE-SUBSTITUTION-FUNCTION-AND-MATRIX, which returns a function
+which is called with the two residues.)
+
+<p>
+
+The algorithm must first fill in values for all of the elements of the
+SCORE matrix according to the following recursion relationship:
+
+<p>
+For any given element SCORE(i,j), assuming we have already filled in all
+elements SCORE(k&lt;i,l&lt;j), the value of SCORE(i,j) will be:
+
+<ul>
+<li>A.  The MAXIMUM of three values
+<p><ul>
+<li>1.  SCORE(i-1,j-1)
+<p>
+<li>2.  The maximum over k, of SCORE(k,j-1) + W((i-1)-k), k = 0...i-2
+(That is, a maximum over the elements in column J-1, down to 
+and including row I-2).
+<p>
+<li>3.  The maximum over k, of SCORE(i-1,k) + W((j-1)-k), k = 0...j-2
+(That is, a maximum over the elements in row I-1, over to 
+and including column J-2).
+</ul>
+<p>
+<li>B. Plus the value of SUB(SEQB[i],SEQA[j])
+</ul>
+
+W is our penalty function for gaps: W(x) is the penalty value for
+having a gap of length x.  The value of k determines how big the gap
+is.  (Starting from the left edge, and going across, as in condition
+#3, above, the size of the gap is a maximum at the left edge (k=0) and
+decreases as k increases, and correspondingly as we move down a column
+in 2.)  
+
+<p>
+
+Given that we are careful to avoid screwing up at the leftmost column
+and uppermost row (since there is no J-1 column or I-1 row in these
+cases) this algorithm can then be used to sequentially fill in the
+rest of the array.
+
+<p>
+
+(The recursion relationship above is one of two such global alignment
+recursion formulas found in the biology literature.  We'll talk about
+these differences a little later on. A few minor implementation
+details: When we get to the edge, we use a value of 0.0 rather than
+indexing outside of the array bounds; This consitutes our initial
+condition, instead of using an additional row and column as we did
+with the edit distance array.  Also, in edit distance as we implmented
+it above, we were doing MIN, and looking for the path with the lowest
+numbers.  Here we're doing MAX, and we'll be looking for the paths
+with the <i>highest</i> numbers.  This is not actually an important
+difference; If we did the scoring functions the other way around
+(replacing pluses with minuses and vice versa), the algorithms could
+both use MIN or MAX.)
+
+<p>
+
+The BACKPOINTER matrix is filled in by determining which of the cases
+from above, 1, 2, or 3, had the maximum score, and setting the
+backpointer to point from cell (I,J) back to the cell which held the
+maximum score.  
+
+<p>
+
+So for the cell labelled '*' in the below matrix, the recursion formula
+looks at all cells labelled '+'
+
+<pre>
+- - - + - -
+- - - + - -
++ + + + - -
+- - - - * -
+- - - - - -
+</pre>
+
+For these cells, we find the cell that has the maximum value according
+to the recursion formula, and set the backpointer to point to that
+cell.  (The code handles the case where two or more cells hold maximal
+values).
+
+<p>
+
+(In the code, the SCORE matrix (*SCOREMAT*), and the BACKPOINTER
+matrix (*POINTERMAT*) are computed by the
+GENERATE-NEEDLEMAN-WUNSCH-SCORES function.)
+
+<p>
+
+What do the numbers in the SCORE matrix mean once we compute them?
+Just as in the edit distance algorithm, the numbers tend to increase
+as we go down and right, but in this case, the more positive an
+element (I,J) is, the better it is to align the two sequences such
+that SEQA[I] is over SEQB[J].
+
+<p>
+
+Once the SCORE and BACKPOINTER matrices have been filled in, to
+determine a best alignment all we need to do is follow the
+backpointers we have set up.  We start from a position with the
+highest score in the bottom row or rightmost column, and work our way
+up and to the left (towards the origin) via our backpointers, just as
+we did by eye in the edit distance case!  As we do this, we create
+paths through the matrix from this point back to the origin.  The
+geometry of these paths determine the alignment.  (Since there may be
+more than one such maximal point along the bottom row or rightmost
+column, and there may be more than one backpointer from a given cell,
+there may be numerous best alignments).
+
+<p>
+
+Given a path through the matrix, we can easily determine what sequence
+alignment it specifies.
+<p>
+<ul>
+<li>
+For any given (I,J) in our path, the sequence lines up at that point
+and therefore the RESIDUES at (I,J) constitute the alignment at that
+point.
+<p>
+<li>
+Given point (I,J) in the path, if the previous point in the path is at
+(I-1,J-1), this means there is no gap.
+<p>
+<li>
+Otherwise, there is a gap.  If the previous point is above (I-1,J-1),
+then the gap is in the sequence that was indexed across the columns,
+while if the previous point is to the left of (I-1,J-1), then the gap
+is in the sequence indexed down the rows.
+</ul>
+<p>
+
+To make this concrete, suppose we have the following path back through the matrix:
+
+<pre>
+(5,5) -> (3,4) -> (2,3) -> (1,2) -> (0,0), 
+
+or graphically:
+
+   A  C  G  A  C  T
+
+A  *
+G        *
+A           *
+A              *
+A
+T                 *
+</pre>
+
+We start at the bottom right, at (5,5), with T aligned with T as the
+last characters of both sequences.  The next point is not at (4,4),
+but rather at (3,4) which is above (4,4), so there is a gap in the
+sequence that was indexed across the columns, meaning that the element
+of the sequence indexed down the rows at position 4, A, is paired with
+the gap.  So we have (remember, we are going backwards):
+       
+<pre>
+AAT
+C*T
+</pre>
+
+From (3,4) we go to (2,3), so there is no gap, and once more with no gap,
+to (1,2):
+
+<pre>
+GAAAT
+GAC*T 
+</pre>
+
+Finally, we go to (0,0) which is to the left of (0,1), so there is a gap
+in the sequence indexed down the rows.  Our end result is therefore:
+
+<pre>
+A-GAAAT
+ACGAC*T
+</pre>
+
+We can produce such alignments for every backpath if we choose to do
+so, but generally we're only looking for one solution.
+
+Let's try it!  There's a function called RUN-NW that sets everything up, and 
+does a demo for us:
+
+<pre>
+
+>> (use-modules :matching)
+:: << A number of files get compile/loaded here >>
+
+>> (user::run-nw)
+
+;; Sequence A:  T T G A C A C C C T C C C A A T T G T A 
+;; Sequence B:  A C C C C A G G C T T T A C A C A T 
+
+;;Gap penalty formula = P(n) = 1.0 + ((n-1) * 0.25))
+
+Substitution matrix = 
+
+        C     G     T     A  
+C :    1.0   0.0   0.0   0.0
+G :    0.0   1.0   0.0   0.0
+T :    0.0   0.0   1.0   0.0
+A :    0.0   0.0   0.0   1.0
+
+Score matrix = 
+
+        A    C    C    C    C    A    G    G    C    T    T    T    A    C    A    C    A    T 
+
+T :   0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  1.0  1.0  0.0  0.0  0.0  0.0  0.0  1.0
+
+T :   0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  2.0  2.0  1.0  0.0  0.0  0.0  0.0  1.0
+
+G :   0.0  0.0  0.0  0.0  0.0  0.0  1.0  1.0  0.0  0.0  1.0  2.0  2.0  1.0 0.75  0.5 0.25  0.0
+
+A :   1.0  0.0  0.0  0.0  0.0  1.0  0.0  1.0  1.0  0.0  0.0  1.0  3.0  2.0  2.0 0.75  1.5 0.25
+
+C :   0.0  2.0  1.0  1.0  1.0  0.0  1.0  0.0  2.0  1.0  0.0 0.75  1.0  4.0  2.0  3.0  1.5  1.5
+
+A :   1.0  0.0  2.0  1.0  1.0  2.0 0.25  1.0  0.0  2.0  1.0 0.75 1.75  2.0  5.0  3.0  4.0  2.5
+
+C :   0.0  2.0  2.0  3.0  2.0  1.0  2.0  1.0  2.0  1.0  2.0  1.0 0.75 2.75  3.0  6.0  4.0  4.0
+
+C :   0.0  1.0  3.0  3.0  4.0  2.0 1.75  2.0 2.25  2.0  1.0  2.0  1.0  2.5 2.75  5.0  6.0  5.0
+
+C :   0.0  1.0  2.0  4.0  4.0  4.0  3.0 2.75  3.5 2.25  2.0 1.75  2.0 2.25  2.5 4.75  5.0  6.0
+
+T :   0.0  0.0  1.0  2.0  4.0  4.0  4.0  3.0 2.75  4.5  3.5 3.25  2.0  2.0 2.25  3.5 4.75  6.0
+
+C :   0.0  1.0  1.5 2.75  4.0  4.0  4.0  4.0  4.0 2.75  4.5  3.5 3.25  4.0 2.75 4.25  4.5 4.75
+
+C :   0.0  1.0  2.0  2.5 3.75  4.0  4.0  4.0  5.0  4.0  3.5  4.5  3.5 4.25  4.0  4.0 4.25  4.5
+
+C :   0.0  1.0  2.0  3.0  3.5 3.75  4.0  4.0  5.0  5.0  4.0 3.75  4.5  4.5 4.25  5.0  4.0 4.25
+
+A :   1.0  0.0  1.0  2.0  3.0  4.5 3.75  4.0  4.0  5.0  5.0  4.0 4.75  4.5  5.5 4.25  6.0  4.0
+
+A :   1.0  1.0  0.0  1.0  2.0  4.0  4.5 3.75  4.0  4.0  5.0  5.0  5.0 4.75  5.5  5.5  5.5  6.0
+
+T :   0.0  1.0  1.0 0.75 1.75 2.25  4.0  4.5 3.75  5.0  5.0  6.0  5.0  5.0 4.75  5.5  5.5  6.5
+
+T :   0.0  0.0  1.0  1.0  1.5  2.0 3.25  4.0  4.5 4.75  6.0  6.0  6.0  5.0  5.0 4.75  5.5  6.5
+
+G :   0.0  0.0  0.0  1.0 1.25 1.75  4.0 4.25  4.0  4.5 4.75  6.0  6.0  6.0  5.0  5.0 4.75  5.5
+
+T :   0.0  0.0  0.0  0.0  1.0  1.5 2.75  4.0 4.25  5.0  5.5  6.0  6.0  6.0  6.0  5.0  5.0 5.75
+
+A :   1.0  0.0  0.0  0.0 0.75 2.25  2.5  3.0  4.0 4.25  5.0  5.5  7.0  6.0  7.0  6.0  6.0  5.0
+
+;; 2 Best endpoints.
+;; Best points: ((19 14) (19 12))
+;; Using first endpoint (19 14)
+Number of best paths: 3
+;; Alignment 1 (of 3):
+
+TTGACACCCTCCCAATTGTA   
+     ||||      ||  |
+     ACCCCAGGCTTTACACAT
+
+;; Alignment 2 (of 3):
+
+TTGACACCCTCCCAATTGTA   
+   || |||   |  ||  |
+   AC*CCCAGGC*TTTACACAT
+
+;; Alignment 3 (of 3):
+
+TTGACACCCTCCCAATTGTA   
+   || |||   |  ||  |
+   AC*CCCAGGCT*TTACACAT
+
+</pre>
+
+<i> Cool! </i>
+<p>
+
+So there are two points along the bottom row or rightmost column from
+which optimal backpaths originate (i.e., those points with the highest
+scores).  The first of those points is used, and it has 3 optimal
+paths ending at it.  The demo shows the alignments dictated by these
+three optimal paths.
+
+<p>
+
+Notice that while the number of matches in the first alignment is
+less than the number of matches in alignments 2 and 3, there are no
+gaps in the first alignment.  The two competing factors (matches good,
+gaps bad) happen to balance out exactly and the scores turn out to
+be the same for all three alignments!
+
+<p>
+
+By monkeying with the substitution matrix and the gap penalty function
+you can get all sorts of different behavior out of this algorithm.
+
+<p>
+
+Try
+<pre>
+>> (user::demo-nw)
+:: -- various alignments using different parameters --
+</pre>
+
+as an example of how varying parameters affects the optimal alignments.
+<p>
+Also look at the documentation in the code and especially the
+arguments to RUN-SW if you'd like to play with different substitution
+matrices, gap functions, and sequences. You might want to try a few
+runs in order to get a feel for how it works before pushing onward!
+
+<p><hr><p>
+
+Now, there is a variant of NW that you'll find a lot in discussion of
+sequence matching algorithms.  It is called "Smith-Waterman" (SW) and
+is used extensively, particularly within the Blast algorithm as we
+will see shortly.  SW is nearly identical algorithmically to NW, but
+the small changes introduced result is substantially different behavior.
+
+<p>
+
+The algorithmic changes from NW to SM are:
+
+<ul>
+
+<li>The substitution matrix elements not on the diagonal (i.e.,
+mismatches) should be negative, and the gap function should be
+non-zero.
+
+<li>No element of the SCORE matrix is allowed to have a negative
+value.  If a value is computed to be negative it is set to 0.0.
+
+<li>The optimal backpaths start at any maximal point in the SCORE matrix,
+not just maximal points along the bottom row or rightmost column.
+
+<li>
+Finally, optimal backpaths end when a SCORE of 0 is encountered.
+
+</ul>
+<p>
+
+Essentially, while NW finds best <i>global</i> alignments, reporting
+the best overall match, SW finds best <i>local</i> alignments.  When
+sequences are very similar in a sub-region, but not overall, global
+alignment algorithms will tend to miss this fact, whereas local
+alignment enable us to pick up sub-region similarity.  (One can intuit
+this because in NW the sequence match starts at the start of both
+sequences and ends at the end of both sequences.  In SW, the match can
+start anywhere (because the backpaths terminate when 0 is found) and
+end anywhere (because the backpaths can start at any maximal point in
+the whole array), so it can pick out a small region of high
+similarity).
+
+<p>
+
+Here's the same sequence set as above, run with Smith-Waterman:
+
+<pre>
+>> (run-sw)
+
+;; Sequence A: T T G A C A C C C T C C C A A T T G T A 
+;; Sequence B: A C C C C A G G C T T T A C A C A T 
+
+;; Gap penalty formula = P(n) = 1.0 + ((n-1) * 0.25))
+
+Substitution matrix = 
+
+        C     G     T     A  
+
+C :    1.0 -0.25 -0.25 -0.25
+
+G :  -0.25   1.0 -0.25 -0.25
+
+T :  -0.25 -0.25   1.0 -0.25
+
+A :  -0.25 -0.25 -0.25   1.0
+
+Score matrix = 
+
+&lt;&lt; Another big, hairy SCORE matrix which need not be shown here! &gt;&gt;
+
+;; 1 Best endpoints.
+;; Alignment ending at point (19,12):
+
+;; Local alignment starting at: SEQA[5], SEQB[0]
+;;  and ending at:              SEQA[19], SEQB[12]
+
+ACCCTCCCAATTGTA
+|||| |    || ||
+ACCC*CAGGCTT*TA
+</pre>
+
+Notice that we only have a portion of the sequence aligned.  Some of
+sequence A's initial bases (the first five) and some of sequence B's
+final bases (the last five) are not shown in the alignment (nor do
+they contribute to the score for the alignment, unlike NW, where they
+could be scored as gaps in the other sequence).
+
+<p>
+
+Although it's a little hard to see, the SW alignment of this segment
+of the sequences is better than either of the NW global alignments!
+(There are ten matches and two gaps, while in NW above, the final two
+alignments have nine matches and two gaps)
+
+<p>
+
+As with the RUN-NW function, the RUN-SW function takes various
+arguments that allow you to vary the sequences, substitution matrix
+and gap penalty function.  There's also a DEMO-SW function that you
+can run.  Take a look at the code (it's in
+"matching/smith-waterman.lisp") and try some things out yourself if
+you'd like.
+
+</pre>
+
+<p><hr><p>
+
+We've taken a look at the Needleman-Wunsch and Smith-Waterman
+algorithms.  There's just one problem with attempting to apply them to
+DNA and protein matching -- <b>they're too slow and they take too much
+space!</b> If you happen to be comparing a DNA sequence of 500 base
+pairs against a relatively small database of, say, half a billion base
+pairs, then you'd have to fill in a 500 x 500,000,000 matrix.  Most
+PC's don't (yet!) have a terabyte (a trillion bytes) of main memory...
+
+<p>
+
+To deal with this the famous Blast algorithm was invented!  Blast
+attempts to find the best match(es) for a (relatively small)
+<i>query</i> sequence in a (very large) <i>database</i> sequence.
+It's actually a complex combination of two algorithms: First Blast
+uses a set of 'words' -- that is, small subsequences (usually just a
+few letters long) that appear in the target sequence -- to locate
+regions of the database that are likely to have high sequence
+similarity with the query (or to think about it another way, to
+eliminate huge regions of the database that almost certainly do
+<i>not</i> match the query).  Once these regions of possible
+similarity have been identified Blast uses a Smith-Waterman-type
+local alignment algorithm to extend the match around each region of
+these matching words, scoring the aligments in each region and
+returning to the user the best such scores.
+
+<p>
+
+Here's an little example: Suppose we have the query sequence "CAT" and
+the database sequence "THE MAD HATTER AND THE WHITE RABBIT SAW A CARD
+BATTLE".  We'll divide up the query into all substrings of length 2,
+i.e., "CA" and "AT".  Now we'll find occurences of those substrings in
+our database sequence:
+
+<pre>
+THE MAD HATTER AND THE WHITE RABBIT SAW A CARD BATTLE
+         ^^                               ^^    ^^
+</pre>
+
+We've found three regions of possible high similarity, and a large
+region (in the middle) where we don't expect any matching algorithm to
+generate a high score for "CAT".  So we need only run the matching
+algorithm over the regions we located.
+
+<p>
+We've implemented a simplified Blast (in the file
+matching/blast.lisp).  Just to mix things up a little, this version of
+Blast compares amino acid (AA) sequences instead of boring DNA
+sequences. Recall that there are 20 AAs (whereas there are only 4 DNA
+bases).  The standard substitution matrix for AAs is called the
+BLOSUM-62 matrix, and it represents certain complex probabilities of
+substitutions among amino acids.   Here it is:
+
+<pre>
+>> (defvar *amino-acid-letters* '(a r n d c q e g h i l k m f p s t w y v))
+
+>> (defvar *blosum-62*
+>>  (make-array '(20 20)
+>>   :initial-contents
+>>    ;;A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V
+>>   '(
+>>    ( 4 -1 -2 -2  0 -1 -1  0 -2 -1 -1 -1 -1 -2 -1  1  0 -3 -2  0) ;; A
+>>    (-1  5  0 -2 -3  1  0 -2  0 -3 -2  2 -1 -3 -2 -1 -1 -3 -2 -3) ;; R
+>>    (-2  0  6  1 -3  0  0  0  1 -3 -3  0 -2 -3 -2  1  0 -4 -2 -3) ;; N
+>>    (-2 -2  1  6 -3  0  2 -1 -1 -3 -4 -1 -3 -3 -1  0 -1 -4 -3 -3) ;; D
+>>    ( 0 -3 -3 -3  9 -3 -4 -3 -3 -1 -1 -3 -1 -2 -3 -1 -1 -2 -2 -1) ;; C
+>>    (-1  1  0  0 -3  5  2 -2  0 -3 -2  1  0 -3 -1  0 -1 -2 -1 -2) ;; Q
+>>    (-1  0  0  2 -4  2  5 -2  0 -3 -3  1 -2 -3 -1  0 -1 -3 -2 -2) ;; E
+>>    ( 0 -2  0 -1 -3 -2 -2  6 -2 -4 -4 -2 -3 -3 -2  0 -2 -2 -3 -3) ;; G
+>>    (-2  0  1 -1 -3  0  0 -2  8 -3 -3 -1 -2 -1 -2 -1 -2 -2  2 -3) ;; H
+>>    (-1 -3 -3 -3 -1 -3 -3 -4 -3  4  2 -3  1  0 -3 -2 -1 -3 -1  3) ;; I
+>>    (-1 -2 -3 -4 -1 -2 -3 -4 -3  2  4 -2  2  0 -3 -2 -1 -2 -1  1) ;; L
+>>    (-1  2  0 -1 -3  1  1 -2 -1 -3 -2  5 -1 -3 -1  0 -1 -3 -2 -2) ;; K
+>>    (-1 -1 -2 -3 -1  0 -2 -3 -2  1  2 -1  5  0 -2 -1 -1 -1 -1  1) ;; M
+>>    (-2 -3 -3 -3 -2 -3 -3 -3 -1  0  0 -3  0  6 -4 -2 -2  1  3 -1) ;; F
+>>    (-1 -2 -2 -1 -3 -1 -1 -2 -2 -3 -3 -1 -2 -4  7 -1 -1 -4 -3 -2) ;; P
+>>    ( 1 -1  1  0 -1  0  0  0 -1 -2 -2  0 -1 -2 -1  4  1 -3 -2 -2) ;; S
+>>    ( 0 -1  0 -1 -1 -1 -1 -2 -2 -1 -1 -1 -1 -2 -1  1  5 -2 -2  0) ;; T
+>>    (-3 -3 -4 -4 -2 -2 -3 -2 -2 -3 -2 -3 -1  1 -4 -3 -2 11  2 -3) ;; W
+>>    (-2 -2 -2 -3 -2 -1 -2 -3  2 -1 -1 -2 -1  3 -3 -2 -2  2  7 -1) ;; Y
+>>    ( 0 -3 -3 -3 -1 -2 -2 -3 -3  3  1 -2  1 -1 -2 -2  0 -3 -1  4) ;; V
+>>   )))
+ </pre>
+
+So, for example, aligning C with C scores 9, which is quite high.
+Aligning D with N scores 1, and aligning D with C scores -3.  All
+matches are good, while some mismatches are ok, and others bad.  
+
+<p>
+
+Where do these numbers come from?  And why are the amino acids not
+named for the first 20 characters of the alphabet, instead of using an
+apparently random collection?  And why aren't they at least in
+alphabetical order?  Good questions.  We won't answer these questions
+here, but a Google search will give you a lot of information on the
+first question.  The other two are probably the result of history and
+convention.
+
+<p>
+
+The code in matching/blast.lisp deals with three-letter words, that
+is, triples, (unlike the doublets in our little example above) and
+forms every combination of the 20 AAs composed of three letters.  A
+quick calculation will show that there are 20x20x20 of these, or 8,000
+combinations.
+
+<p>
+
+We need to be able to figure out the substitution score for any pair
+of sequences (of the same length); That is, the sum of the elements in
+the matrix above, indexed by the respective letters in each sequence.
+
+Here's some (inefficient) code that does this (a more efficient version
+can be found in matching/blast.lisp):
+
+<pre>
+>> (defun substitution-score (seqa seqb)
+>>     (let ((letters *amino-acid-letters*))
+>>      (apply #'+ 
+>>       (mapcar 
+>>         #'(lambda (x y) 
+>>             (aref *blosum-62* (position x letters) (position y letters)))
+>>         seqa seqb))))
+
+>> (substitution-score '(a s d f) '(a s d f))
+:: 20
+</pre>
+
+i.e. this calculates:
+<p>
+sub(a,a) = (subs(a,a) = 4) + (sub(s,s) = 4) + (sub(d,d) = 6) + (sub(f,f) = 6) = 20.
+<p>
+One more example, using two difference sequences:
+<pre>
+>> (substitution-score '(a s d f) '(f d s a))
+:: -4
+</pre>
+
+Okay, next we need to be able to extract all the triples from the
+query sequence:
+
+<pre>
+>> (defun contiguous-subsequences (sequence len)
+>>     (let ((seqlen (length sequence)))
+>>      (if (> len seqlen)
+>>         nil
+>>       (let ((subseqs nil) (stop (1+ (- seqlen len))))
+>>         (dotimes (j stop)
+>>           (push (subseq sequence j (+ j len)) subseqs))
+>>         (nreverse subseqs)
+>>         ))))
+
+>> (contiguous-subsequences (setq query '(a  r  n  d  c  q  e  g  h  i  l  k  m  f  p  s  t  w  y  v)) 3)
+:: ((A R N) (R N D) (N D C) (D C Q) (C Q E) (Q E G) (E G H) (G H I) (H I L) (I L K) ...)
+</pre>
+
+<p>
+The idea now is to find all the triples in the database sequence
+which, when scored against <i>any</i> triple in the query sequence,
+result in at least a <i>threshold</i> SUBSTITUTION-SCORE result (this
+threshold can be increased or decreased as a Blast user wishes, to
+decrease or increase, respectively, the number of such matches).
+<p>
+The code at this point becomes involved, due to complications involving
+duplications of triples in both the query and database sequences.
+We won't develop the code further, as the general idea should be clear,
+but if you are interested in the details have a look at the comments
+and code in matching/blast.lisp.
+<p>
+
+Instead, just follow along as we show a sample run.  
+
+<p>
+
+First let's create a database:
+
+<pre>
+>> (defun random-amino-acid-chain (n)
+>>     (let ((chain nil) (naa (length *amino-acid-letters*)))
+>>      (dotimes (j n) (push (elt *amino-acid-letters* (random naa)) chain))
+>>      chain))
+
+>> (setq db (coerce (random-amino-acid-chain 2000) 'simple-vector))
+:: #(R H P A P S S R Q M ...)
+</pre>
+
+(When you do this, and all of the subsequent examples, you will get
+somewhat different results because your database will start out
+differently, since it's random!)
+
+<p>
+
+Now find all the places that any triple in the database matches any
+triple in the query using a high substitution score as the match
+criterion.  There are fast and slow ways to do this, our way isn't the
+fastest, but it's okay for the moderately-sized database that we'll
+be using here.
+
+<pre>
+>> (user::find-seeds query db 18)
+
+;; Seed (W Y I) at db position 617 matches query triple(s)
+;;  (W Y V) at query position 17
+
+;; Seed (W Y A) at db position 976 matches query triple(s)
+;;  (W Y V) at query position 17
+
+;; Seed (S W Y) at db position 1619 matches query triple(s)
+;;  (T W Y) at query position 16
+
+;; Seed (W Y L) at db position 1620 matches query triple(s)
+;;  (W Y V) at query position 17
+
+;; Seed (T W Y) at db position 1970 matches query triple(s)
+;;  (T W Y) at query position 16
+
+::((617 (17) 21) (976 (17) 18) (1619 (16) 19) (1620 (17) 19) (1970 (16) 23))
+</pre>
+
+So it found five places in the database sequence which match some
+query triple at or above our substitution score threshold of 18, and
+the output shows which triple in the query sequence was matched.
+Notice the important point that the database triple is not necessarily
+an exact match to the query triple.  Only the substitution score is
+relevant!
+
+So these five database triple locations constitute the seeds for the
+local alignment part of the Blast algorithm.  (If we wanted nearly
+perfect matches, we could raise the substitution score limit, and if
+we wanted less perfect matches, but more of them, we could reduce it.)
+
+<p>
+
+All that is left to do is examine each seed area and determine the
+best match of the query to the database region containing that seed.
+
+<p>
+
+Here's a run of the entire algorithm, showing how it does this:
+
+<pre>
+
+>> (user::run-test-blast)
+
+Query sequence: (G P Y H A L N F E T)
+
+;; Seed (P F H) at db position 150 matches query triple(s)
+;;  (P Y H) at query position 1
+
+;; Seed (P H H) at db position 1288 matches query triple(s)
+;;  (P Y H) at query position 1
+
+;; Found 2 seeds
+
+;; A maximal alignment starts at position 149
+;; of the database, and at position 0 in the query.
+;; The alignment has a score of 29.
+
+DB MATCH: G P F H A V V D T C 
+QUERY   : G P Y H A L N F E T 
+          ^         ^
+
+;; A lesser alignment starts at position 1288
+;; of the database, and at position 1 in the query.
+;; The alignment has a score of 21.
+
+DB MATCH: K P H H A F K A H G 
+QUERY   : G P Y H A L N F E T 
+            ^         ^
+</pre>
+
+Note that in the first alignment the match was expanded in both
+directions; initially the triple at positions 1-3 in the query was
+matched to positions 150-152 in the database, but the local alignment
+code expanded this match to include the G to the left and the A and L
+to the right (the L is included because the VL match is a positive
+score in the substitution matrix, even though the characters are not
+identical).  In the second alignment the match was not extended to the
+left but was extended three to the right.
+
+<p>
+
+In our code we use a very simple-minded maximizing algorithm that
+keeps extending the seed in both directions until the score goes
+negative, without permitting any gapping or deletion.  But you can see
+how a local alignment algorithm like SW would fit in nicely here,
+permitting gaps and deletions, and finally producing a good local
+alignment between the query and matching portions of a possibly very
+large database.  Also note how we have reduced the initial problem of
+having to fill in a 500 x 500,000,000 matrix to one of filling in
+several 500 x 1000 or so matrices and some simple score evaluations of
+short sequences.
+
+<p>
+
+So <i>that's</i> how Blast works!
+
+<p><hr><p>
+
+<b>A technical note on slight differences in the recursion formulations found in 
+the computational biology literature</b>
+
+<p>
+
+Browsing Biolinformatics web sites and books that discuss
+Needleman-Wunsch and Smith-Waterman algorithms, one comes across two
+apparently different recursion formulas that claim to implement these
+alignment algorithms.
+
+<p>
+
+Below we provide the two different formulas, discuss what they mean,
+and why they are in fact different but in some cases equivalent.
+
+<p>
+
+Consider the alignment problem
+
+<pre>
+SEQA = ACGTA
+SEQB = ACATA
+</pre>
+
+One would normally think that the alignment 
+
+<pre>
+ACGTA
+|| ||
+ACATA
+</pre>
+
+was optimal.
+
+<p>
+
+But given a relatively large mismatch penalty and a relatively small
+gap penalty, then:
+
+<pre>
+AC-GTA
+||  ||
+ACA*TA
+
+or
+
+ACG-TA
+||  ||
+AC*ATA
+</pre>
+
+could be optimal.
+
+<p>
+
+Using the recursion relationship found in the original Needleman-Wunsch
+algorithm (<a
+href=http://www.cs.umd.edu/class/spring2003/cmsc838t/papers/needlemanandwunsch1970.pdf>Here's</a>
+the orginal Needleman-Wunsch paper!), which is:
+
+<pre>
+SCORE(i,j) = SUBST(i,j) + 
+ 
+ MAX { SCORE(i-1,j-1), 
+ 
+       MAX    SCORE(k,j-1) - W(i-1-k) 
+     k=0,i-2 
+ 
+       MAX    SCORE(i-i,k) - W(j-1-k) 
+     k=0,j-2 
+    } 
+</pre>
+
+it is impossible to find these latter alignments, while using the
+alternate recursion formula, it is.
+
+<p>
+
+The reason finding these alignments is not possible using the
+recursion formula above is because it forces the backpointers from
+(I,J) to point to some point K&lt;I AND L&lt;J.  A backpointer from (I,J)
+cannot go to (I-1,J) or (I,J-1) and then to (I-1,J-1), and these paths
+are the only ways to produce such an alternating gap.
+
+<p>
+
+Recall that backpointer(s) from (I,J) point back to the cell(s) selected
+by the MAX operations in the recursion formula that contribute the
+highest score(s).  No cell with I or J as a coordinate is ever considered.
+
+<p>
+
+Graphically, for the '*' point below, the algorithm allows
+backpointers to the '+' points.
+
+<pre>
+- - - + - -
+- - - + - -
++ + + + - -
+- - - - * -
+- - - - - -
+</pre>
+
+In mathematical English, what this recursion relationship says is:
+The optimal alignment of the subsequences SEQA[0...I] and SEQB[0...J]
+GIVEN that SEQA[I] and SEQB[J] are to be exactly aligned, must be
+determined by looking either for some K&lt;I such that SEQA[K] will be
+aligned with SEQB[J-1], or for some L&lt;J such that SEQA[I-1] will be
+aligned with SEQB[L].  That is, one MUST go back to a previous point
+where two sequence elements are exactly aligned.
+
+<p>
+
+The fact that SEQA[I] and SEQB[J] must be exactly aligned here is
+enforced by the addition of SUBST(I,J) (the score for this exact
+match) regardless of which term is selected by the outer MAX
+operation.  This addition is done for all I and J, so every
+backpointer points back to an exact alignment.
+
+<p>
+
+Now consider the alternate recursion formula, found, for instance, in
+Gusfield, "Algorithms of Strings, Trees and Sequences", Chapter 11.
+(It is presented there in a somewhat different format.  It has been
+converted to the format used above):
+
+<pre> 
+SCORE(i,j) = 
+ 
+ MAX { SCORE(i-1,j-1) + SUBST(i,j), 
+ 
+       MAX    SCORE(k,j) - W(i-k) 
+     k=0,i-1 
+ 
+       MAX    SCORE(i,k) - W(j-k) 
+     k=0,j-1 
+     } 
+</pre>
+
+Note that the backpointers can point back to the same row I or the
+same column J when one of the bottom two terms is selected, since
+coordinates with I or J in them are part of the formula.
+
+<p>
+
+Graphically, as above,
+
+<pre>
+- - - - + -
+- - - - + -
+- - - + + -
++ + + + * -
+- - - - - -
+</pre>
+
+This recursion formula does NOT impose the constraint that SEQA[I]
+and SEQB[J] must align exactly.  They only align exactly if the
+first term is chosen (because only then do we add SUBST(I,J), the
+score for exact alignment).
+
+<p>
+
+This recursion relationship says that the optimal alignment for
+the subsequences SEQA[0...I] and SEQB[0...J] is either:
+
+<ul>
+<li>1.  The optimal alignment of SEQA[0...I-1] and SEQB[0...J-1],
+concatenated with SEQA[I] and SEQB[J].
+<li>2.  Some optimal alignment of SEQA[0...I] with SEQB[0...J]
+such that SEQA[I] is strictly to the left of SEQB[J].  That is,
+the alignment ends with a gap in SEQA from SEQA[I] until we
+hit SEQB[J].
+<li>3.  The same as (2), reversing A&B, I&J.
+</ul>
+
+<p>
+
+There is no presumption in (2) that SEQA[I] must exactly align with
+any character in SEQB, and similarly for (3).
+
+<p>
+
+Illustrated graphically, the first recursion relation can only produce
+the following backpath, regardless of the penalty for mismatches:
+
+<pre>
+   A C A T A
+A  0
+C    1
+G      2
+T        3
+A          4
+</pre>
+
+while the latter recursion relation can produce the same as above,
+but can also produce
+
+
+<pre>
+   A C A T A
+A  0
+C    1 2
+G      3
+T        4
+A          5
+
+or
+
+   A C A T A
+A  0
+C    1
+G    2 3
+T        4
+A          5
+</pre>
+
+given suitable mismatch and penalty functions.
+
+<p>
+
+Now, in some kinds of DNA matching it may be the case that one never
+encounters a situation where it would be appropriate to have a large
+mismatch penalty and small gap penalty.  Then the two recursion
+formulas would, I believe, produce the same alignments, all other
+things equivalent.  Also note that the first algorithm is slightly
+more efficient since less cells need to be searched (although in the
+standard case, with a linear gap penalty function, this is no longer
+true if one implements the optimization that allows the algorithm to
+run in O(NM) instead of cubic time; both algorithms need to search the
+same number of cells).
+
+<p>
+
+But presumably there are other scenarios where a gap would be
+acceptable while a mismatch highly unlikely (See Gusfield, p 253, for
+a discussion of when adjacent gaps in opposite strings might be
+appropriate in a biological context).
+
+<p>
+
+As noted, the original Needleman-Wunsch paper uses the first algorithm,
+and the paper specifically notes the constraint that both I and J must
+decrease as the path matrix is traversed backwards.  They do not,
+however, talk about the implications/restrictions of this contraint
+on what alignments are possible.
+
+<p>
+
+The <a
+href=http://www.cs.umd.edu/class/spring2003/cmsc838t/papers/gribskovanddevereux1994.pdf>Gribskov,
+Devereux paper</a> also uses the first algorithm.  However, most texts
+and websites seem to use the second, more general, recursion formula.
+

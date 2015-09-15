@@ -1,0 +1,1039 @@
+<title>BioBike: BioLisp Introduction</title>
+<p>
+
+<h2>
+BioBike: BioLisp Introduction
+</h2>
+
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction</a>
+<a href=#lists><li>Lists</a>
+<a href=#exprs><li>Expressions</a>
+<a href=#eval><li>Evaluation</a>
+<a href=#strings><li>Strings</a>
+<a href=#syms><li>Symbols</a>
+<a href=#listfns><li>More List Functions</a>
+<a href=#quote><li>Quote Blocks Evaluation</a>
+<a href=#dwim><li>Do What I Meant! (DWIM)</a>
+<a href=#trees><li>Lists as Trees</a>
+<a href=#binding><li>Symbols and Value "Bindings"</a>
+<a href=#exer><li>Exercises</a>
+
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+BioBike is the environment in which you write and execute BioLisp
+code, and BioLisp is a dialect of Common Lisp (which is, I'll bet you
+can guess, a dialect of Lisp).  Before you can interact with BioBike,
+you need to know a few basic facts about Lisp.  There are various web
+sites dedicated to Lisp and learning Lisp.  You can find some of these
+through <a href=http://www.lisp.org/alu/home> the Association of Lisp
+Users (ALU) web site</a>, <a href=http://www.franz.com> the Franz web
+site</a> (a commercial Common Lisp vendor), or <a
+href=http://www.biolisp.org> the BioLisp.org site</a>, but you don't
+need to learn much Lisp to begin working in the BioBike environment;
+knowing just a few basics will get you jump started. In this tutorial
+we'll do some very simple things with BioLisp in order to get you
+comfortable with both interaction with the BioBike "listener" (the web
+interface, aka the 'Weblistener'), and at the same time we'll see a
+little bit of what BioLisp is about.
+
+<p>
+
+Nearly everything you do in BioLisp will involve sets of nested,
+balanced, parentheses.  These are variously called "lists", "trees",
+or "exprs" ("expressions").  When you tell BioLisp to do something,
+The operation or function always comes first.  For example, if you
+want to add two numbers in other programming languages you'd usually
+type something like: 3 + 4, but in BioLisp you type: (+ 3 4).
+
+<p>
+
+<p><hr><p>
+<a name=lists>
+<h2>Lists</h2>
+
+Let's start with lists. Here are some examples of correctly formed
+lists:
+
+<p>
+<pre>
+  (this is a list of symbols)
+
+  (3.141 2.718 1.414) 
+
+  (the above is a list of numbers)
+
+  ((this) (is) (a) (list) (of other lists))
+
+This one's several lines long:
+
+  ((((this) (is (a ((deeply nested) list) see) if (you (can))
+     (((follow all) the) matching parens) all the way)
+          back up (to (the top)))))
+</pre>
+</p>
+
+Here are some <i>wrong</i> lists (because none of them have correctly
+balanced parentheses:
+
+<p>
+<pre>
+  (this one does not have a close parentheses
+
+  this one does not have an open parenthesis)
+
+  ((this (one has) too many close parentheses)))))
+</pre>
+</p>
+
+You have to be careful that you've balanced the parentheses correctly,
+and that you've put them where you want them!  Most Lisp editors,
+including the BioBike Listener, have some way of helping you balance
+your parens, but it's important to understand that although you can
+usually make the parens balance by just adding or removing some parens
+at the end of the expression, this isn't always what you want!  We'll
+see some example of this soon.
+
+<p><hr><p>
+<a name=exprs>
+<h2>Expressions</h2>
+
+<p>
+
+To compute things, you type in expressions (herafter known as
+"exprs").  BioLisp follows your directions (e.g., when you  type
+(+ 3 4) you are telling BioLisp to add 3 and 4), and returns the
+result of your instructions, in this case 7.
+
+<p>
+
+Now, although (+ 3 4) is an expr, the the lists above aren't exprs --
+that is, they are data lists, not expressions that specify
+instructions.  If you try to get BioLisp to do something with one of
+them (by typing it in) BioLisp will come back and tell you it doesn't
+understand what you want it to do.  Notice the interesting fact that
+expr lists look almost exactly the same as data lists, but they tell
+Lisp to actually compute something -- the first element of the expr (+
+3 4) is an instruction that Lisp understands, in this case: '+'.
+
+<p>
+
+Here are some examples of exprs.  We've indicated the expr with a ">>"
+before it, and the result with a "::" before it.  
+<p>
+
+<font color="red">
+[<i>Important!</i> When entering things into BioBike, make sure that
+you don't type the leading ">>" characters!  These aren't part of the
+expression; ">>" is just a presentation convention for the BioBike
+tutorials! So in these tutorials, inputs are prefixed by ">>", and
+outputs by "::", but, again, you should <i>NOT</i> type the ">>" when
+you enter things into BioBike!]</font>
+
+<p>
+
+<pre>
+>> (+ 1 2)
+:: 3
+
+>> (* 1 2 3 4)
+:: 24
+
+>> (* (+ 1 2) (+ 3 4))
+:: 21
+</pre>
+
+</p>
+
+Let's look at the first two exprs above.  These are obviously just
+simple arithmetic expressions.  The only thing that's a little weird
+is that the function (+ or *) comes before the arguments.  This is the
+way Lisp <i>always</i> works: The first thing in an expression is the
+function, and everything after that are the arguments:
+
+<pre>
+  (function arg1 arg2 arg3 ...)
+</pre>
+
+[The 'arguments' are the things that the function operates on, so,
+with respect to the '+' function, the 'arguments' are the numbers
+being added up.]
+
+<p> 
+
+At first this will seem a little weird to you; Why not just write:
+1+2, or 1+2+3+4?  But if you think about it a little, you'll see that
+Lisp syntax (which is called "prefix" notation), can be clearer and
+more useful than the way you learned it (you learned: 1 + 2, which is
+called "infix" notation).  When you use infix, you have to worry about
+operator precedence -- that is, what gets done first. (Like, does
+1+2*3 = 7 or 9?, that is: (1+2)*3 or 1+(2*3)???.) You have to
+disambiguate infix using parentheses. Also, in infix you can't operate
+on more than two arguments at a time -- to add four numbers you need 3
+operations (a + b + c + d), while with prefix you just need one
+operation (+ a b c d). So in the long run prefix turns out to be both
+less ambiguous and in many cases shorter. 
+
+
+<p>
+
+I have to admit that for simple math prefix is kind of clunky, but it
+has many other advantages.  One is that prefix more like the way you
+actually <i>think</i>. Think about what you say when you talk about
+math: You say something like: "three plus five" (this is infix), but
+you could also say: "add three and five" (this is prefix).  For
+<i>non-mathematical</i> things <i>prefix</i> is the more common way to
+say things, and infix is quite rare!  When you give commands in
+English you don't say: "ball give John" (infix -- weird!), you say:
+"Give John the ball" (prefix -- normal!).  If you're
+<i>describing</i> what's happening, you might use infix: "The ball is
+given to John". But for commands, the verb usually comes first: "Give
+John the ball." "Give the ball to John." "Eat the sticky rice with the
+wooden chipsticks."  "Add 3, 4, 2, and 12."  "Multiply the result of
+adding 1 and 2, to the result of adding 3 and 4." Etc.
+
+<p>
+
+As we get more into Lisp we'll come across more and more advantages of
+prefix notation; for the moment, just bear with me on this.
+
+<p>
+
+This last sentence: "Multiply the result of adding 1 and 2, to the
+result of adding 3 and 4." is how we read the third example, above:
+
+<pre>
+>> (* (+ 1 2) (+ 3 4))
+:: 21
+</pre>
+
+Where there are both multiplication and addition combined. In infix
+you could write: (1+2)*(3+4), except that in Lisp, by the above rule,
+the function always comes before the arguments, so you write each
+addition as: (+ 1 2) and (+ 3 4), as in the first example, and then in
+order to multiply those together, you put them in as the arguments to
+a multiplication, that is: (* (+ 1 2) (+ 3 4)), which is the same as:
+(* 3 7) = 21.
+
+<p><hr><p>
+<a name=eval>
+<h2>Evaluation</h2>
+
+<p>
+
+The way to read exprs, and figure out what they're going to do -- that
+is, how they <i>evaluate</i> -- is to read them from the front, and
+ask at each level what the function is, and then what the values of it
+arguments are.  Let's try that with the first expression: (+ 1 2):
+
+<pre>
+How to read: (+ 1 2):
+The function is + (addition), so what are its arguments?
+  The first argument is 1.  Okay, that's just a number.
+  The second argument is 2.  Okay, that's just a number.
+No more arguments; we can evaluate the + with it's arguments: (+ 1 2)
+The result is 3
+and we're done!
+</pre>
+<p>
+
+This is called "recursive evaluation".  Now let's do exactly the same
+thing with (* (+ 1 2) (+ 3 4)):
+
+<p>
+<pre>
+Recursive evaluation of: (* (+ 1 2) (+ 3 4)):
+The function is * (multiply), so what are its arguments?<br>
+  The first argument is actually another expression: (+ 1 2),
+  so we do just like above:
+    The function is + (addition), so what are its arguments?
+      The first argument is 1.  Okay, that's just a number.
+      The second argument is 2.  Okay, that's just a number.
+    No more arguments; we can evaluate the + with it's arguments: (+ 1 2)
+    = 3
+    and we're done!... at least with the first argument to *, which is 3.
+  The second argument is another expression: (+ 3 4), so as above,
+  we go through the evalauation of this sub-expression:
+    The function is + (addition), so what are its arguments?
+      The first argument is 3.  Okay, that's just a number.
+      The second argument is 4.  Okay, that's just a number.
+    No more arguments; we can evaluate the + with it's arguments: (+ 3 4)
+    = 7
+    and we're done with the second argument to *, which is 7.
+So now we've evaluated both of the arguments to *, which are 
+expressions that evaluate to 3 and 7, so we can complete the
+multiplication: (* 3 7) 
+= 21
+and we're done!
+</pre>
+
+<p>
+
+This seems complex (or at least verbose!), but when you get used to it
+you'll find that it's actually very easy to follow, and
+<i>incredibly</i> convenient in many ways.  Here are some others to
+try out.  See if you can figure out what they evaluate to before
+trying them::
+
+<p>
+<pre>
+>> (* (+ 3 4) (* 2 3))
+
+>> (- (- 3 4) (- 2 3))
+
+>> (+ (* (+ 2 3) (* (+ 3 4) 2 (- 1 3))) (+ 3 4))
+</pre>
+<p>
+
+(If you got -133 for the last one, you're better than me!  I did
+something wrong when I was running through that one by hand and got
+152; Oh well, that's why we actully let computers do this sort of
+thing most of the time!  Go ahead and try it out by entering the last
+one into Biobike!)
+
+<p>
+
+Now, let's look at a couple of problem cases.  The most common problem
+that you'll run into is incorrectly parenthesized lists.  We saw some
+simple examples above where there were just missing parens at the
+beginning or end, but now you can see what I was saying about it not
+being enough to just balanced the parens -- you have to balance them
+CORRECTLY or else you'll get something that doesn't mean what you want
+it to mean!  
+
+<p>
+Watch this!  Try each of these in BioBike: 
+
+<p>
+<pre>
+>> (+ (* (+ 2 3) (* (+ 3 4) 2 (- 1 3))) (+ 3 4))
+:: -133
+
+>> (+ (* (+ 2 3) (* (+ 3 4 2 (- 1 3)))) (+ 3 4))
+:: 42
+
+>> (+ (* (+ 2 3) (* (+ 3 4 2 (- 1 3 (+ 3 4))))))
+:: 0
+</pre>
+<p>
+
+Yow!  All of those have <i>exactly the same characters</i>, and the
+parens are all balanced, and the functions and arguments are in
+<i>exactly the same order</i>!  But by just changing where the
+parentheses go, you can get <i>completely different results</i>!
+Moreover, it's easy to make things that just don't make any sense,
+like:
+
+<p>
+<pre>
+>> (* (+ 1 2) (+ 3 4))
+:: 21
+
+>> (* (+ 1 2 + 3 4))
+:: Error: `+' is not of the expected type `NUMBER'
+</pre>
+<p>
+
+Oops!  This time by leaving out a set of parentheses we tried to add a
+non-number -- the plus sign! -- together with a bunch of numbers.
+
+<p>
+
+So far we've been working entirely with numbers, but there are three
+other basic types of data in Lisp: strings, symbols, and
+lists. (So that makes four, including numbers.)
+
+<p>
+
+Numbers are the obvious things: 1, 3.141, 1e-10, 3.5d-35, etc.  (The
+'e' and 'd' notations are two different ways to denote scientific
+notation.  Although you're probably more used to the 'e' form, the 'd'
+form will be useful for writing extremely small numbers.  This will be
+clear later on when we're talking about blast e-values. For now, just
+get that 'e' and 'd' are both ways to specify scientific notation.)
+
+<p><hr><p>
+<a name=strings>
+<h2>Strings</h2>
+
+<p>
+
+<i>Strings</i> are quoted sets of characters: "This is a string", "So is
+this", etc. Note that we use double quotes, not single quotes --
+single quotes mean something else to Lisp that we'll get to in a
+moment, and just like lists (and exprs) the quotes have to balance!
+
+<pre>
+  "This is a string"
+
+  "So is this"
+
+  "this isn't a string because there's no end quote
+
+  this isn't a string because there's no start quote"
+
+  'this isn't a string because we used the wrong kind of quote'
+</pre>
+
+<p><hr><p>
+<a name=syms>
+<h2>Symbols</h2>
+
+<p>
+
+<i>Symbols</i> are a sort of like strings, except that they don't have
+double quotes, and they aren't just a set of characters; rather, they
+are used to symbolize something else (which is why they are called
+symbols). Generally, symbols are used to store stuff, and the names of
+functions are symbols.  Any name without special characters in it can
+be a symbol. Here are some okay symbols:
+
+<p>
+<pre>
+  symbol
+  a-symbol
+  this-is-a-symbol
+  the-4th-symbol
+</pre>
+<p>
+
+Here are some invalid symbols:
+
+<p>
+<pre>
+  This has blanks in it
+  (This has blanks, and other bad stuff)!
+  12345.6789       <- This one's really a number, not a symbol!
+  "This is a string, not a symbol!"   <- I'll bet you can tell what this really is!
+
+  (this 1 is "a proper list containing" (numbers like 3.141) (symbols 
+        like these) and ("some Strings" "like these"))
+</pre>
+
+<p><hr><p>
+<a name=listfns>
+<h2>More List Functions</h2>
+
+<p>
+
+The last one above is a <i>list</i>.  Lists are like exprs, but since
+they are data, not to be evaluated, you don't have to worry about the
+(function arg arg arg ...)  syntax. You can make lists of any of
+these, or of any combination.  Here's a complex list:
+
+<p>
+<pre>
+  (this list (combines 3.141 and ("This string" with) 
+    (another 2.718 (numbers))))
+</pre>
+<p>
+
+Now, as you might well imagine, there are a number of Lisp functions
+that deal with lists instead of just doing math.  The most important
+among these are: FIRST, REST, NTH, LIST, and CONS.  Let's look at a
+couple of examples of these in action.  You'll see a new piece of
+syntax (the single quote) that I'll explain in a minute:
+
+<p>
+<pre>
+>> (first '(this (is a) list of symbols))
+:: THIS
+
+>> (rest '(this (is a) list of symbols))
+:: ((IS A) LIST OF SYMBOLS)
+
+>> (elt '(this (is a) list of symbols) 0)
+:: THIS
+
+>> (elt '(this (is a) list of symbols) 1)
+:: (IS A)
+
+>> (elt '(this (is a) list of symbols) 4)
+:: SYMBOLS
+
+</pre>
+
+<p><hr><p>
+<a name=quote>
+<h2>Quote Blocks Evaluation</h2>
+
+</p>
+
+Notice that in the fourth example the second element (that is, the ELT
+1 element, since ELT starts at zero!) is actually a <i>list</i>, so
+when we do ELT 1 (that is, get the second element) we get <i>a whole
+list</i> instead of just one word!  Aside from that, it's probably
+pretty obvious from those examples what these function do.  However,
+as promised, there's new syntax: The single quote (') that appears
+before each of the data lists in the above examples.
+
+<p>
+
+<font color=green>
+This is a very important thing about Lisp: <i>Quote blocks evaluation</i>.
+</font>
+
+<p>
+
+What's that mean?  Well, recall our old example: 
+
+<pre>
+>>  (* (+ 1 2) (+ 3 4))
+</pre>
+
+We did the complex "recursive evaluation" above by going into each of
+the arguments of *, and evaluating them, and then using the results of
+those sub-evaluations to finish the evaluation of the multiplication.
+But what if we don't want Lisp to do that sub-evaluation at all; what
+if we have a list that we want treated as a data list instead of as an
+expr?  That's single-quote's job: It tells Lisp: Just use this list as
+a list, not as an expr; don't evaluate it, just give it up! (When
+lispers say "quote" they <i>always</i> mean "single quote" -- the
+things around strings are always called "double quotes". It's not our
+fault that English gave these both the same name!)
+
+<p>
+
+Watch:
+
+<p>
+<pre>
+>> (+ 3 4)
+:: 7
+
+>> '(+ 3 4)
+:: (+ 3 4)
+
+>> (first '(+ 3 4))
+:: +
+
+>> (first (+ 3 4))
+:: Error: Attempt to take the car of 7 which is not listp.
+</pre>
+<p>
+
+Aha!  So in the last case we forgot the quote (well, actually, of
+course, I left it out on purpose for the benefit of your education!
+:-), and Lisp evaluated (+ 3 4), giving 7, and then tried to get the
+first element in the number 7, but FIRST only applies to lists; It
+doesn't make sense to get the first element out of a number, and Lisp
+is perfectly happy to tell us so!
+
+<p>
+
+Now, there are two functions that I mentioned above that I haven't
+explained yet: LIST and CONS.  Whereas FIRST, REST, and ELT extract
+the parts of a list, LIST and CONS build lists!  Watch:
+
+<p>
+<pre>
+>> (list 3.141 2.783)
+:: (3.141 2.783)
+
+>> (list 'this 'and 'that)
+:: (THIS AND THAT)
+
+>> (list 'this '(and that))
+:: (THIS (AND THAT))
+
+>> (cons 'this '(and that))
+:: (THIS AND THAT)
+</pre>
+<p>
+
+Look carefully at the last two examples.  Notice that whereas LIST
+puts things together in a new list, CONS (which is short for
+"construct") jams one thing into the front of another, already
+existing list.  This is a subtle but important distinction, and if you
+think about it, you'll see why you need two different functions to
+make lists, both LIST and CONS; There's no way to make (THIS AND THAT)
+from: THIS and (AND THAT) unless you have CONS. 
+
+<p>
+
+While you're looking at the above example, notice the use of quotes to
+block evaluation in some places, and not in others.  We don't need to
+block evaluation of numbers, because Lisp understands that the value
+of a number is just the number itself.  But we did have to block it
+for 'THIS and '(AND THAT). Why?  What happens if you try evaluating
+(AND THAT), that is, leaving out the quote?  Remember (function arg
+arg arg...) and recursive evaluation: It'll think that AND is a
+function -- which, as it turns out, it is!  (It's a function that
+combines a bunch of trues and falses together). So just like our
+previous examples, it's going to look at its arguments and compute
+their values, then do its things.  But THAT doesn't have any value, so
+you'll get an error.  Watch:
+
+<pre>
+>> (cons 'this (and that))
+:: <<< Evaluation failed. Actual error: >>>
+   <<< Attempt to take the value of the unbound variable `THAT'.>>>
+</pre>
+
+Okay, so it was okay with AND, but THAT is unbound. We'll see in a
+moment what "unbound" means.  Now compare that error with this one:
+
+<pre>
+>> (cons 'this (will create a different error))  
+:: ; While compiling (:ANONYMOUS-LAMBDA 494):
+   Warning: While compiling these undefined functions were referenced:
+       WILL.
+   > <<< Evaluation failed. Actual error: >>>
+   <<< Attempt to take the value of the unbound variable `CREATE'.>>>
+</pre>
+
+That happened because whereas AND <i>is</i> a lisp function, WILL
+<i>is not</i> a lisp function, so the recursive evaluator tries to do the
+function WILL and gets immediately confused, and yells at you, but it
+pushes on anyway (for an obscure reason), and, again hits the unbound
+symbol CREATE.
+
+<p><hr><p>
+<a name=dwim>
+<h2>Do What I Meant! (DWIM)</h2>
+
+<p>
+
+Here's yet another example of a slightly different sort of error:
+
+<pre>
+>> (cons 'this (will cause a "DWIM" correction))
+:: ; While compiling (:ANONYMOUS-LAMBDA 509):
+   Warning: While compiling these undefined functions were referenced:
+       WILL.
+   > <<< Unbound variable: CAUSE >>>
+   Maybe you meant one of these?  CASE   [f]   [show modified form]   [execute modified form] 
+</pre>
+
+Notice that this time, even though it didn't understand CAUSE, it
+thought that maybe you just made a slight typo, and mean CASE instead
+-- <i>You didn't, so don't select either of the offered correction options!</i>
+
+<p>
+
+This is called "DWIMing" -- DWIM stands for "Do What I Meant"; it's a
+sort of spelling checker and corrector, but it lets you tell it when
+you want the correction made. Here's a good example of DWIMing (and
+we'll learn a new function while we're at it):
+
+<pre>
+>> (appned '(this list) '(that list))
+   Warning: While compiling these undefined functions were referenced:
+         APPNED.
+   > <<< Unbound function: APPNED >>>
+   Maybe you meant one of these?  APPEND   [f]   [show modified form]   [execute modified form] 
+</pre>
+
+This time we really <i>did</i> mean APPEND, so click on: [show
+modified form], and you should see: (append '(this list) '(that list))
+in the EVAL window (the big one), which you can execute by pressing on
+the [EVAL] button, and get the right answer:
+
+<pre>
+:: (THIS LIST THAT LIST)
+</pre>
+
+Notice that APPEND puts two lists together end-to-end. 
+
+<p>
+
+Here's a challenge: What single expression, using just LIST, CONS,
+FIRST, REST, and APPEND will do this:
+
+<pre>
+  Input:  '(grateful are those who are not dead)
+  Output: (grateful dead)
+</pre>
+
+Here's another, harder one:
+
+<pre>
+  Input:  '(I think that (I shall never see) (a list (as lovely (as a tree))))
+  Output: ((I shall never see) (a tree) (as lovely (as a list)))
+</pre>
+
+(Answers at the end!)
+
+<p><hr><p>
+<a name=trees>
+<h2>Lists as Trees</h2>
+
+<p>
+
+Speaking of trees, deeply embedded lists, like the ones in this last
+problem, represent trees of a certain sort, again by the ubiquitous
+recursive reading that we used to do recusive evaluation above. So,
+for example, this complex list:
+
+<pre>
+  (I think that (I shall never see) (a list (as lovely (as a tree))))
+</pre>
+
+Represents this tree:
+
+<pre>
+     /\
+    I /\
+     /  \
+  think /\
+       /  \
+     that /\
+         /  \
+        /\   \                           
+       I /\   \                          
+        /  \   \                         
+     shall /\   \                        
+          /  \   \                       
+       never /\   \                      
+            /  \   \                     
+          see  nil  \                    
+                     \
+                     /\          
+                    /\ nil          
+                   a /\          
+                    /  \          
+                  list /\          
+                      /\ nil          
+                    as /\          
+                      /  \          
+                  lovely  \          
+                          /\          
+			 /\ nil
+                        as \          
+                           /\          
+                          a /\               
+                           /  \                    
+                         tree nil                   
+</pre>
+
+Whoa! Hmmm. Well, let's look carefully at this: Note, first, that all
+the words are on the lefthand branches, and all the righthand branches
+eventually end in nil. Nil is the empty list, sometimes written:
+(). This tree notation, which is really clunky to write down (which is
+why we use lists!) is actually really really really important, so it's
+worth understanding! Let's look at a slightly simpler case:
+
+<pre>
+  (a s d f)
+
+Has this tree:
+
+
+   /\
+  a /\
+   s /\
+    d /\
+     f nil
+</pre>
+
+Given this, you can understand what the lisp functions FIRST and REST
+do quite easily: First goes down the left branch, and REST goes down
+the right branch of the tree. Given that, I'll bet that you can
+predict what this does:
+
+<pre>
+>> (first '(a s d f))
+:: a
+>> (rest '(a s d f))
+:: (s d f)
+>> (first (rest '(a s d f)))
+:: s
+...etc...
+>> (rest (rest (rest (rest '(a s d f)))))
+:: nil
+</pre>
+
+As predicted, if we walk along all the righthand branches, you find a
+nil there. (You can keep trying to walk into the nil, but it doesn't
+go anywhere, (rest nil) is just nil!)
+
+<p>
+
+So let's go back up to the complex list above: (I think that (I shall
+never see) (a list (as lovely (as a tree)))), and it's big complex
+tree (which we won't reprint, you can just scroll up to it!) How can
+we get the subtree: (I shall never see)?
+
+<pre>
+>> (first (rest (rest (rest '(I think that (I shall never see) (a list (as lovely (as a tree))))))))
+:: (I shall never see)
+</pre>
+
+Cool! Once you understand this, it turns out that we'll give you a
+simpler way to think about more-or-less the same thing. Let's take the
+simple case again: (a s d f).  A simpler tree that means pretty much
+the same thing (but is harder to draw in ASCII art!) is this one:
+
+<pre>
+          _ * _    <- All 4 branches meet here!
+         / / \ \      (It's just hard to draw that in ASCII!)
+        / |   | \
+       /  |   |  \
+      /   |   |   \
+     a    s   d    f
+</pre>
+
+What I'm trying to draw here is just a list of four elements, where
+each letter is one the the elements or "sublists". This representation
+is simpler to think about with ELT instead of the series of FIRST and
+REST functions, so, again returning to the complex list above, the
+sublist (i shall never see) is also just (elt ... 3) of the complex
+list (remember, elt starts at 0):
+
+<pre>
+>> (elt '(I think that (I shall never see) (a list (as lovely (as a tree)))) 3)
+:: (I shall never see)
+</pre>
+
+Given all this, can you guess what the function CONS does in terms of
+trees? (Hint 1: It's simpler to think of it in the binary tree form,
+with all the nils. Hint 2: Remember that CONS stands for!)
+
+<p><hr><p>
+<a name=binding>
+<h2>Symbols and Value "Bindings"</h2>
+
+<p>
+
+I promised to tell you what "unbound" means. It means you never gave
+the symbol a value (that is, you never "bound" a value to it). Symbols
+can have "bindings" that is, values.  Here's an example to give you
+the idea:
+
+<pre>>
+>> (+ 34 56)
+:: 90
+
+>> first-number
+:: Attempt to take the value of the unbound variable `FIRST-NUMBER'.
+
+>> (setf first-number 34)
+:: 34
+
+>> first-number
+:: 34
+
+>> (+ first-number 56)
+:: 90
+</pre>
+
+So, you see, we've "bound" the symbol FIRST-NUMBER to the value 34
+(using the special Lisp instruction SETF -- you can read (setf
+first-number 34) as 'assign (or bind) the value 34 to the symbol
+FIRST-NUMBER'), and then used it in the addition calculation.  We
+didn't use a quote before FIRST-NUMBER in the last expression because
+we <i>wanted</i> it to be evaluated.  Here's what happens if we make
+the opposite mistake:
+
+<pre>
+>> (+ 'first-number 56)
+:: `FIRST-NUMBER' is not of the expected type `NUMBER'
+</pre>
+
+See, FIRST-NUMBER isn't a number, it's a symbol, but its <i>value
+</i> is a number! 
+<p>
+
+<font color=green>
+The key concept here is that symbols can be used in two ways -- as
+data objects themselves, in which case we quote them, or for the
+values they contain, in which case we don't.
+</font>
+
+<pre>
+;; Use a symbol as a data object:
+>> (list 'first-number 'first-number)
+:: (first-number first-number)
+
+;; Use a symbol for its value:
+>> (+ first-number first-number)
+:: 68
+  
+;; Use a symbol to confuse the heck out of you:
+>> (list 'first-number first-number)
+::  (first-number 34)
+</pre>
+
+This may be confusing right now.  That might be because in computer
+languages you are used to, you can't use a symbol as a data object,
+you can only use it for its value.  Don't worry, you'll get used to
+it!
+
+<p>
+
+Here are some more examples:
+
+<pre>
+>> (setf poem '(I think that (I shall never see) (a list (as lovely (as a tree)))))
+
+>> (first (rest (rest (rest poem))))
+:: (I shall never see)
+
+>> (elt poem 3)
+:: (I shall never see)
+
+>> (setf simple-list '(a s d f))
+
+>> (rest simple-list)
+:: (s d f)
+
+>> (reverse simple-list)
+:: (f d s a)
+
+>> (reverse poem)
+:: ((a list (as lovely (as a tree))) (I shall never see) that think I)
+</pre>
+
+(Why didn't REVERSE turn the whole poem around? Because REVERSE only
+works on the top level of the tree!)
+
+<p>
+
+Okay, let's put it all together!  Try to figure out what these
+combined exprs evaluate to before doing them:
+
+<p>
+<pre>
+
+>> (list (+ 1 2) (+ 3 4))
+
+>>  (* (+ (first '(1 2 3 4 5)) (first (rest '(1 2 3 4 5))))
+>>     (+ (elt '(1 2 3 4 5) 2) (elt '(1 2 3 4 5) 3)))
+</pre>
+
+Okay, so here we go:
+
+<pre>
+>> (setf saying '(grateful are those who are not dead))
+
+>>  (list (elt saying (+ (* (+ 2 3) (* (+ 3 4 2 (- 1 3 (+ 3 4)))))))
+>>        (elt saying (* 2 (+ 1 2))))
+
+    [Hint: You can get the value of the complex math expr in this 
+           last one from a previous example, above!]
+
+</pre>
+</p>
+
+Great! So you're now ready either to move on to some more complex
+BioBike, or maybe just to lie down for a while until your headache
+goes away!
+
+<p><hr></p>
+<p><hr></p>
+
+<p><hr><p>
+<a name=exer>
+<h2>Exercises</h2>
+
+<p><hr></p>
+
+1. Create an arithmetic expression using only the numbers 1 through
+9 each EXACTLY ONCE, and the operators +, -, *, and EXPT (you can use
+these as many times as you like) to create an expression that
+evaluates to exactly 2006. [EXPT raises one number to the power of
+another number, so, for example: (expt 10 2) => 100.]
+
+<p>
+
+[Hint: Build the complete expression in the EVAL box (the larger one),
+and try out parts of it as you work in the ENTER box (the smaller
+one).]
+
+<p><hr></p>
+
+2. Each of the following has an error in it. Fix the error. (X => Y
+means "X evaluates to Y") Hint: Copy the lefthand expression into the
+enter box and try it out. (Sometimes this will help, sometimes the
+error is less obvious.)
+
+<pre>
+Example:
+
+  (+ 3 4) => 8
+  Corrected: (+ 3 4) => 7
+or:
+  Corrected: (+ 3 5) => 8
+
+Your turn:
+
+  (+ 3 4  => 7
+  3+4 => 7
+  "this is a string
+  this is a symbol
+  "this is a symbol"
+  this-is-a-string
+  (list 1 2 3) => (3 2 1)
+  (list (list 1 2 3)) => 1 2 3
+  (list (list 1 2 3)) => (1 2 3)
+  (list (1 2 3)) => ((1 2 3))
+  (list list 1 2 3) => 1 2 3
+  (cons 3.141 (1 2 3)) => (3.141 1 2 3)
+  (cons a-symbol '(some more symbols)) => (a-symbol some more symbols)
+  (append (this list) (that list)) => ((this list) that list)
+  (append '(this list) '(that list)) => ((this list) that list)
+
+</pre>
+
+<p><hr></p>
+
+3. Using only the functions: FIRST, REST, CONS, APPEND, LIST,
+REVERSE and ELT and each input, create each output. You can
+say (setf in ...) and then use it (as, for example in the first
+example). [Note: No quoted symbols or lists allowed, so it's not possible to
+cheat by just entering the result!]
+
+<pre>
+Example:
+
+  In:  (setf in '(grateful are those who are not dead))
+  Out: (grateful dead)
+  Method: (list (first in) (first (reverse in)))
+
+Your turn:
+
+  In:  '(the rain in spain falls mainly on the plain)
+  Out: (in spain the rain on falls the plain mainly)
+
+  In:  '((the rain) (in spain) (falls mainly) (on the plain))
+  Out: ((in spain) (the rain) (falls on) (the plain) mainly)
+
+  In:  '(the rain in spain falls mainly on the plain)
+  Out: (plain the on mainly falls spain in rain the)
+  Hint: This is easier than it looks.
+
+  In:  '((the rain) (in spain) (falls mainly) (on the plain))
+  Out: ((on the plain) (falls mainly) (in spain) (the rain))
+  Hint: This is MUCH easier than it looks!
+
+  In:  '((((((((the (((rain)))) (in spain))))))) (((((falls mainly) ((((on the plain)))))))))
+  Out: ((((((falls mainly) ((((on the plain)))))))) (((((((the (((rain)))) (in spain))))))))
+  Hint: This one is INCREDIBLY easy (given how complex it looks)!!
+
+  In:  '((((the ((rain))) (in spain))) (((falls (mainly)) (on ((the) plain)))))
+  Out: ((mainly ((on the) plain) falls (the (rain in))) spain)
+  Hint: Oops... Well, so much for easy problems!
+</pre>
+
+<p><hr></p>
+
+4. What aspects of this tutorial could be improved? Does it fit well with
+the previous tutorials? Does it need something introduced before hand
+that we failed to introduce? Any typos or confusing parts? Were the
+exercises useful? Any other feedback?
+
+<p><hr><p>
+<p><hr><p>
+
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+

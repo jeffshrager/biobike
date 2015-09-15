@@ -1,0 +1,36 @@
+(html
+  (head 
+   (title "AJAX testing")
+   (meta http-equiv "Content-Script-Type" content "text/javascript")
+   (css
+     ((and (id "messages") p)
+      background "#ddddff"
+      padding "3pt"
+      margin-top "0pt"
+      margin-bottom "0pt"
+      font-size "12pt")
+     ((and (id "debugging") p)
+      background "#ffddff"
+      padding "3pt"
+      margin-top "0pt"
+      margin-bottom "0pt"
+      font-size "12pt")
+     ((and (id "channel-log") p)
+      background "#ffddbb"
+      padding "3pt"
+      margin-top "0pt"
+      margin-bottom "0pt"
+      font-size "12pt")
+     (p padding "0pt"))
+   (script type "text/javascript" src "ajax.js")
+   (script type "text/javascript" src "http.js")
+   )
+  ((body onload "startTransport()" onunload "shutdownTransport()")
+   (p (input type button onclick "anotherRequest()" value "Another Request") 
+      (input type button onclick "queueToSend()" value "Queue to Send")
+      (input type button onclick "actuallySend()" value "Send Immediately")
+      (input type button onclick "channelSend()" value "Channel Send"))
+   ((div id "messages"))
+   ((div id "channel-log"))
+   ((div id "debugging"))))
+

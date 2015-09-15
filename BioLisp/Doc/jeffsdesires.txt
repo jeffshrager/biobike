@@ -1,0 +1,27 @@
+a set of shorthand buttons that I can set to various things and then
+just press to get the effect (Can sort of do this by keeping multiple
+inputs in the EVAL field -- only the top one is actually evaled!)
+
+some means of download (other than emailing to oneself) (looses
+tabs!!) -- note that you can right click > download to get the file
+from the browser -- this preserves the tabs
+
+editor buttons (esp. indent) should appear both at the top and bottom
+of the page
+
+simplified table handling for simplest (grab a column from a tab)
+
+various ways of sorting files in the internal dired pages (e.g., by
+date)
+
+need a way to move a file, esp. to/from a subdir.
+
+multiple file upload? and "fast" table upload (where you give the name
+of a variable, and the table "appears" in your world (and each time
+you login!) by magic... that is, it goes into a magical .data subdirectory.
+
+Should be able to Save/Compile/Load w/o leaving the editor window
+(useful when you want to keep the editor around -- I do this now by
+doing S/C/L and then immediately hitting "Prev" -- this screws with
+the history numbering, but works.
+

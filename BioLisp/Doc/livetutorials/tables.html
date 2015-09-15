@@ -1,0 +1,491 @@
+<title>BioBike: Data Tables</title>
+<p>
+
+<h2>
+BioBike Tutorial: Working with Tables of Data
+</h2>
+
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+
+<p><hr><p>
+<ul>
+<a href=#introduction><li>Introduction</a>
+<a href=#upload><li>Uploading tables into your BioBike directory</a>
+<a href=#reading><li>Reading simple tables</a>
+<a href=#manipulating><li>Manipulating simple tables</a>
+<a href=#writing><li>Writing simple tables</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+
+Most of what is done in BioBike deals with <i>knowledge</i> organized
+into <i>graphs</i>, like the Li et al. regulatory model, or
+<i>trees</i>, like the Gene Ontology. But sometimes we need to get
+down to good-old-fashioned <u>data</u> -- you know: numbers, like what
+you do with spreadsheets. Unfortunately, most "data-oriented"
+bioinformatics tools -- you know, the ones from the last century --
+deliver their results in form of tables, generally so that you can use
+ancient technology like spreadsheets to work with them.
+
+<p>
+
+A common example is microarray data. After you've done your
+experiments, and hybridized your arrays, the device that scans the
+arrays (or some company that does this for you) will hand you back a
+table of numbers. If you're lucky, it's look something like this:
+
+<pre>
+  geneID              15          60          360         900
+s6803.ssr3571        0.97        1.05        0.96        0.92
+s6803.ssr3570        0.99        1.11        0.91        0.96
+s6803.ssr3532        1.46        1.15        1.21        0.88
+s6803.ssr3467        1.08        1.51        0.98        0.84
+s6803.ssr3465        0.51        0.76        1.16        0.70
+s6803.ssr3451        0.80        1.01        1.12        0.94
+s6803.ssr3410        1.78        1.80        1.52        1.62
+s6803.ssr3409        0.92        1.01        0.89        0.77
+...
+</pre>
+
+This data comes from this paper:
+
+<blockquote>
+<b>Hihara, Y., A. Kamei, M. Kanehisa, A. Kaplan, and M. Ikeuchi. (2001)
+DNA microarray analysis of cyanobacterial gene expression during
+acclimation to high light. Plant Cell 13:793-806</b>
+</blockquote>
+
+To put a complex experiment too simply: Hihara and her coworkers
+exposed the cyanobacterium Synechocystis sp. 6803 to strong lights for
+different periods of time.  The times are in each column in terms of
+minutes: 15 minutes, one hour (60 minutes), etc.
+
+<p>
+
+(The "sp. 6803" designates a particular type of Synechocystis -- sort
+of like a specific species, but bacteria don't really have
+species. From now on, whenever I say Synechocystis, I mean sp. 6803!)
+
+<p>
+
+They used a microarray to measure the relative expression level of
+every known gene in Synechocystis. The labels of the rows designate
+the genes, and the numbers in the columns designate relative
+expression level of that gene (more precisely, the relative level of
+RNA abundance) measured at that point.
+
+<p>
+
+One very important thing to understand is that this table has gone
+through a great deal of "post processing" after the raw numbers came
+out of the scanner that read the microarray. Usually, when you get
+back raw microarray data it looks more like this:
+
+<pre>
+Block   Column   Row   Name   ID   X   Y   Dia.   F635   Median   F635   Mean   F635   SD   B635   Median   B635   Mean   B635   SD   %   >   B635+1SD   %   >   B635+2SD   F635   %   Sat.   F532   Median   F532   Mean   F532   SD   B532   Median   B532   Mean   B532   SD   %   >   B532+1SD   %   >   B532+2SD   F532   %   Sat.   Ratio   of   Medians   Ratio   of   Means   Median   of   Ratios   Mean   of   Ratios   Ratios   SD   Rgn   Ratio   Rgn   R      F   Pixels   B   Pixels   Sum   of   Medians   Sum   of   Means   Log   Ratio   F635   Median   -   B635   F532   Median   -   B532   F635   Mean   -   B635   F532   Mean   -   B532   Flags
+1   1   1         2760   3410   120   12528   13086   2483   373   491   572   100   100   0   9299   9539   2004   1073   1226   813   100   100   0   1.478   1.502   1.502   1.519   1.201   1.502   0.890   120   668   20381   21179   0.563   12155   8226   12713   8466   0
+1   2   1         2950   3400   120   1267   1288   476   385   475   527   75   37   0   1737   1771   344   1108   1210   670   44   3   0   1.402   1.362   1.262   1.332   2.196   1.349   0.561   120   613   1511   1566   0.488   882   629   903   663   0
+1   3   1         3170   3410   130   2173   2231   553   401   456   279   100   100   0   2497   2590   453   1110   1160   269   100   100   0   1.278   1.236   1.240   1.233   1.457   1.259   0.740   120   725   3159   3310   0.353   1772   1387   1830   1480   0
+1   4   1         3370   3400   130   1125   1143   357   403   463   294   89   66   0   1500   1508   235   1111   1153   244   72   35   0   1.856   1.864   1.929   1.806   2.262   1.954   0.401   120   715   1111   1137   0.892   722   389   740   397   0
+1   5   1         3570   3400   130   2691   2751   695   404   485   400   100   100   0   3543   3500   685   1105   1197   421   99   98   0   0.938   0.980   0.955   0.993   1.467   0.976   0.800   120   664   4725   4742   -0.092   2287   2438   2347   2395   0
+</pre>
+
+(Scroll across and look at how complex that is!)
+
+<p>
+
+And all that would just be for <i>one time point</i> (and only 5
+genes!). Thank goodness there are numerous programs that can turn this
+mess into the nice table above. An example is the <a target=_blank
+href=http://genome-www5.stanford.edu/>Stanford Microarray Database</a>
+which will actually store the array images, and do a bunch of
+numerical processing for you. It's a whole 'nuther course to learn how
+to get from that mess to the nice clear Hihara table above -- but
+we're saved because that's someone else's problem. We're going to just
+start with the simpler table.
+
+<p>
+<a name=upload>
+<h2>Uploading tables into your BioBike directory</h2>
+
+If you <a target=_blank
+href=livetutorial-files/tables/hihara.tbl>[click here]</a> you'll see
+the whole hihara table. The first (and in some ways hardest) thing we
+need to do is to get that table uploaded into your BioBike directory.
+
+<p>
+
+Follow these steps:
+
+<ol>
+
+<li>Click RIGHT on <a target=_blank
+href=livetutorial-files/tables/hihara.tbl>[this link]</a> and download
+the table to someplace convenient on your local computer. (Usually it
+says something like "Save target as...")
+
+<li>Now in BioBike, find the pulldown menu at the bottom called
+"Tools...". From that pulldown select "Upload File". This should bring
+up an upload page. (If you have a pop-up blocker, you might have to
+hold down the CTRL key when you make this selection. Also, if you get
+it wrong, you have to re-select "Tools..." and then re-select "Upload
+File"; Non of this is our fault -- it's the way that browers work!)
+
+<li>Use the [Browse] button to find the data file that you just
+downloaded.
+
+<li>Next fill in "hihara.tbl" (without the quotes!) in the field
+called "Save it as:". (Note, you might be tempted to leave this blank,
+assuming that it will do something sensible and call the file the same
+thing as you downloaded it. <i>Don't leave this blank!</i> If you do,
+it will call the file something horrible, like "C:\My
+Documents\hihara.tbl.txt"!)
+
+<li>Okay, all filled in? Go ahead and press "Upload". You should see
+something like:
+<pre>
+   Weblistener upload report
+   
+   Upload file: "C:\\jshrager\\temp\\hihara.tbl.txt"
+   Saved as: "/home/BioDemo/visitors/jshrager/hihara.tbl"
+   File size: 86245
+   
+   Back to WebListener
+</pre>
+<i>DO NOT PRESS THE TEMPTING "Back to WebListener" button!</i> Simply
+close this window in the usual way that you would close a browser.
+
+</ol>
+
+Whew! See what I mean about that being the hardest part of this whole
+process!  Whenever you have to deal with moving data (or knowledge!)
+from one machine to another it's slightly messy, but it's worth
+knowing how to do!
+
+<p>
+
+Okay, so now if you're lucky, you should have the data table (as a text
+file, looking just like it does above) in your BioBike directory. Let's check:
+
+<pre>
+>> (list-file-contents "hihara.tbl")
+:: 
+----- hihara.tbl -----
+  geneID              15          60          360         900
+s6803.ssr3571        0.97        1.05        0.96        0.92
+s6803.ssr3570        0.99        1.11        0.91        0.96
+s6803.ssr3532        1.46        1.15        1.21        0.88
+s6803.ssr3467        1.08        1.51        0.98        0.84
+...
+</pre>
+
+Okay, great! 
+
+<p>
+<a name=reading>
+<h2>Reading simple tables</h2>
+
+Now, in order to be able to manipulate the data, we need to have it
+loaded into BioBike as a data object of some sort. There are a variety
+of ways to do that. The simplest is to just load the table as a list
+of lists where each row is one of the sublists. We'll call this
+"hdlist", here's how we can do that:
+
+<pre>
+>> (setq hdlist (simple-read-table "hihara.tbl"))
+:: 
+(("geneID " 15 60 360 900)
+ ("s6803.ssr3571" 0.97 1.05 0.96 0.92)
+ ("s6803.ssr3570" 0.99 1.11 0.91 0.96)
+ ("s6803.ssr3532" 1.46 1.15 1.21 0.88)
+ ("s6803.ssr3467" 1.08 1.51 0.98 0.84)
+ ("s6803.ssr3465" 0.51 0.76 1.16 0.7)
+ ...
+
+Count the rows:
+
+>> (length hdlist)
+:: 3080
+</pre>
+
+Okay. Seems reasonable (There are about 3700 known genes in Syn6803,
+but often all the known genes aren't represented on a paritcular
+microarray, so it's plausible that there are only about 3000 in this
+case. Notive that this includes the header line, so there are really
+only 3079 genes!!)
+
+<p>
+<a name=manipulating>
+<h2>Manipulating simple tables</h2>
+
+First off, let's get rid of the header line which is not really a part
+of the table, and anyway we know what the columns are:
+
+<p>
+
+<pre>
+>> (pop hdlist)
+:: ("geneID " 15 60 360 900)
+
+Pop just returns the first line, but at the same time, remove it. 
+Let's make sure it's gone:
+
+>> (length hdlist)
+:: 3079
+</pre>
+
+Let's start by just getting things from the table. In computer-speak,
+the first column of our table is called the <i>"key"</i>. The key is
+the way that you'll "unlock" the data -- that is, it's the way you'll
+access it from the table. Specifically, we'll put in a key -- the name
+of a gene -- and get back its data (the numbers). 
+
+<p>
+
+(By the way, the key doesn't have to be the first row -- it just
+happens to be in this case!)
+
+<p>
+
+Let's do some table access by using the keys to select from the table:
+
+<pre>
+>> (find "s6803.slr1234" hdlist :key #'first :test #'string-equal)
+:: ("s6803.slr1234" 0.87 1.66 1.95 1.11)
+</pre>
+
+Notice that we told FIND that the key was the function FIRST (using
+:key #'first). Next, we had to tell it what comparison to use to
+compare our key with the keys in the table. By using #'STRING-EQUAL
+for this we permitted various versions of the key:
+
+<pre>
+>> (find "s6803.slr1234" hdlist :key #'first :test #'string-equal)
+:: ("s6803.slr1234" 0.87 1.66 1.95 1.11)
+
+;;; Let's try it with capitals:
+
+>> (find "S6803.SLR1234" hdlist :key #'first :test #'string-equal)
+:: ("s6803.slr1234" 0.87 1.66 1.95 1.11)
+</pre>
+
+Later we'll see other way to use these :keyword arguments.
+
+<p>
+
+Okay, so now we can do some simple table calculations. Let's start by
+just asking for the average expression level of all the genes at a
+particular time point:
+
+<pre>
+>> (mean 
+>>   (loop for (gene 15min 60min 360min 900min) in hdlist
+>>         collect 15min))
+:: 
+; While compiling (:ANONYMOUS-LAMBDA 636):
+Warning: Variable 900MIN is never used.
+Warning: Variable 360MIN is never used.
+Warning: Variable 60MIN is never used.
+Warning: Variable GENE is never used.
+
+> 1.1396942
+</pre>
+
+Right, we didn't use those other time points (only the 15min). We can
+generalize this a little into a function:
+
+</pre>
+>> (defun mean-of-table-column (table column)
+>>  (mean 
+>>   (loop for row in table
+>>         collect (elt row column))))
+
+>> (mean-of-table-column hdlist 1)
+:: 1.1396942
+>> (mean-of-table-column hdlist 2)
+:: 1.177636
+</pre>
+
+Notice that we took advantage here of the fact that the gene name is
+in the zeroth column, and ELT starts counting positions in the list at
+zero (i.e., (elt 0) gets the first thing in the list, (elt 2) gets the
+second thing, and so on), so the arguments that we give our function
+are natural (although sort of by accident).
+
+<p>
+
+Given this it's easy to get the mean for every colum in the table:
+
+<pre>
+>> (loop for col from 1 to 4
+>>       as time in '(15 60 300 900)
+>>       collect (list time (mean-of-table-column hdlist col)))
+:: ((15 1.1396942) (60 1.177636) (300 1.1586082) (900 1.0193598))
+</pre>
+
+(Why are these all so close to 1???? The reason is that the
+normalization that was done in order to make this table from the mess
+of raw data that comes straight from the scanner tries to arrange it
+so that the mean is about 1. It didn't do a terrific job with these,
+but again, that's a lesson for another day.)
+
+<p>
+
+Let's do something slightly more interesting, let's find the gene that
+has the highest expression level at each time point. To do that we
+need to sort the genes (which are in the first column -- that is, the
+column numbered 0 by ELT) according to some other column (say, the
+first data column, that is, the second column, that is the column
+numbered 1 by ELT -- this is pretty confusing -- all you need to
+remember is that ELT starts counting at zero!)
+
+<p> 
+
+Let's start by just collecting the numbers and their genes. This is
+just like the loop above, although we want to get both the gene name
+and the value from the appropriate column:
+
+<pre>
+>> (defun get-table-column-with-keys (table column)
+>>  (loop for row in table
+>>        collect (list (first row) (elt row column))))
+
+>> (get-table-column-with-keys hdlist 1)
+:: 
+(("s6803.ssr3571" 0.97) ("s6803.ssr3570" 0.99) ("s6803.ssr3532" 1.46)
+ ("s6803.ssr3467" 1.08) ("s6803.ssr3465" 0.51) ("s6803.ssr3451" 0.8)
+ ("s6803.ssr3410" 1.78) ("s6803.ssr3409" 0.92) ("s6803.ssr3402" 1.23)
+ ("s6803.ssr3383" 0.15) ("s6803.ssr3341" 0.91) ("s6803.ssr3307" 0.52)
+ ...
+</pre>
+
+Good! Now all we need to do is to sort these. (This will give us
+another opportunity to practice with #'functions!)
+
+<p>
+
+SORT is a sort of complex function; in addition to telling it what to
+sort, you need to tell it how you want it sorted, and you need to give
+it the sort key.  "Key" here means just what it meant above, but now
+the key will be the number, not the name. (We could sort on the name
+too... maybe we'll do that next!)
+
+<p>
+
+Watch:
+
+<pre>
+>> (sort (get-table-column-with-keys hdlist 1) ; This gives us: (("s6803.ssr3571" 0.97) ("s6803.ssr3570" 0.99) ..., as above ...
+>>       #'>             ; This is the ordering function -- in this case, GREATER-THAN (>)
+>>       :key #'second   ; And this tells us how to get the number out of each row.
+>>       ))
+:: 
+(("s6803.sll0005" 15.04) ("s6803.sll0528" 12.95)
+ ("s6803.sll0218" 12.63) ("s6803.sll1514" 12.26)
+ ("s6803.slr1512" 11.12) ("s6803.sll1733" 10.89) ...
+</pre>
+
+Notice that the result is a nicely sorted list!
+
+<p>
+
+In other tutorials we'll use these skills in table reading and
+manipulation to do more interesting sorts of data analysis, but for
+the moment, we want to move on to other things that you can do with
+the tables.
+
+<p>
+<a name=writing>
+<h2>Writing simple tables</h2>
+
+We now know how to <i>read</i> simple tables, how about writing them
+out? Since there's a function called SIMPLE-READ-TABLE, you might well
+expect there to be one called SIMPLE-WRITE-TABLE... and you'd be
+write... or right about that! :-)
+
+<p>
+
+In theory, if SIMPLE-WRITE-TABLE does the obvious thing, we should be
+able to just SIMPLE-READ a table and SIMPLE-WRITE it right back out,
+and that will basically just create a copy of the table. Let's try:
+
+<pre>
+;;; Let's Take a look at our table for comparison:
+
+>> (list-file-contents "hihara.tbl" :line-limit 5)
+:: 
+----- hihara.tbl -----
+  geneID              15          60          360         900
+s6803.ssr3571        0.97        1.05        0.96        0.92
+s6803.ssr3570        0.99        1.11        0.91        0.96
+s6803.ssr3532        1.46        1.15        1.21        0.88
+s6803.ssr3467        1.08        1.51        0.98        0.84
+...
+
+;;; Okay, here comes the copy operation:
+
+>> (simple-write-table "new.tbl" (simple-read-table "hihara.tbl"))
+:: 3080    ; the result is the number of lines written out -- sounds right!
+
+;;; Let's Take a look at our new file for comparison:
+
+>> (list-file-contents "new.tbl" :line-limit 5)
+:: 
+----- hihara.tbl -----
+  geneID              15          60          360         900
+s6803.ssr3571        0.97        1.05        0.96        0.92
+s6803.ssr3570        0.99        1.11        0.91        0.96
+s6803.ssr3532        1.46        1.15        1.21        0.88
+s6803.ssr3467        1.08        1.51        0.98        0.84
+...
+
+;;; Perfecto!
+</pre>
+
+Obviously we could have done any sort of calculation, and written out
+a new, modified table. (Using this method to copy files isn't
+terrifically efficient, not to mention that it only works on tables!)
+
+<p>
+
+One little detail about SIMPLE-WRITE-TABLE... watch what happens when we try to
+do the same thing again:
+
+<pre>
+>> (simple-write-table "new.tbl" (simple-read-table "hihara.tbl"))
+<<< Evaluation failed. Actual error: >>>
+<<< File #P"new.tbl" already exists.>>>
+<<< Use (EXPLAIN) to see a stack trace. >>>
+</pre>
+
+Oops! For your own protection, SIMPLE-WRITE-TABLE won't let you
+overwrite an existing file. In order to do that you have to add the
+:IF-EXISTS :SUPERSEDE key:
+
+<pre>
+>> (simple-write-table "new.tbl" (simple-read-table "hihara.tbl")
+>>                     :if-exists :supersede)
+:: 3080
+</pre>
+
+And <i>that</i> we can do as many times as we like!
+
+<p>
+
+That's about all there is to simple table manipulation. There is
+another way to work with tables that is a lot more complex, but offers
+some extra features, but we're not going to go into that here. (It's
+well documented in other BioBike documentation.) In other tutorials
+we'll use tables to do actual analysis, but for now, all we need to
+know is about how to read, write, and manipulate the simple ones.
+
+<p><hr><p>
+
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

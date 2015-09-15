@@ -1,0 +1,865 @@
+<title>BioBike: More Biological Reasoning</title>
+<p>
+
+<h2>
+BioBike: More Biological Reasoning
+</h2>
+
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+
+<ul>
+<a href=#Introduction>Introduction</a><br>
+<a href=#approach>A reasoning-based approach</a><br>
+<a href=#Setup>Setting up SNARK</a><br>
+<a href=#data>Getting the data</a><br>
+<a href=#fns>Providing the helping functions</a><br>
+<a href=#finalsetup>Code to run the example</a><br>
+<a href=#tryout>Testing it out</a><br>
+<a href=#order>What's all that ordering about?</a><br>
+<a href=#whysnark>Why all this complexity?</a><br>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+<p>
+
+In this tutorial we're going to address the same problem as in one of
+the very earliest tutorials, but instead of just programming it, we're
+going to let the Snark theorem prover do most of the work for us.
+
+<p>
+
+The problem we'll address is the one posed by Jeff Elhai:
+
+<blockquote>
+
+What photosynthesis-related genes in PMed4 have no ortholog in P9313
+but <i>do</i> have an ortholog in S6803 and which there exhibit a
+light stress response -- e.g., greater than 2x up-regulation ratio in
+the light stress microarray experiments of Hihara et al?
+
+</blockquote>
+
+The background for this is discussed in depth in the tutorial called
+"Biocomputing I". You might want to review that tutorial, although
+doing so isn't critical for understanding this one.
+
+<p><hr><p>
+<a name=approach>
+<h2>A reasoning-based approach</h2>
+<p>
+
+In the Biocomputing I tutorial we wrote a program to search for genes
+that met these criteria. This time, we're just going to state the
+problem, and let Snark do the searching for us. 
+
+<p>
+
+Compared to the way we did this same problem in the "Biocomputing I"
+tutorial, this is going to seem like a whole lot of work to do a
+relatively simple thing. At the end we'll see why it might make sense
+to use a reasoning-based approach, instead of just the pure Lisp
+approach.
+
+<p>
+
+First off, let's express the thing we're after in Snark
+terms. Essentially we'd like to:
+
+<blockquote>
+
+Find a gene in promed4 that is photosynthesis related, and that has an
+ortholog in syn6803, but no ortholog in pro9313, and where the mean
+up-regulation ratio in the Hihara dataset is > 2. 
+
+</blockquote>
+
+In Snark-ese, that comes out something like this:
+
+<pre>
+  (and (gene-in-organism ?gene med4)
+       (photosynthesis-related ?gene)
+       (ortholog ?gene ?gene1)
+       (gene-in-organism ?gene1 s6803)
+       (not (exists ((gene3 :sort gene))
+               (and (ortholog ?gene gene3)
+                    (gene-in-organism gene3 mit9313))))
+       (> (hihara-mean-regulation-ratio ?gene1) 2)
+       )
+</pre>
+
+Note that we've made up out of thin air a number of functions that we
+need to figure out how to write (gene-in-organism,
+photosynthesis-related, ortholog, and hihara-mean-regulation-ratio),
+but the point is that, once we write those, Snark will (if we've done
+everything correctly) find genes for us that fit this set of
+requirements.
+
+<p>
+
+So, as before, we're going to create a test function using the above
+formulation, and then we'll fill in the holes:
+
+<pre>
+>> (defun test-hihara ()
+>>   (hihara-init)
+>>   (find-one '(and (gene-in-organism ?gene med4)
+>>                   (photosynthesis-related ?gene)
+>>                   (ortholog ?gene ?gene1)
+>>                   (gene-in-organism ?gene1 s6803)
+>>                   (not (exists
+>>                         ((gene3 :sort gene))
+>>                         (and (ortholog ?gene gene3)
+>>                              (gene-in-organism gene3 mit9313))))
+>>                   (> (hihara-mean-regulation-ratio ?gene1) 2))
+>>             :answer '(list ?gene ?gene1 (hihara-mean-regulation-ratio ?gene1))
+>>             ))
+</pre>
+
+Note that it initializes biodeducta, just like we did before, and then
+tries to find one solution to the problem (we could, of course, find
+all solutions, but one will do for now), and returns the med4 gene
+(called ?gene), its syn6803 equivalent (called ?gene1 -- okay, we
+weren't naming these so well ... we'll explain in a minute why we used
+these names!), and the regulation ratio.
+
+<p><hr><p>
+<a name=Setup>
+<h2>Setting up SNARK</h2>
+<p>
+
+Before going any farther, let's set up Snark, just like we did before:
+
+<pre>
+>> (progn
+>>   (use-module :snark)
+>>   (do-snark-shadowing-imports)
+>>   (shadowing-import 'snark::assert)
+>>   (shadowing-import 'snark::?)
+>>   (use-snark)
+>>   (set-timelimit 200)
+>>   )
+</pre>
+
+Now we need to ensure that we have all the relevant organisms:
+
+<pre>
+>> (progn 
+>>  (load-organism :p9313)
+>>  (load-organism :s6803)
+>>  (load-organism :pmed4)
+>>  )
+</pre>
+
+<p><hr><p>
+<a name=data>
+<h2>Getting the data</h2>
+<p>
+
+And we'll also get the Hihara data exactly as we did back in the old
+Biocomputing I tutorial:
+
+<pre>
+;;; First we define a table to hold the data:
+>> (defvar *gene->regratio* (simple-hash-table))
+
+;;; Then load the table with the Hihara data and compute the means on the way in:
+>>  (loop for (gene . data) in (cdr (simple-read-table "hihara.tbl"))
+>>        do (setf (gethash gene *gene->regratio*) (mean data)))
+
+;;; And make sure it's there:
+>> (hash-table-count *gene->regratio*)
+:: 3079
+
+;;; A quick examination of the table should demonstrate that we actually
+;;; have the desired data in hand at this point:
+
+>> (showhash *gene->regratio*)
+;; Hash table #<EQUAL hash-table with 3079 entries>, displaying 10 entries:
+"s6803.ssr0482" 1.27
+"s6803.slr0699" 0.95500004
+"s6803.slr0079" 0.85249996
+"s6803.sll0360" 1.3000001
+"s6803.slr1959" 1.4325
+"s6803.slr1248" 0.9225
+"s6803.sll0657" 1.2925
+"s6803.ssr0109" 1.0675
+"s6803.slr1677" 1.7525
+"s6803.sll0006" 1.33
+</pre>
+
+Note that, as before, each entry contains the mean of the expression
+levels in the table for that gene.
+
+<p><hr><p>
+<a name=fns>
+<h2>Providing the helping functions</h2>
+<p>
+
+Now we have to provide the functions: GENE-IN-ORGANISM,
+PHOTOSYNTHESIS-RELATED, ORTHOLOG, and HIHARA-MEAN-REGULATION-RATIO.
+
+<p>
+
+Creating function for use in Snark theorem proving is a little
+different than writing them for use in Lisp code. Notice that we call
+them with multiple variable arguments (beginning with ?, like:
+"?gene", etc.), and that we don't use their results as lists of things,
+but treat them all like predicates. That is, whereas in the old
+version of this problem we did something like:
+
+<pre>
+   (loop for pm4gene in (#^genes pmed4)
+         when (promed-specific-light-sensitive-gene? pm4gene)
+         collect pm4gene)
+</pre>
+
+Here we are doing:
+
+<pre>
+  (and (gene-in-organism ?gene med4)
+       (photosynthesis-related ?gene)
+       (ortholog ?gene ?gene1)
+       (gene-in-organism ?gene1 s6803)
+       (not (exists
+               ((gene3 :sort gene))
+              (and (ortholog ?gene gene3)
+                   (gene-in-organism gene3 mit9313))))
+       (> (hihara-mean-regulation-ratio ?gene1) 2)
+       )
+</pre>
+
+The loop is <i>implicit</i> -- Snark will do it for us. In fact, what
+Snark effectively does is to <i>bind</i> (that is, try to replace)
+every gene it knows for all the ?gene names in the above, and will
+treat this as a giant condition.
+
+<p>
+
+So all we have to do is to tell Snark how to resolve all those predicates!
+
+<p>
+
+(Note this is going to be the most confusing thing you've read in the
+entire course! There are lisp functions that look like Snark
+relations, and there are things called relations and things called
+predicates, and they all look like the same things, and have similar
+names. I predicate that you'll need to read this section several times
+before getting it. Don't get frustrated, and pay close attention to
+the names of things as they are slightly and importantly different.)
+
+<p>
+
+Conceptually, everything in a Snark condition is a relation -- that is
+something hold between two or more things. Predicates -- that is,
+functions that do a simple test, like "photosynthesis-related", are
+relations between some things (a gene, in this case) and a truth
+value: True or NIL (in lisp it was T or NIL, but Snark uses
+True). Predicates are generally easy to write, and are done nearly
+exactly the same way as in the previous tutorial (except that instead
+of returning T or NIL, we use the special Snark name TRUE):
+
+<pre>
+>> (defun photosynthesis-related-code (gene)
+>>   (if (or (search "photo" (#^annotation gene) :test
+>>                   #'char-equal)
+>>           (search "light" (#^annotation gene) :test
+>>                   #'char-equal))
+>>       true
+>>     nil))
+</pre>
+
+Note the name of this function:
+photosynthesis-related-<i>CODE</i>. This isn't the actual predicate
+used by Snark, it's the function that does the work of the predicate.
+We have to tell Snark that in order to do:
+
+<pre>
+  (photosynthesis-related ?gene)
+</pre>
+
+is has to call the lisp code: 
+
+<pre>
+  (photosynthesis-related-code some-specific-gene)
+</pre>
+
+Note the change in arguments!! <i>?gene</i>
+v. <i>some-specific-gene</i>! Remember the "binding" thing -- where
+?gene gets replaced by Snark with every known gene... So, what will
+happen is that ?gene will get replaced by some-specific-gene (say
+#$s6803.srl1234), and then Snark will translate:
+<pre>
+  (photosynthesis-related ?gene)
+</pre>
+
+into this:
+
+<pre>
+  (photosynthesis-related-code #$s6803.srl1234)
+</pre>
+
+which will, in turn, return True or NIL. But "returning" a value isn't
+the way to think about this; the way to think about this is that
+photosynthesis-related is a <i>relation</i> between a gene and a truth
+value. At this moment this will just seem weird to you, but in a
+second, it'll matter a lot!
+
+<p>
+
+Anyway, The way that we tell Snark all this is:
+
+<pre>
+   (declare-relation 
+        'photosynthesis-related 1
+        :sort '((1 gene))
+        :rewrite-code (function-rewrites-operator 
+                         #'photosynthesis-related-code)
+        :weight 1)
+</pre>
+
+This tells Snark that the relation photosynthesis-related takes one
+argument, which is of type GENE, and that the function to use (as
+above) is photosynthesis-related-code. We'll get to the weight later
+on.
+
+<p>
+
+Okay, new let's move on to the other relations that we need to
+declare: gene-in-organism, hihara-mean-regulation-ratio, and ortholog.
+
+<p>
+
+Let's take hihara-mean-regulation-ratio first because that's almost
+the same as photosynthesis-related, except that instead of producing a
+truth value, it produces a number (the mean regulation ratio, from the
+table we loaded above). Just like photosynthesis-related, here are the
+function and the Snark declaration:
+
+<pre>
+>> (defun hihara-mean-regulation-ratio-code (gene-frame-or-name)
+>>   (let* ((number-or-nil
+>>           (let* ((name (cond ((isframe? gene-frame-or-name)
+>>                               (second (string-split 
+>>                                        (#^fname gene-frame-or-name) #\.)))
+>>                              (t gene-frame-or-name)))
+>>                  (values (assocdr name bio::*hihara-results*
+>>                                   :test #'string-equal)))
+>>             (when values (mean values)))))
+>>     (if (numberp number-or-nil)
+>>         number-or-nil
+>>       0)))
+
+ (declare-function 'hihara-mean-regulation-ratio 1
+         :sort '(number (1 gene))
+         :rewrite-code
+          (function-rewrites-operator 
+                    #'hihara-mean-regulation-ratio-code))
+
+</pre>
+
+Gene-in-organism is a relationship between genes and their organism,
+we give it an organism, and it produces their genes. Notice that we
+use it three times:
+
+<pre>
+  (and <font color=red>(gene-in-organism ?gene med4)</font>
+       (photosynthesis-related ?gene)
+       (ortholog ?gene ?gene1)
+       <font color=red>(gene-in-organism ?gene1 s6803)</font>
+       (not (exists ((gene3 :sort gene))
+              (and (ortholog ?gene gene3)
+                   <font color=red>(gene-in-organism gene3 mit9313)</font>)))
+       (> (hihara-mean-regulation-ratio ?gene1) 2)
+       )
+</pre>
+
+Here's where it starts to pay to think of these as relations, not
+functions. In these three cases, are these calls producing a gene
+given an organism, or checking whether a given gene is in a particular
+organism? If we were writing a standard program, this would matter a
+great deal, but in Snark the question isn't relevant. Snark's job is
+to find a consistent way of binding the variables in the
+expression...How it does this could be complex, but usually you don't
+have to worry about it -- you just use the relations, and if Snark
+needs to use them to produce entities (such as genes), it will,
+whereas if Snark has an entity and needs to use the functions to check
+for consistency (like a predicate), it will use them that way.
+
+<p>
+
+Now, because we use this relation in so many ways, its declaraction is
+a tad complex. I'm gonna explain it, and show it to you, but you're
+only going to partly understand it. That's okay; the idea is to get
+the gist, but to be able to write this yourself!
+
+<p>
+
+So, with that disclaimer, here are the various pieces you need to make
+gene-in-organism work:
+
+<pre>
+First off, we declare the basic relation:
+
+  (declare-relation 'gene-in-organism 2
+                    :sort '((1 gene) (2 organism)))
+
+Next we <i>assert</i> that if Snark doesn't happen to already
+know that a given gene is in a given organism, it can use
+Lisp functions to get them. These functions are collectively
+called "gene-in-organism-code":
+
+  (assert
+   '(iff
+     (gene-in-organism ?gene ?organism)
+     (gene-in-organism-code ?gene ?organism))
+   :sequential :uninherited
+   :name 'definition-of-gene-in-organism-code)
+
+Next we have to declare gene-in-organism-code. That has <i>two</i>
+implementations, one to get the genes from a given organism, and 
+another to get the organism from a given gene. Snark will call the
+one it needs depending on whether it needs to get a gene from an
+organism, or vice versa:
+
+  (declare-relation 'gene-in-organism-code 2
+                    :sort '((1 gene) (2 organism))
+                    :satisfy-code 
+                    (list
+                     (function-satisfies-relation #'genes 1)
+                     (function-satisfies-relation #'organisms 2))
+                    :weight 13)
+
+And here are those two functions, which we'll actually define right now!
+
+>> (defun genes (org) (#^genes org))
+
+>> (defun organisms (gene) (list (#^organism gene)))
+</pre>
+
+Whew! That was nasty! I hope that you got the gist.
+
+<p>
+
+Okay, and finally ortholog is similar:
+
+<pre>
+First off, we declare the basic relation:
+
+ (declare-relation 'ortholog 2 :sort '((t gene)))
+
+Next we <i>assert</i> principles by which Snark can figure
+out what needs to be done:
+
+ (assert
+  '(iff
+    (and
+     (ortholog ?gene ?gene1)
+     (gene-in-organism ?gene1 ?organism))
+    (gene-has-ortholog-in-organism ?gene ?gene1 ?organism))
+  :sequential :uninherited
+  :name 'definition-of-gene-has-ortholog-in-organism)
+
+Next we have to declare the complex part of 
+gene-has-ortholog-in-organism:
+
+ (declare-relation 'gene-has-ortholog-in-organism 3
+                   :sort '((1 gene)
+                           (2 gene)
+                           (3 organism))
+                   :satisfy-code 
+                   (function-satisfies-relation #'orthologs-in-organism 2)
+                   :falsify-code
+                   (function-falsifies-relation #'orthologs-in-organism 2)
+                   :weight 2)
+
+And finally define the lisp parts, which we'll actually define
+right now!
+
+>> (defun orthologs-in-organism (gene org)
+>>   (let* ((ortho (and (#^encodes-protein gene)
+>>                      (two-way-ortholog-of gene org 0.001))))  
+>>     (and ortho (list (slotv ortho #$gene)))
+>>     ))
+</pre>
+
+<p>
+
+<p><hr><p>
+<a name=finalsetup>
+<h2>Code to run the example</h2>
+<p>
+
+Okay, so that's it for the various underlying machinery, now 
+all we need to do is to set up and test it out! This is mostly like 
+the previous tutorials with Snark.
+
+<p>
+
+Just like before, we begin with a top-level plan that just calls the
+other functions to do the work:
+
+<pre>
+>> (defun hihara-init ()
+>>   (init-biodeducta)
+>>   (declare-sorts)
+>>   (declare-constants)
+>>   (declare-relations)
+>>   (declare-ordering) ; This is new here!
+>>   (install-axioms)
+>>   )
+</pre>
+
+>> (defun init-biodeducta ()
+>>  (initialize)
+>>  (use-resolution t)
+>>  (use-factoring t)
+>>  (assert-supported nil) ; don't reason forward from assertions
+>>  (use-numbers-as-constructors)
+>>  (use-code-for-numbers)
+>>  (use-lisp-types-as-sorts t)
+>>  (agenda-length-limit 10000)
+>>  (print-final-rows)
+>>  (use-literal-ordering-with-resolution 'literal-ordering-a)
+>>  (use-literal-ordering-with-paramodulation 'literal-ordering-a)
+>>  (use-term-ordering :rpo)
+>>  (use-default-ordering nil) ; will try both directions
+>>  (rpo-status :left-to-right)
+>>  (ordering-functions>constants t)
+>>  (use-subsumption nil) ; ???? possibly remove ????
+>>  (use-answers-during-subsumption t)
+>>  (use-simplification-by-equalities nil) ; ???? maybe turn off look for indents
+>>  )
+</pre>
+
+Note, in declaring sorts (types) we want to be a little more careful
+than we were in previous tutorials. This time we're going to need
+numbers and genes and organisms, and the like:
+
+<pre>
+>> (defun declare-sorts ()
+>>   (declare-sort 'thing)
+>>   (declare-subsorts 'thing 'name 'entity)
+>>   (declare-disjoint-subsorts 'entity 'bio-entity 'number 'pair 'bool)
+>>   (declare-disjoint-subsorts 'bio-entity 'gene 'rna 'mrna 'organism 'list)
+>>   (declare-subsorts 'organism 'species)
+>> )
+</pre>
+
+We're going to need some constants, specifically the names of specific
+organisms. BioBike uses that funny "#$" frame notation for these, but
+Snark doesn't understand this syntax, so we need to give these normal
+names, and we use the F2S (frame to Snark) function to create a Snarky
+name for things with #$frame notation:
+
+<pre>
+>> (defun declare-constants ()
+>>   (declare-constant (f2s #$synechocystis_pcc6803) 
+>>                     :sort 'species
+>>                     :alias 's6803)
+>>   (declare-constant (f2s #$prochlorococcus_marinus_med4)
+>>                     :sort 'species
+>>                     :alias 'med4) 
+>>   (declare-constant (f2s #$prochlorococcus_marinus_mit9313) 
+>>                     :sort 'species
+>>                     :alias 'mit9313)
+>> )
+</pre>
+
+The relations are as explained above:
+
+<pre>
+>> (defun declare-relations ()
+>>   (declare-relation 
+>>     'gene-in-organism 2
+>>     :sort '((1 gene)
+>>     (2 organism)))
+>>   (declare-relation 
+>>     'gene-in-organism-code 2
+>>     :sort '((1 gene) (2 organism))
+>>     :satisfy-code 
+>>     (list
+>>      (function-satisfies-relation #'genes 1) 
+>>      (function-satisfies-relation #'organisms 2))
+>>     :weight 13)
+>>   (declare-relation 'ortholog 2 :sort '((t gene)))
+>>   (declare-relation 
+>>     'gene-has-ortholog-in-organism 3
+>>     :sort '((1 gene) (2 gene) (3 organism))
+>>     :satisfy-code 
+>>       (function-satisfies-relation #'orthologs-in-organism 2)
+>>     :falsify-code
+>>       (function-falsifies-relation #'orthologs-in-organism 2)
+>>     :weight 2)
+>>   (declare-function 
+>>     'hihara-mean-regulation-ratio 1
+>>     :sort '(number (1 gene))
+>>     :rewrite-code 
+>>       (function-rewrites-operator 
+>>         #'hihara-mean-regulation-ratio-code))
+>>   (declare-relation 
+>>     'photosynthesis-related 1
+>>     :sort '((1 gene))
+>>     :rewrite-code 
+>>       (function-rewrites-operator 
+>>         #'photosynthesis-related-code)
+>>      :weight 1)
+>> )
+</pre>
+
+And here are the assertions, also explained above:
+
+<pre>
+>> (defun install-axioms ()
+>>   (assert
+>>    '(iff
+>>      (and
+>>       (ortholog ?gene ?gene1)
+>>       (gene-in-organism ?gene1 ?organism))
+>>      (gene-has-ortholog-in-organism ?gene ?gene1 ?organism))
+>>    :sequential :uninherited
+>>    :name 'definition-of-gene-has-ortholog-in-organism)
+>>   (assert
+>>    '(iff
+>>      (gene-in-organism ?gene ?organism)
+>>      (gene-in-organism-code ?gene ?organism))
+>>    :sequential :uninherited
+>>    :name 'definition-of-gene-in-organism-code)
+>>   )
+</pre>
+
+Now, one little detail. We want to tell Snark what order to try to do
+things in. This is what all those :weight things in the relation
+declarations were for as well. In addition to those, we can specify
+the ordering as:
+
+<pre>
+>> (defun declare-ordering ()
+>>   (declare-ordering-greaterp
+>>    'ortholog 
+>>    'gene-in-organism
+>>    'gene-in-organism-code
+>>    'photosynthesis-related
+>>    'gene-has-ortholog-in-organism)
+>>   )
+</pre>
+
+We'll talk about what this does at the end of this lesson.
+
+<p>
+
+Okay, so we should be good to go! Here's the main function again:
+
+<pre>
+>> (defun test-hihara ()
+>>   (hihara-init)
+>>   (find-one '(and (gene-in-organism ?gene med4)
+>>                   (photosynthesis-related ?gene)
+>>                   (ortholog ?gene ?gene1)
+>>                   (gene-in-organism ?gene1 s6803)
+>>                   (not (exists
+>>                         ((gene3 :sort gene))
+>>                         (and (ortholog ?gene gene3)
+>>                              (gene-in-organism gene3 mit9313))))
+>>                   (> (hihara-mean-regulation-ratio ?gene1) 2))
+>>             :answer '(list ?gene ?gene1 (hihara-mean-regulation-ratio ?gene1))
+>>             ))
+</pre>
+
+<p><hr><p>
+<a name=tryout>
+<h2>Testing it out</h2>
+<p>
+
+Let's give it a try!
+
+<pre>
+>> (test-hihara)
+</pre>
+
+If you're really lucky, you'll see something like this:
+
+<pre>
+; The agenda of everything else has 1774 entries:
+;    32 with value (4 20)          5 with value (4 43)          10 with value (4 49)
+;  1696 with value (4 21)          7 with value (4 45)          11 with value (4 51)
+;    11 with value (4 41)          2 with value (4 47)
+(#$PMED4.PMM0817 #$S6803.ssr2595 2.2025) 
+> ((SNARK::QUESTION-- (AND (GENE-IN-ORGANISM ?GENE MED4) (PHOTOSYNTHESIS-RELATED ?GENE) (ORTHOLOG ?GENE ?GENE1) (GENE-IN-ORGANISM ?GENE1 S6803) (NOT (EXISTS ((GENE3 :SORT GENE)) (AND (ORTHOLOG ?GENE GENE3) (GENE-IN-ORGANISM GENE3 MIT9313)))) (> (HIHARA-MEAN-REGULATION-RATIO ?GENE1) 2))) NIL (#$PMED4.PMM0817 #$S6803.ssr2595 2.2025))
+</pre>
+
+If you go back to the original tutorial in which we did this same
+problem, you'll see that, in fact, this is the right answer! (Or you
+can click on these genes to prove to yourself that they are light
+related, and 2.2025 is the Hihara ratio, which you can prove to
+yourself by looking it up in the hash table!
+
+<p><hr><p>
+<a name=order>
+<h2>What's all that ordering about?</h2>
+<p>
+
+Now, let's talk about :weights and the declare-ordering function
+again.  To review, we defined this ordering:
+
+<pre>
+ (defun declare-ordering ()
+  (declare-ordering-greaterp
+    'ortholog 
+    'gene-in-organism
+    'gene-in-organism-code
+    'photosynthesis-related
+    'gene-has-ortholog-in-organism)
+   )
+</pre>
+
+The reason that we want to tell Snark the order in which to try things
+is a little bit subtle. Let's start by recalling the orginal
+tutorial. There we had a loop that looked like this:
+
+<pre>
+ (defun proquery ()
+   (loop for pm4gene in (#^genes pmed4)
+         when (promed-specific-light-sensitive-gene? pm4gene)
+         collect pm4gene)))
+</pre>
+
+This loops through all the promed genes, and collect the ones that
+pass promed-specific-light-sensitive-gene?  ... and then
+promed-specific-light-sensitive-gene? was:
+
+<pre>
+ (defun promed-specific-light-sensitive-gene? (pm4gene)
+   (let* ((orths (biolite::ORTHOLOGS-OF pm4gene)))
+     (and (#^protein pm4gene)
+          (photosynthesis-related? pm4gene)
+          (not (org-in-orths-list p9313 orths))
+          (org-in-orths-list s6803 orths)
+          (hiraraup2x? (org-in-orths-list s6803 orths)))))
+</pre>
+
+At that time this was just a simple lisp function, the AND forms were
+evaluated in order: First it tested for a protein, then if the gene
+was photosynthesis related, then ...  and so on. Now, AND in Lisp has
+a special property that can make things very efficient. The way it
+works is to evaluate each form one-by-one, and if any of them fail
+(i.e., return NIL), it <i>stops right there</i> and returns NIL. The
+reason it can do this is that AND of anything with even a single NIL
+is going to be NIL, so Lisp shortcuts the rest of the tests. This can
+be very useful because you can use the order of the tests to make your
+computations go faster -- basically you just put the longer ones at
+the end, and both the shorter ones, and the ones that are going to
+pass fewer cases, near the top. So the early tests will be faster, and
+will hopefully stop most cases from getting to the long, later
+computations.
+
+Specifically, we knew that most genes aren't photosynthesis related, and this test is really fast, so by putting:
+
+<pre>
+          (photosynthesis-related? pm4gene) 
+</pre> 
+
+pretty far up in the AND list, if it failed, none of the rest of the
+AND block would get executed for that gene, thus saving us a lot of
+time over all the genes.
+
+<p>
+
+Now, Snark ANDs don't do things in the same linear order. In fact, you
+have a great deal of freedom over the order in which Snark tries to
+resolve the various assertions and relations.  So by saying:
+
+<pre>
+ (defun declare-ordering ()
+  (declare-ordering-greaterp
+    'ortholog 
+    'gene-in-organism
+    'gene-in-organism-code
+    'photosynthesis-related
+    'gene-has-ortholog-in-organism)
+   )
+</pre>
+
+and by giving the various :weights to the declarations, we tell Snark
+approximately what order to proceed with the evaluation. These
+orderings and weights won't make any <i>formal</i> difference -- you
+should still get the same answer -- but it will make a practical
+difference; that is, it may take a long time to get the answer if you
+let Snark use its various default orderings.
+
+<p><hr><p>
+<a name=whysnark>
+<h2>Why all this complexity?</h2>
+<p>
+
+Okay, enough of this. I'm sure that you've now completely overwhelmed
+by detail. All of that work just to get the same answer as we already
+had!  I said at the top that I'd explain why we did all this work to
+get the same answer that a simple piece of Lisp code go us back in the
+"Biocomputing I" lesson. There are a few reasons for this.
+
+<p>
+
+First, although for "pedagogical  reasons" I forced you through all of
+this setup and knowledge entry, most of that stuff would normally be
+done by whoever it was that setup the BioBike knowledge bases, and all
+that you'd have to do is to write the query (FIND-ONE ...) In theory
+there would be a lot of knowledge that was expressed by the
+knowledgebase designer (although we don't have a lot of it above!),
+and so you'd be able to do a wide range of complex queries.
+
+<p>
+
+Second, in complex cases, the theorem-proving approach turns out to be
+simpler because it can turn complex loops and code that chases around
+in the knowledge base into a set of simpler axioms, and Snark then
+does the chasing automatically. In this particular cases, that
+advantage isn't really clear since this is such a simple case, but
+it's not too hard to construct more complex cases, and we'll actually
+do that in the next tutorial.
+
+<p>
+
+Third, given that the knowledge has been setup appropriately, it turns
+out to be possible (although not really simple) to write programs that
+turn queries expressed in something close to natural language into
+conjectures like ours above, so that instead of having to write:
+
+<pre>
+   (find-one '(and (gene-in-organism ?gene med4)
+                   (photosynthesis-related ?gene)
+                   (ortholog ?gene ?gene1)
+                   (gene-in-organism ?gene1 s6803)
+                   (not (exists
+                         ((gene3 :sort gene))
+                         (and (ortholog ?gene gene3)
+                              (gene-in-organism gene3 mit9313))))
+                   (> (hihara-mean-regulation-ratio ?gene1) 2))
+             :answer '(list ?gene ?gene1 (hihara-mean-regulation-ratio ?gene1))
+</pre>
+
+You'd be able to say something like: "Find a med4 gene that has no
+ortholog in mit9313, but which does have an ortholog in s6803 that is
+photosynthesis related and which has a Hihara mean regulation ratio
+that's greater than 2." You can sort of see how a really smart program
+might be able to turn that into the query above, and we'll see more of
+that in the next lesson.
+
+<p>
+
+All in all, the theorem proving approach is, indeed, more cumbersome 
+than writing a simple program full of loops, but by breaking up
+knowledge into "sensible" units (axioms etc), and then letting the
+theorem prover do the work of figuring out how to find its way through
+these to your answer, in larger scale projects, it turns out to be
+extremely powerful.
+
+<p><hr><p>
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

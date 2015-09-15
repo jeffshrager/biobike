@@ -1,0 +1,97 @@
+
+After the system reboots, you can do 
+
+(setq genericdb::*generic-db-verbose* nil)
+
+to turn off printing of queries.  
+
+Now load the pb code: 
+
+(ld "biol:Trbl;load.lisp")
+
+Note that the Trbl user does not have group write permission for the
+source directories.  Therefore you must make sure that the 
+
+.../Biolisp/Trbl/
+
+directory and the files in it are chmod-ed to 777.  
+If not, and any source file has been changed and therefore is to be compiled, 
+you'll get a permissions error when it tries to write the .fasl file.  
+
+:pa pb
+
+Finally execute 
+
+(reorg-and-thread-trbl :minyear 1991 :reload? nil :authors? t)
+
+This creates the db handle: pb::*pdb*, and creates frames for authors,
+publications, etc.
+
+Note that these args control what's loaded (esp. minyear, so we're
+ignoring pre-1991 data at the moment).  Also, IMPORTANTLY: Re-Loading
+DOES NOT PRECLEAN the previously made frames -- i.e., there's not
+:RELOAD? T option, so bascially if you call it again, it's going to
+make a mess.  So you have to restart the server to change these args.
+
+(FYI: this function and assocs are in CONVERTER.LISP)
+
+See comments in specific code to run specific analyses.
+
+----------------
+
+To canonicalize the go-nodes so that obsolete nodes are deleted from the 
+hierarchy, redundant links are removed, go levels are assigned, and lists
+of go-nodes at each level are computed, fringe go-nodes for each gene-model
+are computed and gene-models with pointers to obsolete go-nodes have these
+obsolete pointers removed, execute:
+
+(trbl-go-processing)
+
+This will take a few minutes and print out a fair number of
+interesting statistics about the go hierarchy and the gene-models.  
+
+----------------
+
+Before going further (ha ha) set the *go-stops*:
+
+(ensure-go-stops)
+
+You might want to consider doing:
+
+(setq *go-stops*  (union *go-stops* (append
+  *next-level-molecular-function-go-nodes*
+  *next-level-biological-process-go-nodes*
+  *next-level-cellular-component-go-nodes*))))
+
+If you want these as well.
+
+----------------
+
+Example of database access:
+
+Find (or count) the authors that are PIs:
+
+(xsql pb::*pdb* "select author.author_id, auth2api.pi_id from author, auth2api where 
+        author.author_id = auth2api.author_id ")
+
+(xsql pb::*pdb* "select arpiTpubs.pub_id, arpiTpubs.pi_id from arpiTpubs")
+
+-----------------
+
+To run a local server:
+
+  login as trbl
+  $lisp
+  (lwl :load-dbs? t)
+
+this starts in 8010
+  
+
+  :pa pb
+
+Go To 100
+
+-----------------
+
+Running analyses of various sorts:
+

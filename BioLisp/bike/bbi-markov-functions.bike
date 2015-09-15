@@ -1,0 +1,212 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-  
+
+(IN-PACKAGE :BBI)
+
+(DEFUN Optimize-Markov-table (model bg-list Protein?)
+  (LET* ((alphabet (IF Protein? *amino-acids* *nucleotides*))
+         (main-table (MAKE-HASH-TABLE :TEST 'EQUAL))
+         (bg-table (MAKE-HASH-TABLE :TEST 'EQUAL))
+        )
+    
+    (LOOP FOR letter IN alphabet
+          FOR freq IN bg-list
+          DO (SETF (GETHASH letter bg-table) freq))
+        
+    (LOOP FOR key IN (LABELS-OF model DIMENSION 1)
+          DO (SETF (GETHASH key main-table) (MAKE-HASH-TABLE :TEST 'EQUAL))
+             (LOOP FOR letter IN alphabet
+                   AS freq = (FLOAT (LISP:/ model[key letter] bg-table[letter]))
+                   DO (SETF (GETHASH letter (GETHASH key main-table)) freq)))
+    main-table
+   ))
+
+(DEFINE-FUNCTION Make-Markov-from 
+  SUMMARY "Produces a Markov matrix from a list of sequences"
+  REQUIRED (sequence-list (DNA) (PROTEIN))
+    TYPE sequence-list = List
+  KEYWORD order = 3
+    TYPE order = Nonnegative-number
+  KEYWORD Pseudocounts = 1
+    TYPE pseudocounts = Nonnegative-number
+  KEYWORD Background-from
+  RETURNS table
+  PUBLIC
+  BODY
+    
+    (LET* ((seq-list
+              (LOOP FOR item IN sequence-list
+                    AS sequence =
+                       (COND
+                          ((STRINGP item) item)
+                          ((AND (LISTP item) (= (LENGTH item) 2)
+                                (STRINGP (biolisp::SECOND item)))
+                             (biolisp::SECOND item))
+                          ((IsFRAME? item) (EXTRACT-SEQUENCE item))
+                          (T (ERROR "Can't figure out how to make '~A' into a sequence"
+                                 item)))
+                    COLLECT sequence))
+           (concatenated-seq-list (string-join seq-list ""))
+           (type
+              (COND
+                 (dna 'DNA)
+                 (protein 'PROTEIN) 
+                 (T (SEQUENCE-TYPE-OF concatenated-seq-list))))
+           (alphabet 
+              (CASE type
+                 ('DNA *nucleotides*)
+                 ('PROTEIN *amino-acids*)
+                 (OTHERWISE (SPLIT concatenated-seq-list))))
+           (keys (PERMUTATIONS-OF alphabet CHOOSING order))
+           (alphabet-length (LENGTH alphabet)) 
+           (letters "")
+         ; (N (LENGTH seq-list))
+           (B pseudocounts)
+           (pcounts-list
+              (COND
+                 ((NULL background-from)
+                   (MAKE-LIST alphabet-length :INITIAL-ELEMENT (/ B alphabet-length)))
+                 ((AND (LISTP background-from) 
+                       (= (LENGTH background-from) alphabet-length)
+                       (EVERY 'NUMBERP background-from))
+                   (MAPCAR (LAMBDA (c) (* B c)) background-from))
+                 ((SYMBOL= type 'DNA)
+                   (MAPCAR (LAMBDA (c) (* B c))
+                       (BACKGROUND-FREQUENCIES-OF background-from DNA)))
+                 (T (MAPCAR (LAMBDA (c) (* B c))
+                       (BACKGROUND-FREQUENCIES-OF background-from DNA))))) 
+           (pcounts-hash
+              (LOOP FOR pcount IN pcounts-list
+                    FOR letter IN alphabet
+                    WITH hash = (MAKE-HASH-TABLE :TEST 'EQUAL)
+                    DO (SETF (GETHASH letter hash) pcount)
+                    FINALLY (RETURN hash)))
+          (model-counts (NEW-TABLE {keys alphabet} INITIALIZE 0))
+          (model (NEW-TABLE {keys alphabet} INITIALIZE 0))
+         )
+        
+     (LOOP FOR seq IN seq-list
+           DO (LOOP FOR start FROM 1 TO (- (LENGTH seq) order)
+                   AS end = (+ start order -1)
+                   AS key = seq[start -> end]
+                   AS target = seq[(+ end 1)]
+                   DO (IF (NOT (SEARCH target letters))
+                          (SETF letters (CONCATENATE 'STRING letters target)))
+                      (ASSIGN model-counts[key target] AS
+                          (1+ model-counts[key target]))))
+                    
+     ;; MAKE MODEL
+     (LOOP FOR key IN keys
+           AS csum = (FOR-EACH target IN alphabet
+                          SUM model-counts[key target])
+           DO (LOOP FOR target IN alphabet
+                   AS p = (IF pseudocounts (GETHASH target pcounts-hash) 0)
+                   DO (ASSIGN model[key target] 
+                          = (/ (+ model-counts[key target] p)
+                               (+ csum B)))))
+     model))
+
+(defun apply-markov-to-internal 
+       (sequence-source dna protein With-Markov-from With-background-from
+                        Threshold Pseudocounts Motif-size One-strand)
+  (without-code-walker
+    (let* ((type-specified t)
+           (type 
+            (COND
+             (protein 'Protein)
+             (one-strand 'one-stranded-DNA)
+             (DNA 'DNA)
+             (T (SETF type-specified NIL))))
+           (dna? (IF (SYMBOL= type 'PROTEIN) NIL T))
+           (sequence-set 
+            (COND
+             ((AND Protein (OR (TYPEP sequence-source 'Organism)
+                               (TYPEP sequence-source 'Contiguous-sequence))) 
+              (PROTEINS-OF sequence-source))
+             ((OR (TYPEP sequence-source 'Organism)
+                  (TYPEP sequence-source 'Contiguous-sequence)) 
+              (SETF type 'DNA)
+              (REPLICONS-OF sequence-source))
+             ((LISTP sequence-source)
+              (LOOP FOR item IN sequence-source
+                    FOR default-label FROM 1
+                    DO (COND
+                        ((STRINGP item)
+                         (IF type
+                             (IF (NOT (SYMBOL= (SEQUENCE-TYPE-OF item) type))
+                                 (ERROR "Following sequence not of ~A type '~A':~&~A"  
+                                        type 
+                                        (IF type-specified "specified" "implied")
+                                        item))
+                           (SETF type (SEQUENCE-TYPE-OF item)))
+                         (SETF item (LIST default-label item)))
+                        ((AND (IsFRAME? item) (TYPEP item 'PROTEIN))
+                         (SETF type 'PROTEIN))
+                        ((AND (IsFRAME? item)
+                              (OR (TYPEP item 'GENE) (TYPEP item 'Organism)
+                                  (TYPEP item 'CONTIGUOUS-SEQUENCE)))
+                         (SETF type 'DNA)))
+                    COLLECT item))
+             ((STRINGP sequence-source)
+              (LIST (LIST "Seq 1" sequence-source)))
+             (T (ERROR "Unidentified sequence type"))))
+           (bg
+            (COND
+             ((AND (IsList? with-background-from) 
+                   (EVERY 'NUMBERP with-background-FROM))
+              (PRINT "bg will be nil")
+              with-background-from)
+             ((AND with-background-from (SYMBOL= type 'PROTEIN))
+              (BACKGROUND-FREQUENCIES-OF with-background-from PROTEIN))
+             (with-background-from 
+              (BACKGROUND-FREQUENCIES-OF with-background-from DNA))
+             ((SYMBOL= type 'Protein)
+              (BACKGROUND-FREQUENCIES-OF sequence-source PROTEIN))
+             (T  (BACKGROUND-FREQUENCIES-OF sequence-source DNA))))
+           (model
+            (COND
+             ((AND with-markov-from (SYMBOL= type 'Protein))
+              (MAKE-MARKOV-FROM with-markov-from PROTEIN BACKGROUND-FROM bg 
+                PSEUDOCOUNTS pseudocounts))
+             (with-markov-from 
+              (MAKE-MARKOV-FROM with-markov-from DNA BACKGROUND-FROM bg 
+                PSEUDOCOUNTS pseudocounts))
+             (T (ERROR (ONE-STRING "Sequence list must be given with "
+                                   "WITH-MARKOV-FROM clause")))))
+           (order (LENGTH (LABELS-OF model DIMENSION 1)))
+           (optimized-model
+            (OPTIMIZE-MARKOV-TABLE model bg (SYMBOL= type 'PROTEIN))
+            ))
+      (IF (= motif-size *unprovided+*) (SETF motif-size NIL))
+      (MARKOV-BODY sequence-set order optimized-model motif-size threshold DNA?)
+      )))
+
+;; Body moved to auxiliary function above.
+(DEFINE-FUNCTION Apply-Markov-to
+   SUMMARY 
+   #.(one-string
+      "Scans across DNA or protein sequence[s] for matches with Markov "
+      "scoring matrix.")
+   REQUIRED (sequence-source (DNA Protein))
+     TYPE sequence-source = (OR Organism String List)
+   KEYWORD With-Markov-from
+     TYPE with-Markov-from = List 
+   KEYWORD With-background-from
+     TYPE With-background-from = (OR Organism String List)
+   KEYWORD Threshold = 500
+     TYPE threshold = Number
+   KEYWORD Pseudocounts = 1
+     TYPE pseudocounts = Nonnegative-number
+   KEYWORD Motif-size = *Unprovided+*
+     TYPE motif-size = Positive-number
+     CONVERT motif-size FROM number TO Positive-Integer
+   FLAG One-strand
+   PUBLIC
+   BODY
+   (apply-markov-to-internal
+    sequence-source dna protein With-Markov-from With-background-from Threshold 
+    Pseudocounts Motif-size One-strand
+    ))
+
+
+
+

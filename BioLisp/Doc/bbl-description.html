@@ -1,0 +1,624 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2005 JP Massar, Jeff Shrager, Mike Travers           |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>BioBike Language Description </title></head>
+<body>
+<br>
+<h2> <center> The BioBike Language (BBL) Description </center> </h2>
+<br>
+<h3> Introduction </h3>
+
+The Biobike Language (hereafter BBL) is a computer language written
+for biologists.  Its goals are 1) to provide readable computer code to
+the perusing biologist who is not necessarily familiar with computer
+languages or computer concepts, and 2) provide capability for a
+biologist interested in investigating bioinformatics-type questions
+about their data to do so via writing computer programs which are
+straightforward and intuitive, using concepts from biology and the
+smallest amount of computer-algorithm knowledge possible.
+
+<p>
+
+BBL is based on Common Lisp, while its syntax is a bit different, its
+semantics more flexible, and its error messages more understandable.
+
+<h3> New syntax </h3>
+The new syntax that BBL introduces is: 
+<br>
+<ul> 
+<li> Bracket notation, [ ], used to access and set substructure.  </li>
+<li> The symbol ->, used within brackets, to denote ranges of indices. </li>
+<li> Curly brace notation, { }, used as shorthand for (list ...) </li>
+<li> Periods within symbols causing symbols to be interpreted as frames,
+ e.g., FOO.BAR denoting the frame #$FOO.BAR </li>
+</ul>
+<p>
+An example of this notation: 
+<p>
+<code> 
+<font color="brown"> <b> (setf foo.bar[.slot1] {1 2 3}) </b> </font>
+</code>
+<p>
+  -- 'foo.bar' represents the frame #$foo.bar.  
+<br>
+  -- '.slot1' represents the frame #$slot1.  
+<br>
+  -- 'foo.bar[.slot1]' is equivalent semantically to 
+<p>
+<code> 
+<font color="brown"> <b> (slotv #$foo.bar #$slot1) </b> </font>
+</code>
+
+<p>	
+
+  -- and {1 2 3} is equivalent to (list 1 2 3).  
+
+<p>
+
+Therefore the above expression sets the #$slot1 slot of the frame #$foo.bar
+to the list (1 2 3).
+
+<p>
+
+Another example using -> notation: 
+
+<p>
+
+<code>
+<font color="brown"> <b> "abcdefghijklm"[-> 2 5 -> 7 9 ->] </b> </font>
+</code>
+
+<p>
+
+  -- '-> 2' represents the set of indices 1 2
+ <br>
+  -- '5 -> 7' represents the set of indices 5 6 7
+ <br>
+  -- '9 ->' represents the set of indices 9 10 11 12 13 in this case; in general
+it represents the indices from 9 through the last legal index.  
+
+<p>
+
+The result of the above operation is "abefgijklm"
+
+<p>
+
+In BBL, all symbols with '.' in them denote frames.  It is impossible
+to have a symbol with a '.' as one of its characters; the compiler
+will simply translate the symbol into an appropriate frame.  Symbols
+whose first character is '.' are translated into a frame whose name
+is the symbol's name without the initial '.' .   A symbol with a '.'
+somewhere in the middle is translated into a frame whose name 
+is the same as the symbol's name -- the '.' is NOT removed.   
+
+
+<h3> New semantics </h3>
+
+BBL introduces the following new semantics: 
+
+<ul>
+
+<li> Symbols as frames
+
+<li> 1-based indexing
+
+<li> Range notation within [ ]s for sequences, with the range values
+indicating inclusive ranges; also range notation denoting a range from
+the beginning of a sequence to a particular index and from an index to
+the end of the sequence; also multiple independent indices within [ ]s
+for sequences.  
+
+<li> Strings of length 1 in place of characters
+
+<li> Deprecation of characters in favor of one-length strings
+
+<li> DEFINE-FUNCTION, an alternative to DEFUN
+
+<li> DEFCONVERSION, sophisticated argument coercion within DEFINE-FUNCTION
+
+<li> A revised LOOP facility
+
+<li> Inability to use FUNCALL or APPLY on BBL functions
+defined with DEFINE-FUNCTION.  
+
+</ul>
+
+<h4> Symbols as Frames </h4>
+
+BBL introduces the concept of certain symbols (without '.' as a
+character) as frames.  In any given BBL instantiation there are a
+set of non-dotted symbols that, unless lexically shadowed, refer to
+frames.  The determination of which symbols refer to frames and to
+which frames is a complicated algorithm, defined by the function
+BIOBIKE-INTERNALS::IN-BIOBIKE-FRAME-MAPPING?.
+
+<p>
+
+This function uses the BIOBIKE-INTERNALS::*BIOBIKE-FRAME-MAPPING*
+hash table, the names and nicknames of existing organisms, and the
+prefixes for the genes, proteins, and contiguous sequences of each
+organism, to make a determination as to whether a symbol denotes a
+frame.  
+
+<p> 
+
+An example: The symbol sef0012 denotes a frame in the Cyanobacterial
+instances of BBL because there is a gene named #$s7942.sef0012 and
+the string "S7942" is the prefix for the organism denoted by the
+organism frame #$synechococcus_elongatus_pcc7942.  Any use of the
+sef0012 symbol (unless it is lexically bound) is as if the symbol
+evaluated to the #$s7942.sef0012 frame.
+
+<p>
+
+Note: It is expected that different BBL installations will have
+different requirements as to which symbols denote frames, and
+therefore the above-mentioned function and hash table will need to be
+redefined.
+
+<h4> 1-based indexing </h4>
+
+BBL reintroduces (a la Fortran) the notion of 1-based indexing,
+instead of 0-based as is done in Common Lisp.  To index the first element
+of an array A in Common Lisp, one would write: 
+
+<p>
+
+<code>
+<font color="brown"> <b> (aref a 0) </b> </font>
+</code>
+
+<p>
+
+while to index the first element of an array A in BBL, one writes:
+
+<p>
+
+<code>
+<font color="brown"> <b> a[1] </b> </font> 
+or 
+<font color="brown"> <b> (ref a 1) </b> </font> 
+</code>
+
+
+<p>
+
+This notion of 1-based indexing extends to results returned by other
+functions such as the BBL equivalents Common Lisp's sequence
+functions.
+
+<p>
+
+<font color="red"> Note: A BBL user using a Common Lisp function
+that either uses indices (such as LISP:SUBSEQ) or returns a position
+(such as LISP:SEARCH) will have to adjust the index or position by
+subtracting or adding 1, respectively.
+</font>
+
+<h4> Range notation, etc. </h4>
+
+ARROW NOTATION: Within [ ]s indexing sequences, BBL allows the use of
+'->'.  This notation may be used between two indices, in which case it
+indicates a range of indices from the first index to the second index,
+inclusive.  The first index may be greater than the second index, in
+which case the indices are enumerated backwards.  The '->' may also be
+used as the first index, if so, it indicates a range from index 1 to
+the second index (it is simply a shorthand notation for '1 -> x' at
+the start of the indices list).  Finally, the '->' may be used as the
+last index, if so, it indicates a range from the previous index to the
+last, highest index, inclusive.
+
+<p>
+
+Examples of -> notation:
+
+<p>
+
+<code>
+<ul> 
+<li> "abcdefgh"[3 -> 6] --> "def"  ; a standard range.  </li>
+<li> "abcdefgh"[-> 4] --> "abcd"   ; an initial range. </li>
+<li> "abcdefgh"[4 ->] --> "defgh"  ; a final range. </li>
+<li> "abcdefgh"[7 -> 4] --> "gfed" ; a reverse range. </li>
+<li> "abcdefghijklmnopqrstuvwxyz"[-> 2 4 6 -> 8 10 11 14 ->] -->
+	"abdfghjknopqrstuvwxyz" ; a complicated set of indices and ranges </li>
+</ul>	
+</code>
+
+<p>
+
+More examples of -> notation in assignment.  Assume x is
+the list (1 2 3 4 5 6 7 8 9 10) and gets reassigned to this value
+for each example below: 
+
+<p>
+
+<code>
+<ul>
+<li> (setf x[3 -> 6] '(a b c d)) ; now x = (1 2 a b c d 7 8 9 10) </li>
+<li> (setf x[6 -> 4] '(a b c))   ; now x = (1 2 3 c b a 7 8 9 10) </li>
+</ul>
+</code>
+
+<p>
+
+<font color="red"> Note: range notation will only work for sequences;
+it will not work for hash tables, frames or multi-dimensional arrays.
+</font>
+
+<p>
+
+MULTIPLE INDEPENDENT INDICES: Within [ ]s indexing sequences, 
+BBL allows the use of multiple indices, indicating that values 
+at each index position will be extracted and concatenated together. 
+
+<p>
+
+Examples of using independent indices:
+
+<p>
+
+<code>
+<ul>
+<li> "abcdefghijklmnop"[1 4 2 10] --> "adbj" </li>
+<li> '(a b c d e f g h i j k)[6 6 5 1 1] --> (f f e a a) </li>
+</ul>
+</code>
+
+<p>
+
+<font color="red"> Note: multiple indices notation will work for everything
+but multiply-dimensioned arrays, where the multiple indices are interpreted as
+specifying a single element of the multiple-dimensioned array.  
+</font>
+
+<p>
+
+
+<h4> Characters replaced by strings of length one </h4>
+
+BBL deprecates the use of characters; while in Common Lisp the
+result of extracting the first element of the string "abc" is #\a, in
+BBL the result is "a", a string of length 1.  Similarly, one can
+store a string of length 1 into a particular position of another
+string.  Common Lisp characters are not, however, verboten -- if one
+attempts to store a Common Lisp character into a string in BBL
+nothing inappropriate will happen:
+
+<p>		
+
+<code>
+<pre>
+<font color="brown"> 
+(setq x "abc")
+(setf x[2] #\z) 
+(setf x[3] "y")
+x --> "azy"
+</pre>
+</font>
+</code>
+
+<h4> Define-function </h4>
+
+DEFINE-FUNCTION is a new utility for defining procedures in BBL.
+(DEFUN still works in BBL as in Common Lisp; DEFINE-FUNCTION
+provides various extensions.)
+
+<p>
+
+DEFINE-FUNCTION is specified fully in the file .../bike/define-function.txt.
+Here is a summary of its main features:
+
+<ul> 
+
+<li> Handling of keyword arguments such that they need not be specified in
+a call using ':' (i.e., as keyword symbols), but can be specified using any
+symbol in any package whose symbol-name matches the symbol name of the
+keyword parameter.
+
+<li> Allowing keywords to have aliases.  
+
+<li> Allowing syntactic tokens (words that make a call seem more
+English like, and/or optionally appear in a specific place between
+required arguments.  These token variables are like flag variables
+(see below) but they must appear in a specific place.)
+
+<li> "Flag" arguments--keyword arguments that take no subsequent
+value but are simply present or not (and their value is T or NIL.)
+
+<li> Allowing aliases for the function name
+
+<li> Specification of argument types and return value (using syntax
+simpler than DECLARE syntax) 
+
+<li> Runtime checking of argument types and generation of meaningful
+error messages.
+
+<li> Runtime coercion of arguments by type.
+
+<li> Implicit mapping of required arguments declared atomic but given
+as lists.
+
+<li> Declaration of local variables (equivalent to &aux or initial
+LET) using simple syntax
+
+<li> Retained ability to define simple functions simply using a
+DEFUN-like syntax.
+
+<li> Allowing, but not requring, various kinds of documentation such
+as a summary string, a documentation string, examples, and see-also
+references (which will get passed through to the DOCUMENT-FUNCTION
+macro).
+
+<li> Provision to allow export of the symbol being defined from the
+Biobike package.
+
+<li> Automatically generating documentation of allowed argument types. 
+
+</ul>
+
+DEFINE-FUNCTION has a very different look and feel from DEFUN.  Here
+is a small example:
+
+<code>
+<pre>
+<font color="brown"> 
+(define-function search-for 
+	required (element (in within) seq)
+	keyword (start = 1)
+	type (seq = lisp:sequence start = lisp:fixnum)
+	summary "Finds the position of the first occurrence of ELEMENT in SEQ."
+	body (loop for j from start to (length seq)
+	            when (equal element (ref seq j))
+	            (return j)
+                    ))
+</font>
+</pre>
+</code>
+
+Instead of a single argument list, DEFINE-FUNCTION provides
+independent specifications for each kind of argument: required and
+keyword arguments, as in Common Lisp, and two new argument types,
+token and flag arguments.  BBL does not allow Common Lisp's &optional
+or &rest argument types.  Instead of type declaration statements
+within the body of a definition the user uses TYPE clauses, which
+additionally guarantee that the argument type will be checked (when
+safety is enabled, as defined by the *safety* variable being non-NIL).
+Many other features as listed above are also available.
+
+<h4> Defconversion </h4>
+
+DEFINE-FUNCTION allows the user to do automatic coercion of input
+arguments.  This is facilitated by BBL's DEFCONVERSION facility.
+DEFCONVERSION allows the user (or the system administrator for a BBL
+instantiation) to define a default conversion from one type to
+another, and a set of named conversions in addition to the default
+from the one type to the other.  Here is an example of DEFCONVERSION
+interacting with DEFINE-FUNCTION:
+
+<code>
+<pre>
+<font color="brown"> 
+;; define a default conversion from floating point to integer, and 
+;; two alternative methods 
+(defconversion (single-float to integer) (f) (round f))
+(defconversion (single-float to integer :named fceiling) (f) (ceiling f))
+(defconversion (single-float to integer :named ftruncate) (f) (truncate f))  
+
+(define-function foo
+	required (float1 float2)
+	convert float1 from single-float to integer
+	convert float2 from single-float to integer using fceiling
+	body (list float1 float2)
+	)
+
+(foo 1.4 1.3) 
+--> (1 2)
+</font>
+</pre>
+</code>
+
+Note: If no DEFCONVERSION method has been defined and the user
+specifies that an argument is to be converted to a particular type,
+then the Common Lisp function COERCE is called to do this conversion.
+
+<h4> Loop facility </h4>
+
+The new BBL loop facility is designed to remedy some of the more 
+obnoxious features and flaws of Common Lisp's loop facility.  
+
+<p>
+
+The BBL loop facility is more completely described in
+.../doc/loop-syntax.txt.  Some of the more interesting features of the
+new loop facility are:
+
+<ul> 
+
+<li> The ability to loop over lists, arrays, strings, hash tables, 
+garrays and frames using a standard syntax; in LISP:LOOP the way one 
+iterates over a list is different than how one iterates over a vector
+and both are different than how one iterates over a hash table!  
+
+<li> The ability to leave out the 'DO' before the body of the loop.
+This is one of the most common errors made by people using LISP:LOOP,
+even by very experienced programmers.
+
+</ul>
+
+The BBL loop facility imposes significant restrictions compared to
+LISP:LOOP's syntax and semantics.  Some of these restrictions are:
+
+<ul>
+
+<li> Variable initialization clauses (which in LISP:LOOP begin with
+the word 'WITH,' while in BBL begin with the word 'INIT') are
+required to occur before any other loop clauses.
+
+<li> No collection into variables is allowed; only a single COLLECT
+can be specified.  
+
+<li> The token 'IF' as toplevel control structure within the body of
+the loop is not allowed; only 'WHEN' and 'UNLESS' are allowed.  
+
+<li> No INITIALLY clauses are allowed.  
+
+</ul> 
+
+Note: LISP:LOOP is a very complicated macro, both syntactically and
+semantically.  There are many of LISP:LOOP's features not specifically
+listed above that are not implemented in BBL's LOOP.
+
+<p>
+
+Here is an example of BBL's loop in action:
+<font color="brown"> 
+<code>
+<pre>
+(defparameter ht (utils:create-hash-table '((a 1) (b 2) (c 3))))
+
+(loop init (x y) = {"abc" "def"} 
+      for (key value) in ht
+      for j fixnum from 1 
+      (print (list j key value x[j] y[(- 4 j)]))
+      finally (return "all done!"))
+      
+(1 B 2 "a" "f") 
+(2 A 1 "b" "e") 
+(3 C 3 "c" "d") 
+"all done!"
+</font>
+</pre>
+</code>
+
+<h4> FUNCALL and APPLY unusable with DEFINE-FUNCTION </h4>
+
+BBL functions defined with DEFINE-FUNCTION <font color="red"> <i>
+cannot </i> </font> be used as arguments to FUNCALL, APPLY, or other
+functions expecting functions as arguments.  This is because BBL
+functions are actually defined as lisp macros; this is spelled out in
+more detail in the DEFINE-FUNCTION document.  (A user can use a Common
+Lisp LAMBDA construct to get around this restriction.)
+
+<h3> Special Operators </h3>
+
+The list of Lisp special operators available to BBL is still under
+construction; The current list is specified in .../bike/symbols.lisp.
+a
+<h3> Macros </h3>
+
+The list of Lisp macros available to BBL is still under construction; 
+The current list is specified in .../bike/symbols.lisp.
+
+<h3> Functions </h3>
+
+The list of Lisp functions available to BBL is still under construction; 
+The current list is specified in .../bike/symbols.lisp.
+
+<h3> BBL specific variables, functions and macros. </h3>
+
+The set of BBL specific symbols is maintained in .../bike/bbl-package.lisp
+
+
+<h3> Miscellaneous </h3>
+
+BBL is designed to be user-friendly.  Much work went into attempting
+to make the error messages it itself produces clear.  Sometimes this
+means the messages are quite verbose!  Still, the BBL language does
+not have control over all possible error messages a user might
+encounter -- many are still generated by the underlying Lisp system
+while others are generated by functions written in BBL and made part
+of the BioBike system.
+
+<p>
+
+BBL maintains a user-level stack trace so that when an error occurs an
+informative flow of control report is generated.  Unlike Common Lisp
+this stack trace report contains system and user-defined macros.
+
+<p>
+
+BBL only does extensive runtime checking and maintenance of its own
+flow of control stack when it executes in safe mode.  Safe mode is on
+by default, and can be disabled (or reenabled) by executing
+
+<p>
+
+<font color="brown"> <code> (setq *safety* nil) </code> </font>
+<br>
+<font color="brown"> <code> (setq *safety* t) </code> </font>
+
+<p>
+
+respectively.
+
+<p>
+
+Currently a user enters the BBL system (as opposed to the
+Biolisp system) by executing: 
+
+<p>
+
+<font color="brown"> <code> (bbl) </code> </font>
+
+<p>
+
+Note: A user may enter Biobike mode by default on logging in by 
+placing the same form as above in his biolisp.ini file.
+
+<p>
+
+In order to load a file containing BBL code, the BBL function BBLOAD
+must be used.  Attempts to load and/or compile files of BBL code using
+LISP:LOAD / LISP:COMPILE-FILE will generally not work, or produce
+strange error messages, or result in failure at runtime.  The BBLOAD
+function both compiles and loads; there is no need for a BBL
+equivalent of LISP:COMPILE and LISP:COMPILE-FILE.
+
+<p>
+
+The Common Lisp function EVAL will not work correctly when handed BBL
+forms.  BBL forms are only guaranteed to work when evaluated from the
+Weblistener in biobike mode, causing the BBL compiler to preprocess
+the input form before handing it off to Lisp.
+
+<h3> Credits </h3>
+
+The BBL language was designed by a committee including Jeff Elhai,
+Jeff Shrager, JP Massar, Peter Seibel, Mike Travers, and Mark
+Slupesky.
+
+<p>
+
+The BBL language infrastructure was implemented by JP Massar and Mark
+Slupesky.  JP Massar implemented BBL's loop facility.  Mark Slupesky
+wrote many of the tests for DEFINE-FUNCTION.  Peter Seibel implemented
+the DOCUMENT-FUNCTION facility (not specific to BBL, but as part of
+the BBL language implementation effort).  Jeff Elhai, Arnaud Taton and
+others are implementing the macros and functions that will constitute
+the user-level interface to the language.
+
+
+

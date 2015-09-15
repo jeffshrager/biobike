@@ -1,0 +1,146 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :BBI)
+
+(DEFUN RNAZ (&REST inputs)
+  "(RNAZ list-of-label-sequence-pairs)"
+  (without-code-walker
+    (FLET ((Expand (target seq)
+             (PROG (it lt is r nc)
+               (SETF it 0 
+                     lt (LENGTH target)
+                     is 0 
+                     r "")
+               LOOP
+               (IF (= it lt) (RETURN r))
+               (SETQ nc (AREF target it))
+               (IF (CHAR-EQUAL #\- nc)
+                   (PROGN (SETQ r (FORMAT NIL "~a-" r))
+                     (INCF it))
+                 (PROGN (SETQ r (FORMAT NIL "~a~a" r (AREF seq is)))
+                   (INCF it) 
+                   (INCF is)))
+               (GO loop))))
+         
+      (LET* ((rnaz-frame (APPLY 'RUN-RNAz (APPEND inputs '(:VERBOSE? NIL))))
+             (rnaz-results (#^Results rnaz-frame))
+             (new-results
+              (LOOP 
+               FOR (key oseq) IN (biolisp::FIRST inputs)
+               COLLECT 
+               (LIST
+                key
+                oseq
+                (EXPAND 
+                 oseq
+                 (biolisp::THIRD (FIND key rnaz-results
+                                       :TEST #'STRING-EQUAL :KEY #'CAR)))
+                (biolisp::FOURTH (FIND key rnaz-results
+                                       :TEST #'STRING-EQUAL :KEY #'CAR))))))
+        (SETF 
+         new-results 
+         (APPEND new-results 
+                 (LIST (ASSOC "consensus" rnaz-results :TEST #'STRING-EQUAL))))
+        (SETF (SLOTV rnaz-frame #$Results) new-results)
+        rnaz-frame))))
+
+(DEFINE-FUNCTION Find-conserved-RNA-in 
+  SUMMARY "Uses RNAZ to identify DNA segments that may determine noncoding RNAs"
+  REQUIRED sequence-list
+  KEYWORD Named
+    TYPE Named = List
+  KEYWORD From = *unprovided+*
+    TYPE from = Positive-number
+    CONVERT from FROM number TO integer
+  KEYWORD To = *unprovided+*
+    TYPE to = Positive-number
+    CONVERT to FROM number TO integer
+  FLAG No-display
+  FLAG No-stats
+  FLAG No-structures
+  INITIALIZE display = (NOT no-display)
+  INITIALIZE show-stats = (NOT no-stats)
+  INITIALIZE show-structures = (NOT no-structures)
+  BODY
+  (LET* ((raw-aligned-seq-list 
+                   (ALIGNMENT-OF sequence-list NO-DISPLAY NO-CONSENSUS))
+          (aligned-seq-list
+             (LOOP FOR (alignment-name seq) IN raw-aligned-seq-list
+                   FOR offered-name 
+                      IN (OR named (MAKE-LIST (LENGTH raw-aligned-seq-list) 
+                                      :INITIAL-ELEMENT NIL))
+                   AS name = (OR offered-name alignment-name)
+                   AS start = (IF (= from *unprovided+*) 1 from)
+                   AS end = (IF (= to *unprovided+*) (LENGTH seq) to)
+                   AS new-seq = (SUBSEQ seq (1- start) end)
+                   DO (NSUBSTITUTE #\- #\SPACE name)
+                   COLLECT (LIST name new-seq)))
+          (RNAZ-result (RNAZ aligned-seq-list :VERBOSE? NIL))
+          (structure-alignment (SLOTV RNAZ-result #$Results))
+                    (stats (SLOTV RNAZ-result #$Parameters))
+          (evals)
+          (names)
+          (processed-structure-alignment
+             (LOOP FOR items IN structure-alignment
+                  AS (label seq structure eval) = items
+                  AS label1 = (BB-JOIN (LIST label (STRING-OF eval)))
+                  AS label2 = (BB-JOIN (LIST label "-str"))
+                  AS eval-num = (MATCHES-OF-PATTERN "[0-9.`-+]..." 
+				                  IN eval +1st-MATCH-ONLY +MATCHES)				   
+				  DO (PUSH eval-num evals)
+                     (PUSH label names)
+                  COLLECT (LIST label1 seq)
+                  COLLECT (LIST label2 structure)
+                  FINALLY (ASSIGN evals = (REVERSE evals))
+                          (ASSIGN names = (REVERSE names)))))
+            
+     (IF-TRUE (AND display show-structures)
+         THEN (DISPLAY-SEQUENCE processed-structure-alignment))
+
+     (IF-TRUE (AND display show-stats)
+         THEN (LOOP FOR (stat-label stat) IN stats
+                   DO (DISPLAY-LINE (FIT stat-label TO 30) stat)))
+               
+     (LIST stats[5 -> 14]
+           (INTERLEAVE names evals))
+))
+
+(DEFINE-FUNCTION Fold-RNA
+  REQUIRED sequence
+    TYPE sequence = (OR String Labeled-sequence)
+  KEYWORD labeled
+    TYPE labeled = (OR Null String)
+  FLAG +graphic
+  FLAG -graphic
+  FLAG +display
+  FLAG -display
+  FLAG +delta-g
+  FLAG save
+    ; graphic is PDF file of best structure
+    ; display is text representation of folding
+    ; Default: graphic and text are displayed, delta-g returned
+    ; +something implies -everything else, unless specified
+    ; delta-g is always returned.
+    ; files are saved in users directory when SAVE specified
+    ; displays, graphics, and files are named according to LABELED
+    ;    or the name of a labeled sequence or "seq"
+  FLAG %%multivalue%%
+  MAP sequence
+  BODY
+   (ERROR-IF-MORE-THAN-ONE +graphic -graphic)
+   (ERROR-IF-MORE-THAN-ONE +display -display)
+   (LET ((delta-g)(graphic-result)(text-result)
+         (graphic? 
+            (OR +graphic -display 
+               (AND (NOT +display)(NOT +delta-g)(NOT -graphic)))))
+     (ASSIGN (delta-g graphic-result text-result)
+	   = (FOLD-RNA-aux sequence labeled save graphic?))
+	 (COND
+        ((AND +graphic +display)
+           (VALUES delta-g graphic-result text-result))
+        ((OR +graphic -display) (VALUES delta-g graphic-result))
+        ((OR +display -graphic) (VALUES delta-g text-result))
+		((OR +delta-g (AND -graphic -display)) delta-g)
+        (T (VALUES delta-g graphic-result text-result)))		
+))
+

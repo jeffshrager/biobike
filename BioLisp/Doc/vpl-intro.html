@@ -1,0 +1,264 @@
+<head><title>Using the VPL</title></head>
+<h2><br><center>Using the VPL: The basics of code construction</center></h2> 
+<br><br>
+The VPL is an easy way to create and execute complicated code forms.  
+This document will explain the basic tools and interaction of the VPL, 
+but cannot tell you what to use it for...that is up to you.  
+<br><br>
+
+
+<h3>Index</h3>
+<ul>
+<li> <a href="#bring">Bringing down</a></li>
+<li> <a href="#editing">Editing</a></li>
+<ul>
+<li> <a href="#sel">Selection</a></li>
+<li> <a href="#cop">Copying and pasting </a></li>
+<li> <a href="#key">Keyboard shortcuts</a></li>
+<li> <a href="#cut">Cutting and pasting</a></li>
+<li> <a href="#ins">Insert</a></li>
+<li> <a href="#wra">Wrapping and Unwrapping</a></li>
+<li> <a href="#col">Collapsing and expanding boxes</a></li>
+</ul>
+<li> <a href="#example">Example</a></li>
+</ul>
+
+<br><br>
+<a name="bring" id="bring"></a>
+<h3> Bringing things down </h3>
+The functions available for code construction are found in the green boxes at the top of the screen,
+otherwise known as the PALETTE.  We BRING DOWN a function by mousing over 
+the appropriate category and clicking on the function name.  
+<br><br>
+
+This places a FUNCTION BOX in the WORKSPACE, the large green area in the center.  
+Nearly all functions take ARGUMENTS, some kind of input from the user; it makes little sense
+to execute a function like 'sequence-of' without telling it what sequences or organisms
+to work with.  To pass such information, click one of the gray boxes in the function box --
+called a HOLE -- which turns it into a normal looking input with a flashing cursor.  
+Here you have three options: 
+<br>    
+1 - Type something, probably a variable name, and hit enter.   <br>    
+2 - Bring down another function, whose result becomes the input for the original function  <br> 
+3 - Use another of the VPL's editing tools, like PASTE, which are explained below. 
+<p>
+If you leave a hole blank, your code will refuse to execute.  Try it.  To change the value
+of a hole, select 'Edit' from the its pulldown menu.  Clicking the clear icon -- the small X 
+at the top right of the filled in hole -- will revert it back to an empty hole.
+<br>
+
+
+At the top left of each function box is a green arrow, which provides a pulldown menu with
+various useful options.  The options available are dependent on the particular function.  
+<p>
+The green arrows at the top left of the workspace work much like your browser's 
+back and forward buttons.  You can back up, or undo, a step in editing by clicking
+on the left arrow, and redo it by clicking on the right arrow.
+<br>
+To clear the entire workspace, click the x icon at the top right.
+<p><image src="vpl-pics/vpl-areas.jpg"><br>
+
+Once you've got a piece of code you'd like to execute, select 'Execute' from the pulldown menu.
+A RESULT BOX appears in the RESULTS AREA, the blue area at the bottom of the screen, preceded
+by an index number.  The highest index number indicates the most recently executed result.  
+When the index number is blue instead of black, there is additional printout for you to view
+beyond what the function returned.  To view this, click on the result box's menu
+and click 'show printout.'
+<br>
+The results area can be expanded by clicking the square icon at the top right.  
+Clicking the x icon will clear the results area except the most recently executed result, and
+clicking it once more clears it completely.
+<br><br>
+
+<a name="editing" id="editing"></a>
+<h3>Editing</h3>
+
+There are lots of ways to move boxes around in the workspace.  Moving boxes is safe --
+you won't lose any information you've typed in -- and useful for that same reason.  
+
+<a name="sel"></a>
+<h3> The selected box </h3>
+
+For some of these you'll need to SELECT a box by clicking somewhere inside it, 
+surrounding it with a red border.
+<p>
+Say our VPL looked like this:
+<p>
+<image src="vpl-pics/copy-1.jpg"><br><br>
+
+Choose 'Copy' from the pulldown menu of the thing you want to copy (it can be any size)...
+<p>
+<a name="cop"></a>
+<h3> Copying and pasting </h3>
+<image src="vpl-pics/copy-2.jpg"><br><br>
+...and select 'Paste' from the pulldown menu of the destination hole.  
+<p>
+<image src="vpl-pics/copy-3.jpg"><br><br>
+The value 10 is copied into its new hole, leaving the original in place.  
+<p>
+<a name="key"></a>
+We can also do the exact same thing with keyboard shortcuts.  
+Instead of bringing down the menu, select the box you want to copy (so that its border
+is red).  Hit Control + C to copy.
+<p>
+<image src="vpl-pics/copy-7.jpg"><br><br>
+
+Click on the destination hole, turning it into a text box.  Anytime you see a text input box,
+its corresponding box is automatically selected.  (Notice the red border.)
+<p>
+<image src="vpl-pics/copy-8.jpg"><br><br>
+Hit Control + Z to paste.  
+<p>
+<image src="vpl-pics/copy-9.jpg"><br><br>
+
+<a name="cut"></a>
+<h3> Cutting and pasting </h3>
+Cutting forms and pasting them into holes works exactly the same.  Instead of 
+'Copy', choose 'Cut' from the pulldown menu. 
+<p>
+<image src="vpl-pics/copy-4.jpg"><br><br> 
+Paste it.  
+<p>
+<image src="vpl-pics/copy-5.jpg"><br><br> 
+<image src="vpl-pics/copy-6.jpg"><br><br> 
+
+To use the keyboard to cut, use Control + X instead of Control + C.  
+You still paste with Control + Z.  
+<br><br>
+
+<a name="ins"></a>
+<h3> Inserting </h3>
+Similarly we can INSERT a box into a hole by first SELECTING the hole, 
+then clicking 'Insert' from the first box's pulldown menu. 
+<p>
+<image src="vpl-pics/ins1.jpg"><br><br> 
+<image src="vpl-pics/ins3.jpg"><br><br> 
+To remove the original instance of the box and insert it into a hole, 
+select the hole and choose 'Cut/Insert' from the first box's pulldown menu.
+<p>
+<image src="vpl-pics/cutins0.jpg"><br><br> 
+<image src="vpl-pics/cutins.jpg"><br><br> 
+Generally, when nesting functions, one first brings down the outer function first,
+and then brings down the inner function as one of its arguments.  But we can also go the other way.
+<a name="wra"></a>
+<h3> Wrapping </h3>
+Find the box around which you want to add an immediate layer (it doesn't have to be the
+outermost function, or even a function at all) and select 'Wrap enable' from the box's menu...
+<p>
+
+<image src="vpl-pics/wrap1.jpg"><br><br> 
+...then select a function from the palette.
+<p>
+<image src="vpl-pics/wrap2.jpg"><br><br> 
+<image src="vpl-pics/wrap3.jpg"><br><br>  
+
+The opposite of wrapping -- adding a level of nesting -- 
+is unwrapping, which can remove a layer in a nested function call.
+Choose the layer to remove by selecting Unwrap from that function's menu.  
+<p>
+<image src="vpl-pics/unwrap1.jpg"><br><br>  
+
+The argument(s) get moved into the new holes accordingly...
+the function call of PROTEINS-OF on the variable MY-ORGANISM --
+which before the unwrap was passed as the argument to SEQUENCE-OF --
+is now passed to the function one level higher, in this case, IS-LIST?
+<p>
+<image src="vpl-pics/unwrap2.jpg"><br><br> 
+
+ 
+
+
+<a name="col"></a>
+<h3> Collapsing </h3>
+If things get too crowded in the workspace, you can collapse a box by selecting
+'Collapse' from the box's pulldown menu.
+<p>
+<image src="vpl-pics/coll1.jpg"><br><br> 
+<image src="vpl-pics/coll2.jpg"><br><br> 
+You can expand the collapsed box by selecting 'Expand' from the box's pulldown menu.
+<p>
+<image src="vpl-pics/coll3.jpg"><br><br> 
+<image src="vpl-pics/coll4.jpg"><br><br> 
+
+
+
+
+
+
+
+<a name="example" id="example"></a>
+<h3> Example </h3>
+<p><a name="visual-tutorial" id="visual-tutorial"><br><br></a></p>
+
+Let's try adding three numbers: 1, the absolute value of -2, and 3.  
+
+<br><br>
+1 - Bring down the function '+' from the palette menu. <p>
+<image src="vpl-pics/plus-0.jpg"><br><br>
+<br>
+This is what shows up in the workspace:
+<p>
+<image src="vpl-pics/plus-1.jpg">
+
+<br><br>
+2 - Click the first hole labeled 'number', turning it into a text-input box.
+Type '1' and hit enter.  <p>
+<br>
+<image src="vpl-pics/plus-2.jpg">
+
+<br><br>
+3 - Click the second hole labeled 'number', turning it into a text-input box.    
+<br>
+Don't type anything in...instead, bring down the absolute value function, called ABS.  
+<p>
+<image src="vpl-pics/plus-3.jpg"><br><br>
+<br>
+Now our workspace looks like this:
+<p>
+<image src="vpl-pics/plus-4.jpg"><br><br>
+<br>
+Now click on the hole labeled 'number', type '-2', and hit enter, yielding this:
+<p>
+<image src="vpl-pics/plus-5.jpg"><br><br>
+
+4 - Since we want to add a third number, we need to add another hole.
+<p>
+<image src="vpl-pics/plus-6.jpg"><br><br>
+<br>
+Remember we could add as many holes as we want.  
+<p>
+<image src="vpl-pics/plus-7.jpg"><br><br>
+<br>
+Click the hole labeled 'arg', type '3', and hit enter.
+<p>
+<image src="vpl-pics/plus-8.jpg"><br><br>
+<br>
+5 - You're done!  
+
+<p>
+You might think the workspace is a bit crowded for just adding 1, 2, and 3,
+but there's more going on than just that.
+<br>
+We are using the function + to add 1, the result of executing another function 
+(in this case ABS 2), and 3, with the option of adding more boxes if we want to add more numbers.  
+<p>
+6 - Now let's execute the code we built.  Before we execute the '+' function,
+let's execute just its second value -- ABS 2.  Bring down the menu in the ABS
+box and click 'Execute'.  
+It's ok that this is inside another function -- you can still execute it!
+<p>
+<image src="vpl-pics/plus-9.jpg"><br><br>
+<br>
+Now look at the results area to get the answer.
+<p>
+<image src="vpl-pics/plus-10.jpg"><br><br>
+<br>
+Now back to our main function, the +.  Bring down the main menu in the '+' box
+and hit execute.
+<p>
+<image src="vpl-pics/plus-11.jpg"><br><br>
+<br>
+Now check the results area to get your answer:
+<p>
+<image src="vpl-pics/plus-12.jpg"><br><br>
+<br>

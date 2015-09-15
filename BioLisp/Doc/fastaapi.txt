@@ -1,0 +1,287 @@
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+
+
+              BIOBIKE FASTA FILES FUNCTIONALITY SPECIFICATION
+
+
+
+DEFINITIONS
+
+
+A FASTA file consists of one or more RECORDS.
+
+A RECORD is a single datum spanning one or more lines in a FASTA file,
+consisting of a HEADER line and 0 or more DATA LINES.  Every RECORD
+begins on a line starting with the '>' character and every '>'
+character at the beginning of a line defines a new RECORD.
+
+A HEADER consists of a KEY and possibly OTHER header information. 
+The HEADER is the first line of a RECORD.
+
+A KEY is the unique identifier for a RECORD.  By default, the KEY
+immediately follows the '>' character (although a function can be
+specified to extract the key in an arbitrary fashion from the HEADER)
+and terminates at the first whitespace character of the HEADER,
+exclusive.
+
+The DATA for a RECORD consists of all the subsequent lines of the
+RECORD.  The DATA is either in FIXED-WIDTH or VARIABLE-WIDTH format.
+FIXED-WIDTH means that all the DATA lines, save possibly the last, are
+the same length.  The newlines at the end of each DATA line are not
+considered part of the DATA.
+
+Note: Two different RECORDS within a FASTA file can both have FIXED-WIDTH
+data but each FIXED-WIDTH can be different.
+
+Note: RECORDS within a single FASTA file or FASTA-DB need not all be
+the same, some can be FIXED-WITH while others are VARIABLE-WIDTH.
+
+Note: The indices built by the FASTA accessing mechanism will be smaller,
+and accessing time for subsequences will be less, if records are of
+FIXED-WIDTH.
+
+Note:  Usually the data in FASTA files is DNA or Amino Acid sequence
+data, but it can be anything.
+
+A FASTA DATABASE (FASTA-DB) is defined recursively as:
+
+  -- a single FASTA file, or
+  -- a set of FASTA files, or
+  -- a set of FASTA-DB's.
+
+Implementation Note: A FASTA-DB is simply a file with some sort of
+descriptor of that database contained within it.  FASTA database files
+names are of the form <name>.fdbs.
+
+Implementation Note: All FASTA files, who names must be of the form <name>
+or <name>.<extension>, will have associated index files, of the form
+<name>.fidx, and compiled index files, of the form <name>.fasl
+(or whatever the binary file type is for the Lisp implementation).
+
+Note: There is no effective difference between a single FASTA file
+and a FASTA-DB consisting of multiple files, except perhaps in speed
+of access (right now there is no speed difference).
+
+
+LIMITATIONS
+
+FASTA-DBS and FASTA-FILES have no locking mechanism.  If the data
+files were to change while someone had a FASTA-DB or FASTA file open,
+that person would be hosed.
+
+
+FASTA API
+
+
+ACCESSING A FASTA-DB or FASTA file:
+
+
+<function> OPEN-FASTA-DB (dbfile &key key-function verbose) -> DB-HANDLE
+
+DBFILE must be an existing file.
+
+If DBFILE is a database file (<name.fdbs>), creates a DB-HANDLE which
+allows access to the data in that database based on the contents of
+DBFILE.  If DBFILE is anything else it is assumed to be in FASTA file
+format, and OPEN-FASTA-DB creates a DB-HANDLE based on the index file
+associated with that FASTA file (creating the index file if it does
+not exist by parsing the FASTA file and storing the results of the
+parse in the index file).
+
+If OPEN-FASTA-DB has to create an index file for a FASTA data file
+it will use KEY-FUNCTION to determine the key.
+
+KEY-FUNCTION defaults to a function which takes the first
+whitespace-terminated token on the beginning record line, not
+including the initial '>'.  The default function signals an error if
+there is whitespace or newline immediately following the '>'.
+
+Note: This allows multiple FASTA db's to be open at the same time if
+the user so wishes.
+
+Note: When opening a FASTA-DB, we potentially need to be concerned
+about managing open streams, effectively caching streams so that
+OPEN's of FASTA files don't have to be done all the time.  By keeping
+track of all open FASTA-DB's and imposing limits on the number of open
+streams either per database or globally, the internals should be able
+to manage this.  It may be that this is not really a concern.  It may
+be that opening FASTA files each time to get the entry data is not a
+performance bottleneck.  The system should be designed so that this
+kind of management and caching is optional.  It may be that instead of
+caching open streams, caching entry data on a per entry basis is
+better.  No caching of anything is currently implemented.
+
+<macro> WITH-FASTA-DB ((dbhandle dbfile &key open-options) &body body)
+
+where OPEN-OPTIONS are the keys and their values for OPEN-FASTA-DB.
+DB-HANDLE is a symbol that is bound to the DB-HANDLE returned by
+OPEN-FASTA-DB, and DBFILE is the database file.
+
+<function> CLOSE-FASTA-DB (dbhandle &key options)
+
+
+CREATING A FASTA DATABASE
+
+
+<function> CREATE-FASTA-DB 
+              (db-file component-files 
+               &key (if-exists :error) key-function verbose)
+
+The COMPONENT-FILE's are either existing .fdbs or other (presumably
+fasta format) files.
+
+Creates a FASTA database file named DB-FILE (which must be of the form
+(<name>.fdbs) able to access data from COMPONENT-FILE's.
+
+By default if a database file by that name already exists an error
+is signalled.  IF-EXISTS can also be :supersede, :overwrite or :ask,
+with the obvious semantics.
+
+CREATE-FASTA-DB will create index files from FASTA source files as
+necessary.  If it has to create an index file, KEY-FUNCTION is used
+to determine the key for each record.
+
+
+ACCESSING FASTA DATA
+
+
+<function> FIND-FASTA-RECORD        
+          (db-handle key 
+           &key header-function line-function join-function
+
+The options specify how the data is to be returned.  By default a list
+of two strings, the HEADER line and the concatenated DATA lines, is
+returned.  Users can specify their own functions to process the HEADER
+(the default function returns the entire line minus the initial '>'),
+process each DATA line (the default function is the identity
+function), and join the DATA lines together (the default function does
+a string concatentation of all the lines).
+
+Example: If a fasta record looked like
+
+>goo-gene A very messy gene
+ABCDEFG
+HIJKLMN
+
+the default result for FIND-FASTA-RECORD would be:
+
+("goo-gene A very messy gene"
+ "ABCDEFGHIJKLMN")
+
+while if
+
+    HEADER-FUNCTION was #'SPLIT-STRING
+    LINE-FUNCTION was #'REVERSE 
+    JOIN-FUNCTION was #'(lambda (x) (apply #'list x))
+
+then the result would be
+
+(("goo-gene" "A" "very" "messy" gene")
+ ("GFDECBA" "NMLKJIH"))
+
+<function> FIND-FASTA-HEADER (db-handle key)
+
+Returns the HEADER line of the RECORD indexed by KEY.
+
+
+<function> FIND-FASTA-HEADER (db-handle key)
+
+Returns the header line, sans the initial '>' for the RECORD indexed by KEY.
+
+
+<function> FIND-FASTA-SUBSEQUENCE (db-handle key from to direction)
+
+Returns a subsequence of the DATA of the RECORD indexed by KEY.
+
+Note: FROM and TO are SEQUENCE INDICES, which start at 1 (not 0) and
+are inclusive (not exclusive, as are Common Lisp sequence indices).
+
+FROM
+  A positive integer less than or equal to the number of characters
+in the data.  See DIRECTION for semantics.
+
+TO
+  A positive integer less than or equal to the number of characters
+in the data.  See DIRECTION for semantics.
+
+DIRECTION
+  Either :forward (or :forwards) or :backward (or :backwards)
+  If FROM <= TO (the normal case):
+    If :forward, indicates that the subsequence is to be read forward
+starting from position FROM until TO inclusive.
+    If :backward, indicates that the subsequence is to be read in reverse
+starting at position TO and going backwards until FROM inclusive.
+  If TO < FROM (the wrapping case):
+    If :forward, indicates that the subsequence is to be read forward
+starting with position FROM until the end of the sequence, then
+reading is continued starting at the first base pair of the sequence
+until TO is reached inclusive.
+    If :backward, indicates that the subsequence is to be read in reverse
+starting with position TO and going backwards until the beginning of
+the sequence, then reading is continued starting at the last base pair
+and continuing backwards through the sequence until FROM is reached
+inclusive.
+
+
+ITERATION OVER FASTA RECORDS
+
+
+<macro> WITH-FASTA-DB-KEYS (key-symbol db-handle) &body body
+  
+Executes BODY repeatedly with KEY-SYMBOL bound to each key, in turn,
+in the database denoted by DB-HANDLE.
+
+
+MISCELLANEOUS
+
+<function> FASTA-RECORD-DATA-LENGTH (db-handle key)
+<function> FASTA-RECORD-DATA-FORMAT (db-handle key)
+<function> FASTA-RECORD-DATA-LINE-SIZE (db-handle key)
+<function> FASTA-RECORD-DATA-LINE-SIZES (db-handle key)
+<function> FASTA-RECORD-DATA-LAST-LINE-SIZE (db-handle key)
+
+
+
+<variable> *FASTA-VERBOSE*
+
+Default is NIL.  If T, causes various extra file manipulation information
+to get printed out, showing what the FASTA database software is doing.
+
+API functions which take a VERBOSE key bind *FASTA-VERBOSE* to the
+value of this key.
+
+
+IMPLEMENTATION
+
+Files in biol:bioutils; and the test file biol:testing;fasta-tests.lisp
+
+
+QUESTIONS
+
+Q.  What happens when you try to merge two FASTA files into a DB
+and they have the same KEY? 
+
+A.  It's an error.  We raise an exception.
+
+

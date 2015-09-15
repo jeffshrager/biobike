@@ -1,0 +1,23 @@
+This is a paragraph\note{And this is a simple note}. And some more of
+the same paragraph and blah blah blah and here's\note{a footnote that
+crosses a line boundary} some more.\note{This footnote is itself a
+whole document with:
+
+    some code in it
+      indented line
+        a more indented line
+    unindented line
+
+and some more stuff
+
+  and a blockquote
+
+And a list:
+
+  @ foo
+
+  @ bar
+
+  @ baz
+
+} and the rest of the original paragraph.

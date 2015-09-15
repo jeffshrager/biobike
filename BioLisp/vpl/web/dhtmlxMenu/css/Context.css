@@ -1,0 +1,25 @@
+.contextMenu{
+	font-family:arial; font-size:8pt;
+	padding:0 0 0 2;
+	margin: 0 1 0 1;
+	text-align:left;
+	cursor:default;	
+}
+
+.contextMenuOver, .contextMenuDown{
+	font-family:arial; font-size:8pt;
+	padding:0 0 0 2;
+	margin: 0 1 0 1;
+	text-align:left;
+	background-color:#000000;
+	color:white; 
+	cursor:default;
+}
+.contextMenuOver td{ 
+	color:white;  
+}
+.menuTable{
+	border:1px solid;
+	margin : 0px;
+	padding : 3 1 4 1;
+}

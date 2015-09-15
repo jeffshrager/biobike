@@ -1,0 +1,170 @@
+/*button text - all levels*/
+#osxstyle .menuButtonSecond td, #osxstyle .menuButton td, #osxstyle .menuButtondown td,#osxstyle .menuButtonover td {
+	cursor:default;
+}
+/*menu text - all levels*/
+#osxstyle .defaultMenuText{
+	font: 13px "Lucida Sans Unicode",Verdana;
+	font-weight:bold;
+	color:525252;
+	padding-left:10px;
+	padding-right:5px;
+}
+/*menu caption if any*/
+#osxstyle .menuName{
+	color : gray;
+	letter-spacing : 7px;
+	font : 12px "Lucida Sans Unicode",Verdana;
+	padding-left : 10px;
+	padding-right : 10px;
+}
+/*========= BUTTONS ======================*/
+
+/*plain button state - top level*/
+#osxstyle .menuButton {
+	border : solid 0px #ece9d8;
+}
+/*down button state - top level*/
+#osxstyle .menuButtondown {
+	background-color : #2b60b1;
+	border: solid 0px #2b60b1;
+	color:white;
+	cursor : default;
+}
+/*mouse over button state - top level*/
+#osxstyle .menuButtonover {
+	background-color : #2b60b1;
+	border: solid 0px #2b60b1;
+	color:white;
+	cursor : default;
+}
+/*text color for pressed and over items - top level*/
+#osxstyle .menuButtondown .defaultMenuText,#osxstyle .menuButtonover .defaultMenuText{
+	color:white;
+}
+/*plain button state - other levels*/
+#osxstyle .menuButtonSecond {
+	background-color:white;/*#xD4D0C8*/
+	background-image : url(../img/osx_bg.gif);
+	border:0px solid white;
+	font:12px Arial,sans-serif;
+}
+/*mouse over button and down button states - other levels*/
+#osxstyle .menuButtonSecondover,#osxstyle .menuButtonSeconddown {
+	background-color : #2b60b1;
+	color:white;
+	cursor : default;
+	border:0px solid #316ac5;
+	font:12px Arial,sans-serif;
+}
+/*icon place style on button over/down - other levels
+.menuButtonSeconddownimg {
+	background-color : #C9D9F5;
+}*/
+
+/*text of mouse over button - other levels*/
+#osxstyle .menuButtonSeconddown td {
+	 color:white;
+	 cursor:default;
+	 border:0px solid;
+}
+
+
+/*============ PANELS and DEVIDERS ===========================================*/
+
+/*manu panel - top level*/
+#osxstyle .menuTable{
+	background-color : #ece9d8;
+	background-image : url(../img/osx_bg.gif);
+	border-bottom : solid #808080 1px;
+	border-left : solid #FFFFFF 1px;
+	border-right : solid #808080 1px;
+	border-top : solid #FFFFFF 1px;
+	margin : 0px;
+	-moz-user-select : none;
+	padding : 0px;
+	
+}
+/*menu panel - other levels*/
+#osxstyle .secondMenuTable{
+	background-color : white;
+	background-image : url(../img/osx_bg.gif);
+	border-left: 0px solid ; 
+	border-top: 1px solid #808080; 
+	border-right:2px outset #ffffff;
+	border-bottom:2px outset #ffffff;
+	margin : 0px;
+	-moz-user-select : none;
+	padding : 0 1 0 2;
+}
+
+/*devider - horizontal*/
+#osxstyle .menudivider {
+	background-color : #ece9d8;
+	border-left : solid #808080 1px;
+	border-right : solid #FFFFFF 1px;
+	height : 100%;
+	margin-bottom : 2px;
+	margin-top : 1px;
+	overflow : hidden;
+	vertical-align : middle;
+	width : 2px;
+}
+/*devider - vertical*/
+#osxstyle .menudividery {
+	background-color : grey;
+	border-bottom : solid #808080 1px;
+	border-top : solid #808080 1px;
+	height : 1px;
+	overflow : hidden;
+	width : 100%;
+}
+
+/*================== DRAG HANDLERS ==================*/
+
+/*drag handler for menu - horizontal*/
+#osxstyle .menuhandle {
+	background-color : #ece9d8;
+	border-bottom : solid #808080 1px;
+	border-left : solid #FFFFFF 1px;
+	border-right : solid #808080 1px;
+	border-top : solid #FFFFFF 1px;
+	cursor : move;
+	height : 100%;
+	overflow : hidden;
+	width : 3px;
+}
+/*drag handler for menu - vertical*/
+#osxstyle .vmenuhandle {
+	background-color : #ece9d8;
+	border-bottom : solid #808080 1px;
+	border-left : solid #FFFFFF 1px;
+	border-right : solid #808080 1px;
+	border-top : solid #FFFFFF 1px;
+	cursor : move;
+	height : 3px;
+}
+
+
+/*============ ICONS and SCROLLERS ====================*/
+
+/*disabled icon - all levels*/
+#osxstyle .iconGray {
+	filter : BlendTrans(Percent=50) gray(); 
+	cursor: default; 
+	border:solid 1px #ece9d8;
+}
+
+/*enabled scroller*/
+#osxstyle .menuscrollerenabled{
+	background-color:#CAC8D4;
+	 cursor: pointer;	
+	 text-align:center;
+}
+/*disabled scroller*/
+#osxstyle .menuscrollerdisabled{
+	background-color: #CAC8D4;
+	cursor: default;
+	visibility:hidden;
+	text-align:center;
+}

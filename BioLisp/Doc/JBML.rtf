@@ -1,0 +1,249 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fswiss\fcharset0 Arial;}}
+{\*\generator Msftedit 5.41.15.1507;}\viewkind4\uc1\pard\f0\fs20 John's Box Markup Language  JBML, version 0.6\par
+----------------------------\par
+PRIMITIVES:\par
+\par
+Printable text primitives, including:\par
+  SYMBOLS       Can be any atomic symbol except the special-symbols.\par
+                These currently get CAPITALIZED by the system.  Use "strings" when you can.\par
+  "Strings"     Double-quotes.  Displayed literally.  CR's probably ignored.  \par
+                May get filled by the system if excessively long.\par
+  numbers       General, ints and/or floats.  Internally passed as strings.\par
+\par
+Modifiers\par
+  Box Modifiers   modify default appearance of box and its contents.\par
+                  These should come after the id, at the beginning of the box.\par
+  Text Modifiers  modify the appearance of specific printable text primitive instances.\par
+                  These should come after the text primitive instance.\par
+Note:  The pipe system throws away the ":" at the beginning of modifier keywords.\par
+This means that regular symbols cannot be the same as modifier keywords.  Strings should be OK.\par
+ \par
+Special-symbols   These are tokens that may appear anywhere after the (optional) box modifiers.\par
+\par
+(id# ...)  A BOX is represented by a list.\par
+   The contents of the box are represented by the contents of the list,\par
+   and filled left-to-right inside the box, with automagic refilling on resizing.\par
+   At the moment, it seems like a box must be the highest top level form,\par
+   that is, you can't simply have a raw symbol/string or raw sequence.\par
+   I'll have to check into this.\par
+   -The FIRST item in the list MUST be the box's unique ID number.\par
+   This does not get displayed, but it is used to report back when the box is clicked.\par
+   -The next series of items consist of an optional series of box modifiers\par
+   -After the box modifiers come a series of primitives, including such things\par
+    as symbols, strings, numbers, special-symbols, boxes, and hole boxes.\par
+    These may occur in any order.\par
+\par
+(id# :hole ...)  A HOLE is currently a box with a special flag token in front.\par
+   Holes support special semantics that are not normally part of the display.\par
+   The :hole flag must currently come before other box modifiers.\par
+   Holes are currently untyped; this is scheduled to change in 2.0.\par
+   I recommend calling :i after :hole to italicize the text in the hole.\par
+   Holes get a light purple-grey color for the background, e0e0ff, and a dotted outline.\par
+   Holes also have roll-over flash code, whereas regular boxes no longer have this.\par
+     Hole boxes are sensitive to mouse clicks.  If you left-click on the outline of the box,\par
+   or on a large area that is not close to the text, the hole gets "selected" and\par
+   its box outline starts flashing.  Left-clicking again "unselects" the hole-box.\par
+   This is useful for inserting new stuff.\par
+     The text inside a hole box is special also.  A string should be used in order\par
+   for results to work out the best. Probably only the last string or printable symbol\par
+   gets displayed.  You should try not to nest boxes inside a hole.  The string inside\par
+   a hole is magic; when the user clicks on it, it turns into an input region.\par
+   The input region is initialized with the contents of the string.  The length of\par
+   the input region is roughly the number of characters in small letter "m" size,\par
+   so it is going to look slightly larger than the text, which could have "i" and "l"\par
+   and other skinny letters in it.\par
+     When the user finishes typing in the box and hits return, it sends the contents\par
+   of the hole's input-box to the server.  The server then replaces this with a constant display.\par
+     At present there is no way to get the constant display back into another input box\par
+   if the user changes his or her mind.  Left for expansion.\par
+\par
+(id# :options-menu "Menu Widget Title" (id# :MENU-ENTRY "Option Title 1")(id# :MENU-ENTRY "Option 2"))\par
+  Menu Widgets are special inline invisible boxes that contain a pulldown menu.\par
+  The title of the pulldown menu is shown and is the first item on the pulldown;\par
+  then the menu entries are displayed in order.  Currently menus do not support\par
+  text modifiers such as bold and italics.  An inline menu widget gets left-filled\par
+  inline and can be put anywhere a symbol or string is put; it can also be stuck\par
+  at the top level of the workspace by itself.\par
+  Based on JP's specification, a pulldown menu widget returns not the ID of the\par
+  menu widget itself, but the ID of the next superior box surrounding it.\par
+  So if you're going to replace a menu widget, you should probably replace its next-level-up\par
+  box, so as to ensure things will be hooked up.  A menu click also returns the ID of the\par
+  menu-entry selected.  I believe if you click on the menu title, it rolls the menu\par
+  back up and doesn't select anything.\par
+\par
+  Inline pulldown menus are distinct from palette pulldown menus and rightclick popup box menus.\par
+\par
+\par
+\par
+--------------------------\par
+Nesting example:\par
+\par
+(1 defun (2 args) (3 (4 "box1") "followed by" (5 box2 (6 :hole "put hole contents here"))))\par
+\par
+it's boxes, boxes all the way down.  Should be obvious.  Gotchas?\par
+\par
+-------------------------\par
+Modifiers:\par
+--it is not important to have the modifiers be all caps.  Any combination\par
+of upper-case and lower-case letters will do.\par
+\par
+Box Modifiers\par
+Box Modifiers come FIRST in the sequence, before any symbols etc.\par
+:DOTTED\tab      Creates a dotted outline on the box.\par
+:THICK       Creates a thick outline on the box.\par
+:THIN        Creates a thin outline on the box.\par
+:DOTTED-BLINK  Creates an animated dotted blinking effect on the box,\par
+   which can be used to indicate selection.  Note that this is orthogonal to\par
+   other flags, such as thickness, color, style, etc, but overrides dotted. \par
+   Dotted-blink may be turned off by a special transmitted command, in which case\par
+   the previous default style should be resumed.\par
+:BOX-COLOR "#ffffff"  Specifies a particular color for the box outline.\par
+:BACKGROUND-COLOR "#ffffff"  Specifies a particular color for the box background.\par
+:COLOR "#ffffff"  Specifies a particular color for the default text in the box.\par
+:OUTDENT    Specifies a formatting such that the first thing (symbol, string)\par
+        is outdented from the list of following items if they wrap to second lines.\par
+        Not supported yet as of Sept 20 '06.\par
+The order of box modifiers amongst themselves is not significant.\par
+Note that colors require their numerical strings to be quoted.\par
+\par
+Text Modifiers (postfix)\par
+  Text modifiers come AFTER the printable string, number, or symbol that they modify.\par
+  The original concept was to have the text modifiers be specified in any order.\par
+  This seems to work pretty well, with the exception of color.\par
+:COLOR "#ffffff"  Specifies the color for that text.  Color needs to come first\par
+    before any of the other text modifiers, in order to register.\par
+:UL  Underline the text.\par
+  Underlining is a curious beast.  The system treats underlining as almost a separate\par
+  set of characters.  In particular, the underlining gets its own (postfix, box-defaulted)\par
+  color.  So if you simply specify (..."text" :color "#" :ul) you will get colored text\par
+  with a defaulted underline; (..."text" :ul :color "#") gives defaulted text with \par
+  a colored underline; (..."text" :color "#" :ul "color "#") is required to give you\par
+  colored text with a colored underline.  I have not experimented with how bold and\par
+  italic interact with underline in text modifiers.  All three seem to play well together \par
+  when used in box modifier defaults. \par
+:B  Bold-face the text.  Combines freely with italicize.\par
+:I  Italicize the text.  Combines freely with bold.\par
+ \par
+\par
+Printable text is actually contained inside special clear boxes that don't show outlines.\par
+--------------------------\par
+Special Symbols:\par
+\par
+:CR    Carriage Return is a special token inside a list \par
+       that outputs a carriage return in the filled sequence.\par
+       Used to create new rows inside the box.  Order is obviously significant.\par
+\par
+:INPUT-TEXT  This special symbol instantiates an input-text widget inline, in order.\par
+       Filling this in and hitting return sends it and its enclosing box ID to the server.\par
+\par
+:EXEC-ICON  The execute icon is a special token inside a list \par
+       that puts up a medium-sized rounded square button with a green arrow to the right\par
+       with a white background.  This is useful for evaluating and executing\par
+       a function.  This button is displayed in-line and can appear anywhere\par
+       in the box.  I recommend putting it as the first printable symbol.\par
+       You may also precede it with a :CR and have it be the last symbol,\par
+       to wind up centered underneath the entire contents. \par
+\par
+:CLOSE-ICON  This special token is unusual in that it does not get filled inline,\par
+       so it can appear anywhere inside the box.  It generates a tiny red X in the upper-\par
+       right-hand corner.  Clicking on this sends a message to the server to close the box.\par
+       This icon actually floats above the box's contents, so unless you put a " "\par
+       single-space string at the end of the box contents, a subbox might have its\par
+       top-right corner cut off.  This maintains maximum flexibility, though, in the layout.\par
+\par
+:GO-ICON  This special token is also like the red X in that it can appear anywhere.\par
+       It generates a tiny green circle with a white arrow on it.  This is also \par
+       positioned in the upper-right corner, but 15 pixels from the right edge.\par
+       This leaves room for the red X.  If the red X is not there, it still leaves room.\par
+\par
+:BUTTON  As designed, this is to be "a BUTTON is a special kind of tiny box\par
+       that will be presented using a different color,\par
+       maybe even round corners if it's possible, etc.\par
+       Buttons are clickable."  However, currently the only function of BUTTON\par
+       is to set the background color to a mild yellow, 888800.  Currently this\par
+       special symbol may appear anywhere inside the box.\par
+\par
+:DOTDOTDOT   A DOTDOTDOT ellipsis is a token, a special symbol\par
+       used to represent elided sequences / nestings.  It puts up "...".\par
+       It is clickable.  Ellipses are actually contained inside\par
+       special clear boxes that don't show outlines. DotDotDot may appear\par
+       anywhere inside the printable symbols and gets filled inline in order. \par
+\par
+:ICON "/dir/myiconhttpfilename.jpg"   This special sequence puts in an icon inline.\par
+       Position matters.  The icon is filled from left to right like everything else.\par
+\par
+\par
+--------------------------------------------------------------\par
+MOUSE CLICKS AND ROLLOVERS\par
+Mouse clicking is rather difficult to support, as it seems that sometimes\par
+the clicks get passed through from subbox to superbox even when they are\par
+explicitly caught and stopped.  Rollovers are a particular problem, as when\par
+the mouse moves from a blank area inside the box to being over text,\par
+it has just technically left the box and entered the invisible text box.\par
+This can cause visual strobing in exactly the wrong circumstances.\par
+I think we've got it straightened out.\par
+\par
+All regular boxes handle left-click, left-double-click, and right-click.\par
+Left-click is currently delayed by 0.1 sec in order to catch a following\par
+possible double-click, in which case the left-click is not reported.\par
+Right-click intercepts the browser's instinctive drive to display its own\par
+right-click menu.  This works in most cases.  Right-click also internally\par
+records the position of the mouse pointer, for use in pop-up box-menus. \par
+\par
+Hole boxes currently handle roll-over.\par
+\par
+--------------------------------------------------------------\par
+Layout is automatically performed by the browser.\par
+--------------------------------------------------------------\par
+The internal parts of menus are special and break the idiom.\par
+Currently menus do not support bold, italic, etc text modifiers. \par
+--------------------------------------------------------------\par
+A command (replace-box) may be used to replace the contents of\par
+a particular box starting from its id.  Thus ids must be unique.\par
+--------------------------------------------------------------\par
+ \par
+Examples used by Test Boxes:\par
+  (clear-workspace)\par
+\par
+  (add-workspace  \par
+   '(1 MyWorkspace :b foo :b (2 Cleared)) \par
+   '(3 Testing Add (4 Nested boxes))  )\par
+\par
+  (redraw-workspace\par
+   '(1 :BACKGROUND-COLOR "#aaFFaa" :BOX-COLOR "#FF0000" :color "#0000FF" \par
+       Red :ul Box :ul Green :i background :i Blue :b text :b \par
+       White :ul :color "#ffffff" Text :color "#ffffff" :ul\par
+       underlined :color "#ffffff" :ul :color "#ffffff"\par
+       bold :color "#ffffff" :b bold :b :color "#ffffff"\par
+       boldital :b :i :color "#ffffff"\par
+       ) \par
+   '(2 (3 Nested boxes))\par
+   '(4 :i :b :ul :color "#ff0000" :exec-icon Red Italics bold underline box default :menu-icon (5 but subboxes :cr start over :cr :icon) :close-icon :go-icon)\par
+   '(6 :outdent An-Outdent followed by :CR carriage return followed by :cr another carriage return)\par
+   '(7 :options-menu "Menu Widget" (15 :menu-entry "option 1")(16 :menu-entry "option 2"))\par
+   '(8 :thick :box-color "#00ff00" (10 :options-menu "Menu Widget in box" \par
+                                      (15 :menu-entry "option 1")(16 :menu-entry "option 2"))) \par
+   '(9 :thick :box-color "#00ffbb" (11 :options-menu "Menu Widget in box" \par
+                                      (15 :menu-entry "option 1")\par
+                                      (16 :menu-entry "option 2")) \par
+                                   with flags (9 :dotted " "))\par
+   '(21 :input-text long-symbol) \par
+   '(22 :input-text "long-string") \par
+   '(23 :input-text 1234567890)\par
+   '(24 :dotted-blink :BOX-COLOR "#FF00ff" "dotted blink")\par
+   '(25 function-hole (26 :hole))\par
+   '(26 "Right-click here!")\par
+   ) \par
+\par
+  (redraw-box '(3 :BOX-COLOR "#FF00ff" "Redrawn box!" :CR (123 "further nest")))\par
+\par
+  (attach-boxmenus-to-boxes '(100 26))\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+}
+ 

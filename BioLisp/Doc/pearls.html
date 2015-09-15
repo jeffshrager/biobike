@@ -1,0 +1,441 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+</pre>
+
+<p align="left">Back to <a href=index.html>BioBike Documentation Contents</a></p>
+
+<html><head><title>BioBike: Programming Pearls</title></head>
+<body><center>
+
+</b><p>
+<h2><b>JP and Mike's BioBike Programming Pearls</h2>
+</b></p><p>
+</p></center>
+
+
+<p align="right">Copyright (c) 2003 by The BioBike Team</p>
+
+<li>Index of discussion topics
+
+<ul>
+<li> <a href="#TAG-NIL">THE DEAL WITH NIL AND ()</a>
+<li> <a href="#TAG-EQUALP-FRAMES">WHY YOU CAN'T USE EQUALP FOR FRAMES</a>
+<li> <a href="#TAG-OPTIMIZE">CODE OPTIMIZATION EXAMPLE AND DISCUSSION</a>
+<li> <a href="#TAG-STRINGS">STRINGS, CHARACTERS AND ESCAPE CHARACTERS</a>
+<li> <a href="#TAG-FLET-AND-FUNCALL">USING LOCAL FUNCTIONS INDIRECTLY</a>
+</ul>
+
+<p><hr><p>
+
+<a name="TAG-NIL"></a>
+<h3> What's the deal with NIL and () ?  Sometimes one gets printed out,
+sometimes the other.  Are they different? </h3>
+
+They are identical.  NIL is not distinct from () in any sense in terms of
+Lisp internals.  (Of course the string "NIL" is distinct from the string "()"
+but that has nothing to do with Lisp internals).
+<p>
+
+Put another way, NIL and () are EQ.
+<p>
+
+In Lisp, as opposed to many other similar languages, the empty list,
+(), and logical FALSE, NIL, are identical.  This turns out to be
+extremely useful in many cases, and a pain in the ass in a few.
+<p>
+Usually  what gets printed out is NIL. Sometimes you see () because
+it is possible to tell the Lisp printer to print out () instead of NIL.
+Also, there may be code that does its own printing, and it might print
+out a list by printing a left paren, then the elements, then a right
+paren, without specifically checking whether the list is empty.
+
+<p><hr><p>
+
+<a name="TAG-EQUALP-FRAMES"></a>
+<h3>Why can't I ask whether a frame is EQUALP another frame?  When I
+do: (equalp #$frame1 #$frame2) it blows up in spectacular fashion with
+a stack overflow... And what's the deal with EQ, EQL, =, EQUAL, STRING=,
+STRING-EQUAL, EQUALP, and probably other equality tests I know nothing
+about, anyway?</h3>
+
+<p>
+
+This happens because you are using EQUALP as a test instead of EQ or
+EQL.  EQUALP is defined recursively -- two things can be EQUALP if
+they have components and their components are pairwise EQUALP, so you
+may be able to see how you could get into an infinite recursion,
+although not the particulars in this case.
+
+<p>
+
+Now a frame is an object that has components.  And one of its components
+is its #$Fname, which itself is a frame, which has components, one of which
+is its #$Fname, which itself is a frame, which has components, one of which
+is its #$Fname,... stack overflow ... core dumped.
+
+<p>
+
+While it is tempting to use EQUALP as your general, all-purpose
+comparison function, in some cases (as we just demonstrated) it's
+going to get you into trouble.  You can't compare one frame to another
+using EQUALP, but you can use EQUAL, EQ, or EQL.
+
+<p>
+
+Unfortunately, equality is not a trivial concept.  Sometimes you
+really have to think about what it is you are asking about in terms of
+similarity, equality, identicalness, etc.  One key thing to understand
+is when things are unique and when they are not.
+
+<p>
+
+For example, there is exactly one, and only one, symbol denoted by:
+CAR You can type 'CAR as many times as you want and you will always
+get back the identical, same, unique symbol named CAR.  If you setf two
+different variables to 'CAR, they are both pointing to exactly the
+same thing, and you can use any sort of equality test (except,
+obviously, a numerical one) to test their equality:
+
+<p><pre>
+  >> (setq a 'car)
+  >> (setq b 'car)
+  >> (eq a b)
+  :: T 
+</pre><p>
+
+But that's not true for most other things.  Usually, complex things
+are not actually the very same thing, they just LOOK the same.  Take
+strings, for example: If you type "abc" and then type "abc" again you
+get two similar strings, but they are not identical.  There is no
+unique string "abc"; there are a potentially infinite number of
+strings all of length 3 that contain the characters 'a', 'b' and 'c'.
+
+<p><pre>
+  >> (setq a "abc")
+  >> (setq b "abc")
+  >> (eq a b)
+  :: NIL
+</pre><p>
+
+Nor is it true for numbers in Lisp.  There is no 'canonical' number
+denoted by 1 in Lisp.  1's can be replicated all over Lisp's memory.
+Same for characters.
+
+<p>
+
+This might seem arcane, but it's extremely important and useful!
+Generally speaking, things <i>looking</i> alike is incidental.  For
+example, Jeff Shrager and Jeff Elhai both have the first name "Jeff"
+but they are different people.  They are EQUAL (at least in terms of
+their first names), but not EQ.  EQUAL goes one more step than EQ, but
+not as far as EQUALP.  EQUAL is actually pretty weird: it descends into
+elements of lists and strings, but nothing else, while EQUALP will descend
+into vectors and structures and other composite things as well.
+
+<p><pre>
+  >> (setq a "abc")
+  >> (setq b "abc")
+  >> (equal a b)
+  :: T
+</pre><p>
+
+Equalp is the most powerful (or weakest, depending on your point of
+view) kind of equality, descending recursively into pretty much
+everything that it can, which is why it blows up trying to recursively
+descend into frames.  It also ignores case when testing strings (like
+STRING-EQUAL), unlike EQUAL (or STRING=).
+
+<pre>
+  >> (setq v1 #(1 2 3))
+  >> (setq v2 #(1 2 3))
+  >> (eq v1 v2)
+  :: NIL
+  >> (equal v1 v2)
+  :: NIL
+  >> (equalp v1 v2)
+  :: T
+</pre>
+
+EQUAL and EQUALP implement two somewhat different notions of equality
+that the definers of the Common Lisp language thought were very
+useful.  That's good, except when you get confused about exactly which
+one does what.  The nice thing about Lisp is that, if you don't like
+these particular equality predicates, its really easy to write your
+own!
+<p>
+
+Things that are unique, like symbols (e.g., 'CAR) you want to use EQ
+as the test.  But you must be very sure they are unique -- that you
+really want to test this unique sort of equality, and not just ask
+whether they look alike.  Things that are not unique but which are
+'atomic' you use EQL.  Things that are neither unique nor atomic
+(i.e., they have subcomponents) you use EQUAL or EQUALP, depending on
+exactly what semantics you want.  As a last result you can roll your
+own equality function.
+
+<p>
+
+BTW, all programming languages have these different meanings of
+equality.  Lisp just makes the problem more explicit than many, and
+lets you do exactly what you want.  In some languages, you simply
+can't distinguish between two strings that look alike.  Their loss! 
+
+<p><hr><p>
+
+<a name="TAG-OPTIMIZE"></a>
+<h3>An example of how to speed up a slow program (conversation between
+Jeff Elhai and JP, about Feb. 2004)</h3>
+
+<pre>
+
+(defun mismatches-between-slow (string1 string2 mismatches-allowed)
+   (LET ((mismatches-found 0))
+     (loop for i from 0 below (min (length string1) (length string2)) do
+           (if (string= (subseq string1 i (1+ i)) (subseq string2 i (1+ i)))
+               (incf mismatches-found))
+           (if (> mismatches-found mismatches-allowed) (return nil))
+           finally (return mismatches-found))))
+
+[Jeff complains that this is very slow, compared to another implementation
+using PPCRE, a pattern matcher written in Lisp ]
+
+JP replies:
+
+There are many problems with this.
+
+First, did you compile WINDOW-MATCH-WITH-ERRORS?  Otherwise, you are
+running an interpreted program against a highly optimized compiled
+regular expression pattern matcher.
+
+The biggest problem with this code is that it creates (conses) huge numbers
+of temporary strings, whereas the pattern matcher most certainly does not.
+
+Every time you do this:
+
+  (IF (STRING= (SUBSEQ string1 i (1+ i)) (SUBSEQ string2 i (1+ i)))
+      (INCF mismatches-found))
+
+you are creating two temporary new strings (SUBSEQ always creates a
+new string), when in fact you don't need to create any strings at all.
+Notice that this is executing in the inner-inner loop of your code.
+
+Instead, you could do this:
+
+(if (char= (char string1 i) (char string2 i))
+    (incf mismatches-found))
+
+Another issue is that in order to write highly optimized lisp code,
+you have to declare your variables, just like you have to declare
+everything all the time in C or Java.  I'm not going to discuss this
+further at the moment, but suffice to say this can make all the
+difference in the world in the inner-inner loop of your code.
+
+Another issue is that if you want the compiler to generate very
+efficient code instead of generating code that does a lot of error
+checking, you have to tell it to do so.  You may have seen the
+following:
+
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+
+at the beginning of some of my functions.  That's how you do it.
+
+Now, you may be saying, "BLETCH, BARF, SPIT, COUGH".  Fair enough.
+
+But one of the strong points of Lisp is that in order to get good
+performance you ONLY have to worry about declarations in the
+inner-inner loops of your code.  The rest of it can be coded as
+quickly, elegantly and inefficiently as you like.
+
+Now, I'm not saying that if we optimize the hell out of your program
+it will run anywhere near as fast as the pattern matcher.  I don't
+know. 
+
+But the timings you did could easily be off by a factor of 3,10 or
+even 100 from what could be obtained with a bit of work.
+
+[[ As it later turned out, optimization made it FASTER than the
+pattern matcher... ]]
+
+Something to keep in mind.
+
+One of the points or 'aims' of BioBike is sort of that the
+implementers write the 'inner loops' of biologically important
+algorithms, and we let Biologists go and write the outer loops.
+
+Here is a comparison of an optimized version of MISMATCHES-BETWEEN
+with your original code.  The FAST version runs somewhere around
+60 times as fast as the SLOW version.
+
+  (defun mismatches-between-fast
+        (string1 string2 start1 end1 start2 end2 max-mismatches-allowed)
+   (declare (simple-string string1 string2))
+   (declare (fixnum start1 end1 start2 end2 max-mismatches-allowed))
+   (declare (optimize (speed 3) (safety 0) (debug 0)))
+   (let ((count 0))
+     (declare (fixnum count))
+     (loop for i fixnum from start1 below end1
+           for j fixnum from start2 below end2 do
+           (when (eql (schar string1 i) (schar string2 j)) (incf count))
+           (when (> count max-mismatches-allowed) (return))
+           finally (return count)
+           )))
+
+(defun time-them (n)
+   (declare (fixnum n))
+   (time
+    (loop for j fixnum below n do
+          (mismatches-between-fast
+           "asdlkfaldkfa" "aslflkfadddddd" 0 12 0 14 4)))
+   (time
+    (loop for j fixnum below n do
+          (mismatches-between-slow
+           "asdlkfaldkfa" "aslflkfadddddd" 4))))
+
+
+CL-USER 60 > (time-them 300000)
+Timing the evaluation of (LOOP FOR J FIXNUM BELOW N DO 
+(MISMATCHES-BETWEEN-FAST "asdlkfaldkfa" "aslflkfadddddd" 0 12 0 14 4))
+
+user time    =      0.046
+system time  =      0.000
+Elapsed time =   0:00:00
+Allocation   = 0 bytes standard / 0 bytes fixlen
+0 Page faults
+Timing the evaluation of (LOOP FOR J FIXNUM BELOW N DO 
+(MISMATCHES-BETWEEN-SLOW "asdlkfaldkfa" "aslflkfadddddd" 4))
+
+user time    =      2.765
+system time  =      0.000
+Elapsed time =   0:00:03
+Allocation   = 172802152 bytes standard / 1232 bytes fixlen
+0 Page faults
+NIL
+
+CL-USER 61 > (/ 0.046 2.765)
+0.01663652802893309
+
+CL-USER 62 > (/ 2.765 0.046)
+60.108695652173914
+</pre>
+
+
+<p><hr><p>
+
+<a name="TAG-STRINGS"></a>
+<h3> Strings, characters in and out of strings, and escapes </h3>
+
+<pre>
+
+The backslash is Lisp's escape character.  So the string
+
+"abc"
+
+has exactly the same characters as the string
+
+"\a\b\c"
+
+To put a backslash in a string you have to escape the escape character:
+
+"\\a\\\\b"
+
+That's a string with five characters, a backslash, an 'a',  two more backslashes,
+and a 'b'.
+
+Also, #\\ is the single character backslash (as opposed to a string with a single
+backslash character, "\\".  
+
+(eql #\\ (char "\\" 0))  
+
+You use the '#\' notation to represent characters OUTSIDE of double-quoted
+strings.  The #\ notation is not recognized INSIDE of double quotes.
+
+So "#\a"
+
+is a string consisting of two characters, pound sign and the letter 'a'.
+
+#\a
+
+is the single character object, the letter a.
+
+The #\ notation is not restricted to single character 'names'.
+Certain characters have 'verbose' english names:
+
+#\Space
+
+is a valid character.
+
+#\Newline
+
+another.
+
+To create a string with a Tab character in it you need to do something like
+
+(one-string "abc" #\Tab "def")
+
+(Note that ONE-STRING is a BIOBIKE macro, it's not Common Lisp per se.
+The equivalent using Common Lisp primitives is
+
+(concatenate 'string "abc" (string #\Tab) "def")
+
+which might give you a clue as to why we invented ONE-STRING...
+
+</pre>
+
+<p><hr><p>
+
+<a name="TAG-FLET-AND-FUNCALL"></a>
+<h3> Why doesn't referring to a local function by name work
+when using FUNCALL, MAPCAR, or similar functions? </h3>  
+
+<p>
+E.g, why does
+
+<pre>
+(defun foo ()
+  (flet ((bar (y) (1+ y))
+         (baz (z) (1- z)))
+    (progn (baz 4) (mapcar 'bar '(1 2 3)))))
+
+(foo)
+</pre>
+error out with an 'undefined function BAR' error 
+(while the call to BAZ works just fine) ?
+<p>
+
+Basically, it's quirk of the definition of Common Lisp.  
+Whenever you refer to a local function defined with FLET or LABELS other
+than by calling it directly (as with BAZ, above) (such as with MAPCAR
+or APPLY), you must use #' notation.  So changing the above MAPCAR call to
+
+<pre>
+(mapcar #'bar '(1 2 3))
+</pre>
+
+will work.
+
+Note that if you refer to a function QUUX defined with DEFUN (which defines
+a function globally), you can use either the 'QUUX or the #'QUUX notation.
+

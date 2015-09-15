@@ -1,0 +1,247 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(in-package :bbi)
+
+; *************** KEGG-ID-OF AND ... **************
+
+;; KEGG-ORG-OF moved to kegg-aux.lisp
+
+(DEFINE-FUNCTION KEGG-ID-OF 
+  SUMMARY "Returns a string which identifies a gene or protein wrt Kegg"
+  REQUIRED bborf
+  MAPTREE bborf 
+  BODY
+  ;; body moved to level-3
+  (kegg-id-of-aux bborf)
+  )
+
+; *************** KEGG-ORGANISMS-OF **************
+;; moved to level 3
+
+; ******** BEST-KEGG-NEIGHBORS-OF ********
+
+(DEFINE-FUNCTION best-kegg-neighbors-of 
+  REQUIRED bborf
+  MAPTREE bborf
+  KEYWORD :OFFSET = 1
+  KEYWORD :LIMIT = 5
+  FLAG +orf-id
+  FLAG +gene-id1
+  FLAG +gene-id2
+  FLAG +sbjct-organism
+  FLAG +sw-score
+  FLAG +bit-score
+  FLAG +identity
+  FLAG +overlap
+  FLAG +start-position1
+  FLAG +end-position1
+  FLAG +start-position2
+  FLAG +end-position2
+  FLAG +best-flag-1to2
+  FLAG +best-flag-2to1
+  FLAG +length1
+  FLAG +length2
+  FLAG +definition1
+  FLAG +definition2
+  body
+  ;; body moved to kegg file
+  (kegg-neighbors-of-aux "best"
+   bborf OFFSET LIMIT +orf-id +gene-id1 +gene-id2 +sbjct-organism
+   +sw-score +bit-score +identity +overlap +start-position1
+   +end-position1 +start-position2 +end-position2 +best-flag-1to2
+   +best-flag-2to1 +length1 +length2 +definition1 +definition2
+   ))
+
+; ******** BEST-BEST-KEGG-NEIGHBORS-OF ********
+
+
+(DEFINE-FUNCTION best-best-kegg-neighbors-of 
+  REQUIRED bborf
+  MAPTREE bborf
+  KEYWORD :OFFSET = 1
+  KEYWORD :LIMIT = 5
+  FLAG +orf-id
+  FLAG +gene-id1
+  FLAG +gene-id2
+  FLAG +sbjct-organism
+  FLAG +sw-score
+  FLAG +bit-score
+  FLAG +identity
+  FLAG +overlap
+  FLAG +start-position1
+  FLAG +end-position1
+  FLAG +start-position2
+  FLAG +end-position2
+  FLAG +best-flag-1to2
+  FLAG +best-flag-2to1
+  FLAG +length1
+  FLAG +length2
+  FLAG +definition1
+  FLAG +definition2
+  body
+  ;; body moved to kegg file
+  (kegg-neighbors-of-aux "best-best"
+   bborf OFFSET LIMIT +orf-id +gene-id1 +gene-id2 +sbjct-organism
+   +sw-score  +bit-score +identity +overlap +start-position1
+   +end-position1 +start-position2 +end-position2 +best-flag-1to2
+   +best-flag-2to1 +length1 +length2 +definition1 +definition2
+   ))
+
+; ******* KEGG-SEQUENCE-OF ******
+#|
+(DEFINE-FUNCTION STRIP-SPECIAL-CHARACTERS
+  REQUIRED entity
+  MAPTREE entity
+  BODY
+  (LET* ((blank->underscore
+          (TRANSLITERATE entity FROM " " TO "_"))
+         (parts (MATCH-OF-PATTERN-aux T "[\\w_\.-]+" blank->underscore '(NIL NIL T T)))
+         (final (JOIN parts)))
+    final))
+
+(DEFINE-FUNCTION KEGG-SEQUENCE-OF
+  REQUIRED KEGG-ID
+  MAPTREE KEGG-ID
+  FLAG DNA
+  FLAG AA
+  FLAG long-label
+  FLAG org-label
+  BODY
+  (LET* ((dna-seq (FORMAT NIL "-f -n n ~a" KEGG-ID))
+         (aa-seq (FORMAT NIL "-f -n a ~a" KEGG-ID))
+         (kegg-seq (COND (DNA 
+                          (kegg::bget :string dna-seq)
+                          #+obsolete
+                          (cl-user::client-11 :string dna-seq)
+                          )
+                         (AA 
+                          (kegg::bget :string aa-seq)
+                          #+obsolete
+                          (cl-user::client-11 :string aa-seq)
+                          ) 
+                         (T (FORMAT NIL "~a" "Please indicate DNA or AA" ))))
+         (kegg-seq1 kegg-seq[2][2])
+         (splitted-kegg-seq (SPLIT kegg-seq1 AT *newline*))
+         (label (SPLIT (SPLIT splitted-kegg-seq[1] AT " " )[1] AT ">")[1])
+         (llabel (SPLIT (SPLIT splitted-kegg-seq[1] AT " (A)" )[1] AT ">")[1])
+
+         (seq (JOIN (SPLIT splitted-kegg-seq[2] EVERY *newline*)))
+
+         (org (STRIP-SPECIAL-CHARACTERS (KEGG-ORGANISMS-OF label)))
+         (org-g (FORMAT NIL "~a~a~a" org "..." kegg-id))
+
+         (labeled-seq (COND (org-label (LABELED-SEQUENCE-FROM seq org-g))
+                            (long-label (LABELED-SEQUENCE-FROM seq llabel))
+                            (T (LABELED-SEQUENCE-FROM seq label)))) 
+        )
+   labeled-seq))
+|#
+; *************************** KEGG-MOTIFS-OF *******************************
+#|
+(DEFINE-FUNCTION kegg-motifs-of 
+  REQUIRED bborf
+  MAPTREE bborf
+  KEYWORD :db = "all" ; choose between "pfam", "tfam", "pspt", "pspf"
+  FLAG +orf-id
+  FLAG +motif-id
+  FLAG +definition
+  FLAG +gene-id
+  FLAG +start-position
+  FLAG +end-position
+  FLAG +score
+  FLAG +evalue
+  BODY
+  ;; body moved to kegg-file
+  (kegg-motifs-of-aux
+   bborf db +orf-id +motif-id +definition +gene-id +start-position
+   +end-position +score +evalue
+   ))
+  
+; **********
+
+(DEFINE-FUNCTION kegg-genes-with-motifs 
+  REQUIRED motif-id
+ ; MAPTREE motif-id
+  KEYWORD :offset = 1
+  KEYWORD :limit = 5
+  FLAG +motif-id
+  FLAG +orf-id
+  FLAG +definition
+  FLAG +organism
+  BODY
+  ;; body moved to kegg file
+  (kegg-genes-with-motifs-aux
+   motif-id offset limit +motif-id +orf-id +definition +organism
+   ))
+
+|#
+; **** KEGG PATHWAY TOOLS ****
+
+
+(DEFINE-FUNCTION HIGHLIGHT-GENE-IN-PATHWAY-AUX
+  REQUIRED gene-list
+  REQUIRED ((IN) pathway)
+  BODY
+  (LET* (
+         (gene-name-list (KEGG-ID-OF gene-list))
+         (pathway-genes 
+          (SECOND
+           (SECOND
+            ;; soap call
+            (kegg::GET-GENES-BY-PATHWAY :pathway_id pathway)
+            )))
+         (pathway-genes1 (bbi::ARRAY-TO-LIST pathway-genes))
+         (int-path-list (INTERSECTION-OF pathway-genes1 gene-name-list))
+         (int-path-list1 
+            (FOR-EACH kegg-gene IN int-path-list
+                 AS gene-name2 = (SECOND (SPLIT kegg-gene AT ":"))
+                 AS gene-name1 = (REMOVE #\_ gene-name2 :TEST 'EQUAL)
+                 AS gene = (OR (BB-GENE-NAMED gene-name1) (BB-GENE-NAMED gene-name2))
+                 COLLECT gene))
+         (int-description (DESCRIPTION-OF int-path-list1 LENGTH 100 +label))
+         (kegg-path-link
+          (SECOND
+           (SECOND 
+            ;; soap call
+            (kegg::GET-HTML-OF-MARKED-PATHWAY-BY-OBJECTS
+             :PATHWAY_ID pathway :OBJECT_ID_LIST int-path-list)
+            )))
+         )
+    {kegg-path-link int-description}))
+
+
+(DEFINE-DF-SYNTACTIC-TOKENS HIGHLIGHT-GENE-IN-PATHWAY in)
+(DEFINE-FUNCTION HIGHLIGHT-GENE-IN-PATHWAY
+  REQUIRED gene-list
+  REQUIRED ((IN) kegg-pathways)
+  BODY
+(FOR-EACH pathw IN kegg-pathways
+ INITIALIZE k-org = (KEGG-ORG-OF (ORGANISM-OF (FIRST gene-list)))
+ INITIALIZE pathhtml = NIL
+   AS path-string = (SECOND pathw)
+   AS path-nb = (FIRST pathw)
+   AS org-pathw = (JOIN "path:" k-org path-nb)
+   AS ensure-gene-list = (GENE-OF gene-list)
+   AS gene-in-path = (HIGHLIGHT-GENE-IN-PATHWAY-AUX ensure-gene-list IN org-pathw)
+   AS gene-in-path-link = (FIRST gene-in-path)
+   AS gene-in-path-desc-tmp = (SECOND gene-in-path)
+   AS gene-in-path-desc = (FOR-EACH d IN gene-in-path-desc-tmp
+                               INITIALIZE htm = NIL
+                               AS l = (FORMAT NIL "~a~a~T~a~%" "<li>" d[1] d[2] )
+                               DO (PUSH l htm)
+                               FINALLY (RETURN (JOIN "</ul>" htm "<ul>"))) 
+   AS gene-in-path-href = (FORMAT NIL "~a~a~a~a~a~%" "<a href='" gene-in-path-link "' target='_blank'>" path-string "</a><p>") 
+DO 
+   (PUSH gene-in-path-href pathhtml)
+   (IF gene-in-path-desc-tmp (PUSH gene-in-path-desc pathhtml))
+FINALLY
+(bio::WITH-TEMP-FILE-IN (_pathways cl-user::*webtmp-directory* :name "pathwayshtml" :delete? NIL :type "html")
+   (WITH-OPEN-FILE (pathwayshtml _pathways :direction :output)
+      (FORMAT pathwayshtml "~a~%~a~%~a~%"
+"<html><head><TITLE>KEGG PATHWAYS</TITLE></head><body>" 
+(JOIN (REVERSE (FLATTEN pathhtml)))
+"</body></html>"))
+(LET* ((pathways-u (FIRST (LAST (SPLIT (STRING-OF _pathways) EVERY "/"))))
+       (URL-to-pathways (FORMAT NIL "~a~a~a" CL-USER:*HOST-MACHINE-APACHE-URL* "biobikewww/" pathways-u)))
+(RETURN (WB::MAKE-URL :PATH URL-to-pathways  :DISPLAY-STRING "View pathways" :TARGET "_blank"))
+))))

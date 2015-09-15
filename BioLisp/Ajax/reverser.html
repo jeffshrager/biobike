@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <title>Word Reverser</title>
+    <meta http-equiv='Content-Script-Type' content='text/javascript' />
+    <script type='text/javascript' src='queue.js'></script>
+    <script type='text/javascript' src='ajax.js'></script>
+    <script type='text/javascript' src='http.js'></script>
+    <script type='text/javascript' src='reverser.js'></script>
+    <body onload='startTransport();' onunload='shutdownTransport()' style='background:#eeeeff'>
+      <input type='TEXT' id='word' value='hello'/><br/>
+      <input type='BUTTON' onclick='reverseWord()' value='Reverse!' /><br/>
+      <input type='TEXT' id='reversed' /><br/>
+
+      <hr/>
+
+      <input type='TEXT' id='fname' value='first name'/>
+      <input type='TEXT' id='mname' value='middle name'/>
+      <input type='TEXT' id='lname' value='last name'/><br/>
+      <input type='BUTTON' onclick='reverseName()' value='Reverse my name!' /><br/>
+      <input type='TEXT' id='emanl' />
+      <input type='TEXT' id='emanm' />
+      <input type='TEXT' id='emanf' />
+
+      <hr/>
+
+      <input type='TEXT' id='hardword' value='really long word'/><br/>
+      <input type='BUTTON' onclick='reverseHardWord()' value='Reverse!' /><br/>
+      <input type='TEXT' id='reversedHardWord' /><br/>
+      <span id='statusbar'>Ready to reverse!</span>
+    </body>
+  </head>
+</html>

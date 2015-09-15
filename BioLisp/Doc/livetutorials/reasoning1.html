@@ -1,0 +1,943 @@
+<head>
+  <title>BioBike: Introduction to Biological Reasoning</title>
+  <link rel="stylesheet" type="text/css" href="tutorial.css"/>
+</head>
+<p>
+
+<h2>
+BioBike: Introduction to Biological Reasoning
+</h2>
+
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+
+<ul>
+<a href=#Introduction>Introduction</a><br>
+<a href=#Snark>The Snark Theorem Prover</a><br>
+<a href=#Example>A Simple Example</a><br>
+<a href=#Setup>Setting up SNARK</a><br>
+<a href=#forest>First the Forest</a><br>
+<a href=#Testing>Testing the Example</a><br>
+<a href=#trees>And now, the Trees!</a><br>
+<a href=#Sorts>Sorts and Constants: What things are there?</a><br>
+<a href=#Assertions>Assertions: The Rules of the Game</a><br>
+<a href=#Goals>Setting Goals: Demanding Proof!</a><br>
+<a href=#more>Setting More Complex Goals</a><br>
+<a href=#BioExample>Example 2: Reasoning about Regulation</a><br>
+<a href=#plan>The Plan of Action</a><br>
+<a href=#setup2>Setup (again)</a><br>
+<a href=#telling>Telling Snark about Regulation</a><br>
+<a href=#network>Representing the Network</a><br>
+<a href=#regrules>Regulation Rules!</a><br>
+<a href=#test2>Testing it All Out</a><br>
+<a href=#summary>Reprise</a><br>
+<a href=#Learning>How to Learn More about SNARK</a><br>
+
+</ul>
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction</h2>
+<p>
+In previous tutorials we have been working mostly with biolisp in
+order to do what we have been calling "symbolic biocomputing". We
+explored regulation simulation, language analysis, and other
+topics. In all those cases we programmed the algorithms in BioLisp --
+usually from scratch! 
+
+<p>
+
+Now we're going to switch gears a little bit and talk about a
+different approach to symbolic biocomputing. Whereas you might call
+what we have done so far "procedural" biocomputing, we'll call this
+new approach "declarative" biocomputing, or sometimes it's called
+"automated reasoning". In procedural biocomputing we handle data
+structures directly, sorting through them for various results, and
+manipulating them in various ways. We did all that using the BioLisp
+language (which is just the Lisp language running on BioBike). 
+
+<p>
+
+Automated reasoning works very differently. Instead of explicitly
+searching through graphs and tables, or manipulating them, in the
+automated reasoning world we <i>explain biology to the computer</i>,
+and then ask it questions, and it figures out the answer on its
+own. This sounds a little crazy -- like the computer is going to
+understand our explanation and then figure things out?!
+
+<p>
+
+Well, we don't explain all of biology -- just a tiny part that we need
+it to understand. And we don't explain it in English -- we'll use a
+special way of representing biological knowledge in this tiny
+part. And it can only do a certain limited kind of reasoning in
+getting to the answers. But, as we'll see, this is a very different
+way of thinking about biocomputing, and it'll take some time to get
+used to it. (You're saying to yourself: I've hardly had the time to
+get used to what we've already been doing!)
+
+<p>
+
+<p><hr><p>
+<a name=Snark>
+<h2>The Snark Theorem Prover</h2>
+
+certain kind of reasoner called a theorem prover. The last time you
+heard about theorems was probably in geometry class, but a theorem
+prover actually isn't a geometrical thing; theorems are much more
+general than geometry! Theorems are really just
+<i>logical</i> or <i>symbolic</i> expressions that state some
+conjecture (the "theorem") about some system, and the job of an
+automated theorem prover is just to "prove" that conjecture (supposed
+fact). (After it's proved, it gets to be called a theorem, before it's
+just a conjecture.)
+
+<p><hr><p>
+<a name=Example>
+<h2>A Simple Example</h2>
+<p>
+
+Let's take a natural example: Suppose that you know for an absolute
+fact that Jeff is older than Bex, and that Bex is older than
+Carrie. Now I <i>conjecture</i> -- that is I think it may be true that
+-- Jeff is older than Carrie. Naturally, you would have no trouble
+"proving" to yourself that this is true: If Bex is older than Carrie,
+and Jeff is older than Bex, then obviously -- <i>logically!</i> --
+Jeff is older than Carrie! <i>It just stands to reason!</i>
+
+<p>
+
+This is pretty much all that an automatic theorem prover does: It
+takes a bunch of facts, like the age relations, and a bunch of rules,
+like that if A is older then B, and B is older than C, then (it stands
+to reason!) that A is older than C! (This is technically called
+"transitivity" -- older-than-ness is a <i>transitive relationship</i>,
+but, for example, it's <i>not</i> symmetric!: If Jeff is older than
+Bex, the Bex is <i>not</i> older than Jeff! -- older-than-ness is
+transitive, but not symmetric!)
+
+<p>
+
+This all seems pretty simple, and, well, it <i>is</i> pretty
+simple. In this lesson we're going to see how automatic theorem
+proving is done using a very complex automatic theorem prover called
+"Snark", written by Mark Stickel at SRI. We'll start by doing this
+entirely in the abstract, using our older-than relationship. Later
+we'll look at a more biologically interesting example.
+
+<p><hr><p>
+<a name=Setup>
+<h2>Setting up SNARK</h2>
+<p>
+Before your first use of snark, you should do this from the biobike
+listener:
+
+<pre>
+>> (load-module :snark)
+
+... a bunch of random output ...
+... and finally:
+
+  ;; Module :SNARK loaded.
+
+</pre>
+
+This only has to be done <i>once</i> by <i>anyone</i>, so it's pretty
+likely that someone has done it before you, but it generally can't
+hurt to do it again, so why not go ahead; then you'll never have to
+worry about it again.
+
+<p>
+
+Once Snark is loaded, there are some magic incantations that you need
+to issue before you can actually write snark theorems and get it
+to give you proofs
+
+<p>
+
+Now here's how you'd set up to use snark if it was already loaded:
+
+<pre>
+>> (use-module :snark)
+</pre>
+
+We'll put that in some code we'll need to use in a moment:
+
+<pre>
+>> (progn
+>>   (use-module :snark)
+>>   (do-snark-shadowing-imports)
+>>   (shadowing-import 'snark::assert)
+>>   (shadowing-import 'snark::?)
+>>   (use-snark)
+>>   (set-timelimit 200)
+>>   )
+</pre>
+
+<p><hr><p>
+<a name=forest>
+<h2>First the Forest</h2>
+<p>
+Next we'll want to put in the snark code. Rather than walking through
+each little bit and then bring it all together, as we have in previous
+tutorials, we're going to show you all the code together <i>first</i>,
+and just have you click through it. Then we'll take each little bit
+apart. This way you'll have an idea of what a complete Snark program
+looks like, and that it's not so horrifically huge, whereas if we did
+it piece-by-piece first, you'd be completely lost. So here's the
+roadmap -- just read and DOIT each piece without trying to understand
+them in detail -- the details will come later:
+
+<p>
+
+This is the top level plan - it just calls the other functions to do
+the work:
+
+<pre>
+>> (defun example-setup ()
+>>   (init-biodeducta)
+>>   (declare-example-sorts)
+>>   (declare-example-constants)
+>>   (declare-example-relations)
+>>   (install-example-axioms)
+>>   )
+</pre>
+
+This declares "sorts" -- that is, what types of things there are in
+the world (just persons in this case):
+
+<pre>
+>> (defun declare-example-sorts ()
+>>   (declare-sort 'person)
+>>   )
+</pre>
+
+And this just tells us that each specific person is of sort (type)
+person:
+
+<pre>
+>> (defun declare-example-constants ()
+>>   (declare-constant 'jeff :sort 'person)
+>>   (declare-constant 'bex :sort 'person)
+>>   (declare-constant 'carrie :sort 'person)
+>>   (declare-constant 'archer :sort 'person)
+>>   (declare-constant 'monique :sort 'person)
+>>   )
+</pre>
+
+This tells snark what relationships where are in the world, in this
+case just one, called <b>older-than</b>, and that it relates persons
+to persons (that is, both the 1st and 2nd arguments are of sort (type)
+person).
+
+<pre>
+>> (defun declare-example-relations ()
+>>   (declare-relation 'older-than 2 :sort '((1 person) (2 person)))
+>>   )
+</pre>
+
+Here's the heart of things, the rules and knowledge; We'll talk a lot
+about these below:
+
+<pre>
+>> (defun install-example-axioms ()
+>>   (assert
+>>     '(implies
+>>        (and (older-than ?person1 ?person2)
+>>             (older-than ?person2 ?person3))
+>>        (older-than ?person1 ?person3))
+>>      :name 'transitivity-of-older-than)
+>>   (assert '(older-than jeff bex))
+>>   (assert '(older-than bex carrie))
+>>   (assert '(older-than carrie archer))
+>>   (assert '(older-than monique carrie))
+>>   )
+</pre>
+
+That's actually all there is for setting up the prolem. There's one
+more pile of snark-specific magic you need. This just sets some of
+Snark's huge number of parameters the way we like them:
+
+<pre>
+>> (defun init-biodeducta ()
+>>   (setq prove-all t)
+>>   (initialize)
+>>   (use-resolution t)
+>>   (use-factoring t)
+>>   (assert-supported nil)
+>>   (print-rows-when-derived nil)
+>>   (print-rows-when-processed nil)
+>>   (print-final-rows)
+>>   (use-answers-during-subsumption t) 
+>>   )
+</pre>
+
+Finally, we need to call all of that and ask a question:
+
+<pre>
+>> (defun ask-snark-once (query)
+>>   (with-saved-variables-values 
+>>    ('snark)
+>>    (example-setup)
+>>    (find-one query :answer query)
+>>    ))
+</pre>
+
+<p><hr><p>
+<a name=Testing>
+<h2>Testing the Example</h2>
+<p>
+Okay, so that's the forest, before getting to each tree, let's see if
+it actually works:
+
+<pre>
+>> (ask-snark-once '(older-than jeff archer))
+</pre>
+
+If everything's right, you'll get a <i>huge</i> amount of random
+output (that we'll examine later), and then this result:
+
+<pre>
+  ((SNARK::QUESTION-- (OLDER-THAN JEFF ARCHER)) 
+                    NIL (OLDER-THAN JEFF ARCHER)!)
+</pre>
+
+The fact that it came back with an answer means that it found a
+solution -- this is like saying "Yes!"
+
+<p>
+
+Watch what happens when you try something that you know is false:
+
+<pre>
+>> (ask-snark-once '(older-than archer jeff))
+</pre>
+
+This will take a long time (for reasons we'll get into later on) and
+eventually will say:
+
+<pre>
+  ((SNARK::QUESTION-- (OLDER-THAN ARCHER JEFF)) NIL :NONE)
+</pre>
+
+So :NONE means that it couldn't find any solutions.
+
+<p>
+
+<p><hr><p>
+<a name=trees>
+<h2>And now, the Trees!</h2>
+<p>
+Okay, let's talk first about what all this mysteriousity is supposed
+to compute! All that we're doing in this example is simple inference
+about who's older than whom. That is, suppose that we have a path
+between A and B (symbolized as: Jeff &gt;&gt; Bex) and another Bex
+&gt;&gt; Carrie, and Carrie &gt;&gt; Archer. Can we find out (prove)
+that Jeff &gt;&gt; Archer? If older-than-ness is <i>transitive</i> (as
+we described above), then, yes, of course: Jeff &gt;&gt; Archer
+because: Jeff &gt;&gt; Bex, and Bex &gt;&gt; Carrie, and Carrie
+&gt;&gt; Archer!
+
+<p><hr><p>
+<a name=Sorts>
+<h2>Sorts and Constants: What things are there?</h2>
+<p>
+Now let's break that down and put it out in Snark terms. First we have
+to tell it that there are some persons in the world. We do that like
+this:
+
+<pre>
+(defun declare-example-sorts ()
+  (declare-sort 'person)
+  )
+
+(defun declare-example-constants ()
+  (declare-constant 'jeff :sort 'person)
+  (declare-constant 'bex :sort 'person)
+  (declare-constant 'carrie :sort 'person)
+  (declare-constant 'archer :sort 'person)
+  (declare-constant 'monique :sort 'person)
+  )
+</pre>
+
+<p><hr><p>
+<a name=Assertions>
+<h2>Assertions: The Rules of the Game</h2>
+<p>
+Now we need to give it the paths. These are "asserted" in the function
+install-example-axioms, as follows:
+
+<pre>
+  (assert '(older-than jeff bex))
+  (assert '(older-than bex carrie))
+  (assert '(older-than carrie archer))
+  (assert '(older-than monique carrie))
+</pre>
+
+The transitivity of paths is also asserted there:
+
+<pre>
+  (assert
+   '(implies
+     (and (older-than ?person1 ?person2)
+          (older-than ?person2 ?person3))
+     (older-than ?person1 ?person3))
+   :name 'transitivity-of-older-than)
+</pre>
+
+This is a little hard to read, but what it says, in English, is just:
+<font color=green>"If there are three people, called persons 1, 2, and
+3, if person1 is older then person2, and person2 is older than
+person3, this implies that person1 is older than person3."</font> 
+
+<p>
+
+That's not so hard to understand. Basically, it's saying that, for
+example, Jeff &gt;&gt; Carrie if both Jeff &gt;&gt; Bex, and Bex
+&gt;&gt; Carrie. Since person 1, 2, and 3 can be any people at all,
+this will work just as well for proving that Jeff &gt;&gt; Archer by
+going, for example, from Jeff &gt;&gt; Carrie, as we just proved we
+could do, and then, since Jeff &gt;&gt; Carrie, and Carrie &gt;&gt;
+Archer, then Jeff &gt;&gt; Archer -- QED!
+
+<p>
+
+(Notice in the above that although there's a person called Monique, we
+only know that Monique is older than carrie (Monique &gt;&gt; Carrie),
+but we don't know who is older than Monique.  Also, of course, this
+implication isn't strictly true! Two people could, in theory, be the
+same age!)
+
+<p>
+
+It's <i>very important to notice that</i> this inference applies for
+<i>any</i> persons 1, 2, and 3, and that that <i>once you make this
+inference of older-than-ness between two persons, this is effectively
+a new older-than-ness assertion -- it's as though you'd written:
+(assert '(older-than person1 person3))</i>, and it acts <i>just
+exactly like you had made that assertion</i> in further
+computations.</i>
+
+<p> 
+
+<p><hr><p>
+<a name=Goals>
+<h2>Setting Goals: Demanding Proof!</h2>
+<p>
+
+Once all this is set up, all we had to do was to ask, which we did
+like this in the first example:
+
+<pre>
+  (ask-snark-once '(older-than jeff archer))
+</pre>
+
+<p>
+
+And that's just what the final result told us:
+
+<pre>
+((SNARK::QUESTION-- (OLDER-THAN JEFF ARCHER)) NIL (OLDER-THAN JEFF ARCHER))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^      ^^^^^^^^^^^^^^^^^^^^^^^^
+                                |                             |
+                           This was our                       |
+                           question...                        |
+                                             ... and here's our answer!
+</pre>
+
+In fact, if you look up a little ways in the huge pile of random
+output, you'll see that it even told us how to get from Jeff to
+Archer:
+
+<pre>
+...
+(Row 2
+   (older-than jeff bex)
+   assertion)
+(Row 3
+   (older-than bex carrie)
+   assertion)
+(Row 4
+   (older-than carrie archer)
+   assertion)
+...
+</pre>
+
+<p><hr><p>
+<a name=more>
+<h2>Setting More Complex Goals</h2>
+<p>
+Let's ask it for something slightly more complex.  Using the same
+setup we can ask for all the ways that Snark can find to prove a
+claim:
+
+<pre>
+ (defun ask-snark-all (query)
+   (with-saved-variables-values 
+    ('snark)
+    (example-setup)
+    (find-all query :answer query) 
+    ))
+
+;;; Now try it:
+
+Enter: (pprint (ask-snark-all '(older-than jeff ?person2)))
+
+  (The pprint just makes the output look nicer by wraping 
+   it around at the end of reasonably sized lines.)
+
+;;; This will take a LOT longer, and we'll leave out most of the output.
+;;; Here's the final result:
+
+(((SNARK::QUESTION-- (OLDER-THAN JEFF ?PERSON2)) NIL (LIST JEFF BEX))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^      ^^^^^^^^^^^^^^^
+                       The question...                ... one answer
+
+ (LIST JEFF ARCHER) (LIST JEFF CARRIE))
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...
+           More answers!
+</pre>
+
+So, we can see that Jeff is older than Bex (which we already knew
+because we told it that one!) and Carrie and Archer, too!  But note
+that we are <i>not</i> able to prove that Jeff is older than Monique!
+(Why?) Quiz: Formulate the query that finds all persons that are older than 
+Archer...
+
+<p>
+
+...did you get something like this?
+
+<p>
+
+Let's try it the other way around: Who's older than Archer?
+
+<pre>
+Try: (pprint (ask-snark-all '(older-than ?person1 archer) )
+
+(((SNARK::QUESTION-- (OLDER-THAN ?PERSON1 ARCHER)) NIL 
+ (LIST CARRIE ARCHER))
+ (LIST JEFF ARCHER) (LIST MONIQUE ARCHER) (LIST BEX ARCHER))
+
+</pre>
+
+Note that Jeff and Monique are both proved to be older than Archer
+because each can be proved older than Carrie (Jeff &gt;&gt; Bex
+&gt;&gt; Carrie &gt;&gt; Archer, and Monique &gt;&gt; Carrie &gt;&gt;
+Archer).
+
+<p>
+
+We can also ask for all pairs of age relationships:
+
+<pre>
+Do: (pprint (ask-snark-all '(older-than ?person1 ?person2)))
+
+(((SNARK::QUESTION-- (OLDER-THAN ?PERSON1 ?PERSON2)) NIL
+  (OLDER-THAN CARRIE ARCHER))
+ (OLDER-THAN JEFF ARCHER) (OLDER-THAN JEFF CARRIE)
+ (OLDER-THAN MONIQUE ARCHER) (OLDER-THAN BEX ARCHER)
+ (OLDER-THAN JEFF BEX) (OLDER-THAN MONIQUE CARRIE)
+ (OLDER-THAN BEX CARRIE))
+</pre>
+
+So that's every provable older-than relationship!
+
+<p>
+
+Now, what happens if we put a loop into the system? Let's claim that
+Archer is older than Jeff -- which is ridiculous, but Snark doesn't
+know any better! To do this we're going to add an assertion, and then
+ask the question:
+
+<pre>
+ (defun install-example-axioms ()
+   (assert
+     '(implies
+        (and (older-than ?person1 ?person2)
+             (older-than ?person2 ?person3))
+        (older-than ?person1 ?person3))
+      :name 'transitivity-of-older-than)
+   (assert '(older-than jeff bex))
+   (assert '(older-than bex carrie))
+   (assert '(older-than carrie archer))
+   (assert '(older-than monique carrie))
+   (assert '(older-than archer jeff)) ; *** Here's the loop! ***
+   )
+</pre>
+
+Now let's try it:
+
+<pre>
+Try: (pprint (ask-snark-all '(older-than ?person1 ?person2)))
+
+(((SNARK::QUESTION-- (OLDER-THAN ?PERSON1 ?PERSON2)) NIL
+  (OLDER-THAN CARRIE ARCHER))
+ (OLDER-THAN ARCHER ARCHER) (OLDER-THAN JEFF JEFF)
+ (OLDER-THAN MONIQUE BEX) (OLDER-THAN BEX BEX)
+ (OLDER-THAN CARRIE CARRIE) (OLDER-THAN ARCHER CARRIE)
+ (OLDER-THAN JEFF ARCHER) (OLDER-THAN MONIQUE JEFF)
+ (OLDER-THAN BEX JEFF) (OLDER-THAN CARRIE BEX) (OLDER-THAN ARCHER BEX)
+ (OLDER-THAN JEFF CARRIE) (OLDER-THAN MONIQUE ARCHER)
+ (OLDER-THAN BEX ARCHER) (OLDER-THAN CARRIE JEFF)
+ (OLDER-THAN ARCHER JEFF) (OLDER-THAN JEFF BEX)
+ (OLDER-THAN MONIQUE CARRIE) (OLDER-THAN BEX CARRIE))
+</pre>
+
+Not too surprisingly, the result is wako because we <i>lied</i> to
+Snark! (Archer is <i>not</i> really older than Jeff, and Archer is
+<i>certainly not</i> older than herself!!) So now nearly every person
+can now be proved to be older than nearly every other person,
+including themselves, and people who we know are older than them! Is
+anyone immune from this madness?!  (Hint: Draw the graph, including
+the Archer &gt;&gt; Jeff loop, and see which person isn't
+reachable. Confirm this observation by look at the above list!)
+
+<p>
+
+So, we've now got actually quite a lot of experience with Snark
+theorem proving; essentially all that Snark does is to draw
+conclusions from a set of assertions, some of which are called "base"
+or "ground" assertions or "sentences", like:
+
+<pre>
+  (older-than Archer Jeff)
+</pre>
+
+and some of which are called "axioms", like:
+
+<pre>
+  (iff
+     (older-than ?person1 ?person3)
+     (exists (?person2)
+             (and (older-than ?person1 ?person2)
+                  (older-than ?person2 ?person3))))
+</pre>
+
+The base assertions are sort of like truths of the universe, and the
+axioms tell Snark how to draw conclusions from sets of ground
+sentences.
+
+<p><hr><p>
+<a name=BioExample>
+<h2>Example 2: Reasoning about Regulation</h2>
+<p>
+Okay, so now you're a theorem-proving expert; Let's try something more
+challenging (and more biologically relevant!)
+
+<p>
+
+I'll be you can guess that we're going back to our old friend, Li et
+al's <a href=http://www.pnas.org/cgi/content/abstract/0305937101v1
+target=_blank>(PNAS, 2004)</a> analysis of the yeast cell-cycle
+network. Here, again, is the network:
+
+<p>
+<img src=livetutorial-files/reasoning1/jssymbiolietalfig1b.jpg>
+<p>
+
+(Go back and review the other tutorials that use this example if you
+don't remember what it all means.)
+
+<p>
+
+<p><hr><p>
+<a name=plan>
+<h2>The Plan of Action</h2>
+<p>
+In the previous tutorials that used this example we wrote a program
+that simulated the regulatory dynamics of this system: What happens
+over time. This time we're going to <i>reason</i> about the network
+itself. In order to do that we need to do just what we did above:
+represent the system, and then explain the rules of reasoning to
+Snark, and then ask Snark to reason about the system using those
+rules. (That is, ask it questions.)
+
+<p>
+
+So, for the most part this will look exactly like the above, but with
+different assertions.
+
+<p><hr><p>
+<a name=setup2>
+<h2>Setup (again)</h2>
+<p>
+<p>
+
+You're probably already got Snark setup, but in case you don't, here's
+again how to do that:
+
+<pre>
+>> (load-module :snark)
+</pre>
+
+<pre>
+>> (progn
+>>   (use-module :snark)
+>>   (do-snark-shadowing-imports)
+>>   (shadowing-import 'snark::assert)
+>>   (shadowing-import 'snark::?)
+>>   (use-snark)
+>>   (set-timelimit 200)
+>>   )
+</pre>
+
+The example setup function and init-biodeducta functions are exactly
+the same (you don't even have to redefine it if you don't want to!),
+and you can use this, and the above magic, in all your code.
+
+<pre>
+>> (defun example-setup ()
+>>  (init-biodeducta)
+>>  (declare-sorts)
+>>  (declare-constants)
+>>  (declare-relations)
+>>  (install-axioms)
+>>  (install-ground-assertions)
+>>  )
+</pre>
+
+
+<pre>
+>> (defun init-biodeducta ()
+>>   (setq prove-all t)
+>>   (initialize)
+>>   (use-resolution t)
+>>   (use-factoring t)
+>>   (assert-supported nil)
+>>   (print-rows-when-derived nil)
+>>   (print-rows-when-processed nil)
+>>   (print-final-rows)
+>>   (use-answers-during-subsumption t) 
+>>   )
+</pre>
+
+<p><hr><p>
+<a name=telling>
+<h2>Telling Snark about Regulation</h2>
+<p>
+But everything else is different, of course, since we're doing a
+different problem. 
+
+<p>
+
+First off, instead of people (persons) we have proteins:
+
+<pre>
+>> (defun declare-sorts ()
+>>  (declare-sort 'protein)
+>>  )
+</pre>
+
+And what are the proteins? (Hint, not: Bex, Jeff, Carrie, and Archer!)
+
+<pre>
+>>(defun declare-constants ()
+>>  (loop for protein in '(SIZE CLN3 CLN12 MBF SBF
+>>                          MCM1SFF CDH1 CLB12 CDC2014 CLB56 SWI5 SIC1)
+>>        do (declare-constant protein :sort 'protein)
+>>        ))
+</pre>
+
+Now we have to actually think a little. Proteins in the Li et al
+example either activate (green arcs) or inhibit one another (red
+arcs), so we'll obviously need an "activates" and an "inhibits"
+relation, and we might want to ask about either case, which we'll call
+"controls":
+
+<pre>
+>>(defun declare-relations ()
+>>  (declare-relation 'controls 2 :sort '((1 protein) (2 protein)))
+>>  (declare-relation 'activates 2 :sort '((1 protein) (2 protein)))
+>>  (declare-relation 'inhibits 2 :sort '((1 protein) (2 protein)))
+>>  )
+</pre>
+
+<p><hr><p>
+<a name=network>
+<h2>Representing the Network</h2>
+<p>
+And now we can use those to represent the network. This is just like
+the old li et al representation, where we had things like: (size +
+cln3), but now we use the Snark prefix notation, and either activates
+or inhibits. 
+
+<p>
+
+Note that we don't need to tell it the CONTROLS relationships; those
+will be inferred by Snark based on our rules (you'll see this in a
+minute):
+
+<pre>
+>>(defun install-ground-assertions ()
+>>  (mapcar #'assert
+>>    '(
+>>       (activates size cln3)
+>>       (activates cln3 mbf)
+>>       (activates cln3 sbf)
+>>       (activates sbf cln12)
+>>       (inhibits cln12 sic1)
+>>       (inhibits cln12 cdh1)
+>>       (inhibits sic1 clb56)
+>>       (inhibits sic1 clb12)
+>>       (activates mbf clb56)
+>>       (activates clb56 mcm1sff)
+>>       (inhibits clb56 sic1)
+>>       (activates clb56 clb12)
+>>       (inhibits clb56 cdh1)
+>>       (inhibits cdh1 clb12)
+>>       (inhibits clb12 cdh1)
+>>       (activates clb12 mcm1sff)
+>>       (activates clb12 cdc2014)
+>>       (inhibits clb12 sic1)
+>>       (inhibits clb12 swi5)
+>>       (inhibits clb12 mbf)
+>>       (inhibits clb12 sbf)
+>>       (activates mcm1sff cdc2014)
+>>       (activates mcm1sff swi5)
+>>       (activates mcm1sff clb12)
+>>       (activates cdc2014 swi5)
+>>       (activates cdc2014 cdh1)
+>>       (inhibits cdc2014 clb12)
+>>       (activates cdc2014 sic1)
+>>       (inhibits cdc2014 clb56)
+>>       (activates swi5 sic1)
+>>       )))
+</pre>
+
+<p><hr><p>
+<a name=regrules>
+<h2>Regulation Rules!</h2>
+<p>
+Now comes the fun part: Making up the rules. First off, we want to
+tell Snark that both activates and inhibits are kinds of control. That
+is, either activation or inhibition imply a control relationship:
+
+<pre>
+  (assert '(implies (activates ?protein1 ?protein2)
+             (controls ?protein1 ?protein2)))
+  (assert '(implies (inhibits ?protein1 ?protein2)
+             (controls  ?protein1 ?protein2)))
+</pre>
+
+Next we want to tell Snark that, just like older-than, CONTROLS is
+transitive; that is, if A controls B, and B controls C, then A
+controls C:
+
+<pre>
+  (assert '(implies (and (controls ?protein1 ?protein2)
+                      (controls ?protein2 ?protein3))
+             (controls ?protein1 ?protein3)))
+</pre>
+
+Putting those together into the install-axioms function:
+
+<pre>
+>>(defun install-axioms ()
+>>  (assert '(implies (activates ?protein1 ?protein2)
+>>             (controls ?protein1 ?protein2)))
+>>  (assert '(implies (inhibits ?protein1 ?protein2)
+>>             (controls ?protein1 ?protein2)))
+>>  (assert '(implies (and (controls ?protein1 ?protein2)
+>>                      (controls ?protein2 ?protein3))
+>>             (controls ?protein1 ?protein3)))
+>>  )
+</pre>
+
+
+<p><hr><p>
+<a name=test2>
+<h2>Testing it All Out</h2>
+<p>
+Okay, so now we're ready to run some examples. Here's the function
+that will run the examples for us:
+
+<pre>
+>> (defun ask-snark-once (query)
+>>   (with-saved-variables-values
+>>     ('snark)
+>>     (example-setup)
+>>     (find-one query :answer query)
+>>     ))
+</pre>
+
+And prove to yourself that it works:
+
+<pre>
+>> (ask-snark-once '(controls size mbf))
+
+Did it get the right answer?
+
+>> (ask-snark-once '(controls mbf size))
+
+Did it get the right answer?
+
+</pre>
+
+Okay, now the paste of resistance: Can it find complex control
+relationships?
+
+<pre>
+>> (ask-snark-once '(controls size swi5))
+</pre>
+
+Did it get the right answer? Look back at the proof trace; can you see
+the path it found?
+
+<p><hr><p>
+<a name=summary>
+<h2>Reprise</h2>
+<p>
+So we've now seen two simple examples of reasoning using the Snark
+theorem prover. There were two points to doing the very simple age
+example. First, I wanted to get you a little used to using Snark --
+two examples, more practice; and practice makes perfect! But more
+importantly, I wanted you to see that reasoning about complex
+biological networks is really not much more complex than reasoning
+about simple systems, like ages. The players are different, but the
+rules of logic are the same -- transitivity in a relationship graph is
+the same sort of thing whether you're talking about ages of people or
+protein activations.
+
+<p>
+
+In future tutorials we'll do more complex reasoning, but it's really
+all just about the same sort of thing: You tell if the types of the
+objects (people or proteins); you tell it the relationships
+(older-than, activates, inhibits, and controls), and you tell it the
+rules of reasoning (the transitivity relationships of controls and
+older-than, and that both activation and inhibitions are kinds of
+controlling). The rest is done by Snark -- Pretty cool, huh? (That's
+why they call it AI!)
+
+
+<p><hr><p>
+<a name=Learning>
+<h2>How to Learn More about SNARK</h2>
+<p>
+
+If you want to learn more about Snark, <a target=_blank
+href=http://www.ai.sri.com/snark/tutorial/tutorial.html>the Snark
+manual</a> includes a tutorial that goes into depth on Snark and all
+its myriad ways. You won't understand most of it (lord knows, I
+don't!) but it'll give you a sense of the breadth of potential of
+Snark.
+
+<p>
+
+There are many good tutorial web pages on Theorem Proving and
+specifically Resolution Theorem Proving. Here are a couple:
+
+<p>
+<li><a target=_blank href=http://www.doc.ic.ac.uk/~sgc/teaching/v231/lecture9.html>Nice lecture notes from the Department of Computing, Imperial College, London,
+Introduction to Artificial Intelligence Course</a>
+
+<li><a target=_blank href=http://en.wikipedia.org/wiki/First-order_resolution>Automated theorem proving in the WikiPedia</a>; See esp. the subentry on <a href=http://en.wikipedia.org/wiki/First-order_resolution target=_blank>resolution</a>.
+
+<p><hr><p>
+
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

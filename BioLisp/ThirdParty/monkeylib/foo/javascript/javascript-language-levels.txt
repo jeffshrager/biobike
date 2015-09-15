@@ -1,0 +1,70 @@
+Level 0:
+
+Special operators to allow generating pretty much any Javascript that
+one could write by hand. (With the exception that we're not going to
+worry to much about making the code pretty and we'll live with,
+e.g. some extra parenthesization around binary operators because it's
+not worth doing anything about.
+
+Level 1:
+
+Set of macros that provide a Lispy language that compiles to the
+Level-0 language. Add proper LET and PROGN forms using closures and
+get rid of statment, expression dichotomy.
+
+This means that all function definitions should include an implicit PROGN
+
+(defun x (a b c) (+ a b c))
+
+(function x (a b c) (progn (+ a b c)))
+
+function x (a, b, c) {
+  return function () { return (a + b + c); }();
+}
+
+(if a b c)
+
+((function () (IF a (return b) (return c))))
+
+
+* Yes
+
+IF                   -- turn into an expression
+PROGN                -- probably a macro on FUNCTION
+LET                  -- probably a macro on FUNCTION
+LET*                 -- probably a macro on LET
+SETQ                 -- maybe with a different name.
+CATCH/THROW          -- not sure if we want the same semantics.
+UNWIND-PROTECT       -- maps to try/finally
+
+* Maybe
+
+QUOTE                -- what kinds of literals?
+MACROLET             -- what language would they be written in?
+SYMBOL-MACROLET      -- see MACROLET
+FLET                 -- maybe as sugar. But since Javascript is a Lisp-1 not clear this is wise.
+
+* Probably not
+
+LABELS               -- not sure if this is possible without the y-combinator.
+MULTIPLE-VALUE-CALL  -- no multiple values
+MULTIPLE-VALUE-PROG1 -- no multiple values
+BLOCK/RETURN-FROM    -- I don't think it's quite possible.
+TAGBODY/GO           -- I don't think it's quite possible.	
+PROGV                -- not unless we provide dynamic variables obviously. And maybe not then.
+
+* No
+
+LOCALLY              -- no declarations
+THE                  -- no declarations
+FUNCTION             -- not a Lisp-2
+EVAL-WHEN            -- no file compiler
+LOAD-TIME-VALUE      -- no file compiler
+
+
+
+
+
+
+
+

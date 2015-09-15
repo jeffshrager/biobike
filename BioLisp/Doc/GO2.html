@@ -1,0 +1,125 @@
+!!! These are being slowly absorbed into the other lessons in this region !!!
+
+<pre>
+(defun leaves-under-go-concept (concept)
+  "Walks down the tree, returning all the paths to the bottom,
+and returning all of the concepts at the very bottom of the tree,
+below the given concept, and the paths.  Example: (leaves-under-go-concept #$GO.MethyltransferaseActivity)"
+  (when concept
+     (mapcar #'(lambda (concept) 
+                 (cons concept (leaves-under-go-concept concept)))
+               (#^subclasses concept))))
+
+;;; Some genomic examples:
+
+(defun best-aligning-go-concept (concepts)
+   "For all the genes that are annotated to each given GO concept, use clustal to align them, and rank the results based upon the fraction of perfect matches in the alignment.  this calculation is only as fast as clustal can do the alignments!  Example: (best-aligning-go-concept '(#$GO.PhosphoglucokinaseActivity #$GO.GlucokinaseActivity))
+"
+  (sort (mapcar #'(lambda (concept)  
+                     (let ((alignment (align (#^Go.Related-Genes concept))))
+                       (list concept (score-alignment alignment) alignment)))
+                concepts)
+        #'< :key #'second))
+
+(defun score-alignment (alignment)
+  "Returns the fraction of the number of alignment matches to the length of the alignment of the given alignment."
+  (let* ((consensus (#^consensus alignment)))
+     (/ (count #\* consensus) (float (length consensus)))))
+         
+;;; Becasue we've reparsed the GO descriptions into reactions, we use those
+;;; in queries, and do interesting calculations on them.  This is, of course
+;;; only as good as our analysis of the go descriptions into molecules.  
+
+(defun find-gos-by-species (species &key (direction :either))
+  "Find all GO concepts that have the indicated species in either the 
+reactant or product slots.  The key :direction can be :product or :reactant or :either"
+  (case direction
+     (:either (union (#^go.reactantin species)
+                     (#^go.productin species)))
+     (:reactant (#^go.reactantin species))
+     (:product (#^go.productin species))
+     (t (error "The :direction key in find-gos-by-species must specify :either, :reactant, or :product"))
+   ))
+
+;;; Let's create some pretend microarray data for Synechocystis 6803
+;;; We put this in our own privately named slot, so that it doesn't
+;;; interfere with other people's data.
+
+(defvar *my-data-slot* (make-temp-frame #$data))
+
+(defun make-up-syn-data ()
+  (loop for gene in (#^genes (load-organism :syn6803)) ; Ensure it's loaded!
+        do (setf (slotv gene *my-data-slot*)
+                 (loop for k below 10 collect (/ (random 100) 100.0)))
+           ))
+
+;;; The data will have various cross-correlations.  We'd like to know the
+;;; mean correlations under various GO categories at a given level of
+;;; abstraction.  We use the number of genes in the given category as
+;;; a proxy for level of abstraction.  To do this we need to compute
+;;; overall means fairly often, so this is useful:
+
+(defun nframe-across-means (frames &optional (slot *my-data-slot*))
+  "Given a list of frames, and a slot, do a series mean on these data.  We assume that the number of datapoints is the same for each frame."
+  (let ((sums (loop for i below (length (slotv (car frames) slot)) 
+                       collect 0.0)))
+    (loop for frame in frames
+          as data = (slotv frame slot)
+          when data ; Case there the gene has no data at all.
+          do (loop for sum+ on sums
+                   as next in data
+                   do (incf (car sum+) next)))
+    (loop with n = (length frames)
+          as sum in sums
+          collect (/ sum n))
+    ))
+
+;;; You can prove to yourself that all of the above worked by doing:
+;;; (nframe-across-means (#^genes (setq s  #$synechocystis_pcc6803)) 
+;;;                      *my-data-slot*)
+;;; and you should get all approx 0.5.
+
+;;; So, we're ready to roll.  As mentioned above, we're going to use the
+;;; number of genes associated with a particular GO concept as a proxy
+;;; for the level of abstraction of that concept. 
+
+(defun go-concepts-by-abstraction (n-genes-required)
+  "Make a list of all the GO concepts with n or more genes associated with them; This isn't quite right because it may have replicates for multiple organisms, but that should be a constant factor, and that detail can be dealt with in a more detailed program."
+  (loop for go in *go-frames*
+        when (>= (length (#^go.related-genes go)) n-genes-required)
+        collect go))
+
+;;; Finally we're ready to do The Full Monty: For a given level of 
+;;; abstraction, calculate the complete cross-product of the data
+;;; associated with the gene frames associated with each concept,
+;;; form a set of constraints based on this data, and then call
+;;; consolve to for a model based upon those.
+
+(defun go-based-constraints (abstraction-level)
+  (flet ((means (set)
+            (nframe-across-means
+                (loop for gene in (#^go.related-genes set)
+                      when (eq #$synechocystis_pcc6803 (#^organism gene))
+                      collect gene))))
+  (let ((cats (go-concepts-by-abstraction abstraction-level))
+        constraints)
+     (loop for cat1 in cats
+           do (loop for cat2 in cats
+                    unless (eq cat1 cat2)
+                    do (push (list :correlated cat1 cat2
+                                  (getf (correlate (means cat1) (means cat2))
+                                        :r))
+                              constraints)
+               ))
+     constraints)
+    ))
+                 
+(defvar *constraints* nil)
+
+(defun go-based-model (abstraction-level)
+  (seegraph 
+    (consolve 
+      (setq *constraints* 
+            (go-based-constraints abstraction-level)))))
+
+</pre>

@@ -1,0 +1,481 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :bbi)
+
+;; This shouldn't be needed is necessary to shut the compiler up about
+;; a free reference to undeclared variable warning when it bbloads
+;; the defvar.  
+(declaim (special *context-of-orthologs*))
+
+(defvar *context-of-orthologs* nil)
+
+(defconstant xfig-format-string 
+  "#FIG 3.2  Produced by xfig version 3.2.5
+Landscape
+Center
+Metric
+Letter  
+100.00
+Single
+-2
+1200 2
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+-3500 150 -1500 150 -1500 200 -3500 200 -3500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 -2500 50 7kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+-2500 150 -1500 150 -1500 200 -2500 200 -2500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 -1500 50 6kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+-1500 150 -500 150 -500 200 -1500 200 -1500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 -500 50 5kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+-500 150 500 150 500 200 -500 200 -500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 500 50 4kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+500 150 1500 150 1500 200 500 200 500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 1500 50 3kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+1500 150 2500 150 2500 200 1500 200 1500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 2500 50 2kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+2500 150 3500 150 3500 200 2500 200 2500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 3500 50 1kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+3500 150 4500 150 4500 200 3500 200 3500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 4500 50 0kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+4500 150 5500 150 5500 200 4500 200 4500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 5500 50 1kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+5500 150 6500 150 6500 200 5500 200 5500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 6500 50 2kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+6500 150 7500 150 7500 200 6500 200 6500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 7500 50 3kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+7500 150 8500 150 8500 200 7500 200 7500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 8500 50 4kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+8500 150 9500 150 9500 200 8500 200 8500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 9500 50 5kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+9500 150 10500 150 10500 200 9500 200 9500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 10500 50 6kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+10500 150 11500 150 11500 200 10500 200 10500 150
+4 0 0 50 -1 0 12 0.0000 4 150 315 11500 50 7kb\\001
+2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 5
+11500 150 12500 150 12500 200 11500 200 11500 150"
+  )
+
+(DEFUN all-context-orthologs (primary-list targets)
+  (LET* ((query-proteins (PROTEINS-OF primary-list))
+         (matches 
+            (FORWARD-FUNCALL 'SEQUENCES-SIMILAR-TO-AUX
+               query-proteins targets "blastp" 
+               *unprovided+* *unprovided+* *unprovided+*
+               *unprovided+* 'protein :NO-DISPLAY T))
+         (number-of-matches (LENGTH (LABELS-OF matches DIMENSION 1)))
+         (ortholog-of (NEW-TABLE '($ $)))
+         (orthologs-found 0)
+         (total-orthologs (* (LENGTH primary-list) (LENGTH targets)))
+         (orthologs)
+        )
+   (FOR-EACH line FROM 1 TO number-of-matches
+        UNTIL (>= orthologs-found total-orthologs)
+        AS query = matches[line "QUERY"]
+        AS target = matches[line "TARGET"]
+        AS target-org = (ORGANISM-OF target)
+       (WHEN (NOT ortholog-of[query target-org])
+          (SETF ortholog-of[query target-org] target)
+          (INCF orthologs-found))
+       )
+   (SETF orthologs
+     (FOR-EACH org IN targets
+          COLLECT
+            (FOR-EACH protein IN query-proteins
+                 COLLECT ortholog-of[protein org])))
+   (GENES-OF (JOIN (LIST primary-list) orthologs))
+ ))
+ 
+(defun context-of-style-of (gene xline gn-line context-of-orthologs central-gene)
+  (without-code-walker
+    (let* ((style "2 2 0 1 0 7 50 -1 -1 0.000 0 0 -1 0 0 8")
+           (stylev 
+             (VECTOR
+               "2 2 0 1 0 4 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 2 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 13 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 15 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 17 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 8 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 10 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 18 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 1 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 11 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 21 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 23 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 31 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 29 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 26 50 -1 20 0.000 0 0 -1 0 0 8"
+               "2 2 0 1 0 24 50 -1 20 0.000 0 0 -1 0 0 8"))
+           (gene-description 
+              (OR (frames::slotv gene #$ANNOTATION) 
+                  (frames::slotv gene #$COG-DESCRIPTION) 
+                  (frames::slotv gene #$BEST-HIT-DESCR)))
+           (access-to-gene-frame 
+              (FORMAT NIL "~a~a~a~a~a~a~a~a" "http://" 
+                  cl-user::*WEBLISTENER-MACHINE-NAME* ":" 
+                  wb::*current-weblistener-port* "/frame?PKG="  
+                  wb::*sessionid* "&NAME=" (utils::url-safe-string (fname gene))))
+           (gd-map 
+              (FORMAT NIL "~a ~a~a ~a~a~a~a ~a~a~a~a~a~a" "#" 
+                  "href=" access-to-gene-frame "alt=" "'" gene 
+                  "'" "title=" "'" (fname gene) ": " gene-description "'"))
+           (central-default (/ (1- (LENGTH (lisp:AREF context-of-orthologs 0))) 2))
+          )
+       (FOR-EACH i FROM 0 TO (1- (LENGTH context-of-orthologs))
+            AS context = (lisp:AREF context-of-orthologs i)
+            AS central-pos = (OR (POSITION central-gene context) central-default)
+            AS pos-raw = (POSITION gene context)
+            AS pos = 
+              (COND
+                 ((NOT pos-raw) NIL)
+                 ((= pos-raw central-pos) 0)
+                 (T (1+ (MOD (- pos-raw central-pos) 15))))
+            (WHEN pos
+               (RETURN 
+                 (format nil "~a~&~a~&~a~&~a~&~a~&~a~&" gn-line gd-map style 
+                   xline (lisp:AREF stylev pos) xline)))
+            FINALLY (RETURN
+                      (format nil "~a~&~a~&~a~&~a~&" gn-line gd-map style xline)))
+         )))
+
+(defun context-of-graphgenes-aux (context y0 yorg0 gene context-of-orthologs)
+  (without-code-walker
+   (LET* ((lastcontext (FIRST (LAST context))) 
+          (lastto (frames::slotv lastcontext #$to))  
+          (ccg (FIRST (INTERSECTION context gene)))
+          (1from (frames::slotv ccg #$from))
+          (1to (frames::slotv ccg #$to))
+          (replicon (frames::slotv lastcontext #$Contiguous-Sequence))
+          (replicon-l (frames::slotv replicon #$Sequence-Length))
+          (0from 1from) 
+          (0to 1to) 
+          (0dir (frames::slotv ccg #$direction))
+          (y0- (- y0 25))
+          (y1 (+ y0 70))
+          (y2 (+ y0 140))
+          (y2+ (+ y0 165))
+          (n 1)
+         )
+     (FLET ((wrap-coords (coord1 coord2)
+             (IF (AND (> coord1 coord2) 
+                      (> (/ (- coord1 coord2) replicon-l) 0.9))
+                 (- coord1 replicon-l)
+                 coord1)
+           ))
+           
+    (SETF 0from (WRAP-COORDS 1from lastto))
+    (SETF 0to (WRAP-COORDS 1to lastto))
+    
+    (FOR-EACH
+     g IN context 
+     
+     AS c = (lisp:incf n)
+     AS y_ = (IF-TRUE (EVENP c) THEN 150 ELSE 150)
+     AS 1_from = (frames::slotv g #$from)
+     AS 1_to = (frames::slotv g #$to)
+     AS _from = (WRAP-COORDS 1_from lastto)
+     AS _to = (WRAP-COORDS 1_to lastto)
+     AS gene-name00 = (SPLIT (frames::slotv g #$genetic-name) BETWEEN-WORDS)
+     AS gene-name0 = 
+     (IF (AND (LISTP gene-name00) T) (FIRST gene-name00) gene-name00)
+     AS gene-name1 = (bio::remove #\NEWLINE gene-name0) 
+     AS gene-name = (IF-TRUE gene-name1 THEN gene-name1 ELSE "...")
+     AS ffrom = (+ 4500 (- _from 0from))
+     AS ffrom+ = (+ ffrom 100)
+     AS fto = (+ 4500 (- _to 0from))
+     AS fto- = (- fto 100)
+     AS rto = (+ 4500 (- 0to _to))
+     AS rfrom = (+ 4500 (- 0to _from))
+     AS rto+ = (+ rto 100)
+     AS rfrom- = (- rfrom 100)
+     AS fmt1 = "~a~a  ~a ~a~a~%"
+     AS fmt2 = "4 0 0 50 -1 0 12 0.0000 4 15 180 "
+     AS gn-line1 = 
+     (IF-TRUE (SAME 0dir :F) 
+              THEN (FORMAT NIL fmt1 fmt2 ffrom (+ yorg0 y_) gene-name "\\001")
+              ELSE (FORMAT NIL fmt1 fmt2 rto (+ yorg0 y_) gene-name "\\001"))
+     AS gn-line = (FORMAT NIL "~a~%" (bio::remove #\NEWLINE gn-line1))
+     as fmt = "~a ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a ~a~%"
+     AS xline = 
+     (IF-TRUE 
+      (SAME 0dir :F)
+      THEN 
+      (IF-TRUE (SAME (frames::slotv g #$direction) :F)
+               THEN 
+               (FORMAT NIL fmt ffrom y0 fto- y0 fto- y0- fto y1
+                       fto- y2+ fto- y2 ffrom y2 ffrom y0)
+               ELSE 
+               (FORMAT NIL fmt ffrom+ y0 fto y0 fto y2 ffrom+
+                       y2 ffrom+ y2+ ffrom y1 ffrom+ y0- ffrom+ y0))
+      ELSE 
+      (IF-TRUE (SAME (frames::slotv g #$direction) :F)
+               THEN 
+               (FORMAT NIL fmt rto+ y0 rfrom y0 rfrom y2 rto+ y2
+                       rto+ y2+ rto y1 rto+ y0- rto+ y0)
+               ELSE 
+               (FORMAT NIL fmt rto y0 rfrom- y0 rfrom- y0- rfrom y1
+                       rfrom- y2+ rfrom- y2 rto y2 rto y0)))
+     AS style-xline = (context-of-style-of g xline gn-line context-of-orthologs ccg) 
+     COLLECT style-xline
+     )
+))))
+
+          
+ (defun context-of-graphgenes (contexts gene context-of-orthologs)
+  (FOR-EACH
+   context IN contexts
+   INITIALIZE y = 0
+   INITIALIZE yorg = -200
+   AS o = (FIRST (INTERSECTION gene context))               
+   AS y0 = (INCREMENT y BY 600)
+   AS org = (TRANSLITERATE (NAME-OF (ORGANISM-OF o)) FROM "_" TO " ")
+   AS gene-info = (WHEN o                                            ; ...
+   (FORMAT NIL "~a~a~a~a~a~a~a~a~a~a~a" " (" (NAME-OF o SHORT) 
+           ", " o[.genetic-name] " - " o[.Direction] ": "
+           o[.from] "..." o[.to] ")"))
+   AS yorg0 = (INCREMENT yorg BY 600)
+   AS orgline = 
+   (FORMAT NIL "~a~a ~a ~a~a~%" "4 0 0 50 -1 0 12 0.0000 4 200 3000 -3500 "
+           yorg0 org gene-info "\\001")
+   AS graphgene = (WHEN o (context-of-graphgenes-aux context y0 yorg0 gene context-of-orthologs)) ; ...
+   COLLECT (FLATTEN {orgline graphgene}))
+  )
+
+
+(DEFINE-FUNCTION make-html-map
+REQUIRED map-context
+REQUIRED pdf-context
+; REQUIRED gif-context
+INITIALIZE html-context = (FORMAT NIL "~a~a~a" cl-user::*WEBTMP-DIRECTORY* "x-" map-context)
+BODY
+(LET* ((html-intro "<P>View a short description of a gene by mousing over it or click on a gene to obtain a full description.</P>")
+      (html-download (FORMAT NIL "~a~a~a" "<P><A HREF='" pdf-context "'> Download a pdf file of the figure</A></P>"))
+      (html-main  (FLATTEN (MATCH-OF-PATTERN-aux T "(.*<BODY>)(?:.*)(<IMG SRC=.*</MAP>)(?:.*)(</BODY>.*)"
+	                          (com.gigamonkeys.utilities::file-text  
+							       (FORMAT NIL "~a~a" cl-user::*WEBTMP-DIRECTORY* map-context))
+                             '(NIL NIL NIL T) :CROSS-LINES T))))
+
+(WITH-OPEN-FILE (_html-context html-context  :direction :output :if-exists :supersede)
+  (FORMAT _html-context "~a~%~a~%~a~%~a~%~a~%" (FIRST html-main) html-intro (SECOND html-main) html-download (THIRD html-main))
+)))
+
+
+
+(define-FUNCTION DISPLAY-CONTEXT-OF 
+  REQUIRED gene-lists
+  REQUIRED gene-or-coordinate
+  KEYWORD primary
+  BODY
+  (without-code-walker
+    (LET* ((*suppress-warnings* t)
+           (org-list  (REMOVE-DUPLICATES (ORGANISMS-OF (FLATTEN gene-lists))))
+           (primary-org 
+            (IF primary 
+                (MATCHES-OF-ITEM primary IN org-list)
+                1))
+           (target-orgs (REMOVE primary-org org-list :TEST 'EQUAL))
+           (primary-list gene-lists[primary-org])
+           (gene-or-coordinate 
+              (IF (NUMBERP gene-or-coordinate)
+                  gene-or-coordinate
+                  (GENES-OF gene-or-coordinate)))
+           (contexts-tmp
+            (JOIN (LIST primary-list)
+                  gene-lists))
+           (contexts (purge-duplicates contexts-tmp :key 'first :test 'eq))
+           (context-of-orthologs
+            (APPLY 'VECTOR 
+              (ALL-CONTEXT-ORTHOLOGS primary-list target-orgs)))
+           (graphgenes (context-of-graphgenes contexts gene-or-coordinate context-of-orthologs))
+           )
+      (declare (special cl-user::*fig2dev-directory*))
+      (bio::WITH-TEMP-FILE-IN 
+          (xfig-context cl-user::*WEBTMP-DIRECTORY* :name "context"
+                        :delete? NIL :type "fig")
+        (WITH-OPEN-FILE (xfig-context  xfig-context  :direction :output)
+          (FORMAT xfig-context "~a~%~a~%"
+                  xfig-format-string
+                  (JOIN (FLATTEN graphgenes))
+                  ))
+        (LET* ((context-f 
+                (FIRST
+                 (SPLIT
+                   (FIRST
+                    (LAST (SPLIT (STRING-OF xfig-context) EVERY "/"))) AT ".")))
+               (pdf-context (FORMAT NIL "~a~a" context-f ".pdf"))
+               (gif-context (FORMAT NIL "~a~a" context-f ".gif"))
+               (map-context (FORMAT NIL "~a~a" context-f ".html"))	
+               (html-context (FORMAT NIL "~a~a~a" "x-" context-f ".html"))
+#|
+               (fig2dev-pdf (FORMAT NIL "~a~a ~a~%" 
+                                  "/usr/bin/fig2dev -L pdf "
+                                  xfig-context pdf-context))
+               (fig2dev-gif (FORMAT NIL "~a~a ~a~%" 
+                                  "/usr/bin/fig2dev -L jpeg -S 4 "
+                                  xfig-context gif-context))
+               (fig2dev-map (FORMAT NIL "~a~a ~a~%" 
+                                  "/usr/bin/fig2dev -L map "
+                                  xfig-context map-context))
+|#
+
+               (fig2dev-pdf (FORMAT NIL "~a~a ~a~%" 
+                                  (S+ cl-user::*fig2dev-directory* "fig2dev -L pdf ")
+                                  xfig-context pdf-context))
+               (fig2dev-gif (FORMAT NIL "~a~a ~a~%" 
+                                  (S+ cl-user::*fig2dev-directory* "fig2dev -L jpeg -S 4 ")
+                                  xfig-context gif-context))
+               (fig2dev-map (FORMAT NIL "~a~a ~a~%" 
+                                  (S+ cl-user::*fig2dev-directory* "fig2dev -L map ")
+                                  xfig-context map-context))
+
+								  ) 
+          (bio::PROTECTED-SHELL-COMMAND 
+           fig2dev-pdf :directory (FORMAT NIL "~a" cl-user::*WEBTMP-DIRECTORY*))
+          (bio::PROTECTED-SHELL-COMMAND 
+           fig2dev-gif :directory (FORMAT NIL "~a" cl-user::*WEBTMP-DIRECTORY*))
+          (bio::PROTECTED-SHELL-COMMAND 
+           fig2dev-map :directory (FORMAT NIL "~a" cl-user::*WEBTMP-DIRECTORY*))
+           
+           (make-html-map map-context pdf-context)
+
+(when (called-from-vpl)
+  (forward-package-funcall 
+       :vpl :show-vpl-popup-URL-window
+        (format nil "~a~a~a" CL-USER:*HOST-MACHINE-APACHE-URL* "biobikewww/" html-context)))
+
+          (VALUES 
+           gene-lists
+           (WB::MAKE-URL 
+            :PATH
+            (format nil "~a~a~a" CL-USER:*HOST-MACHINE-APACHE-URL* 
+                    "biobikewww/" gif-context)
+            :DISPLAY-STRING "View context" :TARGET "_blank")
+           )
+          )))))
+
+
+
+(DEFUN Context-of-tmp (gene-or-coordinate 
+             &KEY in gene-width width no-display multiple)
+  "Returns the genetic context surrounding a gene or coordinate in a replicon"
+  (LET ((result NIL))
+   (SETQ result
+     (IF (NUMBERP gene-or-coordinate)
+         (CONTEXT-OF-coord-aux
+          gene-or-coordinate in gene-width width no-display)
+         (CONTEXT-OF-gene-aux gene-or-coordinate gene-width width no-display)))
+
+   (IF (AND multiple (NOT no-display))
+       (FORMAT T "~a~%" "        ------------------------------------------"))
+   result))
+
+
+; ----
+(DEFINE-FUNCTION  (Context/s-of Context-of Contexts-of)
+ SUMMARY "Returns the genetic context surrounding a gene or coordinate in a replicon"
+ REQUIRED gene-or-coordinate
+   TYPE gene-or-coordinate = (OR Number Gene Protein List)
+   CONVERT gene-or-coordinate FROM Protein TO Gene
+   CONVERT gene-or-coordinate FROM Number TO Positive-Integer
+ KEYWORD in
+   TYPE in = (OR Contiguous-sequence Organism Null)
+ KEYWORD gene-width = *unprovided+*
+ KEYWORD width = *unprovided+*
+   TYPE (gene-width width) = Nonnegative-number
+   CONVERT (gene-width width) FROM Number TO Positive-Integer
+ KEYWORD PRIMARY
+ FLAG no-display
+ FLAG draw
+ INITIALIZE gene-list = (ENSURE-LIST gene-or-coordinate)
+ INITIALIZE neighborhood-list = NIL
+ INITIALIZE results = NIL
+ INITIALIZE gene = NIL
+ INITIALIZE incompatible-in = (AND in (TYPEP gene-or-coordinate 'Gene))
+ INITIALIZE display? = NIL
+ BODY
+ (SETQ display? (IF no-display NIL (BBL-TOPLEVEL?)))
+ (SETQ 
+  results
+  (IF (LISTP gene-or-coordinate)
+      (LOOP for g-or-c IN gene-or-coordinate
+        DO (TYPECASE g-or-c
+             (protein (SETq g-or-c (CONVERT g-or-c TO Gene))
+                      (IF in (SETQ incompatible-in T)))
+             (gene (IF in (SETQ incompatible-in T)))
+             (Number 
+              ;; added error check for number without context -- JP
+              (when (null in) 
+                (err+ 
+                 problem
+                 "No context specified.  If you provide a number (e.g., ~D),"
+                 indent
+                 "you must provide either a contiguous sequence or organism"
+                 indent "to use for context."
+                 format-args gene-or-coordinate
+                 )))
+             (OTHERWISE
+              (ERR+ PROBLEM "Invalid argument for CONTEXT-OF"
+                    INDENT  "The argument's value ~S is not a valid type"
+                    INDENT  "for the REQUIRED argument named GENE-OR-COORDINATE"
+                    ADVICE 
+                    "Replace ~S with a valid value type for GENE-OR-COORDINATE:"
+                    INDENT  "(OR number gene protein list)"
+                    FORMAT-ARGS g-or-c g-or-c)))
+        COLLECT
+        (CONTEXT-OF-tmp 
+         g-or-c :IN in
+         :GENE-WIDTH gene-width :WIDTH width :NO-DISPLAY (NOT display?)
+         :MULTIPLE T))
+    (progn
+      ;; added error check for number without context -- JP
+      (when (and (null in) (numberp gene-or-coordinate))
+        (err+ 
+         problem "No context specified.  If you provide a number (~D),"
+         indent "you must provide either a contiguous sequence or organism"
+         indent "to use for context."
+         format-args gene-or-coordinate
+         ))
+      (CONTEXT-OF-tmp
+       gene-or-coordinate :GENE-WIDTH gene-width :IN in :WIDTH width 
+       :NO-DISPLAY (NOT display?)
+       ))))
+ (WHEN draw
+   (SETQ neighborhood-list
+         (TYPECASE gene-or-coordinate
+           (List
+            (LOOP FOR result IN results
+              FOR gene IN gene-list
+              FOR i FROm 0
+              DO (WHEN (NUMBERP gene)
+                   (SETQ gene (SECOND result))
+                   (SETQ result (CONTEXT-OF-tmp gene :GENE-WIDTH gene-width
+                                                :WIDTH width :NO-DISPLAY T))
+                   (SETF (Nth i gene-list) gene))
+              COLLECT result))
+           (Number
+            (SETQ gene (SECOND results))
+            (SETQ gene-list (LIST gene))
+            (LIST 
+             (CONTEXT-OF-tmp
+              gene :GENE-WIDTH gene-width :WIDTH width :NO-DISPLAY T)))
+           (OTHERWISE (LIST results))))
+   (DISPLAY-CONTEXT-OF neighborhood-list gene-list PRIMARY primary))
+ (when incompatible-in 
+   (WARN 
+    (S+ "The IN keyword is incompatible with asking for the context "
+        "of a gene. The gene already knows what it's in. " IN " ignored.")))
+ results
+ )

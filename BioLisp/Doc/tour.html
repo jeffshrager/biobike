@@ -1,0 +1,626 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2006 The BioBike Team                                |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<html><head><title>A Tour of BioBike</title></head>
+<body><center>
+
+</b><p>
+<h2><b>A Tour of BioBike</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2006 by The BioBike Team (contact <a
+href="mailto:BioLangSupport@lists.stanford.edu">BioLangSupport@lists.stanford.edu</a> for more information)</p>
+
+
+<p>
+
+This short tour of BioBike is intended to get users started.  Once
+you have completed this tour, you can request an account on the "real"
+server by filling in the form accessible from the demo server
+login page.</p>
+
+<p>
+
+The BioBike web service is called a "Listener" because it listens to
+your commands and executes them.  Once you're successfully logged in
+to BioBike, you'll be talking directly to the Web Listener!  Aside
+from the buttons on the bottom, there are three basic parts to this
+page:
+
+<ul>
+<li>The top is the OUTPUT AREA, and extends all the way up the page.
+
+<p><li>The first (one line) text box is the COMMAND ENTRY BOX, or the
+ENTER box (or sometimes the "command" or "entry" box).  You have to
+press ENTER, or click the [ENTER] button for things that you type
+there to be executed.
+
+<p><li>The larger text box is the MULTILINE ENTRY BOX, or the EVAL box
+(or sometimes the "expression" box).  You have to press the [EVAL]
+button for things that you type there to be executed.  </ul>
+
+<p>
+
+<img src=boxes.jpg>
+
+<p>
+
+The entry and eval boxes do nearly the same thing.  Anything that you
+can type into one, you can type into the other, and it will work just
+the same way. The only differences are how you get the listener to
+evaluate what you've entered.  To get commands that you've entered
+into the command entry box evaluated, you hit ENTER (or press the
+ENTER button on the right of the box).  To get what you type into the
+larger, expression entry box evaluated, you have to click on the EVAL
+button that's just underneath it.
+
+<p>
+
+The first thing that we need to do is to get access to the knowledge
+about an organism.  Let's use Synechocystis (pcc 6803) as our example
+organism.  Before referring to knowledge about an organism, you have
+to "load" it, using the LOAD-ORGANISM function.  We'll also save the
+result in a variable for easy reference:
+
+<p>
+
+<pre>  
+  >> (setf syn (load-organism "syn6803"))
+  :: ... maybe lots of junk printed out here ...
+  :: #$synechocystis_pcc6803
+</pre>
+
+(Lines preceded by >> are ones that you are supposed to enter.  You
+can enter these into either the command box and press ENTER, or the
+expression box and press EVAL.  Don't enter the ">>" part, that's just
+to indicate what you're supposed to enter.  The easiest way to do this
+is to cut and paste from the tutorial into the listener.  Output is
+similarly preceded by ::)
+
+<p>
+
+
+Notice that you got back a lot of uninterpretable output, and the
+final result is this odd looking thing with a #$ in front of it.  This
+is another data type (along with numbers, symbols, and lists), called
+a "frame", and is special to BioBike.  A frame is a unit of
+knowledge.  We'll work a lot more with frames as we get into
+biological examples.
+
+<p>
+
+So, we've seen that LOAD-ORGANISM loads up the knowledge for
+Synechocystis, and we got back this frame thing, which is now the
+value of the symbol SYN.  Now all you need to do to get to the
+organism knowledge is to use SYN.
+
+<p>
+
+Example:
+
+<p>
+<pre>
+  >> (length (#^genes syn))
+  :: 3721
+</pre>
+
+<p>
+
+Notice that in the output above, #$synechocystis_pcc6803 is a live
+(web) link. If you click on it you can browse the contents of the
+Synechocystis PCC 6803 organism's knowledge!  (The PCC 6803
+part is a particular species -- or mutant -- of Synechocystis, which
+is an important model cyanobacterium.  <a target=_blank
+href=http://lsweb.la.asu.edu/Synechocystis/>Here's a
+bunch more information about it, with lots of nice pictures!</a>)
+
+<p>
+
+So go ahead and click on #$synechocystis_pcc6803. Notice that there are
+LOTS of slots and they have LOTS of things in them, including <i>other
+frames!</i>  Specifically, each gene is another frame that you can
+click on to explore <i>its</i> slots, and the things that it connects
+to, etc.  Find the GENES slot of the #$synechocystis_pcc6803 frame and
+click on the first gene (#$S6803.slr0612).  Notice that the gene has a
+slot called "GO-ID", and that <i>its</i> value is a list with one
+entry: #$Go.LyaseActivity.  If you click on that you'll be browsing
+the Gene Ontology knowledge backbone.
+
+<p>
+
+Explore, but don't get too lost, and back up to the BioBike Listener
+eventually using repeated BACKs or the 'Listener' link under the page
+title.
+
+<p>
+
+Let's try to find the Synechocystis gene for gluokinase, using one
+of BioBike's searching function:
+
+<p>
+<pre>
+  >> (find-frames "Glucokinase")
+  :: (#$Go.GlucokinaseActivity
+      #$Go.PhosphoglucokinaseActivity)
+</pre>
+<p>
+
+FIND-FRAMES returns a list of all the frames that contain the exact
+string we gave.  It looks like the frame we want is called
+#$Go.GlucokinaseActivity.
+ 
+<p>
+
+Let's look at the contents of the GO's GlucokinaseActivity frame:
+
+<p>
+
+<pre>
+  >> (df #$go.GlucokinaseActivity)
+:: Slots of #$Go.GlucokinaseActivity:
+#$go.related-genes: (#$S6803.sll0593)
+#$GO.products: (#$Mol.Adp #$Mol.D-Glucose6-Phosphate)
+#$GO.reactants: (#$Mol.Atp #$Mol.D-Glucose)
+#$GO.DBXRefs: (("EC" "2.7.1.2") ("MetaCyc" "GLUCOKIN-RXN")
+               ("InterPro" "IPR003836") ("InterPro" "IPR004654")
+               ("HAMAP" "MF_00524") ("Pfam" "PF02685 Glucokinase")
+               ("TIGR_TIGRFAMS" "TIGR00749 glucokinase"))
+#$GO.ECRef: (#$Ec.2.7.1.2)
+#$isA:  (#$GO.Reaction #$Go.CarbohydrateKinaseActivity
+         #$Go.PhosphotransferaseActivity,AlcoholGroupAsAcceptor)
+#$GO.definition: "Catalysis of the reaction: ATP + D-glucose = ADP + D-glucose 6-phosphate."
+#$GO.prettyname: "glucokinase activity"
+#$GO.goid: 4340
+</pre>
+  
+DF is a function that describes the contents of a frame. (This is
+similar to clicking on the link, but it prints it out instead of
+actually going to a new page.) Notice that there's only one gene for
+Synechocystis in this category (in the #$go.related-genes slot:
+(#$S6803.sll0593)) and that the GO frame actually has a lot of
+information, including the reactants and products for the reaction for
+Glucokinase!  Explore these by clicking through them into the frame
+browser.
+
+<p>
+
+Suppose that we want to find all the genes
+in Synechocystis 6803 that are involved in glycolysis.  We know how to
+do that already by carefully examining the slot names in the above,
+and using what we've learned:
+
+<pre>
+  >> (#^go.related-genes #$go.glycolysis)
+  :: (#$S6803.slr0752 #$S6803.sll1342 #$S6803.sll0745 #$S6803.sll0587
+     ...etc...
+</pre>
+
+But what if we wanted only the kinases involved in glycolysis?  We can
+get the kinases like this (you might be able to figure this out by yourself!):
+
+<pre>
+  >> (#^go.related-genes #$go.kinaseactivity)
+  :: ... a really long list ....
+</pre>
+
+How can we find those that are on BOTH lists?  That is, the
+intersection of those lists?  Well, as it turns out, Lisp has an
+INTERSECTION function called, oddly enough, INTERSECTION, so let's use
+it:
+
+<pre>
+  >> (intersection (#^go.related-genes #$go.glycolysis)
+                   (#^go.related-genes #$go.kinaseactivity))
+  :: (#$S6803.sll1196 #$S6803.sll1275 #$S6803.slr0394 #$S6803.sll0593
+      #$S6803.sll0587 #$S6803.sll0745 #$A7120.alr2973 #$A7120.all4131
+      #$A7120.all7335)
+</pre>
+
+(Since this is a more than one line long, you'll have to put it in the
+larger eval box, and press [EVAL] to get it to work.  Your results may
+be somewhat different that the above because the database might have
+changed since we wrote this example.  That's ok.)
+
+<p>
+
+Let's do that again, setting some variables along the way so that we
+can use them later on.
+
+<pre>
+  >> (setf glycolytic-genes (#^go.related-genes #$go.glycolysis))
+  >> (setf kinases (#^go.related-genes #$go.kinaseactivity))
+  >> (intersection glycolytic-genes kinases)
+  :: (#$S6803.sll1196 #$S6803.sll1275 #$S6803.slr0394 #$S6803.sll0593
+     ... etc ...
+</pre>
+
+
+<p>
+
+Let's assign this list of genes to a symbol so that we can use it, and
+then let's get a couple of the genes individually to work with:
+
+<pre>
+  >> (setf gk-genes *)
+
+(* refers to the just previous result) 
+
+  >> (setf g1 (first gk-genes) g2 (second  gk-genes))
+
+(notice that you can put multiple assignments in the same SETF
+ although you only get the last one back as a result, they both
+ get set)
+</pre>
+
+Now, suppose that we want the sequence of one of these genes.  No problem:
+
+<pre>
+  >> (extract-sequence g1)
+  :: "ATGGGGGAAATTAAACGCATTGGTATTT ... and so on ... "
+
+And we'll save that as well:
+
+  >> (setq g1s *)
+</pre>
+
+There are a bunch of functions that do things with sequences.  The first
+thing we'll do is grab a small part of the gene sequence for expository
+purposes:
+
+<pre>
+  >> (setq g1-init (subseq g1s 0 30)) 
+  :: "ATGGGGGAAATTAAACGCATTGGTATTTTA"
+</pre>
+
+Now we'll do something biologically specific -- complement the nucleotide
+sequence (note that it's both complemented and reversed!):
+
+<pre>
+  >> (nt-complement g1-init)
+  :: "TAAAATACCAATGCGTTTAATTTCCCCCAT"
+</pre>
+
+There is a built in function in BioBike, called ALIGN, that will
+align two or more sequences.  It uses the CLUSTAL tool, which is a
+standard tool used by the BioInformatics community. Watch:
+
+<pre>
+  >> (align '("the rain in spain falls mainly on the plain" "the plain in spain is mainly in the rain"))
+  :: #$ClustalWResult1
+</pre>
+
+The result is a frame.  To actually see the alignments, you have to
+either click to the frame browser on that frame, or use the #^
+accessor to get the alignment from the frame.  We'll use the DF
+function that we learned earlier to see all the slots in the frame.
+
+<pre>
+(df *)
+:: Slots of #$ClustalWResult25:
+#$fName: "ClustalWResult25"
+#$consensus: "***  **********: ::******* **** :***"
+#$alignments: (("the rain in spain falls mainly on the plain"
+                "THER-AININSPAINFALLSMAINLY-NTHEPLAIN")
+               ("the plain in spain is mainly in the rain"
+                "THEPLAININSPAIN---ISMAINLYINTHER-AIN"))
+#$instanceOf: #$ClustalWResult
+NIL
+</pre>
+
+The alignment itself lives in a slot called #^alignments.  This is a
+bit confusing because CLUSTAL removes all the spaces from the strings
+it aligns and even uppercases all the letters (which makes sense when
+doing Biology, but not so with English!).  If you look closely you'll
+see that the two strings sans spaces are both there and aligned so
+that most of the characters match.
+
+There is also a consensus string, which tells us where the strings
+matched exactly (*).
+
+<p>
+
+Let's align the two genes that we selected.  ALIGN calls ClustalW on a
+list of things that have sequences (genes, proteins, or whatever).  So...
+
+<pre>
+  >> (setq cr (align (list g1 g2)))
+  :: #$ClustalWResult1
+  >> (#^alignments cr)
+  :: ((#$S6803.sll1196
+       "[lots of dashes --- left out here] -------ATGGGGGAAATTAAACGCATTGGTATTAACC--AGTGGAGGAGACTGTGCCGGACTAAACGCCGTAAT ..."
+      (#$S6803.sll1275
+       "[lots of characters left out here] CTGGACCAAGGGGTGGACTGGGTGGCCCTGAGTTGTTCGTAATCCCCAGGATATTGATGAGATTAAGGGGTTAAT ..."))
+</pre>
+
+You'll have to scroll over quite a ways to see where they align
+because one sequence is much longer than the other and CLUSTAL decided
+that the best alignment matched the ends of both sequences, not the
+beginnings.  Perhaps not the world's best alignment, but not the worst
+either.
+
+<p>
+
+Now, of course we actually have the list of ALL the genes that are
+glycolysis-related kinases; we left that in the symbol called
+GK-GENES.  How about aligning all of those just for yucks:
+
+<pre>
+  >> (#^consensus (align gk-genes))
+  :: ... a real long string of mostly blanks -- not very interesting! ...
+</pre>
+
+One thing to notice is that we've been working with genes from
+different organisms.  This brings up an interesting idea: Since the
+related-genes slots of the GO frames contain genes from various
+organisms, we can use the GO as a sort of <i>lingua franca</i> -- or
+"common language" to inter-translate gene functions between organisms.
+Let's look at the genes that catalyze the glucokinase reaction:
+
+<pre>
+  >> (find-frames "glucokin")
+  :: (#$Go.GlucokinaseActivity #$GlucokinaseActivity
+      #$Go.PhosphoglucokinaseActivity)
+  >> (setf gkframe (first *))
+  >> (#^go.related-genes gkframe)
+  :: (#$A7120.alr2973 #$S6803.sll0593)
+</pre>
+
+Just for fun, let's align those:
+
+<pre>
+  >> (#^alignments (align (#^go.related-genes gkframe)))
+  :: ((#$A7120.alr2973
+       "-------ATGACCTTA---TTGTTAGCAGGAGATATCGGCG...")
+      (#$S6803.sll0593
+       "GGGGGCCATGGGCGTAAATTTTTTGGCAGGGGATATCGGCG..."))
+</pre>
+
+<p>
+
+Now, BioBike is an actual programming language, so we can use it to
+actually write programs.  Let's write a simple one that does something
+slightly useful.  One could, given a whole series of genes, figure out
+which ones were best aligned to one another.  E.g., among ten genes,
+determine which pair are closest.  One way to do this (although not
+the most efficient way) is to align every pair, and score the
+alignment, and then pick the pair that work best.  Even though this
+isn't the best way to do that -- it would be very slow for a lot of
+genes! -- let's do it this way just to show off BioBike.
+
+<p>
+
+First we need to know how to score an alignment.  We saw that along
+with the #^alignments slot in the ALIGN result frame, you get a
+#^consensus slot, and that it has '*' every place that the alignment
+is perfect.  So, one way to do score the alignment is to figure out
+the percentage of the consensus that is stars.
+
+<p>
+
+Try this:
+
+<pre>
+  >> (setq c (#^consensus (align (list g1 g2))))
+  :: "                       ***          **         * ... etc ..."  
+     ;[ Again the matches are way over to the right, scrolled off the screen ]
+  >> (count #\* c)
+  :: 522             ; This is the number of stars!!
+  >> (length c)
+  :: 1790            ; This is the total number of possible matches
+  >> (* 100.0 (/ (count #\* c) (length c)))
+  :: 29.16201        ; The ratio of perfect matches to possible, as a percent
+</pre>
+
+Simple as that!  So, there are 522 stars in a consensus of 1790 total
+characters, or about 29%.  Let's turn this into a function:
+
+<pre>
+  >> (defun score-alignment (genes)
+    (let ((c (#^consensus (align genes))))
+      (* 100.0 (/ (count #\* c) (length c)))))
+  :: SCORE-ALIGNMENT
+</pre>
+
+We just created our own function, called SCORE-ALIGNMENT, which we
+can call just like any other function.  Let's test it:
+
+<pre>
+ >> (score-alignment (list g1 g2))
+  :: 29.248554
+</pre>
+
+Ok.  We'll use it for real in just a minute...
+<p>
+
+Now we need to be able to create all possible pairs of genes from
+the list of genes we are comparing.
+
+<p>
+
+Here's a way to create every pair from a list of items:
+
+<pre>
+  (defun every-pair (list)
+    (cond ((null (cdr list)) nil)
+          (t (append 
+               (mapcar (lambda (next) (list (car list) next))
+                       (rest list))
+               (every-pair (cdr list))))))
+</pre>
+
+Put this into the long expression box and evaluate it.
+<p>
+(In fact, there's already a BioBike utility function that does this;
+it's called ALL-UNORDERED-PAIRS, and you might have found it by typing
+
+<pre>
+  (help "pair")
+</pre>
+
+but that's a topic for another essay!)
+<p>
+Let's try it out too:
+
+<pre>
+  >> (every-pair '(a s d f))
+  :: ((A S) (A D) (A F) (S D) (S F) (D F))
+</pre>
+
+Okay, that looks right.  Now we're almost ready.  Recall that
+GK-GENES is our list of all glycolysis-related kinase genes which we
+obtained at the very start of this tutorial.
+
+<pre>
+  >> gk-genes
+  :: (#$S6803.sll1196 #$S6803.sll1275 #$S6803.slr0394 #$S6803.sll0593
+ #$S6803.sll0587 #$S6803.sll0745 #$A7120.alr2973 #$A7120.all4131
+ #$A7120.all7335)
+  >> (length gk-genes)
+  :: 9 
+</pre> 
+
+<font color=green>(Note: We don't want to be aligning hundreds
+or thousands of pair of genes, at least now it this tutorial!  So if
+the number of genes you get is more than 9, do this:
+
+<pre>
+  >> (setq gk-genes (first-n 9 gk-genes))
+  :: <<<< shorter list of genes >>>>
+</pre>
+)
+</font>
+<p><p>
+Now we're really ready!  Let's put our new functions together, looping
+over every pair and aligning/scoring each pair (even with 9 genes this
+will take a minute or two):
+
+<pre>
+  >> (loop for pair in (every-pair gk-genes)
+           collect (list pair (score-alignment pair)))
+  :: (((#$S6803.sll1196 #$S6803.sll1275) 29.248554)
+ ((#$S6803.sll1196 #$S6803.slr0394) 40.41096)
+ ((#$S6803.sll1196 #$S6803.sll0593) 42.201836)
+ ((#$S6803.sll1196 #$S6803.sll0587) 33.789627)
+ ((#$S6803.sll1196 #$S6803.sll0745) 53.900707)
+ ((#$S6803.sll1196 #$A7120.alr2973) 39.262062)
+ ((#$S6803.sll1196 #$A7120.all4131) 38.71795)
+ ((#$S6803.sll1196 #$A7120.all7335) 64.72832)
+ ((#$S6803.sll1275 #$S6803.slr0394) 30.346819)
+ ((#$S6803.sll1275 #$S6803.sll0593) 27.125505)
+ ((#$S6803.sll1275 #$S6803.sll0587) 44.83555)
+ ((#$S6803.sll1275 #$S6803.sll0745) 27.324587)
+ ((#$S6803.sll1275 #$A7120.alr2973) 25.580046)
+ ((#$S6803.sll1275 #$A7120.all4131) 30.17888)
+ ((#$S6803.sll1275 #$A7120.all7335) 27.056778)
+ ((#$S6803.slr0394 #$S6803.sll0593) 40.63812)
+ ((#$S6803.slr0394 #$S6803.sll0587) 37.6259)
+ ((#$S6803.slr0394 #$S6803.sll0745) 41.191273)
+ ((#$S6803.slr0394 #$A7120.alr2973) 37.925167)
+ ((#$S6803.slr0394 #$A7120.all4131) 70.01718)
+ ((#$S6803.slr0394 #$A7120.all7335) 38.115097)
+ ((#$S6803.sll0593 #$S6803.sll0587) 36.357094)
+ ((#$S6803.sll0593 #$S6803.sll0745) 39.316986)
+ ((#$S6803.sll0593 #$A7120.alr2973) 57.945736)
+ ((#$S6803.sll0593 #$A7120.all4131) 39.678513)
+ ((#$S6803.sll0593 #$A7120.all7335) 41.38889)
+ ((#$S6803.sll0587 #$S6803.sll0745) 35.507248)
+ ((#$S6803.sll0587 #$A7120.alr2973) 31.860971)
+ ((#$S6803.sll0587 #$A7120.all4131) 36.52609)
+ ((#$S6803.sll0587 #$A7120.all7335) 34.099068)
+ ((#$S6803.sll0745 #$A7120.alr2973) 40.124557)
+ ((#$S6803.sll0745 #$A7120.all4131) 41.54104)
+ ((#$S6803.sll0745 #$A7120.all7335) 50.847458)
+ ((#$A7120.alr2973 #$A7120.all4131) 36.417656)
+ ((#$A7120.alr2973 #$A7120.all7335) 43.35206)
+ ((#$A7120.all4131 #$A7120.all7335) 38.297874))
+</pre>
+
+Woohoo!  Quick!  Save it! (If we'd been thinking ahead, we'd have
+saved it when we created it by setq'ing or setf'ing a variable to the
+result of the expression that we started with.  Oh well.  No loss.)
+
+<pre>
+  >> (setq scores *)
+</pre>
+
+Okay, so now we need to find the best.  That's pretty easy: just sort
+it and take the first one:
+
+<pre>
+  >> (setq sorted-scores (sort scores '> :key 'second))
+  :: (((#$S6803.slr0394 #$A7120.all4131) 70.01718)
+      ((#$S6803.sll1196 #$A7120.all7335) 64.72832)
+      ((#$S6803.sll0593 #$A7120.alr2973) 57.945736)
+      ... etc ...
+</pre>
+
+Notice that they're now sorted!  So the first one, i.e.: (FIRST
+SORTED-SCORES), is the best match.  You can check, just for fun, that
+these are actually orthologs by clicking on them and reading the
+GO-IDs.  In the case above, the two genes: #$S6803.slr0394, and
+#$A7120.all4131, whose overlap is 70% both turn out to be
+Phosphoglycerate Kinase!
+
+<p>
+
+Okay, let's put it <i>all</i> together, from the very beginning!
+
+<pre>
+(defun best-related-gene-pair (genes)
+    "Given a gene ontology category, like #$go.glycolysis,
+     figure out the pair of genes among all those in the category
+     that are most closely related, by alignment."
+    (first 
+      (sort 
+        (loop for pair in (every-pair genes)
+              collect (list pair (score-alignment pair)))
+        '> :key 'second)))
+</pre>
+
+Go ahead and try it!  It'll take a while....
+
+<pre>
+  >> (best-related-gene-pair gk-genes)
+  :: 
+</pre>
+
+Go ahead and click on the resulting best pair to see what they
+are. How well did it work?
+
+<p>
+
+Okay, well, that's a very gentle introduction to BioBike.  There a
+<em>LOT</em> more that you can do with this powerful biocomputing
+environment. There are many more examples in <a
+target=_blank href=http://nostoc.stanford.edu/Docs/index.html>the rest
+of the BioBike documentation</a>.  
+
+<p>(In fact, come to think of it, there is an infinitude of things you
+can do since it's a programming language! So what you can do it
+limited only by your imagination!)
+
+<p>
+
+Have fun!

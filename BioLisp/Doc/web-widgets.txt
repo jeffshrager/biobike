@@ -1,0 +1,432 @@
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+
+
+                    WEB WIDGET TOOL DESCRIPTION
+
+
+The Web Widget Tool (WWT) is a simplified mechanism for 
+
+ -- defining an HTML form
+ -- allowing a user to 'invoke' said HTML form, which means
+    -- retrieving values entered by a user from the form
+    -- passing these values into a predefined function
+    -- getting the result back from the function and displaying it 
+       to the user.
+
+The tool defines code that is processed by the AllegroServe web
+server.  Using the tool to define a web widget must be done in an
+environment which has the AllegroServe software accessible.  Executing
+the resulting web widget must be done in an environment with a running
+AllegroServe web server.
+
+Let's work through a simple example:
+
+------------------------------------------------------------------
+
+(create-aserve-form-pages
+  'sum-two-numbers
+  :page-title "The Two Number Addition Web Widget"
+  :arguments
+  '((:text :x :title "1st number:" :data-type :integer)
+    (:text :y :title "2nd number:" :data-type :integer)
+    ))
+
+(defun sum-two-numbers (&key x y) (+ x y))    
+
+------------------------------------------------------------------
+
+This does a lot of things:
+
+* It defines a URL whose local name is   
+
+  "The-Two-Number-Addition-Web-Widget-form.html"
+
+* It creates code which tells AllegroServe what to do when it receives
+this URL -- namely, to display the form defined by the above specification.
+
+* It creates code which tells AllegroServe what to do when the user
+sends the completed form back to AllegroServe -- namely, extract the
+values of the X and Y arguments from the form, pass them to the
+function SUM-TWO-NUMBERS (which we defined separately), get the result
+back, and send back a web page which displays the result.
+
+The best thing to do at this point is to try the example out.  It is a
+bit silly to describe in text what is essentially a visual phenomenon,
+so we're not going to try here in any detail.
+
+The key thing to understand is that by executing CREATE-ASERVE-FORM-PAGES
+a URL which you can then type in or click on (using the web listener)
+is created.  Once you invoke that URL from your web browser everything
+proceeds in a pretty obvious way.
+
+So at this point we're just going to define the syntax and semantics
+of CREATE-ASERVER-FORM-PAGES.
+
+-----------------------------------------------------------------------
+
+CREATE-ASERVE-FORM-PAGES
+
+       (function
+        &rest
+        args 
+        &key
+        (page-title (string (gensym "Biolingua-Tool-")))
+        (page-name page-title)
+	(name nil)
+	(documentation "")
+        (page-model nil)
+        (time-limit *default-cfg-time-limit*)
+        (arguments '((:text :arg1 :title "Argument 1")))
+        (execute-button-title "Go")
+        (reset-button-title nil)
+        (results-label "Result: ")
+        (dry-run? nil)
+        (verbose? t)
+        )
+
+We'll first define the syntax and semantics of all the arguments
+to this function except the ARGUMENTS keyword, which is the most
+critical and most complicated.  We'll leave that for last.
+
+
+FUNCTION -- The name of the function to be invoked by this web widget,
+which must be defined separately and exist before the web widget is
+invoked.  Optionally, a 'LAMBDA' or '(FUNCTION (LAMBDA' form, defining a
+function with no name.
+
+****> The FUNCTION must be defined using all keyword arguments <****.
+
+No required or optional arguments are allowed!  (An &rest argument would
+be legal, as long as appropriate keyword arguments are also defined.)
+
+The names of each keyword argument must match 1-1 with the names
+given in the ARGUMENTS parameter (see later).
+
+
+PAGE-TITLE -- A string which is displayed in large font at the top
+of the web widget form page and the web widget results page.
+
+
+PAGE-NAME -- A string which defines the names of the URL's created for
+the web widget.  It defaults to PAGE-TITLE, with spaces converted to
+'-' characters (since URL's with space characters would be
+problematic, if not illegal).
+
+The two URL's defined are named 
+
+ <PAGE-NAME>-form.html 
+ <PAGE-NAME>-exec.html
+
+with PAGE-NAME transformed as described above.
+
+
+NAME -- A string used to uniquely identify this web widget, and which
+is displayed as the text of the URL that is displayed to reference
+this web widget on the Web Widget Directory page, and potentially 
+other places.
+
+
+DOCUMENTATION -- A string (presumably) describing the Web Widget.
+This is displayed on the Web Widge Directory page.
+
+
+PAGE-MODEL -- This denotes a file to be used as the html for
+<PAGE-NAME>-form.html instead of having the html generated by code
+created by CREATE-ASERVE-FORM-PAGES.  If this option is specified,
+things specific to the form are ignored such as PAGE-TITLE,
+EXECUTE-BUTTON-TITLE, and RESET-BUTTON-TITLE, are ignored
+
+
+TIME-LIMIT -- a bound (in seconds) on the amount of time FUNCTION will
+be allowed to execute before timing out.  The default is 600 seconds
+(10 minutes).  If the computation does time out an appropriate web
+page with that information will be displayed.
+
+
+EXECUTE-BUTTON-TITLE -- the web widget's form page displays a button
+which, when clicked, sends the form's contents off to be processed by
+the web widget.  By default, the label inside this button is "Go".
+Specifying this changes the label to whatever string you specify.  If
+NIL is specified then no button appears (processing will take place
+when the user hits ENTER within one of the :TEXT fields (see below).
+At least I hope it will.  If there are no :TEXT fields you will need an
+execute button!).
+
+
+RESET-BUTTON-TITLE -- the web widget's form page may display a button
+which, when clicked, resets the contents of all the data-input fields.
+By default, this button is not displayed.  If RESET-BUTTON-TITLE is
+specified as T, the button is displayed and labelled with "Reset".  If
+RESET-BUTTON-TITLE is specified as a string that string is used as the
+button label.
+
+
+RESULTS-LABEL -- the web widget's form page displays the result of
+calling FUNCTION, preceded by default by the label
+
+"Results: "
+
+Specifying a different string changes this pre-results label.
+
+
+DRY-RUN? -- if T (default NIL), no URL's or code are actually created.
+Only useful with the VERBOSE? option defined below.
+
+
+VERBOSE? -- if T, the code that is generated by the web widget tool
+which will cause the creation of the '-form.html' and '-exec.html'
+pages will be displayed, along with possibly other information.  This
+can be used with DRY-RUN? T to test the code generation mechanism, and
+is mainly of interest to the implementors (although users may be
+curious to see the form of the AllegroServe Lisp-syntax HTML that is
+generated).
+
+
+-----------------------------------------------------------------------
+
+The Syntax and Semantics of the ARGUMENTS Parameter.
+
+
+The value of the ARGUMENTS parameter must be a list of ARGUMENT-SPECIFIERs.
+
+An ARGUMENT-SPECIFIER defines a particular data input field of the
+web widget form (or of the form prespecified by the PAGE-MODEL argument).
+
+An ARGUMENT-SPECIFIER consists of an ordered list consisting of:
+
+  -- A TYPE
+  -- A NAME
+  -- Optional additional arguments, unordered,
+     in the form of keyword-value pairs.
+
+i.e, (TYPE NAME &key <various depending on TYPE>)
+
+The different TYPEs determine the allowable (sometimes required)
+additional keyword-value pairs.  (The TYPEs correspond to various
+clauses of a real html <form> construct, although not all such
+constructs are mirrored and the syntax is not necessarily equivalent).
+
+NAME is the name of the argument, and must be the same as the
+name of one of the keyword arguments to FUNCTION (same in the sense
+that the SYMBOL-NAME of each is EQUAL).
+
+In every case one of the allowable optional keyword-value pairs is
+:TITLE.  The value specifies a label for the input component, which is
+displayed to the left of the component itself in the form display.  It
+defaults to "ARG<n>" where <n> is replaced by a number which is the
+index of this ARGUMENT-SPECIFIER in the list of ARGUMENTS (plus one).
+(So if there are three ARGUMENT-SPECIFIERs in a web widget definition,
+and the first two have :title "X: " and :title "Y: " respectively, and
+the third does not have any :title specified, it's label will be
+"ARG3: ").
+
+
+The various allowable TYPES are:
+
+
+:TEXT -- the form will contain a standard one line text input box.
+This is the usual way of entering a parameter for FUNCTION.
+
+Additional parameters allowed are:
+
+  :SIZE -- the width in characters of the input box.  Must be a small,
+positive integer.  Defaults to browser default.
+
+  :VALUE -- an initial value.  Must be a string.  The text box will
+initially contain this string (without the double quotes).  Defaults
+to "".
+
+  :MAXLENGTH -- the maximum number of characters than can be entered
+into the text box.  Must be a small, positive integer.  Defaults to
+browser default.
+
+  :DATA-TYPE -- one of   
+    :fixnum, :integer 
+    :float, :single-float
+    :double-float, :double 
+    :real 
+    :number
+    :string
+    :lispval, t   
+    :frame
+
+Those items specified on the same line are equivalent.  Unless :string
+is specified, the data is coerced from its string representation into
+the corresponding Lisp type.  
+
+Anything specified as :float, :single-float, :double-float or :double
+and provided in integer syntax will get coerced to the appropriate
+floating point type using the Lisp function FLOAT.  
+
+Anything entered as :frame should be entered into the text box using
+'#$' syntax.  
+
+Specifying :lispval or T will cause the coercion to simply call
+READ-FROM-STRING without trying to further interpret the result.
+In other words, any Lisp value is legal.
+
+Note: *READ-EVAL* is disabled to prevent anyone from being able to
+execute code via this mechanism.
+
+Note: If the coercion from string to Lisp object, or from Lisp object
+to Lisp object of the appropriate type is unsuccessful, an error
+report result form is generated and the web widget does not execute
+FUNCTION.
+
+
+:PASSWORD -- the form will contain a standard text input box, except
+that what is typed won't appear.  Additional parameters allowed are
+
+  :SIZE
+  :VALUE
+  :MAXLENGTH
+
+These all have the same meaning as for :TEXT.  The value of this
+component is always passed to FUNCTION as a string; it is never
+coerced as with :TEXT (specifying :DATA-TYPE is not legal and will be
+ignored).
+
+
+:TEXTAREA -- the form will contain a multi-line text input box.
+Additional REQUIRED parameters are:
+
+  :ROWS -- the number of rows of text.
+  :COLS -- the number of columns of characters.
+
+The value of the data obtained from a :TEXTAREA input is always passed
+to FUNCTION as a string; it is never coerced.
+
+Note:  the exact semantics of :ROWS and :COLS may be browser dependent.
+
+
+:CHECKBOX -- the form will contain a set of checkboxes (little squares
+that can be checked or unchecked by clicking the mouse in each
+square).  Each square has its own label, and if checked, provides its
+own value as a component of a list that is passed to FUNCTION.  The
+only parameter allowed is:
+
+  :VALUES -- Values is specified as a list of ITEMS.  Each ITEM is of
+the (canonical) form (<boxname> <checked?> <value>).  The actual form
+may be one of:
+
+  <boxname>
+  (<boxname> <checked?>)
+  (<boxname> <checked?> <value>)
+
+BOXNAME (a symbol) is the label associated with the checkbox and its
+name is displayed to the left of the square.
+
+CHECKED? (T or NIL) specifies whether the box is initially (and upon
+reset) checked.  It defaults to NIL.  
+
+VALUE (a string) specifies a value which will be part of a list passed
+to FUNCTION iff the associated square is checked when the form is
+submitted.  VALUE defaults to BOXNAME's SYMBOL-NAME.
+
+Note: you cannot specify BOXNAME and VALUE without specifying CHECKED?.
+
+Note: More than one (or zero) boxes may be checked.
+
+Note:  coercions of VALUE are never done; strings are always returned.
+
+
+:RADIO -- the form will contain a set of tiny buttons/circles.  Each
+button may have its own label, as with :CHECKBOX.  This input
+component is identical in syntax with :CHECKBOX.  However, at most one
+ITEM can be specified as checked? T.  (In the actual form, when one
+button is clicked on, any other button which was selected is
+deselected, unlike checkboxes).
+
+Since only one value can ever be selected, FUNCTION receives a single
+string, not a list of strings as with :CHECKBOX, as the value of the
+argument associated with this component.
+
+Note:  coercions of VALUE are never done; strings are always returned.
+
+
+:HIDDEN -- the viewable form will NOT contain anything corresponding
+to this element.  There's probably a bug associated with :title here.
+There is one required parameter:
+
+  VALUE -- a string.  The string is passed to FUNCTION as the value of
+the argument associated with this component.
+
+Note:  This is probably useless and probably should be removed.
+
+
+:IMAGE -- not implemented.  Probably won't be implemented.
+This is used to obtain X,Y coordinates from an image.
+
+
+:SELECT -- not implemented.  Probably should be implemented.  I think
+this is equivalent to a pull-down menu with the ability to select
+multiple items.
+
+======================================================================
+
+Here are a couple more complicated examples:
+
+(create-aserve-form-pages
+  'add-two-numbers
+  :page-title "The Amazing Addition Utility"
+  :time-limit 10
+  :arguments 
+  '((:text :arg1 :title "Number of frobs:" :data-type :float)
+    (:text :arg2 :title "Number of widgets:" :data-type :integer)
+    (:checkbox :arg3 :title "Result tag:" :values ((foo t) (bar nil)))
+    (:radio :arg4 :title "Favorite flavor?" 
+     :values ((asparagus nil) (steak t) (mango nil)))
+    (:textarea :arg5 :title "Comments:" :rows 4 :cols 50)
+    )
+  :execute-button-title "Do it!"
+  :reset-button-title t
+  :results-label "Number of frobs and widgets:"
+  :verbose? nil
+  :dry-run? nil
+  )
+
+
+(progn
+  (create-aserve-form-pages
+   'form-two-way-ortholog-of
+   :title "Two way Ortholog with respect to an Organism"
+   :page-name "two-way-ortholog"
+   :time-limit 10
+   :arguments
+   '((:text :gene-or-protein :title "Gene or Protein" :data-type t)
+     (:text :organism :title "Organism" :data-type t)
+     (:text :threshold :title "Blast threshold" 
+      :data-type :double-float :value "1.0e-10"))
+   :execute-button-title "Find Ortholog"
+   :reset-button-title t
+   :results-label "Orthologous Protein: "
+   :verbose? t
+   :dry-run? nil
+   )
+  (defun form-two-way-ortholog-of
+         (&key gene-or-protein organism threshold)
+    (two-way-ortholog-of gene-or-protein organism threshold))
+  )
+
+

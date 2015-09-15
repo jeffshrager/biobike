@@ -1,0 +1,267 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2006 JP Massar, Jeff Shrager, Mike Travers           |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<html><head><title>Using the Biobike Web Listener's HELP command</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Using the Biobike Web Listener's HELP command</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2004 by The Biobike Team (contact <a
+href="http://aracyc.stanford.edu/~jshrager/personal/index.html">Jeff
+Shrager</a> for more information)</p>
+
+<p>
+<br>
+<big>The main help command is, unsurprisingly, called "help" !</big>
+
+<pre>
+  >> (help)
+</pre>
+
+or just plain
+
+<pre>
+  >> help
+</pre>
+
+and it gets you
+
+<pre>
+Email support: biobike@lists.stanford.edu
+Use the 'Documentation' link at the bottom of the page for more help,
+  site search capabilities and tutorials.
+HELP usage:
+  (help "a string") -- find functions related to the string
+  (help a-symbol) -- print documentation for the symbol
+For detailed information on help itself, type: (help help)
+and click on the 'HELP' link to see the full HELP documentation.
+</pre>
+
+<p>
+
+If you type (help help) you'll get:
+
+<p>
+<pre>
+HELP	(&OPTIONAL THING &REST ARGS)
+  Usage: (help THING ARGS) If THING names a Biobike primitive exactly, the ...
+</pre>
+
+With the word HELP hyperlinked.  If you click on it you'll see the
+entire description of the Biobike HELP function, along with the
+source code that implements it.
+<p>
+Let's try some help searches:
+
+<p>
+<font color=green><i>
+(Your specific results may vary from the results in these examples
+because the system may well have changed since this documentation was
+last updated.)
+</i></font>
+
+<p>
+<pre>
+   >> (help organism)
+
+LOAD-ORGANISM	(ORGANISM &KEY RELOAD? ORGANISM-INFO? GE...)
+  Load information from the database about an organism into memory. Creates ...
+PPRINT-ORGANISM	(ORGF &OPTIONAL PPRINT-LIMIT)
+  Pretty prints information about an organism. The information is obtained ...
+OODB	()
+  Open the Organisms DataBase
+WITH-ORGANISMS-DB	((DBCONNECTION &KEY VERBOSE?) &BODY BODY...)
+  Make sure an open database connection exists for the dynamic scope of this...
+GENES-OF-ORGANISM	(ORG)
+  Returns the genes of organism ORG, a frame, symbol or string
+*LOADED-ORGANISMS*	(#$anabaena_variabilis_atcc29413 #$anaba...
+  All organisms currently available to Biobike. See LOAD-ORGANISM for how...
+CANONICALIZE-LOADED-ORGANISM-DESIGN...	(ORGD)
+  Convert an organism designator to a loaded organism's frame.
+AVAILABLE-ORGANISMS	()
+  Returns a list of organisms potentially available for analysis. See *LOADED...
+RENDER-ALL-PATHWAYS	(ORGANISM)
+  Uses RENDER-PATHWAY-IN-ORGANISM-TERMS to instantiate every path in an orga...
+CANONICALIZE-ORGANISM-DESIGNATOR	(ORGD &KEY MUST-BE-LOADED? LOAD?)
+  Convert an organism designator to an organism frame. Optionally load the ...
+PROTEINS-OF-ORGANISM	(ORG)
+  Returns the proteins of organism ORG, a frame, symbol or string
+EXTRACT-GENE-SEQUENCE	(GENE &KEY CACHE? START-OFFSET END-OFFSE...)
+  The GENE belongs to a CONTIG, which is part of an ORGANISM. -- Retrieve the...
+
+;; There are 17 related symbols not shown. Use, for example:
+;; (help "ORGANISM" :all t) to see them all.
+;; (help "ORGANISM" :simlimit 0.33) to see more entries.
+;; (help "ORGANISM" :upto 10) to see at most 10.
+;; For more info on help itself, type: (help help)
+;; and click on HELP to show its full documentation.
+</pre>
+
+<p>
+
+You get a list of functions and variables in the Biobike system
+which have something to do with 'ORGANISM', and for each such symbol,
+the function's argument list (or the variable's value) and the initial
+part of its documentation description.  Each symbol so listed is also
+hyperlinked and if you click on the link you'll get a complete
+description of the function, along with source code, or more
+information about the variable.  You also gets hints on how to use
+the HELP command to limit or expand the number of entries displayed.
+<p>
+
+Now let's see the help on a specific function, load-organism:
+
+<p>
+<pre>
+  >> (help load-organism)
+::
+LOAD-ORGANISM	(ORGANISM &KEY RELOAD? ORGANISM-INFO? GE...)
+  Load information from the database about an organism into memory. 
+Creates genome frames for each contig of the organism, and possibly 
+gene, transcript and protein frames if these tables exist in 
+the database.  Modifies *loaded-organisms* appropriately.
+</pre>
+
+By querying for a specific function you get the entire documentation
+description, as well as its argument list and a link to display to
+you the source code for the function.  From that display, you can
+look at the entire file the function is defined it, or get a directory
+listing of all the files in the same directory.
+<p>
+
+What happens if we give help a vague description of what we want?
+
+<pre>
+   >> (help "load an organism")
+:: 
+LOAD-ORGANISM	(ORGANISM &KEY RELOAD? ORGANISM-INFO? GE...)
+  Load information from the database about an organism into memory. Creates ...
+*LOADED-ORGANISMS*	(#$anabaena_variabilis_atcc29413 #$anaba...
+  All organisms currently available to Biobike. See LOAD-ORGANISM for how...
+CANONICALIZE-ORGANISM-DESIGNATOR	(ORGD &KEY MUST-BE-LOADED? LOAD?)
+  Convert an organism designator to an organism frame. Optionally load the ...
+AVAILABLE-ORGANISMS	()
+  Returns a list of organisms potentially available for analysis. See *LOADED...
+CANONICALIZE-LOADED-ORGANISM-DESIGN...	(ORGD)
+  Convert an organism designator to a loaded organism's frame.
+MEME	(OBJECTS &KEY NMOTIFS SAFE?)
+  (meme <list-of-sequenceable-things> [:nmotifs 3])) calls the MEME program ...
+</pre>
+   
+As you see, we find functions and variables with either "load" or
+"organism" (or both!) in them, and another entry, MEME, which the matching
+algorithm thinks might be related to what you are asking for.
+
+<p>
+
+There are a number of other important ways to get help in Biobike
+just using commands.  HELP-LISP is a function which will print out
+Common Lisp symbols that match your input, and there are the Common Lisp
+functions APROPOS, APROPOS-LIST, and DESCRIBE.
+<p>
+APROPOS is a lot like HELP-LISP, while DESCRIBE will print out a
+description of any object you give it:
+
+<pre>
+  >> (describe :fred)
+:: 
+:FRED is a NEW SYMBOL.
+  Its value is :FRED
+  It is globally declared to be a constant.
+  It is EXTERNAL in the KEYWORD package.
+
+  >> (describe 1000000000000000)
+:: 
+1000000000000000 is a NEW BIGNUM.
+ It is 50 bits wide
+</pre>
+
+You can read more about them in the
+<a target=_blank
+href=http://www.lispworks.com/reference/HyperSpec/Front/index.htm>Common
+Lisp Hyperspec</a>.  Here's the entry for <a target=_blank
+href=http://www.lispworks.com/reference/HyperSpec/Body/f_apropo.htm>
+APROPOS</a>, and here's the one for <a target=_blank
+href=http://www.lispworks.com/reference/HyperSpec/Body/f_descri.htm>
+DESCRIBE</a>
+
+<p>
+
+Now, we've mentioned that the names of the functions in the
+foregoing are all marked as hyperlinks.  That is, you can click
+through them to something.  I wonder what it could be?
+
+<p>
+
+Let's try clicking through a function.  If you have access to the Biobike
+system, click on LOAD-ORGANISM.  All sort of interesting things appear:
+
+<ul>
+<li> The argument list
+<li> The name of the source file containing LOAD-ORGANISM, clickable
+<li> The name of the source directory, clickable
+<li> The documentation for LOAD-ORGANISM
+<li> The source code listing 
+</ul>
+
+<p> But that's not all!  The source code listing itself contains
+clickable items, which are the names of functions and macros that
+LOAD-ORGANISM calls.  Some of these are standard Lisp functions <font
+color=purple>(in purple)</font>, and some of them are Biobike primitives
+<font color=green>(in green)</font>
+
+<p>
+
+You can look at the source file by clicking on its name; the same
+purple and green links will appear along with the complete file.
+
+<p>
+
+You can look at a simple listing of the source directory, and from there
+examine other source files in the directory or other higher-level or
+sub-directories.
+
+<hr>
+
+<p> Besides HELP, another means of viewing what Biobike primitives
+are available is through the 'Bio Primitives' link near the
+bottom of the Listener.
+
+<p> 
+
+This will give you a list of categories, which you can click into
+('+' or '*') to get a listing of primitives in that category.  Or you
+can click on the 'alphabetical listing' link near the top of the page
+to get a listing of all the Biobike primitives.
+
+<hr>
+
+<p>
+Finally, you can always email the Biobike support team with
+your questions if you get stuck.
+
+

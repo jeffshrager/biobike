@@ -1,0 +1,115 @@
+;;; -*-lisp-*-
+
+;;  Jan 25 '07  JJC Changed most elements to be absolute.  Added an element
+;;              surrounding entire page to ensure consistent margins.  Added
+;;              an element around results and workspace to make dividing the
+;;              area between them simpler.  Use inline styles to ensure .style
+;;              is initially filled with useful values.
+
+;;  Sep 28 '06  JKM We are getting a horizontal scroll bar at bottom
+;;              which is both unnecessary and space-consuming.
+;;              Put in width 100% in an effort to kill it.
+;;              Didn't work; top extends a bit, middle and bottom extend more.
+
+;; IE barfs on 'or' in style definitions.
+
+(doctype "html" "PUBLIC" "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd")
+(html
+  (head 
+   (title "VPL")
+   (link rel "stylesheet" type "text/css" href "vpl.css")
+
+   (script type "text/javascript" src "queue.js")
+   (script type "text/javascript" src "ajax.js")
+   (script type "text/javascript" src "http.js")
+   (script type "text/javascript" src "vpl.js")
+   (script type "text/javascript" src "vpl-version.js")
+   (script type "text/javascript" src "sexp.js")
+   (script type "text/javascript" src "patches.js")
+   ) ;; End of the HEAD
+
+  ((body onload "setup()")
+   ;; Some considerations for position absolute:
+   ;; 1. margins do not collapse with containing elements.
+   ;; 2. position is determined relative to the containing element.
+
+   ;; To ensure that all elements have the same margin, a div with position
+   ;; absolute surrounds all elements.
+
+   ;; To adaquately separate the workspace/results, these are placed inside
+   ;; their own absolutely positioned div
+
+   ;; Additionally, reading the .style javascript property only reflects
+   ;; the "inline" style, so we dupliate the values here so we do not need
+   ;; to use get-computed-style to read the values specified in the class
+   ;; and/or the id of an element.
+   ((div id "outer-bigbox" class "bigbox")
+
+    ((div id "palette-box" class "box")
+     ((div id "palette" class "container")
+      ;;(:p "Click a box to add an expression to the work area below.")
+      )
+     )
+    ((div id "wr-bigbox" class "bigbox")
+     ((div id "workspace-bigbox" class "bigbox"
+           ;; These are included here so that they are initially present in .style attribute
+           style "bottom: 15%; max-height: 85%"
+	   )
+      ((div id "workspace-box" class "box")
+       ((div id "workspace" class "container contains-jbml")
+        ((div id "workspace-message")
+            (:p "Construct the code you want to execute here!")
+	    (:p "For a visual VPL tutorial, "
+             ((:a :href "vpl2-tutorial.html" :target "_blank") "click here")
+	     )
+            (:p "To find out what's new with the VPL, "
+             ((:a :href "http://vplblog.wordpress.com/" :target "_blank") "click here")
+	     )
+	 )
+	)
+       ((div id "workspace-toolbox" class "toolbox")
+	(img id "left-undo" class "arrows" src "zleftarrow.gif" alt "<" title "Undo")
+	(img id "right-redo" class "arrows" src "zrightarrow.gif" alt ">" title "Redo")
+	(img id "workspace-clear" class "container-clear" src "mauveX16x16.gif" alt "X" title "Clear Workspace")
+	(img id "workspace-expand" class "container-expand" src "Max.gif" alt "^" title "Expand Workspace")
+	(img id "workspace-shade" class "container-shade" src "min.gif" alt "_" title "Collapse Workspace")
+	((div id "workspace-status-server" class "workspace-status" title "Server Message"))
+	((div id "workspace-status-client" class "workspace-status" title "Client Message"))
+        )
+       )
+      )
+     ((div id "results-bigbox" class "bigbox"
+           ;; These are included here so that they are initially present in .style attribute
+           style "top: 85%; min-height: 15%"
+      )
+      ((div id "results-box" class "box")
+       ((div id "results" class "container contains-jbml")
+        ((div id "results-message")
+         (:p "Results of code you execute go here!")
+	 )
+	)
+       ((div id "results-toolbox" class "toolbox")
+	(img id "results-clear" class "container-clear" src "mauveX16x16.gif" alt "X" title "Clear Results")
+	(img id "results-expand" class "container-expand" src "Max.gif" alt "^" title "Expand Results")
+	(img id "results-shade" class "container-shade" src "min.gif" alt "_" title "Collapse Results")
+        )
+       )
+      )
+     )
+
+   ;; DEBUGGING THE PIPE
+   ;; Comment out the following line if you don't want the pipe debugger
+   ;; to display...  also adjust the inline styles above to allow for some space
+
+   ;; ((div id "debugging")"Debugging Window")
+
+   ;; ((:span :id "tooltip" :class "hide popup")
+   ;; ((:table :id "ttable")))
+    )
+
+    ;; Add dragged items here.  Last so that ids of cloned nodes don't confuse the browser.
+    ((div id "dragged")
+     ((div id "drag-proxy"))
+     )
+   )
+)

@@ -1,0 +1,664 @@
+
+
+      THOUGHTS ON THE SOFTWARE COMPONENTS NEEDED FOR THE FULL VPL
+
+
+As Peter's designed it, the VPL consists of 3 parts:
+
+ -- the palette and any associated tabs, help buttons, whatever
+
+ -- the code creation and execution space
+  
+ -- the results space
+
+There is also the server code, and the interface between the
+server and the client.
+
+There are also workspace, file management, and information utilities.
+
+
+I. THE PALETTE.
+
+The palette presents the objects the user has to work with.  When the
+VPL starts up, the palette should present a minimum set of starting
+points and the ability to present all the possible objects, but should
+not attempt to display all possible objects.  It should always be
+possible to get help on any object in the palette (presumably via a
+menu attached to that palette object).
+
+A reasonable set of starting points might be: DEFUN, DEFINE-FUNCTION,
+DEFINE, ASSIGN, IF, COND, and LOOP (LOOP is actually XLOOP, not
+LISP:LOOP) The starting palette display should also include various
+tabs/menus (and brief instructions to get started as it does now).
+
+We need mechanisms to swap in and out various subsets of the available
+entities (functions and other objects). One such mechanism is an
+algorithm which decides which entities are shown depending on the
+user's context in the code creation subwindow -- what he has just
+selected and his history.  Another mechanism gives control to the user
+over what appears via a complex set of 'views'.  These views may
+present the objects sorted in different ways, and/or, as in Windows
+directory listings, present icons or names or larger listings.
+
+Even a single subset of palette objects (such as predicates), is often
+going to be too big to show on the screen without taking up too much
+valuable space.  Therefore some mechanism to 'scroll' each set needs
+to exist, so that only a limited range of the subset appears at any
+one time, but getting to any object in the subset is an easy mouse
+task.
+
+Note: Some operations on the palette objects affect what happens in
+the code construction subwindow.  
+
+Note: When a user defines a new function or variable, there must be a
+way to add this object to the palette.  We can think about the user's
+stuff in much the same way as the BioBike system's workspace utility.
+In fact, we will probably have to have the functional equivalent
+(SAVE-WORKSPACE, RESTORE-WORKSPACE, etc; it is unlikely that a user
+will appreciate having his carefully crafted 10-line VPL program
+disappear into the ether without a means to save it)  
+
+
+II. THE INTERACTION OF THE PALETTE AND THE CODE CREATION SPACE.  
+
+The palette presents the user with a visual image of what he can work
+with.  But the VPL internals need to know much more about each icon
+than what is visually presented.
+
+In fact, for each function, the VPL needs to know pretty much all the
+information contained in a DOCUMENT-FUNCTION description (or an
+equivalent -- say, for a Common Lisp function).
+
+This information includes the exact format of the argument list, the
+type of each argument, and the return type.  Summary information,
+examples, the description and SEE-ALSO links may also prove useful.
+
+Note: macros and special forms need to have slightly different
+information than functions, at least in the sense that they have
+individual syntax as well as semantics.
+
+The only real issues are where this information is stored and in what
+form and the facilities available to get at it.  In theory some of the
+information could be retained on the server and only queried for as
+necessary.  (Since the VPL is operating in human time and messages can
+fly back and forth in what we've measured as hundredths of a second,
+this would presumably not be a limitation on a high-speed connection
+but could be a problem depending on the available network
+connections.)
+
+If all this information is transmitted to the client, then we need a
+versatile representation for it.  Right now we have templates and
+holes for each function/macro; these are adequate if they can be
+extended to include more information than they do now.  
+
+Note: Consider the possibility of abstracting this information
+retrieval, such that it is hidden behind a layer which either gets the
+information from the client if it has been preloaded, or from the
+server.  We could then just build the server interface and see if it
+is adequate; if not, more information would need to be pushed down to
+the client.
+
+Consider a BBL function.  It consists potentially of required
+arguments interspersed with token arguments, followed by flag and
+keyword arguments.  All this information is contained in the
+document-function form (?), (and if it is not, it is contained in the
+define-function parse which is stored away when the define-function
+form is compiled).  Translating this information into a form suitable
+for the VPL is, I claim, simply a question of defining what form we
+want and writing a page or two of code.
+
+The real trick is in how to present a complicated BBL function call
+template to the user.  Right now we have the ability to display only
+required arguments and implicit PROGNs (presumably implicit PROGNs can
+be used to display &rest args, such as for +).  BBL functions will
+require us to extend these abilities to include keyword/value pairs,
+flags, and interspersed token arguments.  Common Lisp functions will
+require us to extend these abilities to include &optional arguments
+(such as for FLOOR).  Also note that keyword arguments for BBL and
+Lisp have slightly different semantics and BBL keywords don't begin
+with ':'.  This issue can probably be finessed.  
+
+&OPTIONAL arguments seem relatively easy; I think we just need to have
+an &OPTIONAL hole type.
+
+One option to present &KEY arguments is to use something similar to
+the ellipsis notation now used for implicit PROGNs.  When the
+pseudo-ellipsis is clicked, a menu of not-yet selected keywords/flags
+is shown, and the user can choose one.  If the selection is a flag, it
+is simply inserted, and the ellipsis is shifted over to the right just
+as it is now when an entry is added to an implicit PROGN.  If the
+selection is a keyword, two elements are inserted: the keyword name,
+and a hole representing the keyword value.  The inserted flag or
+keyword is then removed from the menu or rendered unselectable (note:
+If a keyword or flag is later deleted the menu item needs to reappear
+or become selectable again).
+
+BBL TOKEN arguments are nasty.  Note that they are NOT simply
+syntactic sugar -- they have semantic content and therefore cannot be
+ignored.  Nor can they just always be inserted between required
+arguments precisely because the presense or absence of the token has
+semantic content.  One way to visualize these tokens might be to
+insert some sort of small icon between required arguments that allow
+token arguments between them.  If this icon was not manipulated by the
+user, then the token (or set of mutually exclusive tokens) represented
+by that icon would not be present when the actual code was consed up.
+If the icon were clicked, it would present the possible tokens
+available for this space and the user could select one.  At that point
+the token word itself would appear in between the required arguments
+rather than the tiny icon.
+
+BBL also allows aliases for function names and keywords; these can
+probably be ignored for purposes of display (in terms of possible
+icons in the palette, we may want to display the aliases).
+
+Note that some of BBL's macros (e.g., ADD) have an &REST argument list
+even though BBL functions defined with DEFINE-FUNCTION are not allowed
+to have &REST args.  Presumably each such BBL macro will have to be
+hand-crafted just as the current set of test icon templates have been
+created.
+
+LOOP and DEFINE-FUNCTION present special problems.  *** Not done ***
+
+
+III. THE CODE CREATION AND EXECUTION SPACE.
+
+The user creates code in the code creation subwindow and, when it is
+complete, executes it.
+
+More than one code block (aka snippet) at a time can exist in the code
+creation subwindow (CCS).  The user currently executes a snippet by
+double-clicking on it.
+
+A code snippet is a visual representation of a piece of lisp/BBL code.
+The user creates a complete code snippet by first creating a snippet
+and then performing operations (usually via mouse-clicks) on that
+snippet or a subpart of it to transform it.  (Hereafter we will use the
+term 'snippet' to refer to both a single code block in the CCS or a
+subpart of that code block; if there is a need to distinguish between
+a code snippet and its subparts, we will do so in the text.)
+
+Thus to define code creation we need to define the transformations the
+user can perform, usually as a function of what the user has selected
+or is pointing to in the code snippet.
+
+Note: We can almost always define these transformations without having
+to resort to visualizations by specifying what they do to the
+equivalent lisp/bbl code.  (This is because the two representations
+should be isomorphic, given that we provide a representation in the
+textual representation for a HOLE)
+
+A snippet can either be a HOLE, or a partially-filled-in form.  Some
+operations can only be performed on one; some can be performed on
+both.  (Note:  There also now exists multi-holes)
+
+
+  III A.  Philosophy of the code creation process.  
+
+There are three levels of constraint we can impose on the user trying
+to create a VPL program:
+
+  -- Structural integrity 
+  -- Syntactic integrity 
+  -- Semantic integrity
+
+Structural integrity (well-formed lists) is implied in the concept of
+the VPL.  It should be impossible to create a visual representation of
+a degenerate form (ie, one with unbalanced parentheses).  No operation
+should allow this, but if we allow free-form entry of code through a
+type-in box, then we may not be able to guarantee this constraint.
+
+Syntactic integrity is not implied in the concept of the VPL but is
+manifested through the information stored about the icons that the
+user manipulates.  (E.g., the ABS function has exactly one argument;
+and IF consists of a required condition followed by a required THEN,
+followed by an optional ELSE.)
+
+We may choose to allow or not allow the user to delete the argument to
+ABS; and we may choose to make this option available dependent on a
+mode.
+
+If the user is allowed to perform operations that destroy the
+syntactic integrity of the code then not only will we need to
+understand whether or not a piece of code is 'complete' (ie, it has no
+'holes'), but also whether the code is syntactically correct.  (Of
+course, we could just send it off to Lisp to be evaluated regardless,
+but if we're designing a VPL, we might as well be able to let the user
+know beforehand that what he has constructed will not execute if we
+can determine that with reasonable effort).
+
+If we do insist on syntactic integrity, then we must make sure that
+this does not get in the way of being able to edit the code in a
+reasonable manner.  Example: (when foo (bar) (baz) (frob)) Suppose the
+user wants to change the WHEN to an IF.  Now of a sudden the form is
+syntactically incorrect.
+
+Note: Peter suggests that the set of useful non-syntactically valid
+transformations may be sufficiently limited that we can special case
+each one, so that in the above case, changing a WHEN to an IF would
+automagically wrap a PROGN around the (bar) (baz) (frob), leaving an
+optional ELSE hole to be filled in.
+
+Another way to deal with this type of thing is through color
+visualization.  Anything that is syntactically incorrect could turn
+red, say. Mousing on a red area would pop up a tooltip saying what is
+wrong. This gives the user flexibility while making it completely
+obvious that there is something wrong.
+
+Semantic integrity is here related to type information.  In theory we
+will have information about both argument types and return types for
+all Common Lisp and BBL functions.  Therefore it will sometimes be
+possible to tell whether an argument is invalid. E.g.,
+
+(+ 3 (concatenate 'string "abc" "def"))
+
+In practice, type propagation and type calculus is hard.  And while we
+are certainly capable of doing some checking, the amount of effort
+involved at this point in doing so may prove overwhelming.
+
+Note that the same sort of visual cueing as with syntactic integrity
+could be done: If an expression is of the wrong type it could turn a
+particular shade of red.  (And again, help would be available to tell
+the user why his code is screwed up.)
+
+If semantic integrity is to be checked, then either this information
+must also be conveyed to the client or else a mechanism to dynamically
+check via the server must be implemented.
+
+  III B. Nuts and bolts of the code creation process.  
+
+Here is a list of operations that either must exist or may prove
+very useful to effectively operate in the CCS.  The ones that 
+are marked with '*' are probably essential (and some exist already):
+
+* -- begin
+* -- focus
+* -- insert-into
+* -- replace
+* -- replace-function
+* -- fill-in-hole-explicitly	
+* -- delete
+  -- delete-damnit
+  -- clear
+  -- wrap
+  -- wrap-contiguous 
+* -- add-another
+* -- insert-between
+  -- insert-before
+  -- swap
+* -- undo
+* -- execute
+  -- execute-with-lambda-bindings
+  -- iconicize-or-textualize-everything-but
+  -- de-iconicize	 
+* -- help
+  -- complete
+
+Here is a more formal description of what these operations would do in
+terms of their effect on a piece of code:
+
+  -- BEGIN.  This operation is currently implemented by clicking on a
+palette entry when no snippet exists or no snippet has been selected.
+The operation creates a snippet whose form is dependent on the
+particular palette entry.  Example: Clicking on the palette entry for
+WHEN creates:
+
+  (when <condition-hole> &rest <any-hole>)
+
+
+  -- FOCUS.  This is the operation currently implemented by
+single-clicking on a snippet.  It selects that snippet which means
+that it may be the object of the next operation.  Example: When a 
+snippet is single-clicked, it turns a different color, indicating
+that it is selected.
+
+
+  -- INSERT-INTO.  This operation currently happens when a palette
+entry or toplevel snippet is single-clicked after a hole has been
+selected (see FOCUS).  The palette entry or snippet clicked on is
+inserted into the hole, replacing it.  If the object clicked on is a
+toplevel snippet it is cut and then pasted; the original snippet
+vanishes.  If the object clicked on is a palette entry, the form
+represented by the palette entry is copied into the hole -- of course,
+the palette entry remains.  Example:
+
+  (when <condition-hole> &rest <any-hole>)
+
+If the user selects <condition-hole> and then clicks on the palette entry
+for <, the user gets:
+
+  (when (< &rest <number-hole>) &rest <any-hole>)
+
+If the CCS looks like: 
+
+  (when <condition-hole> &rest <any-hole>)  (< 3 x)
+
+and <condition-hole> is selected and the user clicks on (< 3 x)
+then the user gets:
+ 
+  (when (< 3 x) &rest <any-hole>)
+
+That is, the (< 3 x) disappears as a toplevel snippet.
+
+
+  -- REPLACE. This is the same operation as INSERT-INTO, except that
+the object selected is not a HOLE but a partially filled-in form.  The
+effect is to erase the existing contents and replace them with the
+clicked-on object.  Since code is being destroyed (rather than a hole
+simply being filled in) this is a conceptually different operation
+then INSERT-INTO, although they may be implemented using the same
+mouse and key strokes.  Example:
+
+  (+ 1 2 3)   (/ 4 5)
+
+If the user selects the 2, then clicks on the (/ 4 5), the result is:
+
+  (+ 1 (/ 4 5) 3)
+
+The 2 has vanished, and the (/ 4 5) is no longer a toplevel snippet.
+
+Note: It would be possible to have an operation that 'copy/pasted'
+instead of 'cut/pasted'.
+
+
+  -- FILL-IN-HOLE-EXPLICITLY.  This operation allows the user to
+fill in the value of a hole by typing in text, rather than selecting
+a palette entry or a snippet.  It is currently implemented by first
+single clicking on a hole, then clicking again.  A little text box
+opens up for the user to type into.
+
+
+  -- DELETE.  This operation is currently invoked via the menu
+attached to a snippet.  Its effect depends on the snippet.  In a sense, 
+only certain snippets can be reasonably deleted.  For example, given 
+
+  (if (< 3 4) 5 6)
+
+it makes little sense to delete the condition, leaving 
+
+  (if 5 6)
+
+whereas it is perfectly syntactically reasonable to delete the else
+part of an IF, leaving 
+
+  (if (< 3 4) 5)
+
+If DELETE is executed on a snippet which should not be deleted - in a
+syntactic sense - then the operation turns into a CLEAR (see below).  
+Otherwise the snippet simply vanishes.  Example: 
+
+  (+ 1 2 3 4) 
+
+If the menu for the 3 is selected and the DELETE option chosen, the
+result will be: 
+
+  (+ 1 2 4)
+
+Note that whether a snippet can be deleted is a function of its
+parent, not of itself.  
+
+
+  -- DELETE-DAMNIT.  This operation allows one to delete something
+even if it would be syntactically incorrect to do so.  This may be
+useful in certain circumstances, when otherwise achieving some effect
+would be more contorted.  Example:
+
+  (if (< 3 4) 5 6)
+
+Suppose you really do want to transform this into 
+
+  (if 5 6)
+
+you would have to select the condition, then click on the 5, thereby
+copying it into the condition and leaving a hole; then select the
+hole, click on the 6 to copy it into the THEN-HOLE, thereby leaving a
+hole for the ELSE, and finally select the ELSE hole and delete it.
+(One could argue that the ELSE hole need not be deleted, but the point
+remains.)
+
+
+  -- CLEAR.  This operation turns whatever is being operated on into a
+hole.  Example:
+ 
+  (if (< 3 4) 5 6)
+
+If (< 3 4) is cleared, the result is:
+ 
+  (if <condition-hole> 5 6)
+
+Note that CLEAR is not necessary in and of itself.  The user can use
+DELETE or if the user wishes to replace contents, can use INSERT-INTO.
+Nonetheless it may be useful to have it as an explicit option in the
+sense that a user may realize that what he has written is wrong and
+want to get rid of it, but has not yet figured out what to put in its
+place.  
+
+
+  -- REPLACE-FUNCTION.  This operation changes the CAR of a form.
+Example:
+
+  (+ 3 4) 
+
+When the REPLACE-FUNCTION operator is chosen and the '-' icon
+is selected, we get:
+
+  (- 3 4)
+
+Note: This is conceptually different than replacing a hole because
+the semantics of the expression may change when the function
+itself changes.  For instance, it is in some sense illegal to replace
+
+  (+ 3 4) 
+
+  with 
+ 
+  (abs 3 4) 
+
+since ABS takes exactly one argument.  Nonetheless, it is often
+the case that when coding one needs to change the name of a function or
+special form (WHEN -> IF).  
+
+
+  -- WRAP.  This operation allows one to embed one function call
+within an existing one.  Example: 
+
+  (+ (- 3 4) 5) 
+
+If the user selects the (- 3 4) node and then executes a WRAP, somehow
+selecting the ABS palette entry as a parameter to the WRAP, the result
+will be:
+
+  (+ (abs (- 3 4)) 5)
+ 
+Note: This is a complex operation in three parts.  The user must
+select the object to wrapped, he must select the WRAP operation, and
+then select the item with which to wrap.  While complex, this is an
+extremely useful operation, without which, again, the user can only
+achieve by going through contortions.  
+
+
+  -- WRAP-CONTIGUOUS.  This operation allows a user to embed a
+function call around more than one snippet.  Example:
+
+  (defun foo (x) (f (1+ x)) (g (1+ x)) (print 'done))
+
+The user selects both the F and G snippets, then selects WRAP-CONTIGUOUS, 
+and then wraps with LET.  The result is:
+
+  (defun foo (x) (let () (f (1+ x)) (g (1+ x))) (print 'done))
+
+The ultimate desired result being the removal of the common
+subexpression:
+
+  (defun foo (x) (let ((y (1+ x))) (f y) (g y)) (print 'done))
+
+Note that WRAP is the same operation as WRAP-CONTIGUOUS with a single
+snippet selected.
+
+
+  -- ADD-ANOTHER.  This operation is performed on the ellipses that
+are shown in the VPL (represented by &rest or implicitly in the
+textual representation).  It adds another hole of whatever type is
+appropriate.  Example:
+
+  (progn a b c)
+
+In the visual representation there is an ellipsis after the c.
+Currently by clicking on the ellipsis we invoke the ADD-ANOTHER
+operation.  So if we did that on the above example, we would get 
+
+  (progn a b c <any-hole>)
+
+And of course the ellipsis would move after <any-hole>.  
+
+
+  -- INSERT-BETWEEN.  This operation is currently not available.  
+Conceptually it inserts a hole of an appropriate type 'between'.
+Example:
+
+  (progn a b c d)
+
+If we allowed a user to somehow select the region 'between' the b and the c,
+and then do this operation, we would get:
+ 
+  (progn a b <any-hole> c d)
+
+
+  -- INSERT-BEFORE.  This operation is currently not available, but
+probably needs to exist.  Conceptually it inserts a hole of an
+appropriate type 'before' the selected snippet.  Example:
+
+  (progn a b c d)
+
+If the user selects the b, then does this operation, the result will be:
+
+  (progn a <any-hole> b c d)
+
+While this operation may not strictly be necessary, again, it will be
+extremely useful; to achieve the effect may otherwise require
+contortions.
+
+Note that INSERT-BEFORE is logically equivalent to both INSERT-BETWEEN
+and INSERT-ANOTHER, by choosing the right definitions and selecting
+the appropriate objects.
+
+Note that we could also include INSERT-AFTER as an operation.  
+
+
+  -- SWAP.  This operation is not currently available.  It switches
+the order of two snippets at the same 'level'.  Example:
+
+  (progn a b c d)
+
+If the user selects b, and then selects the SWAP operation, the effect
+will be:
+ 
+  (progn b a c d)
+
+Note that we could have both SWAP-BEHIND and SWAP-AHEAD if we wanted to
+rather than just SWAP.  
+
+Again, this is an example of an operation which is not strictly
+necessary but should be prove useful and is difficult to achieve
+otherwise.
+
+
+  -- UNDO.  This operation undoes whatever the previous operation was.
+Obviously, this can get extremely tricky, but is again extremely
+useful.  
+
+The question arises whether we can do unlimited UNDO, or will we have
+to restrict it to a single undo.
+
+
+  -- EXECUTE.  This is the operation currently implemented by
+double-clicking on a complete snippet.  The form is evaluated and the
+result shown in some fashion in the bottom subwindow.
+
+
+  -- EXECUTE-WITH-LAMBDA-BINDINGS.  This operation is not currently
+implemented.  Suppose we have 
+
+  (defun foo (x y) (+ (abs y) (+ x 2)))
+
+We wish to test the subexpressions to make sure they work, 
+but we cannot simply execute 
+
+  (abs y) 
+
+because Y would not be bound.  What we want to do is provide a test
+value for Y and then execute the subexpression.  So if the user asks
+to perform this operation after selecting the a snippet, a popup
+window should ask the user to provide a value (or values) for all the
+free variables within the snippet.  Once these values are provided,
+the expression would be appropriately wrapped with a LET and executed.
+
+
+  -- ICONICIZE-OR-TEXTUALIZE-EVERYTHING-BUT.  This operator replaces
+everything that is not selected by appropriate icons or text so that
+screen space can be saved for the code the user is working on.  Since
+VPL code takes up more space than simple text, it will become
+important to have this capability once anyone wants to write more than
+a few lines of code.
+
+
+  -- DE-ICONICIZE.  This operator undoes the result of the above
+operator.
+
+
+  -- HELP.  This operator should be contextual.  It certain
+circumstances it may pop up a submenu asking what kind of help you
+want.  In other circumstances it may bring up a separate page with
+help information.  The Help operator should be applicable pretty much
+anywhere, on any object, or on empty space.
+
+
+  -- COMPLETE.  This operator is invoked when the user wants to enter
+a particular object or function that has a name.  When the user begins
+to type, the system can restrict the range of possible selections by
+considering what he has so far typed (and the type constraints on the
+object he is entering text for).  Exactly how completions should be
+displayed or invoked is not defined here.  
+
+
+IV.  The results space.  
+
+As Peter has discussed, it seems like a good idea to be able to
+associate a result with the form that created that result.  For
+this and other reasons we need a history mechanism similar in spirit
+to the current weblistener history, but hopefully more featureful.
+
+One idea that Jeff S has discussed is to associate methods with every
+type of object that can be returned, and for many objects have some
+sort of iconic representation that one can then click on and have the
+method options come up.
+
+For instance if the number 1 is returned, this is not too interesting;
+one could ask that 1 be described (in the lisp sense) but that's about
+it.
+
+On the other hand, if some array of numbers is returned we might have
+options to inspect, show the length and other properties of, graph,
+etc.  A gene can have an option to display itself in the frame browser.
+
+Clearly the software must arrange the results in reasonable order and
+in a visually pleasing way, and provide access to previous history
+which will no longer fit on the screen.  Maintaining the state of the
+screen to be visually pleasing will require some kind of module and I
+would think a lot of effort.
+
+V. The VPL client / VPL server interface. 
+
+*** Not done ***
+
+The user will continue to operate in his own package just as he does
+in the weblistener.  For this to work we need a similar if less
+complicated REPL to that of the weblistener, and we need to be able to
+maintain information about the user's session and package across the
+client server boundary just as the weblistener does (although the
+mechanism need not be identical).
+
+
+VI.  Proposed intermediate goal for VPL.
+
+See the file vpl-example-code.bike
+

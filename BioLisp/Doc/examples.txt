@@ -1,0 +1,165 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001, 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+
+;;; (20040430 Jeff) Use the BioCyc->Organism connection to instantiate pathway models
+
+(defun instantiate-pathway (pathway)
+  (loop for reaction in (ensure-listp (#^reaction-list pathway))
+	as enzymes = (loop for ez-reaction in (ensure-listp (#^enzymatic-reaction reaction))
+			   collect (#^enzyme ez-reaction))
+	append (loop for enzyme in enzymes
+		      collect (#^gene enzyme))))
+
+;;; Count the number of proteins in the various organisms:
+;;; (Jeff Elhai, 20040306).
+
+(LOOP FOR organism IN *loaded-organisms*
+      AS protein-total = 0
+      DO (LOOP FOR gene IN (Genes-of organism)
+               DO (IF-TRUE (#^ENCODES-PROTEIN gene)
+                      THEN (INCF protein-total)))
+         (FORMAT T "~&Organism: ~A      Proteins: ~A"
+                   organism protein-total))
+
+;;; A better version, by JP:
+
+(loop for organism in *loaded-organisms* collect
+   (list organism (count-if (function #^encodes-protein) 
+                            (genes-of organism))))
+
+
+Examples of Biobike Usage and Programming
+===========================================
+
+(defun link-organism-genes-by-go-function (name-or-partial-name-of-organism-a name-or-partial-name-of-organism-b)
+  "Find all of the genes in one organism that are also in the other organism based upon functional homology as defined by shared GO bindings."
+  (let ((ga* (bio::organism-genes (bio::organism name-or-partial-name-of-organism-a)))
+	(gb* (bio::organism-genes (bio::organism name-or-partial-name-of-organism-b)))
+	)
+    ;; Hash the functions of ORG B for efficiency.
+    (clrhash *temp-table*)
+    (loop for gb in gb* 
+	  do (let* ((go-binding (bio::gene-go-binding gb))
+		    (go-id (when go-binding (bio::go-binding-go-id go-binding)))
+		    )
+	       (when go-id
+		 (push gb (gethash go-id *temp-table*)))))
+    ;; Now we can efficently do the scan.  
+    (loop for ga in ga*
+	  as result = (let* ((go-binding (bio::gene-go-binding ga))
+			     (go-id (when go-binding (bio::go-binding-go-id go-binding)))
+			     )
+			(when go-id (gethash go-id *temp-table*)))
+	  when result
+	  collect (list ga result))))
+
+(defun find-similar-genes (target-gene in-organism)
+  #.(one-string "Given a gene and an orgnism, orders all the gene in the organism according "
+		"to how similar they are to the target gene, in order of the number of common "
+		"GO frames they have, all the way up the tree.  Genes with 0 common frames are dropped.")
+  (sort 
+   (loop with target-frames = (go-closure-cached target-gene)
+	 for gene in (#^genes in-organism)
+	 as n-common = (count-commonalities (go-closure-cached gene) target-frames)
+	 when (not (zerop n-common))
+	 collect (cons n-common gene))
+   #'(lambda (a b) (> (car a) (car b)))))
+
+;;; This could just use intersection, but this is faster and less consy.
+
+(defun count-commonalities (l1 l2)
+  #.(one-string "This count the number of elements that two list have in common (by EQ).")
+  (loop for i in l1
+	when (member i l2)
+	sum 1))
+
+(defun render-pathway-in-organism-terms (pathway organism)
+  "Uses the GO->gene bindings, and the pathway->reaction->Go bindings, figure out the genes in a given organism that make up a pathway"
+  ;; Note, reaction list weirdly can sometimes only be one element (non-listp!)
+  (loop for reaction in (let ((reactions? (#^reaction-list pathway)))
+			  (if (listp reactions?) reactions?
+			    (list reactions?)))
+	collect (loop for go-frames in (#^go-frames reaction)
+		      collect (loop for gene in (#^related-genes go-frames)
+				    when (eq organism (#^organism gene))
+				    collect gene))))
+
+(defun render-all-pathways (organism)
+  "Uses render-pathway-in-organism-terms to instantiate every path in the organism!"
+  (loop for pwy in (bio::compute-transitive-slot #$pathways #$subclasses)
+	as instantiated-pwy = (render-pathway-in-organism-terms pwy organism)
+	when instantiated-pwy
+        collect (list pwy instantiated-pwy)))
+
+;;; Elhai's problem (by JP; Supported by /Lib/elhai-query.lisp):
+
+;;; Assumes we have done a USE-ORGANISM on the organisms, and hihara table is loaded.
+
+(defun elhai-query-v2 
+       (
+        match-organism ortho-organism 
+        non-ortho-organism hihara-table
+        &key (evalue 1.0e-30)
+        &aux (*db-verbose* nil) ortho-matches hihara-matches
+        )
+
+  (setq ortho-matches
+        (genes-orthologous-to-organism-a-but-not-orthologous-to-organism-b
+         match-organism ortho-organism non-ortho-organism evalue))
+
+  (format t "~&;; ~D genes match via crossblast~%" (length ortho-matches))
+
+  (setq
+   hihara-matches
+   (select-matching-geneIDs-from-table
+    hihara-table ortho-matches
+    #'(lambda (v) (>= (count-if #'(lambda (x) (>= x 1.5)) v) 2))))
+                                
+  (format t "~&;; ~D genes satisfy hihara test.~%" (length hihara-matches))
+
+  (collect-gene-sequences 
+   hihara-matches :start-base-offset -300 :nbases 300 :verbose? nil)
+
+  )
+
+
+(defun do-elhai-query ()
+  (let ((syn (use-organism "s6803"))
+        (promed (use-organism "promed4"))
+        (promit (use-organism "promit"))
+        (h (load-hihara-table))
+        )
+    (with-organisms-db (dbc) (elhai-query syn promed promit h))
+    ))
+
+(defun do-elhai-query-v2 ()
+  (let ((syn (use-organism "s6803"))
+        (promed (use-organism "promed4"))
+        (promit (use-organism "promit"))
+        (h (load-hihara-table))
+        )
+    (with-organisms-db (dbc) (elhai-query-v2 syn promed promit h))
+    ))
+

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head> <title> VPL Workspace </title> </head>
+<body>
+
+<center>
+<h5>
+&nbsp;&nbsp;&nbsp;<a href="vpl2-tutorial.html">Main menu</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="palette.html">The Palette</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="boxes.html">Function and data boxes</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp; The Workspace &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="resultsarea.html">The Results Area</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="errors.html">When Things Go Wrong</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="define.html">Define and Define-function</a> &nbsp;&nbsp;&nbsp; 
+<br/></h5>
+</center>
+<br/><center><h2>The Workspace</h2> </center>
+
+<b>The workspace is your playground for putting blocks of code together.</b>
+<br/><br/>
+<ul>
+<li><a href="#whole">The Workspace as a whole</a></li>
+<li><a href="#moving">Moving things around</a></li>
+</ul>
+<br/>
+<a name="whole"></a>
+<h3>The Workspace as a whole</h3>
+The green arrows in the upper left corner of the workspace work much the same
+way as the broswer's 'Back' and 'Forward' buttons.  You can go back up to 10 
+edits in the workspace as well as forward again.  The VPL's back button
+transcends both clearing the workspace as well as a browser refresh. <br/><br/>
+<img src="arrowsresizeclear.jpg" alt="ignore" /><br/><br/>
+Moving to the far right one sees the resize icon.<br/>
+It's easy to clear the workspace if things get too cluttered, 
+by either clicking the Clear icon, the pink box in the upper right corner, 
+or by selecting 'Clear Workspace' from the File menu.<br/><br/>
+A convenient way of freeing up space within the Workspace is using
+Collapse.  <br/>
+You can collapse entire function boxes:<br/>
+<img src="collapsefunction.jpg" alt="ignore" /><br/><br/>
+and you can collapse optional arguments:<br/>
+<img src="collapseoptions.jpg" alt="ignore" /><br/><br/>
+You can uncollapse things by selecting 'Expand' in the same menu
+you found collapse.  <br/>
+
+<br/>
+<a name="save"> </a>
+Please note that the Save and Restore workspace options are no longer used.
+If you have anything valuable saved in a workspace, resave it as described
+below.<br/>
+The File menu contains options to save and restore 'user sessions', meaning
+the workspace, the results area, any variables you've created with ASSIGN or DEFINE, 
+and any functions you've created with DEFINE-FUNCTION.
+Give your user session a descriptive name when saving it so that you 
+can easily recognize it when you go to restore your session via the File menu.
+Saving sessions is useful because the system may be reinitialized 
+between one of your sessions and the next, and your work would otherwise be
+lost.
+<br/><br/>
+<img src="wssave.jpg" alt="ignore" /><br/><br/>
+<h3> Moving things around </h3>
+
+<a name="moving"></a>
+
+Both holes and functions have pulldown menus, and we refer to this
+group as 'nodes'.  The pulldown menus have options helpful
+in moving around blocks of code.  <br/>
+
+
+There are lots of ways to move boxes around in the workspace.  
+Moving boxes is safe -- you won't lose any information you've typed in -- 
+and useful for that same reason.  <br/>
+
+
+
+
+Functions can be arguments to other functions.  The inverse of passing a 
+function as an argument is the use of the SURROUND option in the node's 
+pulldown menu.
+You can surround a function around any node, making it the first
+argument to whatever function you select.
+Clicking this option causes a red box to appear around the node to be surrounded.
+Then you select a function from the palette.
+It is also easy to do the opposite, using UNSURROUND.<br/><br/>
+<img src="surround.jpg" alt="ignore" /> <br/><br/>
+<a name="copy"></a>
+Using the pulldown menu, nodes can be <i>copied</i>
+<br/><br/>
+<img src="copy.jpg" alt="ignore" /><br/><br/><br/><br/>
+or <i>cut</i><br/><br/>.
+<img src="cut.jpg" alt="ignore" /><br/><br/><br/><br/>
+You can also select a box and use the keyboard
+shortcuts Ctrl+C to copy and Ctrl+X to cut, instead of using 
+the pulldown menu.  
+In each case, note the <i>Mode line</i> telling you what has been copied or cut.
+<br/><br/>
+These values can then be <i>pasted</i> directly to the workspace <br/><br/>
+<img src="pastetoplevel.jpg" alt="ignore" /><br/><br/>
+or into an empty hole.<br/><br/>
+<img src="pasteintohole.jpg" alt="ignore" /><br/><br/>
+You can select an open hole and use the keyboard shortcut
+Ctrl+Z to paste into the hole, or, with nothing selected,
+use Ctrl+Z to paste to toplevel.  <br><br>
+We can also INSERT a node into an empty hole.  Click the empty hole,
+then select 'Insert' from the pulldown menu of the node you wish to copy over.
+<br/><br/><img src="insert.jpg" alt="ignore" /><br/><br/>
+To insert a node as well as cut it, select 'Cut/Insert'.  Note the mode line.<br/><br/>
+<img src="cutinsert.jpg" alt="ignore" /><br/><br/>
+
+Be sure to check out the Function and data boxes page for more useful information.
+<br/><br/>
+It is also possible to reverse the order of boxes in the workspace.
+This is useful if you have a lot of toplevel boxes and they take up
+more than a screen-full of workspace area.  New toplevel boxes you create 
+will then get placed in the upper left rather than at the bottom of your 
+workspace.
+<br/><br/>
+<img src="reverse.jpg" alt="ignore" /><br/><br/>
+
+
+<center>
+<h5>
+&nbsp;&nbsp;&nbsp;<a href="vpl2-tutorial.html">Main menu</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="palette.html">The Palette</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="boxes.html">Function and data boxes</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp; The Workspace &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="resultsarea.html">The Results Area</a> &nbsp;&nbsp;&nbsp; |
+&nbsp;&nbsp;&nbsp;<a href="errors.html">When Things Go Wrong</a> &nbsp;&nbsp;&nbsp;  |
+&nbsp;&nbsp;&nbsp;<a href="define.html">Define and Define-function</a> &nbsp;&nbsp;&nbsp; 
+
+<br/></h5>
+</center>
+
+</body></html>
+
+
+<!--
+Functions can be arguments to other functions, and we've seen
+how to do this by bringing a function down from the palette into
+the hole of another function.  But what if you want to do to the opposite?
+That is, bring down a function from the palette and place it around a code
+block that you've already constructed in the workspace.  
+You can do this using the SURROUND WITH feature.  
+-->

@@ -1,0 +1,60 @@
+(html
+  (head 
+   (title "AJAX PING")
+   (meta http-equiv "Content-Script-Type" content "text/javascript")
+   (css
+     (body padding "6pt")
+     ((id "ping")
+      font-family courier
+      color "#ff0000"
+      font-size "240"
+      border "solid thin"
+      padding "6pt")
+     ((id "pong")
+      font-family courier
+      color "#00ff00"
+      font-size "240"
+      border "solid thin"
+      padding "6pt")
+     ((id "persecond")
+      font-family courier
+      font-size "120"
+      border "solid thin"
+      padding "6pt")
+     ((and (id "messages") p)
+      background "#ddddff"
+      padding "3pt"
+      margin-top "0pt"
+      margin-bottom "0pt"
+      font-size "12pt")
+     ((and (id "debugging") p)
+      background "#ffddff"
+      padding "3pt"
+      margin-top "0pt"
+      margin-bottom "0pt"
+      font-size "12pt")
+     ((and (id "channel-log") p)
+      background "#ffddbb"
+      padding "3pt"
+      margin-top "0pt"
+      margin-bottom "0pt"
+      font-size "12pt")
+     (p padding "0pt")
+     (input width "100%")
+     (.prompt color "#aaaaaa")
+     (.input color "#000000" font-weight bold padding "0pt" padding-top "6pt" margin "0pt")
+     (.result color "#0000ff" padding-top "3pt" margin "0pt")
+     (.output color "#ff00ff" padding-top "3pt" margin "0pt")
+     (.error color "#ff0000" padding-top "3pt" margin "0pt"))
+
+   (script type "text/javascript" src "queue.js")
+   (script type "text/javascript" src "ajax.js")
+   (script type "text/javascript" src "http.js")
+   (script type "text/javascript" src "ping.js"))
+  ((body onload "startTransport();" onunload "shutdownTransport()")
+   ((div id "ping"))
+   ((div id "pong"))
+   ((div id "persecond"))
+   (p (input type button onclick "startPings()" value "Start")
+      #+(or)(input type text onkeyup "sendOnKeyUp(event);" id "expr"))))
+

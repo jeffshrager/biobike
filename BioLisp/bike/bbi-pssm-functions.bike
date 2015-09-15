@@ -1,0 +1,314 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-  je
+
+(IN-PACKAGE BBI)
+
+(DEFUN Segment-of-string (string from to)
+  (IF (= to *unprovided+*)
+      (SUBSEQ string (- from 1))
+      (SUBSEQ string (- from 1) to)))
+
+
+(DEFINE-FUNCTION Make-PSSM-FROM 
+  SUMMARY "Produces a position-specific scoring matrix from an aligned list of sequences"
+  REQUIRED (aligned-list (DNA) (PROTEIN))
+    TYPE aligned-list = List
+  KEYWORD Pseudocounts = 1
+    TYPE pseudocounts = Nonnegative-number
+  KEYWORD Background-from
+  KEYWORD From = 1
+    TYPE From = Positive-number
+    CONVERT From FROM number TO integer
+  KEYWORD To = *Unprovided+*
+    TYPE To = Positive-number
+  INITIALIZE seq-list =
+     (LOOP FOR item IN aligned-list
+           COLLECT
+              (COND
+                 ((STRINGP item) (SEGMENT-OF-STRING item from to))
+                 ((AND (LISTP item) (= (LENGTH item) 2) (STRINGP (biolisp::SECOND item)))
+                     (SEGMENT-OF-STRING (biolisp::SECOND item) from to))
+                 (T (ERROR "Each element of the argument list must be a string!"))))
+  RETURNS table
+  BODY
+    
+    (LET* ((all-letters (string-join seq-list ""))
+           (type
+              (COND
+                 (dna 'DNA)
+                 (protein 'PROTEIN)
+                 (T (SEQUENCE-TYPE-OF all-letters))))
+          (alphabet 
+               (IF (EQUAL type 'DNA) *nucleotides* *amino-acids*))
+          (alphabet-plus-gap (CONS "-" alphabet))
+          (alphabet-length (LENGTH alphabet)) 
+          (N (LENGTH seq-list))
+          (number-of-pos (LENGTH (biolisp::FIRST seq-list)))
+          (B pseudocounts)
+          (pcounts-list
+             (COND
+                ((NULL background-from)
+                   (MAKE-LIST alphabet-length :INITIAL-ELEMENT (/ B alphabet-length)))
+                ((AND (LISTP background-from) 
+                      (= (LENGTH background-from) alphabet-length)
+                      (EVERY 'NUMBERP background-from))
+                   (MAPCAR (LAMBDA (c) (* B c)) background-from))
+                ((SYMBOL= type 'DNA)
+                    (MAPCAR (LAMBDA (c) (* B c))
+                       (BACKGROUND-FREQUENCIES-OF background-from DNA)))
+                (T (MAPCAR (LAMBDA (c) (* B c))
+                       (BACKGROUND-FREQUENCIES-OF background-from PROTEIN))))) 
+          (count-table (NEW-TABLE {number-of-pos alphabet-plus-gap} INITIALIZE 0))
+          (freq-table (NEW-TABLE {number-of-pos alphabet} INITIALIZE 0.0))
+         )
+        
+
+     (IF (NOTEVERY 'IDENTITY (MAPCAR (LAMBDA (x) (= (LENGTH x) number-of-pos))
+                             seq-list))
+         (LET ((first-problem
+                 (LOOP FOR seq IN seq-list
+                       FOR item FROM 1
+                       WHEN (NOT (= number-of-pos (LENGTH seq)))
+                         DO (RETURN (LIST item seq)))))
+           (ERROR (ONE-STRING "All sequences are not of same length!"
+                      "~&First problem is with item number ~A, with the sequence:"
+                      "~&~S")
+                  (biolisp::FIRST first-problem) (biolisp::SECOND first-problem))))
+
+     (LOOP FOR seq IN seq-list DO
+          (LOOP FOR char ACROSS seq
+               FOR pos FROM 1
+               AS letter = (STRING char)
+               DO (INCF count-table[pos letter])))
+     
+     (LOOP FOR letter IN alphabet 
+           FOR pcounts IN pcounts-list
+           DO
+          (LOOP FOR pos FROM 1 TO number-of-pos
+               AS value = count-table[pos letter]
+               AS adjusted-value 
+                    = (bbl::/ (+ value pcounts) (+ N B))
+               DO (SETF freq-table[pos letter] (FLOAT adjusted-value))))
+           ;   DO (SETF freq-table[pos letter] adjusted-value)))
+     
+     freq-table))
+
+(DEFINE-FUNCTION Information-of 
+   REQUIRED aligned-sequences
+     TYPE aligned-sequences = (OR List Table)
+   FLAG DNA
+   FLAG protein
+   INITIALIZE freq-table =
+     (IF (LISTP aligned-sequences)
+         (COND
+            (protein
+               (MAKE-PSSM-FROM aligned-sequences PROTEIN PSEUDOCOUNTS 0))
+            (DNA
+               (MAKE-PSSM-FROM aligned-sequences DNA PSEUDOCOUNTS 0))
+            (T (MAKE-PSSM-FROM aligned-sequences PSEUDOCOUNTS 0)))
+         aligned-sequences)
+   INITIALIZE labels = (LABELS-OF freq-table)
+   INITIALIZE alphabet = *amino-acids*
+   INITIALIZE max-entropy = (LOG2 20)
+   PUBLIC
+   BODY
+     (IF (NOT (= (LENGTH labels) 2))
+         (ERROR "Argument must be a two-dimensional table!"))
+     (COND
+        ((SET-DIFFERENCE labels[2] (CONS "-" *amino-acids*)
+                  :TEST 'EQUAL)
+           (ERROR "Argument not a proper table of amino acids or nucleotides!"))
+        ((NOT (SET-DIFFERENCE labels[2] {"A" "C" "G" "T" "-"}
+                  :TEST 'EQUAL))
+           (SETF alphabet *nucleotides*)
+           (SETF max-entropy 2)))
+       
+     (LOOP FOR pos IN (biolisp::FIRST labels)
+           AS column-sum =
+               (LOOP FOR letter IN alphabet
+                     SUM freq-table[pos letter])
+           AS hyphens? = (> (ABS (- 1 column-sum)) .001)
+           WHEN hyphens?
+             COLLECT "-"
+           WHEN (NOT hyphens?)
+             COLLECT 
+               (- max-entropy
+                  (LOOP FOR letter IN alphabet
+                        AS p = freq-table[pos letter]
+                        AS value
+                          = (IF-TRUE (= p 0)
+                                THEN 0
+                                ELSE (- (* p (LOG2 p))))
+                      SUM value))))
+
+(DEFUN Optimize-tables (pssm bg-list info-content type &KEY (cutoff 0) )
+  (without-code-walker
+    (LET* ((alphabet 
+            (ECASE type
+              ((DNA ONE-STRANDED ONE-STRANDED-DNA) (string-join *nucleotides* ""))
+              (PROTEIN (string-join *amino-acids* ""))
+              (NIL (ERROR "Non-protein/DNA PSSMs not currently supported"))))
+           (pos-max (LENGTH (LABELS-OF pssm DIMENSION 1)))
+           ;; Create an array to hold the background frequencies of the
+           ;; alphabet
+           (bg-table 
+            (MAKE-ARRAY 128 :element-type 'single-float :initial-element 0.0))
+           ;; Create an array who's first dimension indexes the possible
+           ;; positions and second dimension indexes all possible characters
+           ;; (assume CHAR-CODE of normal characters is in range 0 - 128)
+           (main-table 
+            (MAKE-ARRAY 
+             (list (1+ pos-max) 128) 
+             :element-type 'single-float :initial-element 0.0
+             ))
+           ;; Create a boolean vector true where the information content
+           ;; is greater than the cutoff value.
+           (info-list
+            (IF-TRUE (= cutoff 0)
+                     THEN (MAKE-LIST pos-max :INITIAL-ELEMENT T)
+                     ELSE (MAPCAR (LAMBDA (x) (AND (NUMBERP x) (>= x cutoff))) 
+                                 info-content)
+                     )))
+ 
+      ;; initialize the BG-TABLE from the BG-LIST
+      (LOOP FOR letter ACROSS alphabet 
+            FOR freq IN bg-list
+             AS index = (char-code letter)
+             DO (WHEN (> index 127) 
+                  (ERROR "Ruh roh. Bad character in alphabet!"))
+                (SETF bg-table[index] (FLOAT freq)))
+        
+      ;; Fill in the main table for all positions for all characters
+      ;; in the alphabet (indexed by char-code)
+      (XLOOP FOR pos FROM 1 TO pos-max
+             FOR info-rich IN info-list
+             WHEN info-rich
+             (LOOP FOR aa ACROSS alphabet
+                    AS index = (char-code aa)
+                  ; AS freq = (FLOAT (LISP:/ pssm[pos (STRING aa)] bg-table[index]))
+                    AS value = bg-table[index]
+                    AS freq
+                      = (IF (= value 0)
+                            (FLOAT 0)
+                            (FLOAT (LISP:/ pssm[pos (STRING aa)] value)))
+                    DO (SETF (AREF main-table pos index) freq)
+                    ))
+
+      (LIST main-table info-list)
+
+      )))
+
+(DEFINE-FUNCTION Apply-PSSM-to
+   SUMMARY "Scans across DNA or protein sequence[s] for matches with Position-specific scoring matrix"
+   REQUIRED (sequence-source (DNA Protein) with-pssm-from)
+     TYPE sequence-source = (OR Organism Contiguous-sequence String 
+                                Gene Protein Labeled-sequence List)
+     TYPE with-pssm-from = List
+   KEYWORD With-background-from
+     TYPE With-background-from = List
+   KEYWORD Threshold = 500
+     TYPE threshold = Nonnegative-number
+   KEYWORD (Info-threshold Information-threshold) = 0
+     TYPE info-threshold = Nonnegative-number
+   KEYWORD Pseudocounts = 1
+     TYPE pseudocounts = Nonnegative-number
+   KEYWORD From = 1
+     TYPE From = Positive-number
+   KEYWORD To = *unprovided+*
+     TYPE To = Positive-number
+     ;; FLAG Display
+   FLAG One-strand
+   PUBLIC
+   INITIALIZE type-specified = NIL
+   INITIALIZE type = 
+      (COND
+         (protein 'Protein)
+         (one-strand 'one-stranded-DNA)
+         (DNA 'DNA)
+         (T (SETF type-specified NIL)))
+   INITIALIZE sequence-set =
+      (COND
+         ((TYPEP sequence-source 'Protein)
+             (IF-TRUE DNA
+                 THEN (LIST (GENE-OF sequence-source))
+                 ELSE (SETF type 'Protein)
+                      (LIST sequence-source)))
+         ((TYPEP sequence-source 'Gene)
+             (IF-TRUE Protein
+                 THEN (LIST (PROTEIN-OF sequence-source))
+                 ELSE (SETF type 'DNA)
+                      (LIST sequence-source)))
+         ((AND Protein (TYPEP sequence-source 'Organism)) 
+             (PROTEINS-OF sequence-source))
+         ((TYPEP sequence-source 'Organism)
+            (SETF type 'DNA)
+            (REPLICONS-OF sequence-source))
+         ((TYPEP sequence-source 'Contiguous-sequence)
+            (SETF type 'DNA)
+            (LIST sequence-source)) 
+         ((LISTP sequence-source)
+             (LOOP FOR item IN sequence-source
+                   FOR default-label FROM 1
+                   DO (COND
+                         ((TYPEP item 'Labeled-sequence)
+                            (SETF item
+                              (LIST (LABELED-SEQUENCE-LABEL item)
+                                          (LABELED-SEQUENCE-SEQUENCE item))))
+                         ((OR (STRINGP item) 
+                              (AND (LISTP item) (= (LENGTH item) 2) (STRINGP (biolisp::SECOND item))))
+                            (LET ((seq (IF (STRINGP item) item (biolisp::SECOND item)))
+                                  (label (IF (STRINGP item) default-label (biolisp::FIRST item))))
+                             (IF type
+                                 (IF (NOT (SYMBOL= (SEQUENCE-TYPE-OF seq) type))
+                                     (ERROR "Following sequence not of ~A type '~A':~&~A"  
+                                           type 
+                                           (IF type-specified "specified" "implied")
+                                           seq))
+                                 (SETF type (SEQUENCE-TYPE-OF seq)))
+                             (SETF item (LIST label seq))))
+                         ((AND (IsFRAME? item) (TYPEP item 'PROTEIN))
+                            (SETF type 'PROTEIN))
+                         ((AND (IsFRAME? item)
+                               (OR (TYPEP item 'GENE) (TYPEP item 'Organism)
+                                   (TYPEP item 'CONTIGUOUS-SEQUENCE)))
+                            (SETF type 'DNA)))
+                   COLLECT item))
+         ((TYPEP sequence-source 'Labeled-sequence)
+             (LIST (LIST (LABELED-SEQUENCE-LABEL sequence-source)
+                         (LABELED-SEQUENCE-SEQUENCE sequence-source))))
+         ((STRINGP sequence-source)
+             (LIST (LIST "Seq 1" sequence-source)))
+         (T (ERROR "Unidentified sequence type")))
+    INITIALIZE bg =
+       (IF-TRUE with-background-from
+           THEN with-background-from
+           ELSE (IF (SYMBOL= type 'Protein)
+                    (BACKGROUND-FREQUENCIES-OF sequence-source PROTEIN)
+                    (BACKGROUND-FREQUENCIES-OF sequence-source DNA)))
+    INITIALIZE pssm =
+      (COND
+         ((AND with-pssm-from (SYMBOL= type 'Protein))
+              (MAKE-PSSM-FROM with-pssm-from PROTEIN BACKGROUND-FROM bg 
+                      PSEUDOCOUNTS pseudocounts
+                      FROM from TO to))
+         (with-pssm-from 
+              (MAKE-PSSM-FROM with-pssm-from DNA BACKGROUND-FROM bg 
+                      PSEUDOCOUNTS pseudocounts
+                      FROM from TO to))
+         (T (ERROR (ONE-STRING "PSSM or sequences must be given with "
+                        "WITH-PSSM-FROM clause"))))
+    INITIALIZE processed-information =
+      (COND
+         (with-pssm-from (INFORMATION-OF with-pssm-from))
+         (T (ERROR (ONE-STRING "Information list througn INFORMATION clause "
+                      "or aligned sequences through WITH-PSSM-FROM clause "
+                      "must be provided"))))
+    INITIALIZE optimized-tables =
+            (OPTIMIZE-TABLES pssm bg processed-information 
+                 type  :CUTOFF info-threshold)
+    INITIALIZE optimized-pssm = (biolisp::FIRST optimized-tables)
+    INITIALIZE info-list = (biolisp::SECOND optimized-tables)
+    INITIALIZE both-strands? = nil
+    BODY
+      (SETF both-strands? (AND (SYMBOL= type 'DNA) (NOT one-strand)))
+      (PSSM-BODY sequence-set pssm optimized-pssm  
+                     info-list threshold both-strands?))

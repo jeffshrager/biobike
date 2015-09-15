@@ -1,0 +1,1369 @@
+
+     			Test script for VPL 2.0
+
+
+Bring up a fresh VPL.  The idea is to 'put it through its paces' by
+testing all (or most) of the capabilities and options the VPL has.
+Report any failures (any VPL internal errors or failures to do as
+described) to the system maintainers.
+
+If a new window fails to appear, ensure that your popup blocker
+allows new windows from the VPL.  
+
+Help menu
+
+#+OBSOLETE
+  Help! --> Example code --> Addition Example, Simple Loop Example
+    Code examples should appear in workspace and result boxes in results area
+
+#+OBSOLETE
+  Help! --> Manual/General help
+    Main BBL help page should appear (kill the popup)
+
+  Help! -> How to Get Started.
+     A 'How to Get Started' page should come up.
+
+  Help! -> Ways to Get Help.
+     A 'Ways to Get Help' page should come up.
+
+  Help! --> Interface Tutorial
+    A tutorial should appear (kill the popup)
+
+  Help! --> Examples -> Examples related to sequences -> What fraction...
+
+  Help! -> Biobike, The Manual.
+    'Help for BBL Users' should come up.
+
+  Help! -> Known Bugs, Workarounds
+    'Previously Asked Questions' should come up.
+
+  Help! -> Report Problem, Ask for Help
+    A window with an input box should come up.
+    Enter 'This is a test. Ignore.' and send it off (you may
+      have to scroll down to find the SEND button).  It doesn't
+      work on Windows. Need to do this from a Linux machine.
+      A Weblistener window should appear with a confirmation.
+      Email gets sent to biobike@goolegroups.com.  Verify that it is received.
+      Doesn't seem to be being received!
+
+#+OBSOLETE
+   Help! -> What's New.
+     Opens to vplblog.wordpress.com
+     This should probably go away. Last entry in 2010!
+
+#+OBSOLETE
+  Help! --> Search for
+    An input box should appear.  Type "gene" (without the double quotes)
+    and hit enter or click submit.  A popup with various relevant
+    documentation links should appear.  Click on 'search for' again,
+    this time type in "compare proteins" (without the double quotes); 
+    again, a popup with various relevant links should appear.  (The two
+    word search invokes a somewhat different mechanism than the one word search,
+    which is why we have you do both.)
+
+Use the Help: Search Box.
+    Type "gene" (without the double quotes)
+    and hit enter or click submit.  A popup with various relevant
+    documentation items should appear. If you click on one of the '?'
+    bubbles you should be taken to the documentation page for that function.
+    If you click on the function box itself the function box should
+    appear in the workspace.
+
+    Clear the window and type in "compare proteins" (w/o the double quotes); 
+    again, a popup with various relevant links should appear.  (The two
+    word search invokes a somewhat different mechanism than the one word search,
+    which is why we have you do both.)  Click on 'Search/Compare'. A window
+    listing the contents of the 'search/compare' module should appear.
+
+
+File menu
+
+  File --> Yours
+    The usual directory listing for the current user (same as weblistener)
+    should appear
+
+  File --> Shared Files
+    The directory listing for the shared directory should appear
+
+  File --> Upload a file
+     A popup with the weblistener upload facility page should appear.
+     The BROWSE button should bring up a window with a directory
+       listing on your local machine.
+
+  File --> User Contributed Stuff
+     A popup window listing user contributed packages should appear.
+     If you click to use one the popup should change to tell you you
+       are using the package but there's no indication in the VPL.
+       However, the functions and variables for that package should
+       appear in the blue FUNCTIONS and VARIABLES palette menus.
+       Click on 'Use this package' for PLOT GENOME SIZES and 
+       PLOT-GENOME-SIZES should appear on the FUNCTIONS menu.
+
+  File --> Exit
+      Popup with instructions on how to exit.
+
+  File --> Exit and Logout
+      Popup saying you have been logged out. Problem? If I hit
+      refresh (F5) at this point the wheel spins but nothing happens.
+      Caveat Emptor I suppose.
+      In any case you have to log in again once you've done this!
+
+  File --> Exit Stage Left.
+      Snagglepuss exiting stage left.
+
+#+OBSOLETE
+  File --> Frames
+    The usual toplevel frames listing (same as weblistener) should appear
+
+
+Session Menu
+
+  Session --> Execution Log, Current
+    Execute something (ABS 23). The Execution log should record this.
+    Clicking on 'show full log' should bring you to a page showing
+      the full log, and then you can go back via 'show execution log only.'
+
+  Session --> Execution Log, All
+    If you are a guru (which you should be to run these) brings up
+      listing of log files for this instance  for all users.
+
+  Session --> New Session
+    Brings you to the BioVike login page.
+
+  Session --> New Session (Weblistener)
+     A weblistener window should appear; the session should NOT 
+       be the same session as the VPL (determine via page URL)
+
+  Session --> Preferences
+    The usual preferences page (same as weblistener) should appear
+
+  Session --> Workspaces (list)
+    Popup window showing your workspaces and public workspaces
+
+Sequence to test user workspaces:
+
+Clear the workspace and results area.
+    clear the workspace and results area; 
+    arithmetic --> more-arithmetic --> abs
+    click the 'number' box 
+    insert a number and hit enter
+    definition--> define 
+    click the 'var' box and insert 'x' (no quote marks)
+    click the value box and insert 3
+    execute the define box
+    definition--> define-function
+    click the 'name' box and insert 'foo' (no quote marks)
+    cilck the 'arg' box and insert 'x' (no quote marks)
+    click the 'form' box and insert 'x'
+    execute the define-function box
+    SESSION --> workspace - save
+    enter 'temp' into the input box (no quote marks), hit submit 
+    a popup should appear stating that the user workspace was saved 
+      with the name 'temp'
+    Clear the notification popup 
+    Clear the workspace and results areas
+    SESSION --> workspaces - list
+    A popup window appears.  
+    Click the 'Restore' link next to temp.
+    The popup window now says: 
+        'Session temp restored.'
+    The VPL window is now restored...the workspace contains ABS, DEFINE, 
+        and DEFINE-FUNCTION boxes.
+    Refresh the VPL.  
+    Bring down arithmetic --> abs and enter -9 into the number box.
+    Execute the box.
+    SESSION --> workspace save
+    Type temp2 into the box and click submit.
+    Recreate the same VPL window & save the user workspace with the name temp3.
+    SESSION --> workspaces - list
+    A popup window appears with temp, temp2, and temp3 (and possibly others).  
+    Click the check boxes next to temp2 and temp3.  
+    Click the 'Delete selected user sessions' button.
+    The window changes to include a confirmation of what you want to delete.
+    Click Cancel.
+    The list of available sessions changes to include temp, temp2, and temp3
+      (and possibly others).
+    Click the check boxes next to temp2 and temp3.  
+    Click the 'Delete selected user sessions' button.
+    Click the 'Delete them!' button.  
+    The top of the popup window changes to say 'the following sessions were
+      deleted' and lists temp3 and temp2.  
+    Click the 'Delete selected user sessions' button again.  
+    The confirmation disappears.  
+
+  To test File --> Announce (VPL users)
+   Create two different VPL browser windows with two different users.
+   In the first window, File --> Announce (VPL users)
+   A popup box should appear asking you to type in a message. 
+   Type in 'Hello world!' and click Submit.
+   Go to the 2nd user window and bring down ABS.
+     A popup window with the message should appear.
+   Go back the the original window and bring down ABS.
+     A popup window with the message should appear.     
+
+   Now kill the second VPL, and in the first VPL file --> Announce (VPL users)
+   Type a message and hit submit...now bring up another VPL as a different user
+     and in a new session.  
+   Do some operation in this new VPL and you should see the message appear.  
+
+  To test File --> Announce (all)
+   As above, create two different VPL browser windows with two 
+    different users.  Also create a weblistener window.
+    This weblistener window should be owned by the same user 
+     as the second VPL browser window.
+    In the first browser window, File --> Announce (all)
+    A popup box should appear asking you to type in a message. 
+    Type in 'Hello world!' and click Submit.
+    Nothing should happen, except the status bar area should announce
+      that a message was sent to all users.
+    Now go to the weblistener window and click Enter.  
+      The message should appear.  
+    Now go to the VPL browser window from which the message was sent
+     and click the workspace area.  The message should appear in a popup.
+    Now go to the VPL browser window of the other user and click the workspace
+     area.  Nothing should happen (the message has already been
+     sent to the user).
+
+  To test Session --> Execution Log (current)
+   Start a new VPL browser window (click the 'New Login' button)
+   Session -> Execution Log (current)
+   A popup window should appear with a header and two 'Update' links
+    but nothing else.  
+   In the VPL, bring down ABS, enter a value and execute.  
+   Click one of the 'Update' links in the popup. 
+   The window should update showing the form you executed and the 
+    return value.  
+
+  To test Session --> Join Another Session
+   Create two distinct VPL sessions in two browser windows.  
+   (You don't have to log in as a different person, but if you can,
+    that's probably better.)
+   In the first session, Session --> Join Another Session
+   A popup should appear
+   Type in the session ID of the second VPL session (found
+    in the address bar at the top of your browser, e.g., if the
+    address bar contains:
+    http://localhost:8000/ajax/vpl.html?PKG=MDSLUP69768
+    then you would extract MDSLUP69768 and type or cut and paste it
+    into the popup, and click submit.
+    Now in the second browser window, 
+    Arithmetic --> more-arithmetic --> Abs
+    The Abs box should appear in both windows. 
+    Enter a number into the ABS input box and execute the Abs.  
+    The result should appear in both windows.
+      (But the Submitted! message only appears on the executing window)  
+    Definition --> Define-function
+    In the 'name' box type 'foo', in the 'arg' box type 'x', and
+     in the form box type 'x'.  
+     As you are doing this, the changes should appear in the both
+     browser windows (when you TAB or ENTER).
+    Execute the Define-function.  
+    A FUNCTIONS palette menu should appear in both windows. 
+    Do a browser refresh in the second window.
+     The first window shoud mimic a refresh.
+    Bring down ABS in the second window.
+     The first window will show the abs brought down,
+     because it is still sharing. 
+    Do a browser refresh in the first window.  
+    Bring down another ABS in the second window.
+      Nothing should happen in the first window.
+    In the first window, Arithmetic --> Abs
+     This should work, the two windows should no longer be synchronized.  
+    
+
+Edit menu
+
+  To test Edit --> Paste to toplevel:
+    clear the workspace
+    arithmetic --> more-arithmetic --> abs
+    select 'cut' from the abs menu (the workspace should clear)
+    the mode line should read "Cut "ABS" for three seconds, then vanish.
+    edit --> paste to toplevel 
+      the abs box should reappear 
+    Hit Ctrl+Z.  The abs box should appear again.  
+
+  Edit --> New data box
+    a gray form box with 'object' as the text should appear.  
+    enter a value into the box and hit enter
+
+  To test Edit --> Workspace - clear
+    Refresh the VPL window
+    Do the workspace clear.
+    The initial text and link in the workspace should disappear.
+    Bring down an ABS Box, then clear again.
+    The ABS box should disappear.  
+    Bring down an ABS Box twice.
+    Click the purple X in the upper right of the workspace.
+      Both boxes should disappear.
+
+  To test Edit --> Results - clear
+
+    Bring down ABS, put value in, execute.
+    Do the results clear.    
+    The result box should disappear.
+    Execute the ABS box three times, using 3, 4 and 5 in that order
+      as different values, creating three results boxes with 
+      3, 4 and 5 in them.
+    Do the results clear.
+    One ABS box should remain, with the 5.
+    Do it again.
+    The RESULTS area should contain no boxes.
+    Go through similar process using the purple X box in the upper
+      right of the RESULTS area.
+
+  Edit --> Redraw all
+   Bring down a few boxes, exeucte something to put something in he
+     results area, then Edit --> Redraw all. 
+   Nothing much should happen.  You might see the workspace boxes 
+     and result boxes flash out and then be redrawn.
+ 
+  To test Edit --> Workspace - reverse order
+   Clear the workspace.
+   Arithmetic --> more-arithmetic --> Abs
+   Arithmetic --> sum-of
+   Arithmetic --> quotient-of
+   Edit --> Reverse workspace order
+   The order of the boxes in the workspace should reverse.  
+   Arithmetic --> product-of
+   The product-of box should appear as the first box, not the last.  
+   Edit --> Workspace - reverse order
+   The order of the boxes in the workspace should reverse.  
+   Arithmetic --> difference-of
+   The Difference-of box should appear as the last box in the workspace.
+
+  To test Edit --> Results - reverse order
+   Clear the workspace and results area.  
+   Arithmetic --> Abs, put a 3 in the number hole
+   Arithmetic --> sum-of, put 5 and 0 in the number holes
+   Arithmetic --> quotient-of, put 1 and 6 in the number holes
+   Execute all 3 boxes, one by one.  
+   Edit --> Results - reverse order
+   The boxes in the results area should reverse, with the
+    order being 3, 5, 0.166...
+   Execute the sum-of box again
+   The new result box (containing a 5) should appear at the end
+   Edit --> Reverse results order
+   The new results box (5) should now be at the beginning.
+   Execute the quotient-of again, the new results box (containing 0.166...)
+    should appear at the beginning.  
+
+Data menu
+
+  If there are no organisms loaded, load at least one organism, then do
+    (setq nvpl::*force-vpl-sysinit* t) in a weblistener, then refresh
+    the VPL window
+
+  Data --> Filamentous cyano --> Nostoc_punctiforme_atcc29133 --> NPUN
+    A grey box (constant box) should appear with npun.  
+
+  Data --> *amino-acids*
+    A grey box should appear.  Select the execute menu option, and 
+    a list of 20 1-character strings should appear in the results area.
+    
+  If there are organisms loaded, there should be submenus attached to the 
+   second level menu from above for Nostoc_punctiforme_atcc29133, 
+   whose options are:
+
+    -- <A nickname for the organism>
+    -- Add a gene 
+    -- Add a protein
+    -- <The first 10 contigs of the organism (or as many as there are)>
+
+  If these appear, test the 'add a gene' item (assuming cyanobacteria, 
+    and assuming the Nostoc organism is loaded):
+
+    Clear the workspace 
+    data --> filamentous cyanobacteria --> nostoc... --> add a gene
+    click on the box 
+    type in '6123' (no quote marks)
+    a data box containing 'npun.npf6123' should appear 
+    execute it 
+    a results box containing npun.npf6123 should appear in the results area
+    from the result box's menu select describe, a pop up window should appear
+      showing the frame browser output for the gene
+
+XXXXX
+
+Variables menu
+
+  This menu will not appear until you define a variable.  To do this:
+
+  Definition --> Define 
+  click on the 'var' box 
+  type in 'my-variable' (no quote marks), hit enter
+  click on the 'value' box
+  type in 23, hit enter
+  double-click in the space below the 'define' 
+  a results box should appear with the value 23 and if the VARIABLES menu
+    did not already exist, it should appear.  If it appears at this point it
+    should contain at least three menu items, the first being 'Expunge',
+    the second being 'Expunge all',  and the third or last being 'my-variable'.  
+  clear the workspace 
+  variables --> my-variable
+  select the execute option on the pulldown menu of the box that should appear 
+  a new results box with the value 23 should appear
+  	
+  Variables --> Expunge all 
+    The variables menu should go away
+
+  Definition-->define 
+  click on the 'var' box, insert 'y'
+  click on the 'value' box, insert '2'
+  execute the define box
+  variables-->expunge-->expunge y
+  the variables menu should go away
+  go to the weblistener and type (lisp:boundp 'y), the result should be nil
+
+  Definition-->define 
+  click on the 'var' box, insert 'y'
+  click on the 'value' box, insert '2'
+  execute the define box
+  Definition-->define 
+  click on the 'var' box, insert 'z'
+  click on the 'value' box, insert '2'
+  execute the define box
+  variables-->expunge-->expunge z
+  the variables menu should remain, with only 'y' on the main menu and the 
+   expunge submenu
+
+
+Functions menu
+
+  This menu will not appear until you define a function.  To do this:
+  
+  Definition --> define-function
+  click the 'name' box, type in 'bar' (no quote marks) and hit enter
+  click on the 'arg' box (after 'required') and type in 'x' (no quote marks)
+  hit enter
+  click on the 'form' box (after 'body') and type in 'x' (no quote marks)
+  select the 'execute' option from the define-function menu.
+  a results box with 'BAR' should appear and if the FUNCTIONS menu does not
+    already exist, it should appear.  if it does appear at this point, it should
+    contain at least three menu items, the first being 'Expunge', the second
+    being 'Expunge all', and the remaining being names of functions including
+    'bar'.  
+  clear the workspace
+  functions --> bar
+  click the 'x' box 
+  enter any legitimate value and hit enter 
+  select the execute option for BAR
+  the value you entered should appear as a results box in the results area
+  In the palette, click Functions --> Expunge --> Expunge bar
+  The functions menu should disappear.
+  In the weblistener, type (fboundp 'bar).  The result should be nil.  
+  Define a function fooz, and a function barzz. Both should appear on
+    the FUNCTIONS menu.  Expunge fooz. Barzz should remain. Expunge Barzz.
+    Now the menu should go away (if those are the only two).
+
+Undo and redo 
+
+  Clear the workspace 
+  arithmetic --> more-aritmetic --> abs
+  click the 'number' box
+  arithmetic  --> more-aritmetic --> abs (this abs should embed)
+  click the 'number' box
+  other-commands --> internal --> + (the + should embed)
+  select 'add another' from the options menu of the + box, 
+     a third input box should appear
+  Undo (the left green arrow at the top left of the workspace)
+    The third input box should disappear
+  Click the first 'number' box and enter 2
+  Click the second 'number' box and enter 3
+  Now start clicking the undo arrow until the state reverts
+    to the first state after the workspace was cleared (a single ABS box with
+    an unfilled 'number' box)
+  Now start clicking the redo arrow (the other one) until the state goes forward
+    to the state just before you started clicking 'undo' (with the two numbers
+    as arguments to '+'.)
+  Redo one more time. The status line should tell that you there is no
+    subsequent workspace state to get to.
+  Execute the toplevel ABS.  The number 5 should appear in the results area.
+
+  Refresh the VPL (hit the browser refresh button)
+  Undo.  The workspace and ((NOT: the results area)) should appear as they were
+    just before you did the refresh.
+  
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Constant nodes 
+  
+  Do a browser refresh.
+  Create a toplevel constant node: Edit --> new data box
+  Select the paste option, a user error should appear (nothing to paste)
+  Select the 'surround with' option from the data box's pulldown menu
+  arithmetic --> more-arithmetic --> abs
+  the 'object' box should be the first argument to the abs
+  create another toplevel constant node: edit --> new data box
+  select the new box and insert 3
+  select the object box inside the abs
+  choose the 'cut/insert' option from 3's menu
+  3 should now be the first argument to abs, and the new box should have 
+    disappeared
+
+ 
+Symbol nodes
+
+  similar to constants 
+  Edit -> new data box
+  Enter 'xyzzy'.
+  Attempt to execute. An error should popup (implying XYZZY is undefined).
+  Define XYZZY using DEFINE to be 3.
+  Execute the box again.  It should work. The box should look like
+    xyzzy = 3
+  Change the value in the define to 4 and execute it.
+  The data box should change to xyzzy = 4 automagically!
+
+Form nodes 
+
+  clear the workspace
+  arithmetic --> more-arithmetic --> abs 
+  arithmetic --> more-arithmetic --> abs 
+  click the first 'number' box, the box should open and be highlighted
+  click the second 'number' box, the box should open and be highlighed, 
+    while the first box's highlighting should go away
+  very carefully position the mouse just to the left of the lower left 
+    corner of the text box that is not highlighted, and click;
+    the non-highlighted text box should become highlighted and the other
+    text box which was highlighted should no longer be highlighted
+    
+  clear the workspace 
+  arithmetic  --> more-arithmetic --> abs 
+  select the 'surround with' menu option on the number box; the box
+    should become highlighted
+  other-commands --> internal --> +
+  the + box should replace the number box as the argument to abs
+    (and the number box becomes the first argument of +, but that you can't
+    really ascertain)
+
+mds -- chrome -- absolutely no joy here.  
+
+  multiline input
+    other-commands --> internal --> print
+    select the 'multiline input' menu option on the ANY box
+    Type '(', then hit return
+    Type 1, return, 2, return, 3, return, ')'
+    Click the 'Enter' button to the left of the input box
+    The value in the box should be '(1 2 3)
+    select the 'edit' menu option on the box 
+    the value '(1 2 3) should appear on the first line, and the second
+     line should be blank
+    click the 'Enter' button
+    The value in the box should be '(1 2 3)
+    select the 'edit' menu option on the box 
+    the value '(1 2 3) should appear, and there should only be one line
+     (it should be a normal input box, not a multiline input box)
+    THE ABOVE IS NO LONGER CORRECT, IT REMAINS MULTILINE INPUT
+      FOR WHATEVER REASON.
+    clear the box by clicking the pink X in the upper right
+    select the 'multiline input' menu option on the ANY box	
+    as before, type ( 1 2 3 ), with each of those characters being 
+	on their own line 
+    there should be one blank line above the bottom border of the input box
+    press the 'more' button three times...three more blank lines should
+      appear, for a total of 4
+    press the 'resize' button...the 3 blank lines should disappear, resulting
+	in 1 blank line before the bottom border of the input box
+
+
+Open form nodes
+
+    Clear the workspace 
+    Bring down 2 ABS boxes (Arithmetic  --> more-arithmetic --> ABS)
+    Click the 'number' box in the first one
+    Type 3434 in the open hole, but DO NOT HIT ENTER OR TAB
+    Click the 'number' box in the second ABS box
+    Type 4040 and again do not hit enter or tab
+    Click in the text area of the first open hole 
+    The 3434 should still be there and the box you just clicked in
+       should be highlighted while the other open hole unhighlights
+    Click somewhere on the workspace; the first open hole
+	which was highlighted should unhighlight
+    Then click in the open hole in the second ABS box (which contains 4040)
+    It should highlight and the 4040 should remain.  
+    Now click again in the white area of the highlighted 4040 box.  
+THIS ISN'T WORKING.
+    The box should stay highlighted and the mouse cursor should go where
+     you clicked -- it should not go to the end of the text in the box.
+
+mds -- Chrome, no it doesn't.  (open form nodes)
+    
+
+
+Preserving entered text in still-open holes
+
+  Select + from other-commands --> internal
+  From the "More" menu on the box, select "Add two more"
+   Click in the first box; enter 1 and hit tab.
+  enter 2 in the second box and hit tab
+  Enter 3 in the third box and hit tab.
+  Enter 4 in the fourth box and hit enter.
+  Now all the boxes are closed with the values 1, 2, 3, and 4.
+
+  Click the green arrow in each hole and select "Edit"
+  Click in the fourth hole and change the 4 to 23, but don't hit enter or tab
+  Click in each of the other holes, from third to first, changing
+    3 to 22, 2 to 21, and 1 to 20, but not hitting enter or tab
+    for any of these boxes.  
+  Then hit enter in the first hole.  
+  All the values 23 through 21 should still be there in open boxes; 
+    they should not revert to 4, 3, and 2.  
+  Clear the box with 21 in it by clicking the pink X...the third box with
+    22 should continue to have 22.  
+
+mds -- everything is fucked with this in chrome
+
+*****  The following doesn't work yet ***
+
+Do a browser refresh
+bring down other-commands --> internal --> +
+Click in the first hole and type 1, but do not hit enter or tab
+Click in the second hole, causing it to be highlighted
+Bring down arithmetic --> abs
+The abs box will fill in the second hole to +, 
+  It used to be that the first hole would lose its text value, 
+  but it seems to work now. The weird thing is that the cursor
+  moves to the first + open box, which I guess is as good a
+  place as any, but is a bit surprising.
+  If you use three boxes with the + then the cursor doesn't show up
+     anywhere!
+
+
+****
+
+Arg nodes
+  Clear the workspace
+  Definition --> define
+  click the 'var' box 
+  type in 3, press enter, an error should pop up (must be a symbol)
+  enter 'my-table' (without the quotes) into the currently highlighted box,
+    hit enter, a 'my-table' should appear as a symbol node
+  select 'surround with' from my-table's menu
+  arithmetic --> more-arithmetic --> abs
+  an error should appear 
+  other-commands --> internal --> []
+  a table reference for my-table, MY-TABLE [ <index> <options arrow> ] 
+    should appear 
+  select the 'index' box and enter 2
+  select the value box and enter 23
+  execute the define box, the value 23 should appear in the results area
+  variables --> my-table, a data box should appear
+  execute the data box, a results box with '<Table 1d(Numeric)>' should appear
+  select 'View' from this result box's pulldown menu, 
+   a popup window should appear with a description and the contents
+   of the MY-TABLE table
+
+
+macro, function, define-function nodes
+
+  function: 
+
+  other-commands --> internal --> +
+  select 'collapse' from the main menu, the box should shrink,    
+    the subnodes and the options arrow should vanish, all that should
+    remain is the '+'
+  select '(re)name box' from +'s main menu, a popup box will appear
+  type in 'fred' (without the quotes) andhit enter
+  the box should now simply say 'fred' in bold
+  select 'expand' from the main menu, the box as it looked before you 
+    collapsed it should reappear
+  select 'collapse' again, it should say 'fred' in bold
+  select 'remove name' from fred's main menu, it should go back to +
+  select 'expand' from +'s main menu
+  select 'execute' from the main menu, an error should pop up telling you
+    that the form has unfilled components
+  kill the popup
+  fill in the two boxes with the numbers 23 and 4
+  select 'execute', a results box should appear with 27
+  select 'show code', a window should pop up which at the bottom should contain
+    the form (+ 23 4)
+  clear the node containing 4 (click the X in the upper right)
+  select 'show code', a window should pop up which at the bottom should contain
+    the form (+ 23 :|hole|)
+  clear the workspace
+
+  macro:
+
+  flow-logic --> if-true
+  select the 'condition' node, enter 't' (no quote marks)
+  select 'add another' from the options menu to the right of the 
+   "then"'s form node,
+    another form box should appear 
+  select the first form node
+  other-commands --> internal --> print
+  fill in the 'any' node with 23
+  select the other form node of the 'then', enter 10
+  select execute from the main menu of IF-TRUE
+  a popup should appear with the printout value 23, and a result box
+    containing 10 should appear in the results area; the prompt should be
+    colored blue rather than the normal black
+
+  To test Monitor
+  Flow-logic --> if-true
+  From If-True's menu, select Monitor.
+  The If-true text should turn red.  
+  From If-True's menu, select Surround with
+   Lists-tables --> List
+  In the first box of If-True, enter T, in the second box enter 3,
+   and in the third box enter 4.  
+  Execute the List box.  
+  A popup should appear describing the call to If-True, specifically 
+   what is returned.
+  Select Monitor from If-True's menu.  
+  The If-True text should return to black.  
+  Execute the List again, the popup should not appear.
+  (The monitor menu item acts as a toggle.)
+  
+  define-function: 
+
+  all --> E->F --> From 
+  select the 'by' option from the options menu and click 'apply'
+  select the newly appearing 'value' box 
+    insert "x" (with the double quotes!)
+    an error should pop up saying that you can only insert numbers here
+  insert 3 instead
+  insert 1 into the start box
+  insert 20 into the end box
+  execute; a results box of (1 4 7 10 13 16 19) should appear 
+
+mds -- is this a chrome problem or not?
+
+
+Aggregate nodes
+
+  clear the workspace
+  other-commands --> internal --> progn
+  put 3 into the form box
+  from 3's menu, select 'add left', another form should appear to the left
+    of the 3 box
+  from 3's menu, select 'add right, another form should appear to the right
+    of the 3 box
+  select 'clear' from the 'More...' menu; a single box should remain
+  select 'add another' from the 'More...' menu, then select 'add two more'
+  you should now have a total of 4 form boxes	
+  put 2 into the first box 
+  select 'clear' from the 'More...' menu, all the boxes should disappear to 
+    be replaced by a single 'form' box (the '2' box should go away) 
+  select 'add two more' from the 'More...' menu
+  select 'collapse' from the 'More...' menu, the boxes should go away
+  select 'expand' from the 'More...' menu'
+    three form boxes should be present and shown
+  select 'add two more' from the 'More...' menu
+  put 2, 4, 6, 8, 10 into the resulting 5 form boxes in order 
+  delete the middle box (the 6 box) by twice clicking the X icon 
+    in the upper right of the 6 box (not double clicking! Wait for the first
+    click to take effect before clicking again)
+  delete the far left box (the 2 box) in the same way
+  delete the far right box (the 10 box) in the same way
+  you should be left with the 4 and 8 boxes
+
+  refresh 
+  other-commands --> internal --> +
+  select 'add two more' from the 'More...' menu
+  select clear from the 'More...' menu, both new boxes should disappear
+    (and two should remain, not one, as with the PROGN above)
+
+Choice nodes
+
+  optional nodes
+
+  other-commands --> internal --> floor
+  put 10 into the number box
+  execute the floor, you should get a results node with two subnodes, 10 and 0,
+    representing the two values returned by floor
+  select the divisor option from the arrow menu labeled 'divisor', 
+     an input box labeled 'divisor' should appear
+  execute the floor, you should get an error saying that something is not 
+    filled in
+  fill in the divisor box with 4
+  execute the floor, you should get a results node with 2 subnodes, 2 and 2
+  select 'clear' from the arrow menu, the 4 box should disappear
+  select the divisor option again
+  select 'collapse' from the arrow menu, the 'divisor' input box should 
+    disappear 
+  select 'expand' from the arrow menu, the divisor box should reappear
+
+  token nodes
+  
+  all --> E->F --> First
+  select 'in' from the second arrow menu, a literal IN should appear
+  enter (1 2 3) into the entity box
+  select execute from the main menu, a results box of 1 should appear
+  select 'in-each' from the second arrow menu, the literal IN should be
+    replaced by IN-EACH
+  select 'show code' from the main menu, the last line of the resulting
+    popup should be (FIRST IN-EACH '(1 2 3))
+  select 'clear' from the second arrow menu, the literal IN-EACH should 
+    disappear
+  
+  optional labeled nodes
+
+  clear the workspace
+  flow-logic --> loop
+  select 'For variable IN collection' from the arrow options
+     menu labeled 'controls'
+  select the 'by' option from the arrow options menu labeled 'by' 
+  select the step function box and insert lisp:cddr
+  select the var box and put in x 
+  select the collection box and put in (1 2 3 4 5)
+  select the 'body' option from the arrow options menu labeled 'action'
+  select the 'form' box 
+  other-commands --> internal --> print
+  select the 'any' box and insert x
+  execute the outer loop box, a popup window showing 1 3 5 should appear
+    close the popup
+  select 'show code' from the main loop menu; kill the resulting popup
+  select the 'clear' option from the 'by' arrow options menu labeled 'by'
+    the 'by' and 'cddr' box should disappear
+  execute the outer loop box, a popup window showing 1 2 3 4 5 should appear
+
+
+  optional labeled clause
+  
+  flow-logic --> loop
+  select 'reveal aggregation clause' from the main loop menu
+  select 'hide' from the results section option menu, 
+   the entire line should disappear
+  select 'reveal aggregation clause' from the main loop menu
+  select 'for variable from n1 to n2' from the option arrow menu labeled 
+    'controls' 
+  select the 'var' box and insert j
+  select the 'first value' box and insert -5
+  select the 'last value' box and insert 5
+  select the 'when ... collect' option from the options arrow 
+    menu labeled 'results section'
+  select the 'condition' after the 'when'
+  arithmetic --> numerical-type-checks --> is-positive-number?
+  select the 'any' box inside is-positive-number? and insert j
+  select the 'value' box after the 'collect' and enter j
+  execute the main loop box, a results box should appear with
+    (1 2 3 4 5)
+  
+  simple required choice
+
+  clear the workspace
+  all --> n->o  --> order
+  select '=' from the arrow options menu labeled 'comparison', an equal sign
+    should appear to the left of the arrow options menu labeled 'comparison'
+  select '>=' from the same menu, the equal sign should be replaced by a 
+    greater than or equal to sign 
+  select 'clear' from the same menu, the sign should disappear
+  click the first 'any' box and insert 1 
+  click the second 'any' box and insert 1
+  select '=' from the arrow options menu labeled 'comparison'
+  execute the ORDER box, you should get a T result in the results area
+  select 'add another' from the arrow options menu labeled 'More' 
+  click the newly revealed 'any' box and insert 2
+  select from the newly revealed arrow options menu labeled 'comparison'
+    the '=' option
+  execute the ORDER box, you should get a NIL result
+
+  
+Toplevel output and output value
+
+  clear the results area (if there's an item in the results area after you 
+    clear it, click the clear again and it should disappear)
+  arithmetic --> more-arithmetic --> abs
+   click the 'number' box and insert 23 
+  execute the abs (a results box of 23 should appear)
+  delete the result box by clicking the red X in its upper right corner, 
+    the results area should now be empty 
+  execute the abs again
+  select help from the result box's menu, a popup should appear
+  kill the popup
+  select describe the result box's menu, a popup should appear
+  kill the popup
+  select 'copy' from the result box's menu
+  edit --> paste to toplevel, a box with 23 in it should appear next to 
+    the abs box in the workspace 
+
+  clear the workspace and results area
+  other-commands --> internal --> list
+  click the 'item' box and insert 1
+  execute the list, a results box of (1) should appear
+  select 'copy' from the result box's menu
+  other-commands --> internal --> list, you should now have two list boxes
+  select 'paste' from the new item box's menu, the item box should be
+    replaced by a box containing '(1) *** Note that the initial quote mark
+    is in fact present in the box 
+   
+  other-commands --> internal --> print
+  select the 'any' box and insert "ZY"
+  execute the print, a popup containing "ZY" should appear, as well as a
+    results box in the results area.  the results box prompt should be blue,
+    indicating printout available
+  kill the popup
+  select 'show printout' from the result box's menu, a popup containing
+
+    Printout for result 1: 
+
+    "ZY"
+
+    should appear 
+
+  View Code: 
+  Clear the workspace and results area 
+  Arithmetic --> more-arithmetic --> ABS
+  Arithmetic --> SUM-OF
+  Put a value in the ABS and execute the box, the result should appear
+  In the result area's only box's pulldown menu, select 'View code'
+   The ABS box should be highlighted and a popup box should appear 
+   saying (ABS <value you entered>) along with header information
+  Delete the ABS box from the workspace, and close the popup window
+  Again, select 'View code' from the result box's pulldown menu
+  The same popup box should appear, but nothing in the workspace
+   should be highlighted  
+  -------------------------------------
+
+
+Multiple values
+
+  Refresh the VPL window
+  other-commands --> internal --> floor 
+  select the 'number' box and insert 10
+  execute the floor, a results box with two subboxes containing 10 and 0 
+    should appear (because the FLOOR function returns two values) 
+  select the describe option from the result box's menu, a popup should
+    appear with descriptions of both values
+  select the 'copy' option from the result box's menu
+  other-commands --> internal --> identity 
+  select 'paste' from the 'any' box's menu, the value '(10 0) should 
+   appear in the box (with the single quote)
+  execute the identity box, a result box with a single value, the list 
+    (10 0) should appear
+  select the copy option from the second subbox (the one containing 0)
+     of the original results box (the one with two subnodes) 
+  edit --> paste to toplevel, a workspace with 0 in it should appear
+
+  
+  clear the workspace (not the results area!)
+  other-commands --> result 
+  select the 'result-index' box and insert 1
+  select the 'index' option from the options arrow menu labeled 'index'
+  select the new 'value-index' box and insert 2
+  execute the RESULT box, a new results box containing 0 (the second
+    value of the results box labeled '1>') should appear
+
+Expanding and contracting the results area:
+
+  click the maximize icon to the immediate left of the 'X' in the upper
+    right of the results area.  The results area should expand.
+  Click the same icon again.  The results area should expand
+    to cover the entire workspace.  
+  Click the minimize icon (which should be where the maximize icon was), 
+    the results area should contract halfway.  
+  Click the minimize icon again, the results area should contract back to
+    its original size.  
+  (The boxes in the results area should all always appear as you do 
+    the above operations.)  
+
+Keys and flags 
+
+MDS -- in chrome scroll bars don't work
+
+  genes-proteins --> sequence-of
+  select 'help' from the arrow options menu, a popup should appear 
+    describing in general the keys and flags node, kill the popup
+  select the 'dna' option from the same menu and click apply, a
+    box containing 'DNA' with a delete icon should appear. 
+  bring up the options menu, the 'dna' option should no longer be present.  
+  select the 'truncate' option from the same menu and click apply, 
+    another similar box should appear 
+  click the delete icon on the DNA box, the box should disappear 
+  bring up the options menu again, the 'dna' option should reappear
+  select the 'from' option from the same menu and click apply, a box with a subbox 
+    containing 'value' should appear
+  select the 'to' option from the same menu and click apply, a similar box should appear
+  bring up the options menu again, the 'from' and 'to' options should 
+    no longer be there
+  select 'collapse' from the options menu (near the top).
+  select 'expand' from the options menu (near the top), 
+    the boxes should reappear
+  select 'clear' from the same menu, the boxes should disappear
+  bring up the options menu again, all the options should now once again
+    be available
+  select 'length' from the options menu
+  click the delete icon, the box should go away
+  Select dna, from and to from the options menu before clicking apply, then
+    click apply. All three should show up.
+  
+Focus 
+
+Do a browser refresh.  
+Narrow your browser window so that when you bring down a second
+ for-each from the flow-logic palette menu, it goes
+ under the first for each instead of to the side of it.  
+Bring down a total of 9 for-each's
+On the fourth for-each from the top select 'finally' from the 'finally' arrow
+ menu of the FINAL ACTION section. Also select 'body' from the 'action' arrow
+ menu of the BODY section. 
+Scroll so that the lower of half of the newly-shown 'finally' box
+ is off-screen and the upper half is on-screen.  
+Click the delete icon of the finally box.  The FINAL ACTION section 
+ of the For-each box which contains the open 'body' box should still be visible
+ although it may have moved to near the very top of the workspace area. Scroll
+ the window up if necessary to verify that the final action box you see 
+ is indeed the one which has the open 'do'.  
+      
+Drag and Drop
+
+Clear the workspace
+Bring down Arithmetic --> more-arithmetic -->  ABS and Arithemtic --> SUM-OF.
+In the ABS 'number' box, put 3.  
+Drag the 3 box to the first empty SUM-OF hole and drop.  
+
+MDS -- In chrome, the red lines around boxes don't appear
+The ABS argument box should now be empty, and the sum-of argument 
+  box should have a 3
+Now drag the sum-of box itself to the ABS argument hole and drop.  
+The toplevel sum-of box should disappear to reappear within the ABS.  
+
+Bring down quotient-of, product-of, and difference-of from the Arithmetic menu.
+Drag the product-of box between the ABS and quotient-of boxes.  You should
+  see a vertical red line appear between the ABS and quotient-of boxes.  
+When and only when the red line is present, drop the product-of box.  
+The ordering of the boxes should change: It should be
+ABS, product-of, quotient-of, difference-of.  
+
+MDS -- Chrome Dragging NOT into a box, the red vertical bar appears ONLY
+when I drag the box to the far right, not to the extreme left or in between
+other function boxes
+
+Put a 0 into the second box in 'sum of' (which is inside the abs)
+Execute the ABS, 3 should appear in the results area. 
+Drag the 3 from the results area into the empty product-of argument box. 
+The box in the results area should NOT disappear; the 
+  product-of argument box should now contain 3.  
+
+Drag the 3 box in the results area to the right of the difference-of box,
+  and release (again, make sure a red vertical line is present).  
+  Again the results area should be unchanged while a new gray 3 box 
+  should appear to the right of the difference-of box.  
+
+Drag the 3 box inside the sum-of (which is inside the ABS) to the left
+of the ABS box.  A grey box containing 3 should appear to the left of the
+ABS box and the 3 box that you dragged should now be an empty hole.  
+
+Drag the 3 box in the results area very slightly up so that it just crosses
+into the workspace.  A red line should appear to the right of the rightmost
+3 box in the workspace area.  Drop the 3 box you've been dragging.  
+Another 3 box should appear in the workspace as the last box. 
+
+Clear the workspace.  
+Bring down All --> C-Comme --> COMMENT.  Click the box and type in a comment.  
+Hit enter.  Click the closed hole containing the comment; it should reopen
+with the text still inside, and be highlighted with red dots.  
+Now use your mouse to select a portion of the comment (but not all).  
+Before you release the mouse, hit Ctrl+C to copy the text to the 
+Windows clipboard.  Release the mouse.  Press Enter to close the open hole.
+Bring down another COMMENT box.  Click the closed hole to open it.
+Hit Ctrl+V.  The text you copied earlier with Ctrl+C should appear.  
+Clear the workspace. 
+
+mds -- nope, can't select any text
+
+
+Saving and restoring a user workspace across reboots.
+
+Do a browser refresh.
+Definition --> Define
+In the 'var' box, enter 'my-var'.  In the 'value' box, insert 23.
+Execute the define box.
+Definition --> Define-function.
+In the 'name' box, enter 'baz'.  In the 'arg' box, enter 'x'.  In the 'form'
+ box, enter 'x'.  (no quote marks).
+Execute the define-function.
+The functions menu should now contain Baz and the variables menu should contain
+my-var. 
+Session --> preferences 
+change the value for *EXECUTION-TIMELIMIT* under Current Values
+ to 23.  Click 'Set These'.
+close the preferences window
+Session --> workspace - save
+Enter "session1" (no quote marks) and hit enter. 
+
+Remember what the screen looks like.
+Now reboot the entire weblistener system (ie, kill the lisp and restart)
+Bring up a new VPL and log in again as you.
+Session --> workspaces - list
+
+Click the 'restore' link (not the checkbox) next to session1
+The workspace should be the same as before you rebooted.
+The variables and functions menus should contain still contain my-var and baz.
+Bring down 'baz' from the functions menu.
+Click the hole labeled 'x'.
+Variables --> my-var.
+Execute the baz box.  
+23 should appear in the results area.
+file --> preferences 
+the value of *EXECUTION-TIMELIMIT* under Current Values should be 23.  
+
+
+Favorites
+
+Do a browser refresh.
+If you have a favorites palette menu, clear it via 
+  Manage favorites  --> clear favorites. 
+ (The favorites menu should disappear)
+***** IT DOES NOT DISAPPEAR ANY MORE, PRESUMABLY BECAUSE THE FAVORITES
+  EDITING STUFF IS NOW ON THAT MENU AND YOU MAY WANT TO USE IT EVEN IF
+  THERE ARE NO EXISTING FAVORITES.
+Bring down ABS 5 times.  The favorites menu should (re)appear and contain ABS.
+Favorites -> Manage favorites -> add favorite
+Type in "genes-of" (without the double quotes)
+Genes-of should be added to your favorites menu.  
+Favorites -> Manage favorites -> delete favorite
+Type in "abs" (without the double quotes)
+Abs should disappear from your favorites menu
+Favorites -> Manage favorites -> forbid favorite
+Type in "sequence-of"
+Bring down genes-proteins --> sequence-of 5 times.  
+  It shouldn't appear in the favorites menu.
+***** BUT A MESSAGE STILL APPEARS IN THE STATUS WINDOW
+***** FIXED UP.
+Bring down abs 5 times, it should reappear on the favorites menu.
+Bring down Abs from the favorites menu.  An Abs box will appear in the 
+ workspace.
+
+
+User contributed stuff
+	
+Bring up 2 VPLs, each with its own user.  
+In the first, 
+  Definition --> Define
+  In the 'var' box type 'myvar' and in the value box type '16'
+  Execute the box, MYVAR should be added to your VARIABLES palette menu
+  Definition --> Define-function
+  In the 'name' box type 'myfunc', in the 'arg' box type 'x',
+   and in the 'form' box, type 'x'.  
+  Execute the box, MYFUNC should be added to your FUNCTIONS palette menu
+  Other-commands --> Share
+  Type 'mystuff' into the 'name box'
+  From the green 'Options' arrow menu, select FUNCTIONS and click apply 
+  In the 'value' box, type 'myfunc' (without the quotes)
+  From the green 'Options' arrow menu, select VARIABLES 
+  In the 'value' box, type exactly '(myvar)
+  Execute the share box.
+Now go to the second VPL, 
+  File --> User contributed stuff
+  A popup should appear with the package name MYSTUFF,  
+    author, functions (MYFUNC), and variables (MYVAR).
+  Click the 'Use this package' link
+  The popup should change to say "You are now using package mystuff'
+  MYVAR should now be added to your VARIABLES palette menu, and 
+   MYFUNC should be added to your FUNCTIONS palette menu. 
+  Other-commands --> Unshare
+  Type 'mystuff' into the 'name' box
+  Execute the box, a results box should appear saying 
+    "Shared package MYSTUFF no longer in use."
+  MYVAR should now be gone from your VARIABLES palette menu,
+    and MYFUNC should be gone from your FUNCTIONS palette menu.
+    (and the VARIABLES and FUNCTIONS menus might be gone if those were
+     the only things on them)
+Go back to the first VPL
+  Execute the SHARE box (with the name 'mystuff', functions 'myfunc' 
+    and variables 'myvar')
+Go back to the second VPL
+  File --> User contributed stuff
+  A popup should appear telling you the 'mystuff' package is available,
+    but this time DO NOT click on the 'Use this package' link. Kill the popup.
+In the first VPL, 
+  other-commands --> share
+  Type 'mystuff' into the 'name' box and select REMOVE from the green
+   'Options' arrow
+  Execute the box, a results box should appear saying 
+   "Shared package MYSTUFF no longer exists"
+In the second VPL,
+  File --> User contributed stuff
+  If there were no other shared packages:
+    A popup should appear saying "*** No packages available ***"
+  Otherwise the MYSTUFF listing should no longer be there.
+Close both VPL windows.
+
+Potential cut/insert disaster.
+
+Bring down 
+
+arithmetic --> abs
+arithmetic --> sum-of
+flow-logic --> for-each
+From the for-each's pulldown menu, select cut.  
+Now drag the sum-of box into abs's hole.  
+Edit --> paste to toplevel 
+The for-each box should be pasted to toplevel.  
+
+THIS WORKS NOW.
+
+Multiselect
+
+Bring down genome --> sequence-of
+Click 'DNA' from the Options menu, the background should turn a darker green.
+Click 'DNA' again, the background should return to normal (light green) once 
+  you move the cursor off the item)
+Click 'No-stops', 'From', and 'To-file' in succession...all three
+  should turn to a dark green background.  Click on 'To-file' again
+  and it will unhighlight.  Click the Apply button at the bottom of the menu.
+The No-stops flag and From keyword should appear in the sequence-of box.  
+Select 'Collapse' from the Options menu...the options should collapse.
+Click 'Expand' from the Options menu...the options shoud reappear.
+Click 'Clear' on the Options menu, the options should go away.   
+Mouse over the options menu again, click APPLY...a javascript alert sould appear
+  telling you to pick one or more options   
+Click the OK, go back to the Options menu, click on 'Help'. Immediately
+you should get a popup describing how the multiselect widget operates.
+
+Collapse with name
+
+Bring down arithmetic --> abs.
+From the abs menu, select 'collapse with name'.
+In the 'node name' box, type 'ronald' (without the quotes).
+The box shrinks, and now only contains the word 'ronald' in bold.
+   The hole to type a number into is gone.
+From ronald's (abs) menu, select (Re)Name box, type in 'Leslie'
+  (without the quotes).  
+The text in the box changes to Leslie.  
+From Leslie's (abs) menu, select Expand.  
+Click the 'number' box, type 6, and press Enter.
+From the ABS menu, select 'Collapse with name'.
+In the 'node name' box, type 'Tom' (without the quotes) and press Enter.
+From tom's (abs) menu, select Expand.  
+The 6 in the 'number' hole remains.  
+Refresh the VPL.  
+
+
+
+Only on Edwards:
+Organisms --> Viruses
+The status line should say "Loading menu" and then 
+  "Ok. Retry Organisms menu."
+Mouse over the Organisms menu again.
+There should be a menu entry Viruses (alpha)
+Mouse over it. 
+Click an organism...if it is loaded, a box will appear in the workspace.
+If it is not loaded, a popup with the load-organism output will appear, 
+and then the organism box will appear in the workspace.  
+
+
+*** add for edwards organisms and subsystems ** 
+
+   
+Keyboard shortcuts
+
+Bring down an ABS box.
+Bring down another ABS box.
+Select the first box and press Ctrl+C.
+Click in the hole of the second abs box, and press Ctrl Z.
+The second box should be copied into the hole.
+
+Now select the outer ABS box and press Ctrl+X.
+The box should disappear.
+
+Bring down another ABS box.
+Click in the hole and press Ctrl+Z.
+The 2-level abs should should be pasted 
+into the abs box you just brought down, creating
+a 3-level abs box.  
+
+
+Quotes
+
+Bring down a new data box with edit --> new data box.  
+Type in 'pi  -- that is, the word pi preceded by a single quote
+Execute the box, the results area should contain PI.  
+Copy the results area box.  
+Bring down a new data box and paste into it.  
+You should see an unquoted pi with the value 3.14159... in the box.
+
+Bring down a new data box.
+Type in '3  -- that is, the number 3 preceded by a single quote
+Execute the box, the results area should contain an unquoted 3.
+
+Bring down a new data box.
+Type in 'foo -- that is, the word foo preded by a single quote
+Execute the box, the results area should contain FOO.  
+Copy the FOO box.
+Bring down Definition --> Define
+Paste into the first box, the FOO should be unquoted.  
+
+XXXXX
+
+Define/assign warnings
+
+Bring up 2 different VPL windows logged in as 2 different people, e.g., J and M.
+In J's VPL, bring down Definition --> Assign
+Put 'xyz' into the var box, and 3 into the value box, and execute the Assign box
+Bring down Definition --> Define-function 
+Create the form (define-function foo required x body (+ x xyz)) and execute
+You should see a warning message that xyz is not defined within the function,
+and has not been defined using DEFINE.
+Now bring down define and create the form (define xyz = 3) and execute.
+Execute the define-function again, and the warning should not appear.  
+
+Now go to M's VPL window
+Bring down define-function 
+Create the form (define-function foo required x body (+ x xyz)) and execute.
+You should see a warning message that xyz is not defined with the function,
+and has not been defined using DEFINE.  
+Now bring down define and create the form (define xyz = 3) and execute.
+Execute the define-function again, and the warning should not appear.  
+
+Go back to J's VPL window.  
+Bring down define.  
+Create the form (define define = 5) and execute.  No warning should appear.
+Go back to M's VPL window.
+Bring down define.
+Create the form (define define = 5) and execute.  
+An error should pop up saying you are not allowed to do this.  
+
+Focus of results area
+
+Bring down an Abs box. 
+Put a large number into it, e.g., 555555555555555.
+Execute the box enough times so that the results area
+ has a scroll bar.  
+Change the number in one of the abs boxes and execute it.
+The results area should focus to show the new box.
+
+Edit --> Reverse results order.  
+Bring down several Abs boxes. 
+Put a large number into each, e.g., 555555555555555.
+Execute the box enough times so that the results area
+ has a scroll bar.  
+Scroll the results area up to its top.
+Change the number in one of the abs boxes and execute it.
+The results area should focus to show the new box at the bottom.
+
+========================================
+
+JP's Firefox = 17.0.1
+JP's Chrome =  23.0.1271.97 m
+
+To test = "x" in the BY keyword of FROM
+
+Google Chrome issues.
+
+Doesn't understand "inherit" for 'height' and 'width' attributes
+when popping up a new window.  
+
+Only puts address bar, doesn't have tabs or menu bar when popping up 
+a new window.  
+
+TAB doesn't work.  
+
+Return in multiline input doesn't seem to work...causes loss of focus.  
+
+Focus doesn't shift from open box to another box all the time.  
+It could be necessary to do something on the server for chrome that 
+isn't necessary for firefox, but we're not sure.  (See 'open form nodes' section)
+
+Options menu of sequence-of, if it goes below the edge of the workspace window,
+generates a scroll bar but the scroll bar doesn't work at all.  
+
+Drag and drop -- Dragging into a hole doesn't produce the double red lines, 
+but still allows you to drop it there.  Dragging doesn't show the vertical
+red lines in between boxes or at the extreme left, only at the extreme right.
+
+In an open box, you can't select any text with the mouse.  
+
+
+

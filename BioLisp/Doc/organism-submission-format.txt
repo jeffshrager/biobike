@@ -1,0 +1,864 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+
+		ORGANISM SUBMISSION FORMAT SPECIFICATION
+		AND ORGANISM FRAME STRUCTURE
+
+
+
+
+This defines the set of files and the format of those files that we
+require in order to include an organism in Biobike, and the new
+format for an organism's in-core representation in terms of the frame
+system.  
+
+All the organisms available to a Biobike instance are to be listed
+in a file called available-organisms.lisp in the directory defined by:
+
+(user::translate-simple-lp "bioetc:data;")
+
+(On Nostoc /usr/local/bioetc/data) 
+
+When a new organism is added via the mechanism described in this document
+its name must be added to this file.   
+
+
+I. OVERVIEW
+
+A Biobike organisms' database is a collection of tab-delimited
+(.tbl) files, fasta format (.fasta) files, and miscellaneous other
+files containing information about the organism.  (e.g., the .plist
+file for each organism)
+
+An organism has data about the composition and toplevel organization
+of its GENOME (e.g., its chromosomes, plasmids, or scaffolds,
+otherwise known as 'contigs' which is short for 'contiguous
+sequences'), data about the existence and meaning of subsequences of
+this toplevel structure (aka GENES), possibly data about the organisms
+RNA's (aka TRANSCRIPTS) and possibly data about the organism's
+PROTEINS.  Additional information may also be provided by the curator.
+
+Information about an organism is initially provided by a curator and
+comes in two standard forms: FASTA-format files (xxx.fasta) and TABLES
+(xxx.tbl).  The data files provided are processed by a function
+(LOAD-ORGANISM) which verifies the format, performs some
+transformations on the data, and moves the transformed data into
+Biobike's core memory and creates frames from the raw data.
+
+
+II. SUBMISSION FORMAT
+
+The data should come in an archive file.  The un-archive process (e.g.
+unzip) should create a directory called <organism> and un-archive the
+files into that directory.  Subdirectories called GENOME and GENES,
+optionally TRANSCRIPTS, PROTEINS, OTHER and DOCUMENTATION, and at the
+curator's discretion other subdirectories, should be created by the
+unarchiving process.  Within each of these subdirectories should be
+FASTA format, TABLE format, and other files as described below.  Also,
+a file called <organism-name>.plist must be created in the toplevel
+directory.
+
+Note: despite the names being given in uppercase above and elsewhere
+in this document, all the subdirectory and file names must actually be
+in lowercase (Unix being case sensitive -- Windows is not).
+
+
+III. THE CONTENTS OF THE COMPONENT DIRECTORIES
+
+An organism consists of
+
+  -- A name, <organism> 
+  -- A properties file, <organism-name>.plist
+
+(The organism's name is identical to the name of the toplevel directory
+described above and is extracted from there, save that it is translated
+to lowercase)
+
+  -- The GENOME directory, which contains:
+
+     -- One or more FASTA format files (containing the DNA sequences
+of each of the known contiguous segments of the genome).  
+
+Note: currently all the fasta data must exist in a single .fasta file
+(if you have more than one, then the simplest thing to do is just
+concatenate them together, perhaps with a little minor editing).  This
+restriction will need to be revisited and recoded should we attempt to
+load organisms with genome sequences whose total length is greater
+than the allowable file size for the operating system.  Hopefully by
+the time this happens we'll be running on a 64-bit OS and the file
+size will not be an issue.
+
+     -- Exactly one genome.tbl file (Providing additional information
+about each of the contiguous segments defined in the FASTA files).
+
+     -- Nothing else.
+
+
+  -- The GENES directory, which contains:
+
+     -- Exactly one genes.tbl file (providing information about each
+gene, including name, the contiguous segment it belongs to, location,
+structure and other data)
+
+     -- Nothing else
+
+
+  -- The TRANSCRIPTS directory [optional] which contains:
+
+     -- Zero or more FASTA format files (containing RNA sequences)
+
+Note: see comment about fasta files in genomes subsection above
+
+     -- Exactly one transcripts.tbl file defining name, location
+and other information about RNA transcripts.
+
+     -- Nothing else
+
+
+  -- The PROTEINS directory, which contains:
+
+     -- One or more FASTA format files (containing amino acid sequences,
+and the names of those sequences (aka 'proteins')
+
+Note: see comment about fasta files in genomes subsection above, although
+the total length of the protein sequences should never exceed 2**31.  
+
+     --  Exactly one proteins.tbl file (containing additional information
+about each amino acid sequence).
+
+     --  Nothing else
+
+
+  -- The OTHER directory [optional], which contains:
+
+     -- Zero or more FASTA format files.
+
+     -- Zero or more TABLE format files.
+
+     -- Nothing else
+
+
+  -- The DOCUMENTATION directory [optional], which contains:
+
+     -- Zero or more files, one of which may be called genes.test.
+
+
+DEFINITION AND CONTENTS OF A .PLIST FILE
+
+Information about the organism itself is stored in a file called
+<organism-name>.plist in the toplevel directory in Lisp-syntax property
+list format.  (see below for a discussion of property list format)
+
+The only property that must exist is VERSION, and its value must
+be a Lisp string.  
+
+Note: *** This isn't actually checked at the moment but needs to be
+
+Here is the content of a sample <organism-name>.plist file:
+
+((VERSION "2.0") (DATE (2004 01 15))
+ (AUTHOR "Jeff Elhai") (ORGANIZATION "VCU")
+ (DESCRIPTION "The first Martian cyanobacteria"))
+
+There are some properties besides VERSION which are treated specially
+if they exist.  These are:
+
+  -- The DATE property
+
+  If a DATE property key exists (whose value must be a list in the
+form (yyyy mm dd)), it is used, otherwise the current date is
+recorded as the value of this property key.
+
+Note: *** Need to put the date that some representative file has as its file
+write date into this slot
+
+  -- The DESCRIPTION property
+
+  If present its value must be a string.  It is removed from the
+properties list before the property list is stored in the database
+and it is stored in its own special database column.
+
+  -- The ORGANISM-PREFIX property
+
+  If present this must be a string.  The name of every entity defined
+in the standard submission data tables (i.e., contigs, genes,
+transcripts and proteins, found in both FASTA and TBL files) is
+prefixed by this string before being stored in the database, unless it
+is overwritten as described below.  If not present it defaults to ""
+(the null string), effectively causing their to be no prefix.  Note
+that data in non-standard tables such as those in the OTHER directory
+will not be prefixed, regardless of what they may represent.
+
+  -- The CONTIG-PREFIX, GENES-PREFIX, TRANSCRIPTS-PREFIX and PROTEINS-PREFIX
+     properties.
+
+Note: *** These other prefix strings are not currently used and we believe
+no organism actually has anything but an organism prefix property currently
+
+  If present, these must be strings.  If present, these override the
+ORGANISM-PREFIX property for their respective named entities and
+otherwise perform the same function.  Note that providing the value ""
+(the null string) is NOT the same as not providing the property at
+all.  In the former case the prefix will be "" (effectively no
+prefix), while in the latter case the prefix will default whatever the
+ORGANISM-PREFIX property value is.
+
+Other properties may be present at the discretion of the curator.
+
+In addition to properties present in the property list in the .plist
+file, the processing algorithm adds two properties before storing the
+property list in the database:
+
+  -- a TIMESTAMP property, whose value is the universal time (seconds
+since Jan 1, 1900, the value of the Lisp function get-universal-time),
+at the time the property list is processed by the uploading algorithm.
+
+  -- a TIMESTAMP-STRING property, whose value is in the format
+"mm/dd/yy hh:mm:ss".  This is for human readers.
+
+Note: *** These need to be added to the property list (or really, the
+organism frame)
+
+
+IV. DEFINITION AND CONTENT DESCRIPTION OF FASTA FILES.
+
+These are files in standard FASTA format.
+
+The GENOME fasta files contain 'long' sequences of A's, C's, G's and
+T's, defining the scaffolds, chromosomes, plasmids or what-have-you
+(hereafter referred to as 'contiguous segments') of the genome.
+(There can be a single fasta file with a single fasta record defining
+the entire genome.)
+
+The keys for all the records for all the fasta files in the GENOME
+directory must be unique.  These keys define names which are
+referenced by the data in the GENES and TRANSCRIPTS directories.
+
+The TRANSCRIPTS fasta files contain shorter sequences of RNA data.
+
+The keys for all the records for all the fasta files in the TRANSCRIPTS
+directory must be unique.
+
+The PROTEIN fasta files contain shorter sequences of letters denoting
+amino acids.
+
+The keys for all the records for all the fasta files in the PROTEINS
+directory must be unique.  These define the different proteins of the
+organism.  
+
+The data in the genome fasta files is sequence data which, in a
+perfect world, would consist of only ACGT.  However various other
+characters are often inserted by biologists to represent various
+amounts of uncertainty.  The following additional characters are sometimes
+allowed in genome sequences:
+
+        N -- aNything
+        B -- C or G or T
+        D -- A or G or T
+        H -- A or C or T
+        K -- G or T  (Keto)
+        M -- A or C  (aMino)
+        R -- A or G  (pUrine)
+        S -- G or C  (Strong)
+        V -- A or C or G
+        W -- A or T  (Weak)
+        Y -- C or T  (pYrimidine)
+
+The curator has the option to specify which characters are allowed
+in the genome sequence for a given organism.  By default, only
+ACGT and N are allowed.  To specify that only ACGT are allowed, 
+the curator may put into the .plist file the following form:
+
+(genome-char-predicate allowable-genome-char-strict?)
+
+To specify that any of the characters in the above table are also
+allowed:
+  		
+(genome-char-predicate allowable-genome-char-unfinished?)	
+
+The curator may also define (or have defined for him) another predicate
+that tests for exactly the characters he wishes to be allowed.  
+
+The data in the protein fasta files is amino acid sequence data,
+which, in a perfect world, would consist of the 20 characters that
+represent the 20 amino acids (and '*' which terminates the sequence).
+Some sequencing puts in '-' to represent one or more unknown amino
+acids, and some sequencing puts in 'X', apparently to represent the
+same thing as '-'.  
+
+By default, protein sequence data can contain the 20 standard
+characters along with '*' and '-'.  
+
+To specify that no '-'  is allowed, the curator may put into the .plist
+file the following form:
+
+(protein-char-predicate allowable-protein-char-strict?)
+
+To specify that an 'X' as well as a '-' are allowed (as is apparently the case 
+in the arabidopsis protein sequences):
+
+(protein-char-predicate allowable-protein-char-arab?)
+
+As with the genome, the curator may specify their own predicate.  
+
+
+V.  DEFINITION AND CONTENT DESCRIPTION OF TABLE FILES.
+
+Table files (.tbl) are tab-delimited files with column headers (a
+standard format familiar to the biological community).  Their formal
+syntax is described in other documentation.
+
+Various tables defined below have a column or columns whose syntax is 
+'property list syntax'.  Property list syntax is defined at the bottom
+of this document.  Basically, it consists of either Lisp syntax -- a
+list of (key value) two-element lists, or 'colon' syntax -- a list of
+key:value pairs.
+
+A table has a certain number of required and optional columns,
+depending on the table, as documented below.  Other columns may exist
+at the discretion of the curator.  In some tables (as documented)
+other columns are treated as additional property information.
+
+An example best illustrates this:
+
+Suppose a table as documented has required columns NAME, PROPERTIES
+and DESCRIPTION.
+
+The table as provided in fact has these columns:
+
+NAME GOID PROPERTIES MY-SPECIAL-LABEL DESCRIPTION
+
+And a row in this table looks like
+
+xyz  90115   ECREF:1.2.4.5   special-xyz-label   The last three letters
+
+Then this is semantically equivalent to the following table row:
+
+xyz   ((ECREF "1.2.4.5") (GOID "90115") (MY-SPECIAL-LABEL "my-xyz-label"))   The last three letters
+
+I.e., other columns get transformed into key-value pairs on a per-row
+basis.  The name of the column is used as the key, and the data value
+in the row, treated as a string, is used as the value.
+
+Note that the data value is treated as a string:  The value of the GOID
+is not the number 90115, but the string "90115".
+
+If the data value is empty (the null string, "")
+*** make sure this is true***
+ for a given row, then
+no property for that column for that row is created (rather than 
+defining a key with a null string as its value).  The special string "-"
+is equivalent to the null string.  Any data field in a table that
+consists solely of the character '-' is treated as a null field.
+
+
+  V.A. DEFINITION OF THE TABLE FILE IN THE GENOME DIRECTORY.  
+
+The genome.tbl file must contain the following fields, identified
+exactly (ignoring case) by the column names given here:
+
+NAME
+
+The unique name given to a contiguous sequence.  This must precisely
+match exactly one key name in the set of FASTA files in the GENOME
+directory.  
+
+DESCRIPTION [optional]
+
+An English description for this contiguous sequence.
+
+PROPERTIES [optional]
+
+A property list associated with this NAME.  One property is
+recognized and handled specially by Biobike: CIRCULAR (T/F).
+
+  -- CIRCULAR defines whether the contiguous sequence 'wraps', so that
+the last element of the sequence is treated as being next to the
+first element.  If CIRCULAR is not present Biobike assumes it
+to be FALSE.
+
+
+  V.B. DEFINITION OF THE TABLE FILE IN THE GENES DIRECTORY
+
+The genes.tbl file must contain the following fields, identified
+exactly (ignoring case) by the names given here.
+
+NAME
+
+The unique name of this gene.
+
+GENOME-COMPONENT
+
+The name of the GENOME contiguous sequence to which this gene
+'belongs' or 'comes from'.
+
+DIRECTION
+FROM
+TO
+ARCHITECTURE [optional]
+
+See below for the semantics of these fields.
+
+PROPERTIES [optional]
+
+A property list containing other information about this gene.
+
+DESCRIPTION [optional]
+
+An English description for this gene.
+
+Other columns (see above) may exist in lieu of or in addition to the
+PROPERTIES column.  These are collected to form (if no PROPERTIES
+column exists) or to augment (if one does exist) the property list.
+
+THE SEMANTICS OF FROM, TO, DIRECTION and ARCHITECTURE:
+
+  FROM
+    A positive integer less than or equal to the number of base pairs
+in the fasta record indicated by GENOME-COMPONENT.  See DIRECTION for
+further semantics.  Alternatively -1.
+
+  TO 
+    A positive integer less than or equal to the number of base pairs
+in the fasta record indicated by GENOME-COMPONENT.  See DIRECTION for
+further semantics.  Alternatively -1.  
+
+  DIRECTION 
+    Either F or B. 
+    - If FROM < TO (the normal case): 
+         If F, indicates that the sequence is to be defined by reading
+forward starting with FROM until TO inclusive.  
+         If B, indicates that the gene sequence is to be defined
+by reading in reverse starting with TO and going backwards until FROM
+inclusive.  
+    - If TO < FROM (the wrapping case): 
+         If F, indicates that the gene sequence is to be defined by
+read forward starting with FROM until the end of the sequence, then
+reading is continued starting at the first base pair of the sequence
+until TO is reached inclusive.  
+         If B, indicates that the gene sequence is to be defined by
+reading in reverse starting with TO and going backwards until the
+beginning of the sequence, then reading is continued starting at the
+last base pair and continuing backwards through the sequence until
+FROM is reached inclusive.
+     - If FROM is -1, this indicates that no location information
+exists.  The values of TO and DIRECTION are ignored.  (We suggest
+that TO also be -1, and DIRECTION be either null or X, for clarity).
+
+Note: Unlike standard Common Lisp semantics, TO is not exclusive.
+Note: Unlike standard Common Lisp semantics, FROM and TO are 1-based,
+not zero-based.
+
+  ARCHITECTURE:
+
+The current format is a list of lists, of the form ((<from1> <to1>)
+(<from2> <to2>) ...)  The FROM's and TO's in this list are as above,
+except that they cannot take on the value -1.
+
+This format may be extended to allow additional architecture
+specification in the future.
+
+The intent here is to specify the 'internal' structure of the gene,
+such as 'introns' and 'exons'.
+
+(The ARCHITECTURE column is turned into KEY-VALUE pairs just like
+other, non-specified, columns (see above) when the ARCHITECTURE
+info is stored in the SQL database.)
+
+  V.C. DEFINITION OF THE TABLE FILE IN THE TRANSCRIPTS DIRECTORY
+
+This is identical in format to the table file in the GENES directory.
+The only potential difference is that in the future the ARCHITECTURE
+field may be given different syntax to properly describe how
+TRANSCRIPTS are derived from the genome.
+
+
+  V.C. DEFINITION OF THE TABLE FILE IN THE PROTEINS DIRECTORY
+
+This table file contains extra information about PROTEINS defined by
+the FASTA file(s) in the same directory.
+
+The file must contain the following fields, identified
+exactly (ignoring case) by the names given here.
+
+NAME 
+
+A unique name for this protein.
+
+GENE
+
+The name of the gene associated with this protein.  This name must
+exist as one of the entries in the NAME column of the genes.tbl
+file.  It is possible for more than one protein to point to the same
+genes.tbl NAME entry.
+
+PROPERTIES [optional]
+
+A property list providing additional information about this protein.
+
+DESCRIPTION [optional]
+
+An English description for this protein.
+
+
+Other columns (see above) may exist in lieu of or in addition to the
+PROPERTIES column.  These are collected to form (if no PROPERTIES
+column exists) or to augment (if one does exist) the property list.
+
+
+VI.  DEFINITION OF THE TEST FILE IN THE DOCUMENTATION DIRECTORY
+
+If a genes.test file exists in the DOCUMENTATION directory, it
+should be of the format 
+
+("gene-key-1" "gene-sequence-1") 
+("gene-key-2" "gene-sequence-2") 
+...
+
+The intent is to provide human-culled subsequences for a few
+genes as test cases, to make sure the data gets into the database
+correctly and the sequence extraction algorithms are working.
+
+The tests in this test file get run by default when the organism is
+loaded into Biobike via LOAD-ORGANISM (see below).
+
+********************************************************************
+********************************************************************
+********************************************************************
+
+VIII.  ORGANIZATION OF ORGANISM FRAMES
+
+An organism is 'instantiated' (that is, some or all of the information
+about the organism is transferred from the files in the organism's
+directory into Lisp, into the frame system) using PRELOAD-ORGANISM and
+LOAD-ORGANISM.
+
+PRELOAD-ORGANISMS creates organism frames and loads auxiliary data
+about each organism from the .plist file into the slots of the
+organism frame.   
+
+LOAD-ORGANISM creates frame slots for the organism which contain
+that organism's contiguous sequence information, genes information,
+transcript information, and protein information.
+
+By default, neither the actual sequences for CONTIGUOUS SEQUENCES,
+TRANSCRIPTS or PROTEINS, nor the DESCRIPTION field of any of the
+tables, is read into Lisp and into the frame system.  These fields are
+retrieved 'on demand' using the EXTRACT-* functions and possibly
+cached.  (The DESCRIPTION field can be loaded via an option to
+LOAD-ORGANISM).  
+
+The LOAD-ORGANISM algorithm procedes as follows:
+
+  -- The GENOME_INFORMATION table is processed.  Frames are created if
+necessary for each contiguous sequence. The individual PROPERTIES for
+each contiguous sequence are stored as slot values in each contiguous
+sequence frame.  Each contiguous sequence frame is made to point back
+to its organism's frame.
+
+  -- The .seqidx file for this organism is read (if the file does not
+exist, it is created from the .fasta file).  Each contiguous sequence
+frame is given slot values for #$Sequence-Length and data to allow
+retrieval of the sequence in an internal slot called
+#$internal-sequence-info.
+
+  -- The organism frame is given a frame slot, #$Contiguous-Sequences,
+whose value is a list of all the contiguous sequence frames for that
+organism.  Also slot values for #$genome-sequence-File and
+#$genome-sequence-Stream are provided.
+
+  -- The GENES_INFORMATION table is processed.  A frame is created for
+each gene.  That frame is given DIRECTION, FROM and TO frame slots
+with appropriate values taken from the DIRECTION, FROM and TO columns.
+Individual other properties for each gene are stored as slot values.
+Each gene frame is given a pointer to the CONTIGUOUS-SEQUENCE frame the
+gene record names, and a pointer back to the organism.
+
+  -- The organism frame is given a frame slot, GENES, whose value is
+a list of all the gene frames for that organism.
+
+  -- The TRANSCRIPT_SEQUENCE table is processed (if it exists), and
+a frame is created for each transcript named in the table.
+
+  -- The TRANSCRIPT_INFORMATION table is processed (if it exists).  A
+frame is created for each transcript.  That frame is given DIRECTION,
+FROM and TO frame slots, with appropriate values taken from the
+DIRECTION, FROM and TO columns.  Individual PROPERTIES for each
+transcript are stored as slot values.  Each transcript frame is given
+a pointer to the CONTIGUOUS-SEQUENCE frame the transcript record
+names, and a pointer back to the organism.
+
+  -- The organism frame is given a frame slot, TRANSCRIPTS, whose
+values is a list of all the transcript frames for that organism.
+
+  -- The PROTEIN_SEQUENCE table is processed (if it exists), and a
+frame is created for each of the organism's proteins.
+
+  -- The PROTEIN_INFORMATION table is processed (if it exists), and
+frame slots are created and given values in each protein frame created
+in the previous step from the PROPERTIES field.  The protein frame is
+given a pointer to the GENE frame named in the table.  The
+protein frame is also given a pointer to the organism frame.  The
+GENE frame named by the PROTEIN is augmented so that its PROTEINS
+slot includes this PROTEIN (the PROTEINS slot for the GENE frame is
+created if it does not exist).
+
+  -- The organism is given a frame, PROTEINS, whose value is a list of
+all the protein frames created for the organism in the previous steps.
+
+  -- Postprocessing, if any is done on the organism frame's slot data.
+See section IX for details.
+
+  -- Various other data-structures associated with the organism are created
+by calling the function CREATE-ORGANISM-DATA-STRUCTURES.  
+
+  -- The organism is added to the list of currently loaded
+organisms.
+
+  -- The file genes.test is run through if it exists.
+
+
+IX.  POSTPROCESSING OF ORGANISM DATA.
+
+
+When organism data is loaded into Lisp, it is optionally subject to
+additional processing defined by a 'postload' file.
+
+For a given organism (for example called xyz_123) the system looks to
+see whether a file exists called postload.lisp in the toplevel
+organism's directory.
+
+If the file exists it is loaded, and then a function whose name is
+
+XYZ_123-POSTLOAD-FUNCTION
+
+is called.  (If no such file exists nothing is done).  This file
+should define said function (and a simple tool is provided that will
+automatically do so, see below).
+
+The postload file can contain arbitrary code, but it should not.  It
+should simply consist of the following two forms:
+
+(in-package :bio)
+
+(organism-postload-processsing (<organism-name> <organism-frame-symbol>)
+  (&rest <data-transform-directives>)
+  &body body-forms
+  )
+
+followed by function definitions for functions used by the above code,
+if any.
+
+
+ORGANISM-POSTLOAD-PROCESSING 
+
+is a macro which creates the -POSTLOAD-FUNCTION using the data
+provided by its arguments.
+
+ORGANISM-NAME is the exact name of the organism, either as a symbol
+or a string.  E.g., :nostoc_punctiforme_atcc29133 or
+"nostoc_punctiforme_atcc29133" (note the underscores, which are not
+dashes).  This name is used to contruct the postload function name,
+and to identify the organism frame.
+
+ORGANISM-FRAME-SYMBOL is a symbol you provide which will be bound to
+the organism's frame (e.g., #$Nostoc_punctiforme_atcc29133) when
+BODY-FORMS is executed.  It's there for your convienence, so you don't
+have to type the organism frame name multiple times.
+
+BODY-FORMS are arbitrary lisp forms that get executed after the
+DATA-TRANSFORM-DIRECTIVES have been executed.  The intent is to
+perform further postprocessing on the organism frame that the curator
+wishes to do which cannot be done using the DATA-TRANSFORM-DIRECTIVES.
+
+DATA-TRANSFORM-DIRECTIVES
+
+A DATA-TRANSFORM-DIRECTIVE is either a keyword or a DATA-TRANSFORM-LIST.
+
+The legal keywords are:
+
+	:contig-transforms 
+	:gene-transforms 
+	:transcript-transforms 
+	:proteins-transforms
+
+They may occur in any order but the above order is the preferred
+order.  One of these keywords must be the first
+DATA-TRANSFORM-DIRECTIVE.  After each keyword any number of
+DATA-TRANSFORM-LIST's may appear, all of which are interpreted in the
+context of the keyword (see below).
+
+A DATA-TRANSFORM-LIST is of the form
+
+(<slot-name> 
+  &optional 
+  (<transform-function> 'read-from-string)
+  (<check-function> 'stringp))
+
+What this means is:
+
+For the organism entity identified by the most recently occurring keyword
+ 
+   :contig-transforms -> #$Contiguous-Sequences
+   :gene-transforms -> #$Genes 
+   :transcript-transforms -> #$Transcripts
+   :protein-transforms -> #$Proteins
+
+for each element of the value of that slot in the organism, replace
+the value of the SLOT-NAME frame with the result of calling
+TRANSFORM-FUNCTION on that value, if and only if CHECK-FUNCTION is
+true when called on that value.
+
+This sounds complicated but is in fact simple.  As an example, suppose
+we have 
+
+:gene-transforms
+(direction)
+
+then for all the genes in the organism, each gene's DIRECTION slot
+value will be replaced by the result of calling READ-FROM-STRING on
+its value (since the default transform function is READ-FROM-STRING).
+But only if the old value is a string.  So if the old value was "F",
+the new value will be the symbol F.
+
+With
+
+:protein-transforms
+(my-special-column my-special-transform my-special-check)
+
+Then the value of the #$My-special-column slot of all the organism's
+proteins will be replaced by the value of calling MY-SPECIAL-TRANSFORM
+on the original value, but only if MY-SPECIAL-CHECK is true of the old
+value.
+
+A number of TRANSFORM FUNCTIONS are pre-defined.  These are:
+
+      string-to-lisp-object
+      string-to-double-float
+      string-to-double-float-or-nil
+      string-to-single-float
+      string-to-single-float-or-nil
+      string-to-integer
+      string-to-integer-or-nil
+      string-to-list
+      string-to-list-or-nil
+      string-to-direction
+      boolean-string-to-boolean
+      boolean-string-to-boolean-or-nil
+      circular-string-to-t-or-nil
+
+The 'OR-NIL' versions transform the datum to NIL if the datum is the
+string "" or the string "-".  These strings are often used to indicate
+a 'missing' datum.
+
+STRING-TO-DIRECTION transforms "F" and "B" to :f and :b, respectively.
+The BOOLEAN family transforms "T" and "F" to T and NIL, respectively.
+CIRCULAR-STRING-TO-T-OR-NIL transforms "T" and "F" to T and NIL,
+respectively.
+
+The TRANSFORM-FUNCTION and CHECK-FUNCTION forms may either be symbols
+or lambda expressions.  If they are symbols then of course functions
+of these names must exist or be defined in the postload file.
+
+
+
+********************************************************************
+********************************************************************
+********************************************************************
+
+
+XI.  THE SYNTAX OF PROPERTY LISTS IN TAB-DELIMITED TABLE FILES:
+
+
+  Either
+    
+    -- a list in Lisp format of key-value pairs, the key being the
+first element of each pair, the value being the second element.
+The key must be a symbol.  The value can be any readable Lisp object.
+The notation '()', denoting the empty property list, is valid, but the
+notation 'NIL' is not.
+
+   -- A psuedo-list composed of key-value pairs, any of which may be
+in Lisp format (described above), or colon format.  A psuedo-list
+whose first component is a (key value) list must be enclosed in
+parentheses, while a psuedo-list whose first component is in colon
+format does not need to be surrounded by parentheses.
+
+Colon format for a key-value pair is:
+
+  <lisp-symbol>:[optional space]<non-whitespace-non-paren-value-characters>
+
+The following constitute examples of valid property list syntax:
+
+1.   ()
+2.   ((a b) (c d))
+3.   ((a 5) foo:bar)
+4.   (xyzzy: +++ (foo "abc") (bar (12 13 #\Space)))
+5.   (goid:1.2.3.4 ec-id:926.a.tango kegg-id:8956)
+6.   foo:bar baz: quux (three 3)
+
+Note: *** verify that non-list property list syntax still works
+
+The key part of a key-value pair must always be a syntactically valid
+Lisp symbol, in either format.
+
+When the key and value parts of a key-value pair given in Lisp syntax
+are processed by the code that reads the organism's .tbl files, the
+Lisp reader is called indivdually on the strings representing the key
+and the value.  The standard readtable settings are used except that
+*READ-EVAL* is disabled, *PACKAGE* is set to the KEYWORD package, and
+*READTABLE* is bound to the Biobike readtable (which enables #$
+syntax).  (Therefore all symbols will be interned in the KEYWORD
+package -- however, an exception is made for the symbols T and NIL.
+Any :T symbol will be converted back to T, and similiarly for NIL.)
+
+The key part of a key-value pair given in colon syntax is processed
+as with Lisp syntax.
+
+The value part of a key-value pair given in colon syntax is always
+treated as a Lisp string.  That is, all non-whitespace characters
+after a colon and before the first whitespace character become
+the characters of a string.
+
+Therefore, in example 2 above, the value of the key 'a' is the number 5,
+while in example 4, the value of the key 'kegg-id' is the Lisp string
+denoted by "8956".
+
+It follows from this that values using colon syntax are stored in the
+MYSQL database using the case they are in in the original .tbl files,
+while values using Lisp syntax depend on the Lisp reader's standard
+handling of case for the specific object being read.
+
+It can also be seen that using Lisp syntax is more general: there are
+many things that cannot be represented using colon syntax, such as a
+string with embedded whitespace or parentheses, and any non-string
+Lisp object.
+
+
+
+
+
+

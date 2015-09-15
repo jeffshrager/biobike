@@ -1,0 +1,359 @@
+-*- mode: outline; -*-
+
+* Reliable messaging
+
+The lowest-level piece of infrastructure provides a way to send and
+receive messages from Javascript, communicating with a backend server
+that acts as a message switch.
+
+In Javascript, one instantiates a Channel object that is then used to
+send messages and which "fires" an event (onMessage) when messages are
+received. Under the covers it issues asynchronous XMLHttpRequests to
+send any outgoing messages and to request incoming messages from the
+server. Normally it will use up to two connections at a time, one
+connection to send messages, which lasts only as long as the send
+takes (modulo Keep-Alive etc.) and another long-lived connection for
+receives, which lives until a message is received or a timeout fires
+in which case it is aborted and a new request made.
+
+The Channel is responsible for performing the reliable messaging
+protocol to ensure that each message is sent once and only once. (The
+messages are guaranteed to be sent in order however as soon as they
+are received on the other side in a multi-threaded server, there's a
+good chance that they will become somewhat disordered. Applications
+that need strict ordering will likely need to provide their own
+message ordering mechanism.)
+
+When a message is received by the Channel it is acknowledged and
+delivered to user code via the onMessage callback.\note{Since
+Javascript is single threaded anyway [don't think this is true: JKM], we could possibly delay sending
+the ack until after the callback returns, which guarantees that the
+code has run. However it's not clear that that matters much since
+nothing the Javascript does is durable: it's possible the message
+could be acked and then sometime before the callback returns the
+browser crashes which means the message was never "processed". But
+that's not much different from the case where the callback is called,
+returns, the message is acked and *then* the browser crashes.}
+
+* HTTP transport
+
+The foundation for the messaging protocol, on the client side is the
+XmlHttpRequest object. This object lets the browser make HTTP requests
+to the server the page was loaded from that can send and receive XML
+payloads. Because our messaging protocol is bi-directional we need to
+make sure that we always have at least one request outstanding to the
+server for receiving messages. On the other hand, we want to minimize
+the number of concurrent connections to the server, both to reduce the
+resource drain on the server and because some browsers limit the
+number of connections Javascript can make to a server.
+
+In the interest of code comprehensibility, we'll implement an HTTP
+transport layer that manages this largely independent of the protocol
+it is transporting. The basic scheme is this:
+
+The HTTP transport layer is given an object that supports a
+GET-MESSAGES method which, when called, returns an xml document to be
+sent to the server. The HTTP transport starts by calling GET-MESSAGES
+and then making a POST to the server, sending the messages in the POST
+body. At some point the server will reply with some messages for the
+client and the request will complete. However if the server has no
+messages to send right away, the request will hang for some time. (The
+server needs to be aware that this can happen--for instance in a
+server where each request burns a thread, there need to be enough
+threads to handle the number of concurrent requests.) Because of
+various network glitches that can cause a hanging connection to get
+broken without the client necessarily knowing, we set a longish (order
+of 5-15 minutes) timeout to abort the connection if it is still
+pending when the timeout fires and make a new request.
+
+If the client generates more messages that need to be sent, it
+notifies the HTTP transport object which will immediately call
+GET-MESSAGES and make another request to send those messages. Now the
+question is what happens to the old and new connection. In a simple
+situation the new request will always cause the server to send
+something back, thus one of the requests will complete and one will be
+left hanging and everything is good. In a more pathological case, the
+new request won't cause the server to need reply with any messages and
+both requests will be left hanging. To deal with this possibility we
+can set a short (order of 5-30 seconds) timeout which will abort one
+of the connections if they are both still pending when the timout
+fires.
+
+
+
+
+
+We convey the information needed by the reliable messaging
+layer (the channel id and the sequence number) in the URL of the HTTP
+request. To send messages we make a request like this;
+
+    POST /messages/send?id=<id>&seq=<sent-seq> HTTP/1.1
+    Host: whatever
+
+To get messages we issue a request like this:
+
+    GET /messages/receive?id=<id>&ack=<ack-seq> HTTP/1.1
+    Host: whatever
+
+The server-side functions that handle these requests then look up the
+appropriate channel object and do the reliable messaging protocol.
+When the client sends a message this will result in the XML payload
+being handed off to a message dispatcher and an ack being sent to the
+client. Or, if the message is duplicate, which could happen if, for
+instance, something happens to the network while the server is in the
+process of sending the ack so the client never gets it, the server
+discards the payload and simply replies with the appropriate ack.
+
+Since the response is going to be handled by Javascript code, the
+reliable messaging information sent back to the client needs to be
+sent as XML. Thus 
+
+Send a message on channel 1234 with sequence number 38:
+
+    <channel id="1234">
+      <send sequence="38">
+        <message>...</message>
+      </send>
+      <send sequence="39">
+        <message>...</message>
+      </send>
+      ...
+    </channel>
+
+This kind of message is POSTed to the server by the client and
+returned by the server to the client in response to an <ack>.
+
+To acknowledge receipt of a message (and thus potentially recieve more
+messages, the client sends this kind of message):
+
+    <channel id="1234">
+      <ack sequence="45"/>
+    </channel>
+
+
+
+
+
+
+
+
+Server gets SEND messages. Immediate need to send ACK, so does.
+
+Server gets ACK message. No need to reply until there are new messages
+to deliver, so hangs connection.
+
+Client: has unsent message to send; enqueues a <send> message with the
+appropriate sequence number. Sends any RMP messages in queue right
+away. 
+
+Long lived requests: ones for which we don't necessarily expect to get
+a response in any particular amount of time. In general we always want
+one long-lived request hanging out, in case someone tries to send us a
+message. However there are two problems. 1) sometimes firewalls or
+proxies or whatever kill long-lived connections without doing the
+right TCP dance so you don't find out until you do something like try
+and write on the connection, which we won't do. 2) There may be limits
+on the number of connections a browser can have open to a server at a
+given time.
+
+We don't want to needlessly cancel long-lived requests.
+
+If we have an existing long-lived request and we need to send a
+message we can either 
+
+
+Sending RMP messages: if all messages are ACKs, kill any existing
+long-lived request (should be only one), mark new request as
+long-lived, and set a longish timeout to resend the ack. (If the
+timeout fires, an ACK will be enqueued and sent which will cause the
+current request to be cancelled.)
+
+If any of the messages are SENDs then we expect to get a response (an
+ACK) back right away so we set a short timeout to kill the current
+request and resend any un-acked messages and mark the request as
+short-lived. If that timeout fires, it will 
+
+
+If any of the RMP messages are ACKs, cancels any existing
+long-lived requests and marks itself as long-lived. Otherwise, leaves
+other requests alone and marks new request and short-lived.
+
+
+. Sets timeout to
+resend message if ACK not received fairly soon (order of 30 seconds).
+Normally gets the ack back right away and quiesceses.
+
+Client: receives message. Needs to ack it, does so. Sets timeout to
+cancel request and resend ACK if no new messages received in a longish
+while (order of 5-15 minutes).
+
+
+Request will hang
+until the server has another message to send. Client will eventually
+time out the request and resend the ack.
+
+
+
+
+    <ack channel="1234" sequence="1234"/>
+
+    <receive channel="1234" sequence="456"/>
+
+
+
+
+
+		    +---------------------------+
+		    | Application specific XML  |
+		    +---------------------------+
+		    | Message dispatching XML   |
+		    +---------------------------+
+		    | HTTP - reliable messaging |
+		    +---------------------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<message sequence="1">
+  <header>
+    <to>foo</to>
+    <from>whomever</from>
+    <type>frob</type>
+    <utc>3345913619</utc>
+  </header>
+  <payload>
+    <x>10</x>
+    <y>20</y>
+  </payload>
+</message>
+
+
+To send a message:
+
+  POST /send/channel-id-1234/sent-sequence-number HTTP/1.1
+
+with message as body. Everything the reliable messaging layer cares
+about is in the URL. It can do the protocol and then enqueue or
+discard the message as appropriate and reply with an ack sequence
+number in the response:
+
+  <ack>1234</ack>
+
+To receive messages:
+
+  GET /receive/channel-id-1234/received-sequence-number HTTP/1.1
+
+where received-sequence-number is the sequence number of the last
+correctly recieved message. The server will respond with as many
+messages 
+
+<message>
+  [opaque well-formed xml -- belongs to the message dispatcher]
+</message>
+
+The payload belongs to the message dispatcher which is passed an
+object reperesentation of the payload along with the channel-id of the
+channel it came in on in case it wants to do something like verify
+that the FROM element matches the user-id of the owner of the channel,
+or simply to send a reply directly to the sending channel. The
+information in the payload itself is all application specific. The
+following example assumes there's a message dispatcher that's going to
+use the TYPE element to dispatch the message to an appropriate
+handler.
+
+In the server this will be a message switch that looks at the TO
+element, translates it somehow to a channel-id for that recipient and
+enqueues a new message on the channel's outbound queue.
+
+In the browser this could be a an onMessage handler that looks up an
+appropriate handler function based on the TYPE element of the payload
+and then calls that function with the sending channel-id, the values
+of the TO and FROM elements, and the body element converted to a
+Javascript object.
+
+<message>
+  ....
+  <payload>
+    <to>foo</to>
+    <from>whomever</from> [probably should match user who owns channel for security reasons.]
+    <type>application type</type>
+    <body>
+      [lcd xml representation of object]
+    </body>
+  </payload>
+</message>
+
+* Message dispatching
+
+Once the reliable messaging layer has accepted a message it is
+dispatched to application level code via the onMessage callback. The
+callback is passed the message body and the channel object the message
+came in on.
+
+While any user-defined function can be used as the onMessage callback,
+there are probably opportunities to make life simpler by providing
+library functions that automatically dispatch incoming messages to
+more specific callbacks.
+
+For instance in many applications it makes sense define an application
+level protocol in terms of different "verbs" that the client and
+server use to tell perform actions or change state on the other side.
+A message dispather that knows how to look inside the payload of a
+message and dispatch it to the appropriate handler for the verb could
+be handy.
+
+Another possibility, to put a certain amount of syncronicity back in
+to what is fundamentally an asynchronous system, is to allow messages
+to be dispatched by a correlation ID. This is handy when the client,
+generates message to the server which will eventually cause the server
+to send some number of responses. If the client generates a unique
+correlation ID for the original message, it can register a callback
+which will be passed all messages from the server containing the same
+id. Since the callback can be a closure, it can keep track of which,
+say, element of the DOM tree needs to be updated with the information
+contained in the reply.
+
+* XML
+
+In order to keep the UI and the backend logic approrpiately separated
+we only use XML as the message encoding format, i.e. the backend
+should never send HTML to the browser to be inserted into the
+page.\note{Which is not to say that the client-side code might not
+take the payload of an XML message and convert it fairly directly to
+HTML to be inserted into the page.}
+
+Therefore we need a couple of utilities on the Javascript side.
+
+  # An automatic way to translate Javascript objects into XML that can
+    be included in a message payload.
+
+  # An automatic way to turn the XML we receive in incoming messages
+    into Javascript objects.
+
+  # Possibly, some utilities to make manipulating the HTML DOM easier
+    so we're not tempted to just do it on the server.
+
+
+Jan 2 '13 John Myers
+In order to support the whirling beachball WaitCursors and the Big Red Sign upon channel timeout,
+two new callback calls have been invoked in the ajax pipe system code:
+;;           call to   function ServerStillAliveAndKicking_Callback () 
+;;           call to   function ServerMajorTimeout_Callback () 
+These functions are now defined in vpl.js, which gets loaded later on in the same VPL page, so no problem.
+-- IF YOU WANT TO USE THIS AJAX.JS FILE IN A DIFFERENT SYSTEM other than VPL,
+     YOU NOW ARE REQUIRED TO DEFINE YOUR OWN JS CALLBACK FUNCTIONS SOMEWHERE
+     because otherwise the interpreted JavaScript will break in the middle, 
+    when it hits one of these two callbacks and doesn't have anywhere to go to,
+     ...or simply comment out their invocation inside the ajax.ls / ajax.js  file.
+hope this helps.

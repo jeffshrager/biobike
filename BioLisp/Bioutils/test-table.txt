@@ -1,0 +1,21 @@
+
+;;; This is a totally useless comment
+;;; that spans two lines.
+
+;;; And this is another totally useless comment.
+
+This is a test table for the TABLE-DATA functionality.
+What comes first are the headers.
+
+;;; Here are the names of the columns/fields.
+
+CODE	NAME	SSN	LEVEL0	LEVEL1	LEVEL2	LEVEL3	R1	R2
+
+What the hell is Barney's wife's name, anyway?
+Now we have the data rows.  The intent is that
+NAME and SSN will be KEY fields.
+
+a	Fred	62-055	1.0	2.0	-3.0	50.0e-2	23	the big man
+v	Wilma	37-999	2.05	3.0		0.50	24	his wife
+c	Barney	12-171	3.0	4.0	5.0	0	89	his friend
+d	Dino	37-999	11.0	21.0	31.0	0.005e2	10	his dog

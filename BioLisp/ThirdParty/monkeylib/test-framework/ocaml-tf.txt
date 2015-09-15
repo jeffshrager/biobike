@@ -1,0 +1,129 @@
+Path: newssvr21.news.prodigy.com!newsdbm01.news.prodigy.com!newsdbm03.news.prodigy.com!newsdst01.news.prodigy.com!newsmst01b.news.prodigy.com!prodigy.com!newscon06.news.prodigy.com!prodigy.net!logbridge.uoregon.edu!usenet01.sei.cmu.edu!nntp.ece.cmu.edu!newsfeeder.srv.cs.cmu.edu!wolfberry.srv.cs.cmu.edu!not-for-mail
+From: Neelakantan Krishnaswami <neelk@cs.cmu.edu>
+Newsgroups: comp.lang.lisp
+Subject: Re: Very poor Lisp performance
+Date: Tue, 23 Aug 2005 21:56:36 +0000 (UTC)
+Organization: Carnegie Mellon Univ. -- Computer Science Dept.
+Lines: 112
+Message-ID: <slrndgn6si.9bm.neelk@gs3106.sp.cs.cmu.edu>
+References: <42fd4459$0$97104$ed2619ec@ptn-nntp-reader03.plus.net> <42ff04a9$0$78285$157c6196@dreader1.cybercity.dk> <42ff1c6e$0$1279$ed2619ec@ptn-nntp-reader02.plus.net> <3m95opF15sleiU1@individual.net> <42ff662a$0$97128$ed2619ec@ptn-nntp-reader03.plus.net> <1124107691.257338.72640@g14g2000cwa.googlegroups.com> <1h1bxgc.rjim7q12zaoegN%use-reply-to@spambegone.null> <4300fc41$0$17460$ed2e19e4@ptn-nntp-reader04.plus.net> <WqfMe.1588$Dd.6727@newscontent-01.sprint.ca> <ddsa0j$fk6$1@nwrdmz02.dmz.ncs.ea.ibs-infra.bt.com> <43021724$0$97107$ed2619ec@ptn-nntp-reader03.plus.net> <sqd5odbz6d.fsf@cam.ac.uk> <43021e94$0$97107$ed2619ec@ptn-nntp-reader03.plus.net> <de3bgt$iop$1@ulric.tng.de> <4305bdd5$0$22906$ed2619ec@ptn-nntp-reader01.plus.net> <de8rgq$b3o$1@ulric.tng.de> <4307fac6$0$1285$ed2619ec@ptn-nntp-reader02.plus.net> <m2br3rx6no.fsf@gigamonkeys.com> <4308066b$0$1285$ed2619ec@ptn-nntp-reader02.plus.net> <m2y86vvqbh.fsf@gigamonkeys.com>
+NNTP-Posting-Host: gs3106.sp.cs.cmu.edu
+X-Trace: wolfberry.srv.cs.cmu.edu 1124834196 1195 128.2.203.51 (23 Aug 2005 21:56:36 GMT)
+X-Complaints-To: abuse@cs.cmu.edu
+NNTP-Posting-Date: Tue, 23 Aug 2005 21:56:36 +0000 (UTC)
+User-Agent: slrn/0.9.7.4 (Linux)
+Xref: newsmst01b.news.prodigy.com comp.lang.lisp:179896
+
+In article <m2y86vvqbh.fsf@gigamonkeys.com>, Peter Seibel wrote:
+> 
+> Uh, I'm not sure I get that last bit of logic. But nevermind. Anyway,
+> if you know any OCamlers (Ocamlites?) who actually believe in testing
+> their code for errors other than type errors and who might be up for
+> the challenge, please do point them to my previous post--I'd love to
+> see an Ocaml (or Haskell or SML or whatever) implementation of a
+> simple unit test framework.
+
+Here's the signature of a very minimalist unit test framework in
+Ocaml.
+
+module type TEST = sig
+  type t
+  type result = Pass of string | Fail of string | Broke of string * exn
+
+  val test : name:string -> (unit -> bool) -> t
+
+  val test_state :
+    name:string ->
+    setup:(unit -> 'a) ->
+    teardown:('a -> unit) -> 
+    ('a -> bool) ->
+    t
+
+  val run : t -> result
+  val print : Format.formatter -> result -> unit
+  val go : Format.formatter -> t -> unit
+end
+
+To define a test, you use the functions test and test_state. 'test'
+just takes a name and a function that returns a boolean condition:
+
+  let t1 =
+    Test.test
+      ~name: "Addition test"
+      (fun () -> 4 = 2 + 2)
+
+If you want to define a test for functions that create and use some
+custom state, do something like:
+
+  let t2 = 
+    Test.test_state
+     ~name: "Dereferencing a pointer test"
+     ~setup: (fun () -> ref 13)
+     ~teardown: (fun r -> r := 0) (* Pointlessly zero out the ref cell. *)
+     (fun r -> !r = 13)
+
+The 'run' function runs a test and returns a result. A result is
+either a Pass or a Fail, depending on whether the test body returns
+true or false, or it can be Broken, indicating an unhandled exception
+out of the test.
+
+The 'print' function prints out a result to a stream, and 'go' is just
+a convenience function that both runs and prints a test.
+
+  # Test.go t2;; (* At the REPL *)
+  pass: Dereferencing a pointer test
+
+To be less minimalist, you'd want to have test suites (a la Kent Beck)
+to treat groups of tests as a test, but but that's all easy to add. I
+use something that has a few more features, but not that many more.
+
+I use it by taking the snippets of code I enter into the REPL to see
+what the functions are doing and turn them directly into my unit
+tests. I imagine Scheme and CL programmers work pretty much the same
+way.
+
+Here's the implementation:
+
+module Test : TEST =
+struct
+  type result = Pass of string | Fail of string | Broke of string * exn
+
+  type t = {
+    name : string;
+    runner : unit -> result
+  }
+
+  let runner name setup teardown body () =
+    try
+      let state = setup() in
+      let b = body state in
+      let () = teardown state in
+	if b then Pass name else Fail name
+    with
+	e -> Broke (name, e)
+
+  let test ~name body =
+    let noop = fun () -> () in
+      {name = name; runner = runner name noop noop body}
+
+  let test_state ~name ~setup ~teardown body =
+      {name = name; runner = runner name setup teardown body}
+
+  let run t = t.runner()
+
+  let print out result =
+    let print fmt = Format.fprintf out fmt in
+      match result with
+	| Pass name -> print "pass: %s\n" name
+	| Fail name -> print "Fail: %s\n" name
+	| Broke (name, exn) ->
+	    print "BROKEN: %s threw %s\n" name (Printexc.to_string exn)
+
+  let go out t = print out (run t)
+end
+
+
+-- 
+Neel Krishnaswami
+neelk@cs.cmu.edu
+

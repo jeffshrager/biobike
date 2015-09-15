@@ -1,0 +1,84 @@
+;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE bbi)
+
+; ===================================================
+;            LOAD PRIVATE ORGANISM FUNCTIONS 
+; ===================================================
+
+(DEFINE-FUNCTION Load-private-organism
+  SUMMARY "Brings previously uploaded organism into your space"
+  REQUIRED organism-name
+  FLAG shared
+  MAP organism-name
+  INITIALIZE base-directory =
+     (IF shared "../shared-files/" "./")
+  INITIALIZE directory = NIL
+  INITIALIZE org = NIL
+  INITIALIZE *suppress-warnings* = t
+  BODY
+    (ASSIGN directory = (JOIN base-directory (STRING-DOWNCASE organism-name) "/"))
+    (ASSIGN org = (LOAD-ORGANISM organism-name :private? t :dir directory
+	                    :VERBOSE? NIL))
+	(IF (SAME (REF org #$topology) "circular")
+	    (FOR-EACH contig IN (REF org #$Contiguous-sequences)
+		     (SETF (REF contig #$circular) T)))
+	(DISPLAY-LINE org " loaded. Nicknames: " (REF org #$Nicknames))
+    (IF (CALLED-FROM-VPL)
+	    (LET* ((nickname (FIRST (REF org #$Nicknames)))
+	           (nickname-symbol 
+	              (INTERN (STRING-UPCASE nickname) *package*))
+		       )
+	       (ADD-VARIABLE-SYMBOL-TO-VPL-PALETTE nickname-symbol))
+        (DISPLAY-LINE "'" (FIRST (REF org #$Nicknames)) 
+	         "' added to your VARIABLES button"))
+	org
+	)
+
+(DEFINE-FUNCTION Upload-private-organism-from 
+  SUMMARY "Brings an organism in GenBank format into your space"
+  REQUIRED Genbank-accession-or-file-name
+    TYPE Genbank-accession-or-file-name = (OR String Frame Symbol List)
+    CONVERT Genbank-accession-or-file-name FROM Frame TO String
+  KEYWORD organism-name 
+    TYPE organism-name = (OR String Symbol NULL)
+  KEYWORD nicknames
+    TYPE nicknames = (OR String List Symbol)
+  KEYWORD gene-prefix
+    TYPE gene-prefix = (OR String Symbol)
+  KEYWORD from-directory 
+    TYPE from-directory = (OR String NULL)
+  KEYWORD number-of-digits = 4
+    TYPE number-of-digits = Positive-integer
+  FLAG circular
+  FLAG completed
+  FLAG Shared
+  FLAG oblivious
+  INITIALIZE (org-name contigs total-nt) = NIL
+  INITIALIZE to-directory = (IF shared "../shared-files/" "./")
+  BODY
+    (SYMBOL-TO-STRING-MAYBE gene-prefix)
+    (SYMBOL-TO-STRING-MAYBE Genbank-accession-or-file-name)
+	(SYMBOL-TO-STRING-MAYBE nicknames)
+    (IF (LISTP genbank-accession-or-file-name)
+        (SETF genbank-accession-or-file-name
+              (MAPCAR (LAMBDA (x) (IF (FRAMEP x) (STRING-OF x) x))
+                      genbank-accession-or-file-name)))
+    (IF (AND shared (NOT from-directory))
+	    (SETF from-directory "../shared-files/")
+		(IF (NOT from-directory)
+		    (SETF from-directory "./")))
+    (ASSIGN (org-name contigs total-nt)
+	  = (UPLOAD-PRIVATE-ORGANISM-aux genbank-accession-or-file-name nicknames 
+                  gene-prefix organism-name from-directory to-directory circular
+                  completed number-of-digits oblivious))
+	(DISPLAY-LINE genbank-accession-or-file-name " uploaded to create organism " org-name)
+	(DISPLAY-LINE contigs " contigs containing a total of " total-nt " nucleotides produced"
+             *newline*)
+	(IF shared
+	    (LOAD-PRIVATE-ORGANISM org-name SHARED)
+		(LOAD-PRIVATE-ORGANISM org-name))
+    (DISPLAY-LINE *newline* "If you need to reload the organism in the future,")
+    (DISPLAY-LINE "it will be faster to execute:")
+    (DISPLAY-LINE "   LOAD-PRIVATE-ORGANISM \"" org-name "\"")
+)

@@ -1,0 +1,36 @@
+<title>Foo</title>
+
+Lots of things you'll do with BioLingua involve looping -- otherwise
+known as <i>"iteration"</i>.  For instance, you might want to execute some
+code for each organism in the current database, or for each gene in an
+organism. Or perhaps you want to do something over all organisms, over
+all Contiguous Sequences in that organism, over every other gene in
+that Contiguous sequence, etc
+
+<p>
+
+<b>Lisp has a multitude of ways to express iteration.  Here we'll show
+you simple examples of a few different mechanisms, then concentrate on
+Lisp's LOOP facility, which is a very powerful, usually readable (if
+occasionally obscure), iteration tool.  Then we'll demonstrate how we
+use LOOP and other iteration constructs to search for relevant frames.</b>
+
+<p>
+
+<pre>
+>> (loop for j from 0 to 10 sum j)
+</pre>
+
+<p>
+
+<pre>
+>> (let ((sum 0))
+>>   (dotimes (j 11 sum) (incf sum j)))
+</pre>
+
+<p>
+
+Another couple of lines 
+
+
+

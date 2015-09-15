@@ -1,0 +1,431 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<Html><head><title>Introduction to Frames</title></head>
+
+<body>
+
+<center>
+</b><p>
+<h2><b>Introduction to Frames</h2>
+</b></p><p>
+</p>
+</center>
+
+<p align="right">Copyright (c) 2003-2004 by The BioBike Team</a></p>
+
+<p>
+<font color=green><i>If you've been reading the Tutorial Materials in order,
+you'll realize we've already talked a bit about frames.  So just skip down
+a bit if you get bored...</i>
+</font>
+<p>
+
+Many things in BioBike are represented by <i>frames</i>.  A frame
+stands for (or <i>represents</i>) some object, class, or concept.
+Frames have named properties called <i>slots</i>.  The values of these
+slots can be primitive objects (like numbers or strings), other
+frames, or lists of frames, or pretty much any other sort of thing
+that you'd like to associate with a property of a concept.
+
+<h3>Frame basics</h3>
+
+<p>
+
+Frames are typed or printed as a string beginning with  "#$", i.e.:
+
+<p>
+<pre>
+  #$Hexokinase
+  #$Apoptosis
+  #$isA
+</pre>
+<p>
+
+The names of frames are unique -- that is, the single frame called
+#$Hexokinase represents that concept for all and every use of the
+concept hexokinase, regardless of where it is used.  Frame names can't
+contain spaces, tabs, or parentheses, and they are case-insensitive
+but case-preserving, which means that #$this, #$ThIs and #$THIS are
+exactly the same frame.
+
+<p>
+
+Frame slot names are frames themselves. For instance, the frame  
+#$Hexokinase might have a slot named #$ECRef whose value is "2.7.1.1", 
+which is the EC reference number of Hexokinase. We'll see more details
+of how frames and slots work shortly.
+
+<p>
+
+You reference a frame by typing it with the #$ syntax:
+<pre>
+ >> #$Go.HexokinaseActivity
+ :: #$Go.HexokinaseActivity
+</pre>
+
+If there were no frame named #$Go.HexokinaseActivity, it would be created!
+
+<p>
+
+To examine a frame with all of its slots, use DESCRIBE-FRAME (or DF, for short)
+
+<pre>
+  >> (df #$Go.HexokinaseActivity)
+:: Slots of #$Go.HexokinaseActivity:
+#$GO.products: (#$Mol.Adp #$Mol.D-Hexose6-Phosphate)
+#$GO.reactants: (#$Mol.Atp #$Mol.D-Hexose)
+#$GO.DBXRefs: (("EC" "2.7.1.1") ("MetaCyc" "HEXOKINASE-RXN")
+               ("InterPro" "IPR001312")
+               ("ProDom" "PD001109 Hexokinase")
+               ("Pfam" "PF00349 Hexokinase_1")
+               ("Pfam" "PF03727 Hexokinase_2")
+               ("PRINTS" "PR00475 HEXOKINASE")
+               ("PROSITE" "PS00378 HEXOKINASES"))
+#$GO.ECRef: (#$Ec.2.7.1.1)
+#$isA:  (#$GO.Reaction #$Go.CarbohydrateKinaseActivity
+         #$Go.PhosphotransferaseActivity,AlcoholGroupAsAcceptor)
+#$GO.definition: "Catalysis of the reaction: ATP + D-hexose = ADP + D-hexose 6-phosphate."
+#$GO.prettyname: "hexokinase activity"
+#$GO.goid: 4396
+</pre>
+
+There may be additional slots, some of which look mysterious. Don't
+worry about them.  Notice that the slot names are themselves frames.
+Slot values include strings (like the value of the #$definition slot)
+and lists of frames (like the value of the #$products slot).
+
+<p>
+
+Note that if you are working in the web listener that frames include
+hyperlinks which take you off to a frame browser. This browser shows
+you much the same information that DF does, and it also shows where
+the frame fits into various hierarchies that it may be part of and lets
+you explore the frame structure a bit more conveniently.
+
+<p>
+
+The BioBike function for accessing a slot value is called SLOTV. For instance:
+
+<pre>
+  >> (slotv #$Go.HexokinaseActivity #$go.products) 
+:: (#$Mol.Adp #$Mol.D-Hexose6-Phosphate) 
+</pre> 
+
+The meaning of the slotv call is "get me the value of the
+#$go.products slot of the #$Go.HexokinaseActivity" frame, or even better, "get
+me the products of Hexokinase found in the GO Ontology".
+
+ <p> 
+
+Instead of slotv, you can use a special syntax that turns a slot-frame
+like #$products into a Lisp function. The following is exactly
+equivalent to the above: 
+<pre>
+  >> (#^go.products #$Go.HexokinaseActivity)
+:: (#$Mol.Adp #$Mol.D-Hexose6-Phosphate) 
+</pre>
+
+<p>
+
+Both SLOTV and the functions produced by the #^ syntax are SETF-able,
+which means that you can use them to change the value of a slot (and
+add new slots).  We don't want to alter any of the properties of
+Hexokinase but let's add a new slot:
+
+<pre>
+  >> (setf (slotv #$Go.HexokinaseActivity #$inhibitedBy) '(#$D-Glucose6-Phosphate))
+  :: (#$D-Glucose6-Phosphate)
+</pre>
+
+We've just added some information about regulatory networks!
+<p>
+<font color=green><i>Note: Don't going doing things like this (adding, or
+even worse, changing knowledge) unless you know exactly what you're doing!
+</i>
+</font>
+<p>
+So far, we've learned how to create a frame (by typing in it's name using #$
+notation), and how to access data in an existing frame (SLOTV) and put new data
+into a frame or replace existing data (using SETF and SLOTV).  One can create
+a frame and at the same time give it a set of slots and values for those
+slots using DEF-FRAME:
+
+<pre>
+>> (def-frame #$Spot #$isA '(#$Dog #$Pet) #$Owner #$Fred)
+</pre>
+
+This creates the #$Spot frame if it doesn't already exist and sets its #$isA
+slot to (#$Dog #$Pet) and its #$Owner slot to #$Fred.
+<p>
+
+<h3>More Advanced Frame Capabilities</h3>
+
+<h4>Computed slots</h4>
+
+You can define a slot that computes its value when asked, then caches
+it for later use.  Let's say you want a slot that represents the
+reversed name of the frame (it's unclear why you would want this, but
+we'll see more interesting examples soon):
+
+<p>
+<pre>
+  >> (def-computed-slot (#$backwardsName)
+       (reverse (#^fName frame)))
+
+  >>(#^backwardsName #$MyFavoriteFrame)
+  :: "emarFetirovaFyM"
+</pre>
+
+The def-computed-slot form declares that the slot #$backwardsName
+computes its value on demand. The body of the form contains code that
+does this computation and returns the value. Note that the body makes
+use of the variable <tt>frame</tt>, which is bound to the value of the
+frame for which we are calculating the value of the #$backwardsName
+slot.
+
+
+<h4>Inheriting slots</h4>
+<p>
+One of the most important properties of frames is <i>inheritance</i>.  It's
+easier to demonstrate this than to explain it.
+
+<p>
+
+First, let's make a frame that represents the class of all animals,
+and give it a slot that represents the typical number of legs found on
+an animal:
+
+<p>
+<pre>
+  >> (def-frame #$Animal #$legs 4)
+  >> (def-frame #$Dog  #$isA '(#$Animal))  ; That is: A dog is an animal.
+</pre>
+
+Note that you have to set the value of the #$isA slot to a list,
+because something can be more than one kind of thing!  (If you try to set
+an #$isA slot to a non-list, an error will be signalled,  because the system
+knows that #$isA is a slot that is SET-VALUED -- that it, it requires a
+list as its value).
+<p>
+Notice, however, that when we do this, if some else had previously told the
+system that #$Dog is a #$Verb, that information would have just been lost.
+Instead, it is better to use PUSHNEW when dealing with SET-VALUED slots,
+unless you explicitly intend to destroy any information already present:
+
+<pre>
+>> (pushnew #$Verb (slotv #$Dog #$isA))
+:: (#$Verb #$Animal)
+</pre>
+
+This operation didn't destroy the information a #$Dog is an #$Animal,
+it just added the #$Verb information.  Okay, back to inheritance.  Now
+we indicate that the #$legs slot inherits:
+
+<pre>
+  >> (def-inherited-slot #$legs)
+</pre>
+
+Now we can ask questions about how many legs various animals have:
+
+<pre>
+  >> (#^legs #$Dog)  ; How many legs does a dog have?
+  :: 4
+</pre>
+
+Even though #$Dog doesn't explicitly have a #$Legs slot, because
+#$Legs inherits, the system can get the answer by looking at the
+things #$Dog is.  Insects are animals too, but they typically have six
+legs:
+
+<pre>
+  >> (def-frame #$Insect #$legs 6) ; An insect has six legs
+  >  (pushnew #$Animal (slotv #$Insect #$isA))  ; An insect is an animal
+  >> (def-frame #$Ant)
+  >  (pushnew #$Insect (slotv #$Insect #$isA))  ; An ant is an insect.
+</pre>
+
+How many legs does an ant have?
+
+<pre>
+  >> (#^legs #$Ant)
+  :: 6
+</prE>
+<p>
+
+By default, inheritance happens across the #$isA slot -- that is, the
+relationship of one thing being an instance of another (a dog is an
+animal, or #$dog #$isA #$animal).  But frames can inherit along any
+relationship. Let's make another inheriting slot (other than #$isA):
+<p>
+The concept of ownership inherits through the concept of partof:
+
+<pre>
+  >> (def-inherited-slot #$owner #$partOf)
+</pre>
+
+Make an abstract car frame:
+
+<pre>
+  >> (def-frame #$Car)
+</pre>
+
+PinkCadillac is a kind of car and Angelyne is its owner:
+
+<pre>
+  >> (def-frame #$PinkCadillac #$owner #$Angelyne)
+  >> (pushnew #$Car (slotv #$PinkCadillac #$isA))	
+</pre>
+
+PinkEngine is part of the PinkCadillac:
+
+<pre>
+  >> (def-frame #$PinkEngine)
+  >> (pushnew #$PinkCadillac (slotv #$PinkEngine #$PartOf))
+</pre>
+
+So, who owns the pink engine? I'll bet you can guess!
+
+<pre>
+  >> (#^owner #$PinkEngine)
+  :: #$Angelyne
+</pre>
+<p>
+
+Another good use of computed slots is to compute inverse relationships. There
+is a special function for laying these out: def-inverse-slot.
+
+For example:
+
+<p>
+
+Define the #$parts slot as the inverse of #$partOf:
+
+<pre>
+  >> (def-inverse-slot #$parts #$partOf)
+</pre>
+
+This relationship is already built into the system, so that when we
+told the system that #$PinkEngine was a #$PartOf #$PinkCadillac, it
+automatically stored #$PinkEngine in the #$Parts slot of #$PinkCadillac.
+(Defining the inverse slot using DEF-INVERSE-SLOT doesn't cause old
+relationships to be stored, one new ones).
+<p>
+So, what are the parts of Angelyne's Pink Cadillac?
+
+<pre>
+  >> (#^parts #$PinkCadillac) 
+  :: (#$PinkEngine)
+</pre>
+
+<p><hr><p>
+
+<b>Frame system Reference</b>
+
+<p>
+
+These functions provide high-level access to frames. A slot can be a
+slot object or the name of a slot:
+<p>
+<pre>
+(slotv frame slot)
+(setf (slotv frame slot) value)
+</pre>
+<p>
+Describe a frame:
+<p><pre>
+(describe-frame frame)
+(df frame)
+</pre>
+<p>
+
+Convenient way to specify a frame with some slot values:
+<p>
+<pre>
+(def-frame frame [slot1 value1]*)
+</pre>
+Modify a set-valued slot
+<pre>
+(pushnew value (slotv frame set-valued-slot))
+</pre>
+<p>
+
+Define properties of slots
+<pre>
+(def-computed-slot slot body)
+(def-inverse-slot inverse-slot forward-slot)
+(def-inherited-slot slot &optional inherits-through)
+(compute-transitive-slot frame slot)
+</pre>
+
+<p>
+Find existing frames by name.
+<pre>
+(frame-fnamed string)
+(find-frames substring)
+</pre>
+Creating a frame by name if it doesn't exist
+<pre>
+(frame-fnamed string t)
+(canonicalize-frame-designator symbol-or-string)
+</pre>
+<p>
+Create a throwaway frame
+<pre>
+(make-temp-frame &optional class)
+</pre>
+
+<pre>
+Predefined slots:
+#$fName
+#$isA
+#$subclasses
+#$parts
+#$partOf
+</pre>
+Test whether something is a frame
+<pre>
+(isframe? object)
+</pre>
+<p>
+Iteration over the slots of a frame
+<pre>
+(for-all-frame-slots (slot value) &body body)
+</pre>
+<p><hr><p>
+
+A frame is similar to an object as defined in standard object-oriented
+programming practice.  The chief differences:
+
+<ul>
+<li>flexibility. Unlike an object, frames can have new slots added to
+them at any time.
+<li>reasoning. Frame systems can have reasoning mechanisms built into
+their slot access (ie, default reasoning by inheritance).
+<li>reflexivity. Frame systems represent their own structure in terms of
+frames. Rather than having separate reflection mechanisms, frame
+systems are inherently reflexive.
+</ul>
+
+<p><hr><p>

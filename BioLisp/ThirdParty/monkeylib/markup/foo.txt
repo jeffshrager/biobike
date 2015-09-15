@@ -1,0 +1,43 @@
+Now is the time for the quick brown fox to jump over the lazy dog on
+the way to the good men coming to the aid of their party.
+
+  baz
+  biff
+    bam
+
+    (if foo
+      (frob it)
+      (flip it))
+
+* foo \bar{baz} aoeu
+
+\paragraph{this is a paragraph tag}
+
+\notparagraph{this is not a paragraph tag}
+
+\subdoc{This is a subdocument tag.
+
+And this is the second paragraph.}
+
+This is a paragraph\note{And this is an embedded subdocument.
+
+And this is a second paragraph of that
+
+  And this is some blockquote.
+  Stuff.
+ 
+And another paragraph.} here's\sidebar{And this is an embedded subdocument.
+
+And this is a second paragraph of that
+
+  And this is some blockquote.
+  Stuff.
+ 
+And another paragraph.} some more.
+
+** foo
+
+    code
+
+regular with trailing \i{space} 
+aoeu

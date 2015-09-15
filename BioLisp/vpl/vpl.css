@@ -1,0 +1,1369 @@
+/* Static Structural begin */
+
+* {
+	margin: 0;
+	padding: 0;
+/*	-moz-user-select: -moz-none; */
+}
+
+body {
+	font: 14px normal Arial;
+}
+
+/* text selection enabled for certain objects */
+
+input {
+/*	-moz-user-select: text;  */
+}
+
+
+
+.bigbox
+{
+  /*bottom: 0px;
+  left: 0px;
+  position: absolute;
+  right: 0px;
+  top: 0px;*/
+}
+
+
+#outer-bigbox
+{
+  /*height: 100%;*/
+}
+
+
+.box
+{
+  /*border: solid thin black;
+  margin: 3pt;
+  padding: 12pt;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;*/
+}
+
+
+.container
+{
+  /*bottom: 0px;
+  left: 0px;
+  position: absolute;
+  right: 0px;
+  top: 0px;*/
+}
+
+
+.contains-jbml
+{
+  overflow: auto;
+  text-align: center;
+  vertical-align: middle;
+}
+
+
+/* Toolbox begin */
+
+.toolbox
+{
+  background-color: inherit;
+  /*height: 0px;
+  left: 0px;
+  position: absolute;
+  right: 0px;
+  top: 0px;*/
+}
+
+
+.toolbox img
+{
+  border: none 0px;
+  margin: 0px;
+  top: 0px;
+}
+
+
+.arrows
+{
+  float: left;
+  height: 23px;
+  padding: 2px 4px 0px 4px;
+  width: 23px;
+}
+
+
+.container-expand {
+  float: right;
+  /*height: 14px;
+  width: 16px;*/
+  cursor: pointer;
+}
+
+
+.container-shade {
+  float: right;
+  /*height: 14px;
+  width: 16px;*/
+  cursor: pointer;
+}
+
+
+.container-clear {
+  float: right;
+  /*height: 16px;
+  width: 16px;*/
+  cursor: pointer;
+}
+
+
+#workspace-toolbox  { 
+  position: relative; 
+  z-index: 488; 
+  top: 0; 
+  height: 25px;
+}
+
+/* Toolbox end */
+
+div.container > p
+{
+  margin-top: 0px;
+}
+
+
+#debugging
+{
+  border: solid thick red;
+  color: #550000;
+  font-family: courier;
+  font-size: small;
+  font-style: normal;
+  font-variant: normal;
+  height: auto;
+  text-align: left;
+}
+
+
+#palette-box
+{
+  padding: 1% 1% .5% 1%;
+  text-align: left;
+  min-width: 800px;
+}
+
+#palette {
+	height: 107px;
+	border: solid 1px #000;
+	margin: 10px 10px 5px 10px;
+	min-width: 800px;
+}
+
+
+.palette-menu.menu
+{
+  display: inline;
+  float: left;
+  padding: 3px 4px;
+}
+
+
+#wr-bigbox
+{
+  min-height: 200px;
+  height: 75%;
+  min-width: 800px;
+}
+
+/* Workspace begin */
+
+#workspace-bigbox {
+	height: 60%;
+	min-height: 400px;
+	padding: 0 1%;
+	min-width: 800px;
+}
+
+
+#workspace-box
+{
+	background-color: #ccff99;
+	border: solid 1px #000;
+	margin: 0 10px;
+	min-width: 800px;
+}
+
+
+#workspace {
+	overflow: auto;
+  /*padding-left: 2em;
+   padding-top 25px 
+  top: 25px;*/
+}
+
+
+/* Workspace Status begin */
+
+.workspace-status
+   { font-size: 16px; 
+     background: #c1c1c1; 
+     height: 19px; 
+     margin-top: 3px; 
+     right: 0px; 
+     width: auto; 
+     min-width: auto;
+}
+
+
+.workspace-status-message
+  { margin: 0; padding: 0 0.5em; position: relative; height: 15px; min-width: auto; float: left }
+
+
+.workspace-status-ellipsis
+{
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  padding-right: .5em;
+}
+
+
+#workspace-status-server
+{
+  float: left;
+}
+
+
+#workspace-status-client
+{
+  float: left;
+}
+
+/* Workspace Status end */
+
+
+#workspace-message {
+	height: 100%;
+}
+
+#workspace-help-search-wrap {
+	float: right;
+}
+
+#workspace-help-search-wrap label {
+	font-weight: bold;
+	color: #aa3333;
+}
+#workspace-help-search-wrap input {
+	padding: 0 3px 3px 3px;
+	border: solid 1px #333;
+	height: 15px;
+	width: 250px;
+	margin: 3px 5px 0 0;
+	font-size: 11px;
+}
+
+/* Workspace end */
+
+/* Results begin */
+
+#results-bigbox {
+  padding: .5% 1% 1% 1%;
+  height: 10%;
+  min-height: 45px;
+  min-width: 800px;
+}
+
+
+#results-box {
+	background-color: #e2e2ff;
+	border: solid 1px #000;
+	position: relative;
+	top: 0;
+	margin: 5px 10px 10px 10px;
+	min-width: 800px;
+}
+
+#results-toolbox {
+	height: 23px;
+}
+
+
+#results {
+	padding: 0;
+	overflow: auto;
+}
+
+
+#results-message
+{
+  margin-left: -2em; /* See #results padding-left */
+}
+/* Results end */
+/* Static Structural end */
+
+/* Execution Status Box Begin */
+#execution-status-box {
+	background: transparent url('images/bg_overlay_bottom.png') 0 100% no-repeat;
+	width: 280px;
+	float: left;
+	height: 25px;
+	margin: 0 0 0 5px;
+	padding: 0 10px;
+	position: relative;
+	top: 0;
+	z-index: 489;
+	display: none;
+}
+#execution-status-box .toolbox {
+	height: 23px;
+	text-align: right;
+	padding: 0 10px;
+	float: right;
+}
+#execution-status-box img#execution-status-box-close {
+	cursor: pointer;
+	position: absolute;
+	right: 10px;
+	z-index: 9990;
+}
+#execution-status-box img#execution-status-box-kill {
+	cursor: pointer;
+	position: absolute;
+	right: 10px;
+	z-index: 490;
+}
+#execution-status-box #status-msg {
+	/*background: transparent url('images/btn_alert.jpg') 0 7px no-repeat;
+	padding: 10px 5px 10px 50px;
+	border-top: solid 1px yellow;
+	border-bottom: solid 1px yellow;*/
+	padding: 3px 2px;
+}
+#execution-status-box #status-msg.success {
+	/*background: transparent url('images/btn_checkbox.jpg') 0 7px no-repeat;
+	padding: 10px 5px 10px 50px;
+	border-top: solid 1px green;
+	border-bottom: solid 1px green;*/
+}
+#execution-status-box #kill {
+	/*display: block;
+	margin: 10px 0 0 0;*/
+	position: absolute;
+	right: 60px;
+}
+/* Execution Status Box End */
+
+
+/* Floating Dialog begin (see Dialog) */
+
+.dialog
+{
+  background-color: white;
+  position: fixed;
+}
+
+
+.dialog-interior
+{
+  height: 100%;
+  margin: 4px; /* This is the size of the border */
+  position: relative;
+}
+
+
+.dialog-body
+{
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  width: 100%;
+}
+
+
+.dialog-contents
+{
+  height: 100%;
+  padding: 0px 4px;
+  position: relative;
+  text-align: center;
+}
+
+
+.dialog-header
+{
+  background-color: #808080;
+  cursor: move;
+}
+
+
+.dialog-title
+{
+  padding: 1px;
+  text-align: center;
+}
+
+
+.dialog-buttons
+{
+  cursor: default;
+  float: right;
+}
+
+
+.dialog-buttons-balance
+{
+  float: left;
+  position: relative;
+}
+
+
+.dialog-border
+{
+  background-color: black;
+  height: 4px;
+  position: absolute;
+  width: 4px;
+}
+
+
+.dialog-border-n
+{
+  cursor: n-resize;
+  top: 0px;
+  width: 100%;
+}
+
+
+.dialog-border-nw
+{
+  cursor: nw-resize;
+  left: 0px;
+  top: 0px;
+}
+
+
+.dialog-border-w
+{
+  cursor: w-resize;
+  height: 100%;
+  left: 0px;
+  top: 0px;
+}
+
+
+.dialog-border-sw
+{
+  cursor: sw-resize;
+  bottom: 0px;
+  left: 0px;
+}
+
+
+.dialog-border-s
+{
+  cursor: s-resize;
+  bottom: 0px;
+  width: 100%;
+}
+
+
+.dialog-border-se
+{
+  cursor: se-resize;
+  bottom: 0px;
+  right: 0px;
+}
+
+
+.dialog-border-e
+{
+  cursor: e-resize;
+  height: 100%;
+  right: 0px;
+  top: 0px;
+}
+
+
+.dialog-border-ne
+{
+  cursor: ne-resize;
+  right: 0px;
+  top: 0px;
+}
+/* Floating Dialog end */
+
+
+/* Scroll Bar begin */
+
+.scroll-bar + *
+{
+  height: 100%;
+  overflow: hidden;
+  padding-right: 16px;
+}
+
+
+.scroll-bar
+{
+  border: 1px solid white;
+  border-left-color: #8c8982;
+  border-top-color: #8c8982;
+  bottom: 0px;
+  position: absolute;
+  right: 0px;
+}
+
+
+.scroll-bar.scroll-horizontal
+{
+  left: 0px;
+  height: 14px;
+}
+
+
+.scroll-bar.scroll-vertical
+{
+  top: 0px;
+  width: 14px;
+}
+
+
+.scroll-bar-track
+{
+  background-color: #c4c2bd;
+  position: absolute;
+}
+
+
+.scroll-horizontal .scroll-bar-track
+{
+  height: 100%;
+  left: 14px;
+  right: 14px;
+}
+
+
+.scroll-vertical .scroll-bar-track
+{
+  bottom: 14px;
+  top: 14px;
+  width: 100%;
+}
+
+
+.scroll-bar-button
+{
+  background-repeat: no-repeat;
+  height: 14px;
+  position: absolute;
+  width: 14px;
+}
+
+
+.scroll-bar-bar .scroll-bar-cap
+{
+  background-repeat: no-repeat;
+  position: absolute;
+}
+
+
+.scroll-horizontal .scroll-bar-bar
+{
+  background-image: url('images/scroll-horizontal-1x14.gif');
+  background-repeat: repeat-x;
+}
+
+
+.scroll-horizontal .scroll-bar-cap
+{
+  height: 100%;
+  width: 3px;
+}
+
+
+.scroll-horizontal .scroll-bar-begin
+{
+  background-image: url('images/scroll-horizontal-begin-3x14.gif');
+  top: 0px;
+}
+
+
+.scroll-horizontal .scroll-bar-end
+{
+  background-image: url('images/scroll-horizontal-end-3x14.gif');
+  bottom: 0px;
+}
+
+
+.scroll-vertical .scroll-bar-bar
+{
+  background-image: url('images/scroll-vertical-14x1.gif');
+  background-repeat: repeat-y;
+}
+
+
+.scroll-vertical .scroll-bar-cap
+{
+  height: 3px;
+  width: 100%;
+}
+
+
+.scroll-vertical .scroll-bar-begin
+{
+  background-image: url('images/scroll-vertical-begin-14x3.gif');
+  top: 0px;
+}
+
+
+.scroll-vertical .scroll-bar-end
+{
+  background-image: url('images/scroll-vertical-end-14x3.gif');
+  bottom: 0px;
+}
+
+
+.scroll-horizontal .scroll-bar-less
+{
+  background-image: url('images/scroll-left-14x14.gif');
+  left: 0px;
+}
+
+
+.scroll-vertical .scroll-bar-less
+{
+  background-image: url('images/scroll-up-14x14.gif');
+  top: 0px;
+}
+
+
+.scroll-horizontal .scroll-bar-more
+{
+  background-image: url('images/scroll-right-14x14.gif');
+  right: 0px;
+}
+
+
+.scroll-vertical .scroll-bar-more
+{
+  background-image: url('images/scroll-down-14x14.gif');
+  bottom: 0px;
+}
+/* Scroll Bar end */
+
+
+/* Menu begin */
+.menu
+{
+  font-family: tahoma;
+  font-size: 11px;
+  font-style: normal;
+  position: relative;
+}
+
+
+.menu-centered-text
+{
+  /*text-align: center;*/
+}
+
+
+.menu .menu-section-header
+{
+  display: block;
+  position: relative;
+  text-decoration: none;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+
+.menu .menu-section-header.menu-header
+{
+  color: #fff;
+  font-family: arial;
+  font-size: 12px;
+  font-weight: bold;
+  margin: 0px 3px 3px 0px;
+  padding: 3px 10px 3px 10px;
+}
+
+
+.menu .menu-section-header.menu-subheader
+{
+  color: #000;
+  font-family: tahoma;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 15px 4px 7px;
+   background: #f3f3ff; 
+}
+
+
+.menu .menu-section-header.menu-subheader.multi
+{
+	  background: #56FF56; /* #e0ffe0; */
+}
+
+
+.menu .menu-section-header.menu-subheader:hover
+{
+  background: #fff;
+}
+
+
+.menu .menu-section-header.menu-subheader.menu-active
+{
+  background: #fff;
+}
+
+
+.menu .menu-arrow
+{
+  padding: 3px 16px 4px 8px;
+}
+
+
+.menu .menu-section-header.menu-subheader img
+{
+  border: 0px;
+  position: absolute;
+  right: 1px;
+  top: 4px;
+  z-index: 9998;
+}
+
+.menu .menu-section-header.menu-subheader div.toolTip
+{
+  border: solid 1px #7F7FFF;
+  background-color: #F3F3FF;
+  padding: 2px;
+  position: absolute;
+  top: 2px;
+  z-index: 9999;
+  width: 300px;
+  max-height: 300px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow: auto;
+}
+
+
+.menu .menu-section
+{
+  border-width: 2px;
+  border-style: solid;
+  border-color: #7f7fff;
+  background-color: #F3F3FF;
+  position: absolute;
+  visibility: hidden;
+  z-index: 500;
+}
+
+
+.menu .menu-empty
+{
+  font-style: italic;
+}
+
+
+.menu.boxmenu .menu-section-header.menu-header
+{
+  color: #888;
+  font-size: 8px;
+  font-weight: normal;
+  margin: 0px;
+  padding: 0px;
+}
+
+
+.menu.black .menu-section-header.menu-header
+{
+  background-color: black;
+}
+
+
+.menu.green .menu-section-header.menu-header
+{
+  background-color: #3a5;
+}
+
+
+.menu.blue .menu-section-header.menu-header
+{
+  background-color: #33a;
+}
+
+
+.menu.red .menu-section-header.menu-header
+{
+  background-color: #a33;
+}
+.menu .menu-section .menu-section-contents button {
+	width: 100%;
+}
+.menu .menu-section .menu-section-contents .selected {
+	background-color: green;
+	color: #FFF;
+}
+/* Menu end */
+
+/* Popup Blocked Message begin */
+.blocked-popup-message
+{
+  text-align: left;
+}
+
+
+.blocked-popup-title
+{
+  font-weight: bold;
+}
+/* Popup Blocked Message end */
+
+/* Modal Popup Message begin */
+.modal-popup
+{
+  background: #fff;
+  border-style: double;
+  left: 25%;
+  line-height: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  position: absolute;
+  width: 60%;
+  z-index: 100000000;
+}
+
+
+.modal-popup-normal
+{
+  font-family: 'courier new', courier, monospace;
+  text-align: right;
+}
+
+
+.modal-popup-error
+{
+}
+/* Modal Popup Message end */
+
+/* JBML Structural begin */
+.a-jbml
+{
+  float: left;
+  margin: 4px;
+}
+
+
+.box-jbml
+{
+  background-color: #ffc;
+  padding: 1px 6px 1px 1px;
+  position: relative;
+}
+
+
+.boxtext-jbml
+{
+  border-style: none;
+  color: inherit;
+  font-family: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  text-decoration: inherit;
+}
+
+
+.cr-jbml
+{
+  clear: left;
+  height: 0;
+  line-height: 0;
+}
+
+
+.icon-jbml
+{
+  border-style: none;
+  border-width: 0px;
+}
+
+
+.action-icon-jbml /* Also .icon-jbml */
+{
+  margin: 0px;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  z-index: 10;
+}
+
+
+.menu-menu-jbml
+{
+  display: inline;
+}
+
+
+.menu-title-jbml
+{
+  border-style: none;
+  font-size: xx-small;
+  margin: 1pt;
+}
+/* JBML Structural end */
+
+/* JBML Top-Level begin */
+.top-level-jbml
+{
+  float: left;
+  position: relative;
+  display: inline;
+}
+
+
+.top-level-edge
+{
+  position: absolute;
+}
+
+
+.top-level-horiz
+{
+  height: 4px; /* See .a-jbml margin */
+}
+
+
+.top-level-top
+/* Top Center to Top Left corner */
+{
+  left: -4px; /* A */
+  right: 4px;
+  top: 0px; /* B */
+}
+
+
+.top-level-bottom
+/* Bottom Center to Bottom Right corner */
+{
+  bottom: 0px; /* C */
+  left: 4px;
+  right: -4px; /* D */
+}
+
+
+.top-level-vert
+{
+  width: 8px; /* See .a-jbml margin x 2 */
+}
+
+
+.top-level-left
+/* Left Center to Bottom Left corner */
+{
+  bottom: 0px; /* C */
+  left: -4px;  /* A */
+  top: 4px;
+}
+
+
+.top-level-right
+/* Right Center to Top Right corner */
+{
+  bottom: 4px;
+  right: -4px; /* D */
+  top: 0px;    /* B */
+}
+
+
+.top-level-hilight
+{
+  left: 3px;
+  position: absolute;
+  width: 2px;
+}
+
+
+.top-level-left > .top-level-hilight
+{
+  bottom: 4px;
+  top: 0px;
+}
+
+
+.top-level-right > .top-level-hilight
+{
+  bottom: 0px;
+  top: 4px;
+}
+/* JBML Top-Level end */
+
+
+/* JBML begin (must come *AFTER* JBML Structural) */
+/* JBML border widths begin (must come *BEFORE* specifics) */
+.jbml-thick
+{
+  border-width: thick;
+}
+
+
+.jbml-medium
+{
+  border-width: medium;
+}
+
+
+.jbml-thin
+{
+  border-width: thin;
+}
+/* JBML border widths end */
+
+/* JBML border styles begin (must come *BEFORE* specifics) */
+
+.jbml-solid
+{
+  border-style: solid;
+}
+
+
+.jbml-no-outline
+{
+  border-style: none;
+}
+
+
+.jbml-dotted
+{
+  border-style: dotted;
+}
+/* JBML border styles end */
+
+
+/* Collapse extra boxes */
+.box-jbml.jbml-solid > .box-jbml.jbml-no-outline
+{
+  margin: 0px;
+  border-width: 0px;
+  padding: 0px;
+}
+
+
+.jbml-dotdotdot
+{
+  border-style: none;
+}
+
+
+.a-jbml > input
+{
+  margin: 3px;
+}
+
+
+.hilight-jbml
+{
+  border-color: red;
+  border-style: dotted;
+  border-width: 4px; /* See .a-jbml margin */
+  margin: 1px;
+}
+
+
+.jbml-exec-icon
+{
+}
+
+
+.jbml-close-icon
+{
+  margin: 0px;
+  position: absolute;
+  right: -3px;
+  top: -3px;
+}
+
+
+.jbml-go-icon
+{
+  margin: 0px;
+  position: absolute;
+  right: 14px;
+  top: -3px;
+}
+
+
+.jbml-menu-icon
+{
+}
+/* JBML end */
+
+/* JBML Drag-N-Drop begin */
+.dragging .contains-jbml .drag-target:hover
+{
+  border-color: red;
+  border-style: double;
+  border-width: 4px; /* See .a-jbml margin */
+  cursor: crosshair;
+  margin: 1px;
+}
+
+
+/* JBML Top-Level DND hilight begin */
+.dragging .top-level-jbml > .top-level-edge
+{
+  cursor: crosshair;
+}
+
+
+.dragging .contains-jbml.drag-forced
+{
+  cursor: crosshair;
+}
+
+
+.dragging .top-level-jbml > .top-level-vert:hover > .top-level-hilight
+{
+  background-color: red;
+}
+
+
+.dragging .top-level-jbml > .top-level-horiz:hover + .top-level-vert > .top-level-hilight
+{
+  background-color: red;
+}
+
+
+.dragging .top-level-jbml.dragged-after > .top-level-right > .top-level-hilight
+{
+  background-color: red;
+}
+
+
+.dragging .top-level-jbml.dragged-before > .top-level-left > .top-level-hilight
+{
+  background-color: red;
+}
+
+
+/* JBML Top-Level DND hilight end */
+.dragging .drag-source
+{
+  opacity: 0.5;
+  /*  filter: alpha(opacity=50);    //This was breaking on mine.  Put back in if you need it.  JKM. */
+}
+
+
+.dragging
+{
+  cursor: move;
+  -moz-user-select: none;
+}
+
+
+#drag-proxy
+{
+  opacity: 0.5;
+  /* filter: alpha(opacity=50); / * "Must come after opacity"  still breaking for me, JKM. */
+  position: absolute;
+}
+
+
+/* JBML Drag-N-Drop end */
+#drag-proxy > *
+{
+  margin: 0px;
+}
+
+
+.debug-workspace-dump
+{
+  background-color: white;
+  border: black 1px dashed;
+  float: left;
+  margin: 4px;
+  padding: 4px;
+  text-align: left;
+}
+
+
+/* Unknown usage begin... */
+
+/*
+span 
+{
+  padding: 1pt;
+  margin: 2pt;
+}
+*/
+
+div.labeled-hole
+{
+  padding: 3pt;
+  text-align: left;
+}
+
+
+.list
+{
+  float: left;
+  font-family: courier;
+  text-align: left;
+}
+
+
+.symbol
+{
+  float: left;
+  font-family: courier;
+  font-weight: bold;
+}
+
+
+div.value
+{
+  float: left;
+}
+
+
+.result
+{
+  float: left;
+  padding: 3pt;
+  margin: 3pt;
+  background: #ffffdd;
+  border: solid thin;
+}
+
+
+.main-label
+{
+  vertical-align: middle;
+  font-family: courier;
+  float: left;
+  padding: 3pt;
+}
+
+
+.label
+{
+  float: left;
+  font-family: times-roman;
+  font-size: 10pt;
+}
+
+
+div.hole
+{
+  float: left;
+}
+
+
+div.mhole
+{
+  float: left;
+}
+
+
+.hole
+{
+  padding: 3pt;
+  margin: 3pt;
+  border: solid thin;
+}
+
+
+.mhole
+{
+  padding: 3pt;
+  margin: 3pt;
+  border: solid thin;
+}
+
+
+/* these boxes are always visible and overlap the top left corner */
+.helper
+{
+  padding: 3pt;
+  float: left;
+  margin: -4pt 1pt 1pt -4pt;
+  border: solid thin black;
+  background: yellow;
+}
+
+
+.helper-show
+{
+  padding: 3pt;
+  border: solid thin black;
+  background: yellow;
+  float: left;
+  margin: -4pt 1pt 1pt -4pt;
+}
+
+
+.palette-item
+{
+  border: solid thin black;
+  padding: 3pt;
+  background: #ddddff;
+}
+
+
+.inserted-item
+{
+  float: left;
+  font-family: courier;
+  text-align: left;
+  padding: 3pt;
+  margin: 4pt;
+  background: #ffddff;
+  border: solid thin;
+}
+
+
+.show
+{
+  z-index: 10;
+  visibility: visible;
+}
+
+
+.hide
+{
+  z-index: -10;
+  visibility: hidden;
+}
+
+
+.popup
+{
+  background: lightcyan;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 1px;
+  border: solid thin red;
+}
+
+
+.menu-selected
+{
+  color: blue;
+  background: cyan;
+  cursor: pointer;
+}
+
+
+.menu-unselected
+{
+  color: black;
+  background: lightcyan;
+}
+
+

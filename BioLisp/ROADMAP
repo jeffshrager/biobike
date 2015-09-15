@@ -1,0 +1,240 @@
+
+   A BRIEF DESCRIPTION OF THE CONTENTS OF THE BIOLISP DIRECTORY
+         	  AND ITS SUBDIRECTORIES.
+
+
+Toplevel directory (aka Biolisp)
+
+
+  Loader files (akin to 'make' files)
+   blload.lisp -- toplevel loader.  Loads the Weblistener software
+     (via webload.lisp) then loads the BioLingua application software.
+   webload.lisp -- loads Weblistener software
+
+  boostrap.lisp   
+    First thing to be loaded.  Defines REQUIRES and PROVIDES,
+    loads in primitive defsystem 
+  micro-loader.lisp 
+    The code that defines a very simple compile/load facility.
+    Used to load all subsequent software.
+
+  README -- a very coarse overview of the architecture
+
+  README-LISPWORKS -- guide to making the system work with Lispworks,
+    especially using CLOCC to do XML -> Lisp conversion.  This now
+    lives in the Doc/ directory.
+
+  sample-config.lisp -- A sample configuration file.  Usually
+    slightly out-of-date.
+
+  sample-drowssap.lisp  -- A sample password file.
+
+
+Biolisp Subdirectories (alphabetically)
+
+  Ajax
+   Code for tighter server/client communication
+   than via standard browser technology.
+
+  Analysis
+   Code for doing various EM algorithms.
+ 
+  bike
+   Code for BBL
+
+  Biodefs
+   Package definitions, pathnames, initializations,  
+   etc for the BioLingua software.
+
+  Biomethods
+   Weblistener methods specific to BioLingua
+
+  Biotests
+   Test for Biolisp functions.
+
+  Bioutils
+   Utilities for biolisp; includes fasta, table data and amino acid
+   utilities.  
+
+  cdisc
+   Stuff to do with systems biology.
+
+  data 
+   Pretty much obsolete.  Replaced by logical directory
+   bioetc:data; which is NOT in the CVS source tree.
+
+  Dbaccess
+   Stuff to access the mysql database (somewhat generalized)
+
+  Demos
+   A couple of demo programs; but not kept up. 
+
+  Doc
+   README's, Installation instructions, HTML documentation files, 
+   Specs for various components of the system, etc, etc.  
+   Live-tutorials also live here in a subdirectory.  
+
+  Frames
+   The frame system, a reader for #$ and #^.
+   Code to display frames via HTML.
+
+  Gocode
+    Code to create go frames from the Go database in the data directory.
+    Code to analyze the Go hierarchy and go reaction information.
+
+  Help
+   The code for HELP and DOCUMENT-FUNCTION, etc. 
+
+  Kdbs
+    Toplevel code that creates/loads the Biolingua knowledge bases,
+    currently GO, KEGG and Ocelot.
+
+  KEGG
+   Code dealing with the KEGG database.
+
+  Lib
+    A mishmash of code to do particular queries.
+    Some 'higher-level' routines that might become general purpose.
+    Note:  Lib does not get loaded by default in development worlds;
+    it does get loaded on the server.
+
+  Matching
+    Code to do various Needleman-Wunsch and Smith-Waterman related
+      algorithms.
+    Code to do exact matching in linear time.
+    Expository code for BLAST-like algorithms.
+    Documentation on NW and SW (in the code) and an essay on different
+      implementations of the algorithm in the literature.
+    Note:  This code does not get loaded into the standard system.
+
+  Microarrays
+    Code to deal with microarrays, possibly specific to BBL.
+
+  Miscellaneous
+    Code to aid with XML -> Lisp translation for Lispworks using CLOCC.
+    See the file README-LISPWORKS at toplevel.
+
+  Nframes
+   prototype frame system for AllegroCache.
+
+  Ocelot
+    Code to read in the ocelot database, convert it to frames and compute
+      links to go frames.
+
+  Organisms
+    Code to interface to MYSQL; in particular to the MYSQL cyano database
+      containing sequence and go pointer information for the genes
+      of various cyano organisms.
+    Code to load a particular organism's information into
+      main memory from the MYSQL database.
+    Code to parse, analyze and extract sequence information from
+      a sequence file for a particular organism.
+    Code to upload an organism's data into the MYSQL database (not normally
+      loaded into a running Weblistener)
+
+  OriginalCode
+    The original tutorial code files, circa March 2003, before JP revamped
+      them.  Also the original utils.lisp file.
+
+  Portability
+    The various *-interface.lisp files.  Also a layer on top of Allegro's MP:
+    functions.  Theoretically should contain all non-portable code, 
+    but is far from meeting that goal.
+
+  ppcre
+    Edi Weitz's Perl-compatible regular expression matcher.
+
+  sample-programs
+    Intended for the obvious purpose, but hopelessly out of date.
+
+  Scripts
+    Startup scripts for the Bioweblistener and other miscellanous
+    shell scripts.
+
+  Testing
+    A simple test mechanism, consisting mainly of DEFTEST
+      and RUN-CHAPTER-TESTS.  This gets loaded into the standard
+      development world.
+    Test files for various aspects of biolisp, includings
+      utilities, frames, array and vector ops, table-data objects,
+      and matching algorithms.  These files do not get loaded into
+      the standard world.      
+    Note:  the function (LOAD-BIOLISP-TESTS) loads the test files
+      into Lisp, and then the function (RUN-BIOLISP-TESTS) runs
+      all the tests.
+
+  Third Party
+   various third-party utilities, mostly from Peter Seibel.
+
+  Trbl
+   Code specific to the Arabidopsis Bio server.
+
+  Tutorials
+    The set of nine Biolisp tutorial code files, to go along with
+      the nine BioLisp tutorials Jeff wrote and JP helped edit.  The
+      tutorials themselves are not kept in this file hierarchy, and there
+      are another set of Bioinformatics tutorials that precede these
+      as well; they are not kept here either.
+    Note:  these have not necessarily been kept up to date as of this date
+      (Aug 15, 2003) since perhaps June 2003.  There are as yet no
+      tests to insure that the tutorials work as claimed.
+
+  Utils
+    Various files containing a number of utility macros and functions
+    used by BioLingua.
+
+  vpl
+    Obsolete code for the visual programming language implementation.
+
+  nvpl
+    Working code for the visual programming language (VPL) implementation.
+
+  WebConfig
+   lpt.lisp -- portable logical pathname goo.
+   configvars.lisp -- defines mechanism to define configuration variables.
+   configuration.lisp -- configuration variables for Weblistener.
+
+  Webdefs
+    Package definitions, pathnames, initializations, methods, etc for the
+    Weblistener software.
+
+  Weblisten
+    Stuff dealing with the web interface to Biolisp, e.g.
+      -- Code for login to bioweblistener, including passwords and a
+         password file.
+      -- Code for bioweblistener read/eval/print loop.
+
+  Webtests
+    Tests for various weblistener modules.
+
+  Webuser
+    Stuff implementing user commands for the weblistener, e.g.
+      -- upload facility
+      -- HOP, RELOAD, DEFPROTOCOL
+      -- workspace commands
+
+  Wlisp
+    Code that allows shadowing of various Common Lisp functions.
+
+
+Other directories and files of relevance to BioLisp relative to
+the Nostoc 8002 server:
+      
+  /home/Biobike/users/
+      
+    The directory where files for people who use the bioweblistener
+      are (intended to be) kept.
+
+  /home/visitors/fred/biolisp.ini
+
+    A file which gets loaded when user FRED logs in to the bioweblistener.
+
+
+  ~/clinit.cl or .clinit.cl
+
+     A file which gets loaded when Lisp starts up.
+
+  /usr/local/bioetc/data
+
+     Where the organism data files live.
+     Where the files from which the knowledge frames are derived live.

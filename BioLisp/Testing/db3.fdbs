@@ -1,0 +1,22 @@
+
+(IN-PACKAGE :BIOUTILS)
+
+(SETQ *FASTA-FILES*
+      #("C:\\Lispcode\\BioLisp\\Testing\\sample1.fsta"
+        "C:\\Lispcode\\BioLisp\\Testing\\sample2.fsta"
+        "C:\\Lispcode\\BioLisp\\Testing\\sample3.fsta"))
+
+(SETQ *FASTA-DATA*
+      '(("x-gene" . #(4 65 31 19 2 30 1 NIL))
+        ("thyroid-gene" . #(4 68 34 19 2 30 2 NIL))
+        ("three-gene" . #(169 212 182 28 1 28 0 NIL))
+        ("hair-color-gene" . #(68 160 98 NIL 4 54 2 #(10 24 15 5)))
+        ("y-gene" . #(65 155 93 NIL 4 54 1 #(10 24 15 5)))
+        ("unknown-gene" . #(194 254 235 17 1 17 1 NIL))
+        ("four-gene" . #(212 250 NIL 0 0 0 0 NIL))
+        ("two-gene" . #(72 169 107 NIL 4 54 0 #(10 24 15 5)))
+        ("one-gene" . #(4 72 38 19 2 30 0 NIL))
+        ("z-gene" . #(155 194 164 28 1 28 1 NIL))))
+
+(SETQ *FASTA-INDEX*
+      (BIOUTILS::MAKE-FASTA-DATABASE-HASH-TABLE *FASTA-DATA* :DBFILE))

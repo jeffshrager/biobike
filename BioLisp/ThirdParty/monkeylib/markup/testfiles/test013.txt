@@ -1,0 +1,5 @@
+This is a regular paragraph.
+
+\myp{This is a foo paragraph.}
+
+This is a regular paragraph.

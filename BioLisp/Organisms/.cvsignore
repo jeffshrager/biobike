@@ -1,0 +1,5 @@
+*.removed
+*.fsl
+*.fasl
+.hg
+aux-seed-genome-info.lisp

@@ -1,0 +1,1159 @@
+<title>BioLisp: Dynamic Pathway Analysis</title>
+
+<p>
+
+<h2>
+Pathway logic I: Dynamic creation of metabolic pathways
+</h2>
+
+<p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<i><font color=brown>[If you are running this tutorial live, there are
+a few places where the [DO IT] button will only work on FireFox
+because of a length limitation in Internet Explorer. If you only have
+IE, you can manually enter the code in these places.  We've indicated
+these. Sorry for the inconvenience.]</font></i>
+
+<p>
+<a href=#Introduction>Introduction to Biochemical Pathways</a><br>
+<a href=#SDPathways>Static versus Dynamic Pathways</a><br>
+<a href=#Build>Building our own Dynamic Pathway Calculator</a><br>
+<a href=#represent>Representing Molecules and Reactions</a><br>
+<a href=#logic>The Logic of Logic of Pathway Tracing</a><br>
+<a href=#problem>Heading Off a Probable Problem (An Inifinite Loop)</a><br>
+<a href=#try>Let's Take it Out for a Spin</a><br>
+<a href=#p2>Oops; Another Little Problem (Redundant Paths)</a><br>
+<a href=#eff>Making it a Little More Efficient</a><br>
+<a href=#cycles>The Problem with Cycles</a><br>
+
+<p>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction to Biochemical Pathways</h2>
+
+
+In this section we're going to do some pure symbolic reasoning about
+metabolic pathways.  There are several sections on this topic,
+beginning (here) with the simplest sort of reasoning wherein we
+dynamically find pathways among sets of reactions.  In later sections
+we'll both undertake technical improvements in the methods developed
+here, and we'll expand to include a little bit pathway-based
+microarray interpretation, and even some interesting cases of
+automated discovery.
+
+<p>
+
+Biochemical reactions that enzymes catalyze do everything in the cell,
+and therefore everything relating to life. Biologists often talk about
+a biochemical "pathway", which is a group of related reactions that
+serve some purpose, like the related steps in a procedural computer
+program.  And we looked a the glycolytic pathway, which is the one
+that hexokinase participates in.  You might want to review the <a
+href=pwys.html>section on pathways</a>, wherein the most important
+thing to remember is that: <font color=red>"pathways are a <i>figment
+of our collective imagination!</i>; There's little specific machinery
+in the cell that dictates these pathways."</font> Another way to put
+this is: <font color=red><i>Pathways arise from
+explanations!</i></font> What we're going to do in this section is to
+see what that means.
+
+<p>
+
+Below are two different versions of the glycolytic pathway.  Each line like this:
+
+<pre>
+fructose ---[Fructokinase (FRK)]--> fructose 1-phosphate
+</pre>
+
+represents a biochemical reaction.  In the above case, the enzyme
+"Fructokinase" (abbreviated "FRK") catalyzes the reaction that changes
+fructose into fructose 1-phosphate.
+
+<p>
+
+Here's a more complex one:
+
+<pre>
+phosphatate + NAD+ + glyceraldehyde 3-phosphate ---[G3p dehydrogenase (GAPDH)]--> NADH + H+ + 1,3-bisphosphoglycerate
+</pre>
+
+This one has several reactants (on the left side) and products (on the right side).
+
+<p>
+
+Now, let's look at those two glycolytic pathways.  First notice that
+they both end up with malate.  Notice too that after the red part,
+they are both the same; The difference is only whether we began at
+Fructose, or Glucose:
+
+<pre>
+Pathway #1
+
+<font color=red>
+fructose ---[Fructokinase (FRK)]--> fructose 1-phosphate
+fructose 1-phosphate ---[Fructose 1-phosphate aldolase (F1PA)]--> glyceraldehyde + dihydrozyacetone phosphate
+dihydrozyacetone phosphate ---[Isomerase (ISO)]--> glyceraldehyde 3-phosphate
+</font>
+phosphatate + NAD+ + glyceraldehyde 3-phosphate ---[G3p dehydrogenase (GAPDH)]--> NADH + H+ + 1,3-bisphosphoglycerate
+1,3-bisphosphoglycerate + ADP ---[Phosphoglycerate kinase (PGK)]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate ---[Phosphoglyceromutase (PYM)]--> 2-phosphoglycerate
+2-phosphoglycerate ---[Enolase (ENO)]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP ---[Pyruvate kinase (PYK)]--> pyruvate + ADP
+malate + NAD+ ---[Malate dehydrogenase (MDH)]--> oxaloacetate + NADH + H+
+pyruvate + NAD+ + CoA ---[ NIL]--> NADH + H+ + Co2 + acetyl CoA
+acetyl CoA + oxaloacetate ---[Citrate synthase (CSY)]--> citrate + CoA
+citrate ---[Aconitase (ACT)]--> isocitrate
+isocitrate + NAD+ ---[Isocitrate dehydrogenase (IDH)]--> a-ketoglutarate + NADH + H+ + Co2
+a-ketoglutarate + NAD+ + CoA ---[a-ketogluterate dehydrogenase complex (ADHC)]--> succinyl CoA + NADH + H+ + Co2
+succinyl CoA + GDP + phosphatate ---[Succinyl CoA synthase (SCS)]--> succinate + GTP + CoA
+succinate + FAD ---[Succinate dehydrogenase (SDH)]--> fumarate + FADH2
+fumarate + H2O ---[Fumerase (FAS)]--> malate
+
+--------------------------------
+Pathway #2
+
+<font color=red>
+glucose + ATP ---[Hexokinase (HXK)]--> glucose 6-phosphate + ADP
+glucose 6-phosphate ---[Phosphoglucomutase (PGM)]--> fructose 6-phosphate
+fructose 6-phosphate + ATP ---[Phosphofructokinase (PFK)]--> fructose 1,6 bisphosphate + ADP
+fructose 1,6 bisphosphate ---[Aldolase (ALD)]--> dihydrozyacetone phosphate + glyceraldehyde 3-phosphate
+</font>
+phosphatate + NAD+ + glyceraldehyde 3-phosphate ---[G3p dehydrogenase (GAPDH)]--> NADH + H+ + 1,3-bisphosphoglycerate
+1,3-bisphosphoglycerate + ADP ---[Phosphoglycerate kinase (PGK)]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate ---[Phosphoglyceromutase (PYM)]--> 2-phosphoglycerate
+2-phosphoglycerate ---[Enolase (ENO)]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP ---[Pyruvate kinase (PYK)]--> pyruvate + ADP
+malate + NAD+ ---[Malate dehydrogenase (MDH)]--> oxaloacetate + NADH + H+
+pyruvate + NAD+ + CoA ---[ NIL]--> NADH + H+ + Co2 + acetyl CoA
+acetyl CoA + oxaloacetate ---[Citrate synthase (CSY)]--> citrate + CoA
+citrate ---[Aconitase (ACT)]--> isocitrate
+isocitrate + NAD+ ---[Isocitrate dehydrogenase (IDH)]--> a-ketoglutarate + NADH + H+ + Co2
+a-ketoglutarate + NAD+ + CoA ---[a-ketogluterate dehydrogenase complex (ADHC)]--> succinyl CoA + NADH + H+ + Co2
+succinyl CoA + GDP + phosphatate ---[Succinyl CoA synthase (SCS)]--> succinate + GTP + CoA
+succinate + FAD ---[Succinate dehydrogenase (SDH)]--> fumarate + FADH2
+fumarate + H2O ---[Fumerase (FAS)]--> malate
+
+</pre>
+
+(The above output is produced by a program written by me (Jeff
+Shrager) and Julian Brooke, recently of Stanford University.  Much of
+the code in these sections on metabolic pathway analysis is based on
+our original code.)
+
+<p>
+
+
+<p><hr><p>
+<a name=SDPathways>
+<h2>Static versus Dynamic Pathways</h2>
+
+
+Now, I didn't just write those pathways into the computer, although I
+could have done that, and some important "pathways knowledge bases",
+such as BioCyc and Kegg, have pathways built into them in that way.
+But biochemical pathways are really a fiction of sorts; they are an
+<i>explanation</i> of how the cell gets from one molecule to another
+by using a series of (usually catalyzed) biochemical reactions.  For
+this, and a variety of other reasons, we really want to <i>find</i>
+(that is <i>compute!</i>) pathways, not just write them down from a
+textbook.  I call precomputed pathways "Static" or "Stryer" or
+"S-Pathways" (after the author of the most common biochemistry
+textbook: Stryer). But what we want is "dynamic" or "D-Pathways" that
+we compute on the fly!
+
+<p>
+
+The Kyoto Encyclopedia of Genes and Genomes (KEGG) has tools to find
+all of the D-Pathways between two molecules. 
+
+<p>
+
+Let's go back to KEGG and do some system reasoning.  <a target=_blank
+href=http://www.genome.ad.jp/kegg-bin/mk_pathcomp_html>This link</a>
+will open a new browser into the Kegg page that "generates possible
+reaction pathways between two compounds."  Select it and then get
+yourself set up so that you can read this at the same time that you
+can press buttons on the KEGG page.
+
+<p>
+
+In the slot for "initial substrate" enter "Glucose" (don't put the
+quotes!), and in the slot for "final product" enter "pyruvate" (again,
+the quotes are just for us, you'd just put: pyruvate without quotes.)
+
+<p>
+
+Next set the Cutoff Length to 8 (it defaults to 5).
+
+<p>
+
+Now hit "Exec" on the bottom.  The first time you do this it will
+just replace the names glucose and pyruvate with KEGG's internal
+names for these molecules (C00293, and C00022). 
+
+<p>
+
+Now we're ready for the actual reasoning step: Hit "Exec" (at the
+top of the page) again!  This will take some time (think of big
+computers computing in Japan!).  When it comes back, you should see
+something like this:
+
+<pre>
+Result of Pathway Computation
+    Organism : all 
+    Initial substrate : C00293 Glucose 
+    Final product : C00022 Pyruvate 
+    Cutoff length : 8
+    Relaxation : No relaxation 
+    Number of Results : 30 
+
+    [Show as Diagram]
+
+ 3 C00293 <2.4.1.9> C00089 <2.7.1.69> C00615 <2.7.3.9> C00022
+ 4 C00293 <2.3.1.152> C00132 <1.1.1.244> C00067 <1.2.1.46> C00058 <2.3.1.54> C00022
+ 4 C00293 <2.3.1.152> C00132 <1.1.1.244> C00067 <2.2.1.3> C00184 <2.7.1.121> C00022
+...
+</pre>
+
+<p>
+
+Each line in the long list at the end is one way that you can
+enzymatically get from Glucose to Pyruvate; <em>This result is
+<b>not</b> precomputed; Kegg figured it out just now, based upon your
+query and the model that it has of metabolism!</em>
+
+<p>
+
+Let's look at some of these.  Go to the first one, and press the
+link on the far right, called "Show compound structures."  What you'll
+get is a diagram made up of the results.  The enzymes are represented
+in terms of their EC numbers, and both the reaction arrows and the
+molecules are "live" -- you can button them to see which reaction is
+used in each step.
+
+<p>
+
+Explore some of these a while, then come back to the Result page.
+Before trying something else, let's hit the link called "Show as
+diagram."  This will make a complex and messy picture of all the ways
+that KEGG knows how to get from Glucose to Pyruvate.
+
+<p>
+
+Now, you might be wondering if Glycolysis is somewhere among these 30
+results.  The answer is "No!"  Why not?  Because glycolysis is more
+than 8 steps long, and we limited Kegg to finding pathways that are
+only 8 steps long. These are only the solutions that can <i>in
+theory</i> do this chemistry. In fact, the energy requirements of all
+of these pathways is unfavorable, and none of them actually exist in
+real organisms.
+
+<p>
+
+So, can we get KEGG to find the actual Glycolytic pathway?  Maybe.
+Let's back up now to the query page (the one with the "Exec" button;
+one or two back, depending upon where you are).  Notice the slot that
+says "Enter cutoff length."  It's at 8.  That's why KEGG limited its
+search to pathways that are only 8 or shorter in length.  Let's change
+that to a 10, and then press Exec again.
+
+<p>It should take a lot longer.  How many pathways are there now?
+
+<p><i>Yow!</i> By just changing that little number from 8 to 10 we
+went from 30 to over 810 pathways!!!  Probably the true Glycolysis
+is someplace in these hundreds of solutions, but we'd never be able
+to find it!
+
+
+<p><hr><p>
+<a name=Build>
+<h2>Building our own Dynamic Pathway Calculator</h2>
+
+
+
+<p><hr><p>
+<a name=represent>
+<h2>Representing Molecules and Reactions</h2>
+
+
+Let's see how Kegg did that! We're going to build an explicit
+computational representation of biochemical reactions, and get the
+computer to build pathways for us.  After that we'll actually go
+farther, and break some of the reactions in a simulated "knockout"
+experiment (that is, we're going to knock out one of the genes that
+codes for the enzymes that catalyzes the reactions that participate in
+the pathways); We'll see that we can get the computer to "discover"
+new plausible reactions that might fill in the gap left by this
+knockout.
+
+<p>
+
+Let's start with a representation for reactions.  A reaction structure
+(a "struct" or "defstruct" in Lisp) represents a reaction(like glu +
+atp-(hxk)-> g6p + adp). Reactants is a list of molecules required for
+the reaction to take place. Catalysts are also required, though they
+may be inactive.  Products are created when the reaction takes place
+(although the reacants are not consumed in this model). 
+
+<pre>
+>>(defstruct reaction
+>>      reactants 
+>>      catalyst
+>>      products
+>>      )
+</pre>
+
+<p>
+
+For the moment we're going to use a simple representation for
+molecules to represent them. Later on, we'll want a more detailed
+representation for molecules.  Type can be one of three options: s,
+ns, or ins. S stands for specific; molecules that fall into this
+category tend to be large, multi-carbon molecules. NS is non-specific;
+these are molecules like water or hydrogen that are present in
+practically inexhaustible amounts. INS stands for interesting
+non-specific; these are molecules like ATP, ADP, or C02, that 
+contain atoms (P and C) that we want to keep track of. 
+
+<pre>
+>> (defstruct molecule
+>>  abbrev
+>>  fullname
+>>  type
+>>  )
+</pre>
+
+We're going to keep all of the molecules in a global variable called
+*MOLECULES*, and similarly with reactions:
+
+<pre>
+>> (defvar *molecules* nil)
+
+>> (defvar *reactions* nil)
+</pre>
+
+Okay, so now we can set up some molecules and reactions.  We'll define
+a couple of macros to make this a little simpler:
+
+<pre>
+>> (defmacro add-molecule (abbrev fullname type &rest constituents)
+>>   `(push (make-molecule :abbrev ',abbrev
+>>                         :fullname ,fullname 
+>>                         :type ',type)
+>>          *molecules*))
+</pre>
+
+(Macros are probably new to you! We're not going to go into them
+much. Just briefly: Whereas a function takes the values of its
+arguments, does some calculation and returns a result, a macro take the
+<i>form</i> of the arguments, does some calculation <i>on the form</i>
+and returns an expression that, when you evalulate it, does some
+calculation on the <i>values</i> of the argument. This is <i>way</i>
+too meta for the moment! All you need to understand is that macros
+save you from having to single-quote things that you don't want
+evaluated, so they're useful for data entry, which is how they are
+being used here!)
+
+<p>
+
+And let's have a function that finds a molecule by abbreviation:
+
+<pre>
+>> (defun find-molecule (abbrev) 
+>>   ;; Comment test.
+>>   (find abbrev *molecules* :key #'molecule-abbrev))
+
+;;; Same thing, but for a list of abbreviations.
+
+>> (defun find-molecules (abbrevs)
+>>   (remove nil (mapcar #'find-molecule abbrevs)))
+
+>> (defun find-molecule (abbrev)
+>>   (loop for molecule in *molecules*
+>>         when (eq (molecule-abbrev molecule) abbrev)
+>>         do (return molecule)))
+</pre>
+
+Now we can use the molecular abbreviations to define reactions:
+
+<pre>
+>> (defmacro add-reaction (reactants products enzyme)
+>>   (unless (listp reactants) (setq reactants (list reactants)))
+>>   (unless (listp products) (setq products (list products)))
+>>   `(push (make-reaction :reactants (find-molecules ',reactants) 
+>>                         :catalyst ',enzyme
+>>                         :products (find-molecules ',products)
+>>                   )
+>>     *reactions*))
+
+>> (defun init-objects ()
+>>   (add-molecules)
+>>   (add-reactions)
+>> )
+
+<p>
+
+<i><font color=brown>[If you are running this tutorial live, the [DO
+IT] button for the following two definitions will only work on FireFox
+because of a length limitation in Internet Explorer. If you only have
+IE, you can manually enter these definitions, but you'll have to
+remove the >> marks.  Sorry for the inconvenience.]</font></i>
+
+>> (defun add-molecules ()
+>>   (setq *molecules* nil)
+>>   (add-molecule P "phosphatate" ins)
+>>   (add-molecule C "carbon" ins)
+>>   (add-molecule aden "adenosine" ns)
+>>   (add-molecule guan "guanosine" ns)
+>>   (add-molecule H+ "H+" ns)
+>>   (add-molecule H2O "H2O" ns)
+>>   (add-molecule NAD+ "NAD+" ns)
+>>   (add-molecule FAD "FAD" ns)
+>>   (add-molecule coa "CoA" s)
+>>   (add-molecule atp "ATP" ins)
+>>   (add-molecule adp "ADP" ins)
+>>   (add-molecule gdp "GDP" ins)
+>>   (add-molecule gtp "GTP" ins)
+>>   (add-molecule NADH "NADH" ns)
+>>   (add-molecule CO2 "Co2" ins)
+>>   (add-molecule FADH2 "FADH2" ns)
+>>   (add-molecule glu "glucose" s)
+>>   (add-molecule fru "fructose" s)
+>>   (add-molecule dha "dihydroxyacetone"  s)
+>>   (add-molecule glh "glyceraldehyde" s)
+>>   (add-molecule gla "glycerate" s)
+>>   (add-molecule pyr "pyruvate" s)
+>>   (add-molecule ace "acetyl" s)
+>>   (add-molecule oxa "oxaloacetate" s)
+>>   (add-molecule cit "citrate" s)
+>>   (add-molecule ict "isocitrate" s)
+>>   (add-molecule akg "a-ketoglutarate" s)
+>>   (add-molecule suc "succinate" s)
+>>   (add-molecule fum "fumarate" s)
+>>   (add-molecule mal "malate" s)
+>>   (add-molecule g6p "glucose 6-phosphate" s)
+>>   (add-molecule f1p "fructose 1-phosphate" s)
+>>   (add-molecule f6p "fructose 6-phosphate" s)
+>>   (add-molecule fbp "fructose 1,6 bisphosphate" s)
+>>   (add-molecule dap "dihydrozyacetone phosphate" s)
+>>   (add-molecule g3p "glyceraldehyde 3-phosphate" s)
+>>   (add-molecule bpg "1,3-bisphosphoglycerate" s)
+>>   (add-molecule 3pg "3-phosphoglycerate" s)
+>>   (add-molecule 2pg "2-phosphoglycerate" s)
+>>   (add-molecule pep "phosphoenolpyruvate" s)
+>>   (add-molecule aca "acetyl CoA" s)
+>>   (add-molecule sca  "succinyl CoA" s)
+>> )
+
+>> (defun add-reactions ()
+>>   (setq *reactions* nil)
+>>   (add-reaction (fru) (f1p) "Fructokinase")
+>>   (add-reaction (f1p) (glh dap) "Fructose 1-phosphate aldolase")
+>>   (add-reaction (glh) (g3p) "G3p kinase")
+>>   (add-reaction (glu atp) (g6p adp) "Hexokinase")
+>>   (add-reaction (g6p) (f6p) "Phosphoglucomutase")
+>>   (add-reaction (f6p atp) (fbp adp) "Phosphofructokinase")
+>>   (add-reaction (fbp) (dap g3p) "Aldolase")
+>>   (add-reaction (dap) (g3p) "Isomerase")
+>>   (add-reaction (P NAD+ g3p) (NADH H+ bpg) "G3p dehydrogenase")
+>>   (add-reaction (bpg adp) (3pg atp) "Phosphoglycerate kinase")
+>>   (add-reaction (3pg) (2pg) "Phosphoglyceromutase")
+>>   (add-reaction (2pg) (pep H2O) "Enolase")
+>>   (add-reaction (pep atp) (pyr adp) "Pyruvate kinase")
+>>   (add-reaction (pyr NAD+ coa) (NADH H+ CO2 aca) "Citrate synthase")
+>>   (add-reaction (cit) (ict) "Aconitase")
+>>   (add-reaction (ict NAD+) (akg NADH H+ CO2) "Isocitrate dehydrogenase")
+>>   (add-reaction (akg NAD+ coa) (sca NADH H+ CO2) "a-ketogluterate dehydrogenase complex")
+>>   (add-reaction (sca gdp P) (suc gtp coa) "Succinyl CoA synthase")
+>>   (add-reaction (suc FAD) (fum FADH2) "Succinate dehydrogenase")
+>>   (add-reaction (fum H2O) (mal) "Fumerase")
+>>   (add-reaction (mal NAD+) (oxa NADH H+) "Malate dehydrogenase")
+>>   )
+</pre>
+
+Notice that through the use of the abbrev field, the reactions can
+conveniently refer to the molecules.
+
+<p>
+
+Let's init everything and check out the various globals that we've
+defined to make sure that everything's cool so far.  (We'll also write
+a pretty-printer for reactions here.)
+
+<pre>
+>> (init-objects)
+
+>> (length *molecules*)
+:: 42   ; That seems plausible...
+
+>> (length *reactions*)
+:: 21   ; Okay, also seems right.
+
+>> (pprint *reactions*)
+(#S(REACTION :REACTANTS (#S(MOLECULE # # #) #S(MOLECULE # # #)) :CATALYST "Malate dehydrogenase"
+             :PRODUCTS (#S(MOLECULE # # #) #S(MOLECULE # # #) #S(MOLECULE # # #)))
+ #S(REACTION :REACTANTS (#S(MOLECULE # # #) #S(MOLECULE # # #)) :CATALYST "Fumerase" :PRODUCTS (#S(MOLECULE # # #)))
+ #S(REACTION :REACTANTS (#S(MOLECULE # # #) #S(MOLECULE # # #)) :CATALYST "Succinate dehydrogenase"
+             :PRODUCTS (#S(MOLECULE # # #) #S(MOLECULE # # #)))
+ #S(...) ...)
+
+Ugh!  We're gonna need a pretty-printer for reactions:
+
+>> (defun pp-reaction (r)
+>>   (let* ((catalyst (reaction-catalyst r))
+>>          (reactants (reaction-reactants r))
+>>          (products (reaction-products r))
+>>          )
+>>     (pp-mols reactants)
+>>     (format t " --[~a]--> " catalyst)
+>>     (pp-mols products)
+>>     (format t "~%"))
+>>   r)
+
+>> (defun pp-mols (m*)
+>>   (loop for m+ on m*
+>>         do (format t "~A" (molecule-fullname (car m+)))
+>>         (when (cdr m+)
+>>               (format t " + "))))
+
+>> (pp-reaction (car *reactions*))
+:: malate + NAD+ ---[Malate dehydrogenase]--> oxaloacetate + NADH + H+
+
+</pre>
+
+Ahhhh.  Much nicer!
+
+<p>
+
+This gets us the whole list of them:
+
+<pre>
+>> (defmacro pp-reactions (reactions)
+>>   `(loop for reaction in ,reactions
+>>         do (pp-reaction reaction)))
+
+>> (pp-reactions *reactions*)
+:: ; [I won't bore you by repeating the BioBike output...]
+
+</pre>
+
+Notice that the reaction left and righthand sides (reactants and
+products) are composed of lists of actual molecule objects, <i>not just
+the name of the molecules, but the molecule objects themselves</i>!
+
+
+<p><hr><p>
+<a name=logic>
+<h2>The Logic of Logic of Pathway Tracing</h2>
+
+
+Now, let's think about the goal of the program; We want to find a path
+between two arbitrary molecules, like glucose and pyruvate.  But what's
+really going on is that we're trying to find out what happens
+biochemically in the cell.  The cell is blooming buzzing confusion of
+molecules and enzymes and other junk, so we're going to define that by
+a thing called an "environment", which is just a list of things that
+happen to be around:
+
+<pre>
+>> (defvar *env* nil)
+
+>> (defun init-env ()
+>>   (setq *env* 
+>>         (find-molecules '(frk f1pa tk atp adp gdp gtp fru glu NAD+ FAD P hxk pfk pgm ald 
+>>                               gapdh pgk pym eno pyk iso csy act idh adhc scs sdh fas mdh))))
+</pre>
+
+We also need a way to figure out that we're done (otherwise we can
+just keep running reactions forever!)  To do that we'll define a
+specific goal molecule, which, when it shows up in the environment,
+indicates that we're done.  For now we'll set up the goal to be malate:
+
+<pre>
+>> (defvar *goal* nil)
+
+>> (defun init-goal ()
+>>   (setq *goal* (find-molecule 'mal)))
+</pre>
+
+Oh, and while we're at it, we need a master init function:
+
+<pre>
+>> (defun init ()
+>>   (init-objects)
+>>   (init-env)
+>>   (init-goal))
+
+Remember to actually call it!
+
+>> (init)
+</pre>
+
+Now we're ready to address the problem of getting from the start-state
+to the goal state; that is, from the environment without malate, but
+with a bunch of other stuff floating about, to the environment
+<i>with</i> malate (as well as whatever other intermediates get left
+around as well).  This is conceptually a simple simulation and search
+problem, which can be described as follows:
+
+<ol>
+<li>If the goal molecule is in the environment, then we're done.
+
+<li>Otherwise, try every reaction that can take place in the current
+environment (that is, where the reactants are available); for each,
+dump the products into the environment and look again to see if the
+goal is reached (that is, recurse!)
+</ol>
+
+<p>
+
+So we need a way to find all the reactions that apply in the current
+environment:
+
+<pre>
+>> (defun possible-reactions (env)
+>>   (loop for reaction in *reactions*
+>>         when (loop for reactant in (reaction-reactants reaction)
+>>                    when (not (find reactant env))
+>>                    do (return nil)
+>>                    finally (return t))
+>>         collect reaction))
+</pre>
+
+Let's try this out, since it will be so important in what's to come:
+
+<pre>
+>> (init)
+
+>> (possible-reactions *env*)
+
+(#S(REACTION :REACTANTS (#S(MOLECULE # # #) #S(MOLECULE # # #)) :CATALYST "Hexokinase"
+             :PRODUCTS (#S(MOLECULE # # #) #S(MOLECULE # # #)))
+ #S(REACTION :REACTANTS (#S(MOLECULE # # #)) :CATALYST "Fructokinase" :PRODUCTS (#S(MOLECULE # # #))))
+
+That's kind of ugly, let's have a way to print a list of them:
+
+>> (pp-reactions (possible-reactions *env*))
+glucose + ATP ---[Hexokinase]--> glucose 6-phosphate + ADP
+fructose ---[Fructokinase]--> fructose 1-phosphate
+
+</pre>
+
+Much nicer!
+
+<p>
+
+So, there are two reactions that apply in the initial environment from
+along the list of, what was it?, 21 reactions.  Now we need to be able
+to update the environment according to the plausible reactions:
+
+<pre>
+;;; Non-destructively and non-redundantly add all the products 
+;;; to the environment from a possible reaction.
+>> (defun apply-reaction (reaction env)
+>>   (loop for product in (reaction-products reaction)
+>>      do (pushnew product env))
+>>   env)
+</pre>
+
+And try it out:
+
+<pre>
+>> (length *env*)
+:: 9
+
+>> (pp-reaction (setq r1 (first (possible-reactions *env*))))
+glucose + ATP ---[Hexokinase]--> glucose 6-phosphate + ADP
+
+>> (length (apply-reaction r1 *env*))
+:: 10
+</pre>
+
+So, by running this reaction we added one more molecule to the
+environment.  (Why did only one get added when there are two products
+specified in the reaction?)
+
+<p>
+
+Okay, so now we're ready to implement the grand plan, as above:
+
+<pre>
+>> (defun paths (env goal &optional path)
+>>   (cond ((find goal env) (list path))
+>>         (t (loop for reaction in (possible-reactions env)
+>>                  append (paths (apply-reaction reaction env) 
+>>                                goal 
+>>                                (cons reaction path))))))
+
+</pre>
+
+Notice that the recursive step adds the current reaction to the head
+of the path, and that the final case (when we find the goal) returns a
+LIST of the path so that the APPEND collector can automatically remove
+NIL's from the path.  (This is textbook Lisp; Go back to your
+textbooks!)
+
+
+<p><hr><p>
+<a name=problem>
+<h2>Heading Off a Probable Problem (An Inifinite Loop)</h2>
+
+
+Now, before we try this, let's think for a moment about what it's
+going to do. We're going to find all the reactions that can apply
+in the current environment, and apply the first one, then the next and
+then the next, etc. Each time we do that, we recursively do that same
+thing again, that is: find all the reactions that can apply in the
+current environment, and apply the first one, then the next and then
+the next, etc.
+
+<p> 
+
+Uh oh... you should be able to see that there's already going to be a
+little problem here.  Presumably, since we're never removing anything
+from the environment, the list of possible reactions can only get
+bigger, not smaller, so unless we're extremely lucky and run into our
+goal molecule accidentally and nearly immediately, we're just going to
+keep executing the same reaction over and over!  (You can prove this
+to yourself by trying to call (paths *env* *goal*) as defined above
+and see if it ever returns, but set your timeout preference to
+something like 2 seconds first or you'll quickly fill memory with
+ever-growing chemical junk! -- or better, don't do it at all -- just
+take my word that it will go into a loop!)
+
+<p>
+
+One way to resolve this is to never permit the same reaction to be run
+twice on the same search path.  
+
+<pre>
+>> (defun paths (env goal &optional path)
+>>   (cond ((find goal env) (list path))
+>>         (t (loop for reaction in (loop for reaction in (possible-reactions env)
+>>                                        when (not (member reaction path))
+>>                                        collect reaction)
+>>                  append (paths (apply-reaction reaction env) goal (cons reaction path))))
+>>         ))
+</pre>
+
+
+<p><hr><p>
+<a name=try>
+<h2>Let's Take it Out for a Spin</h2>
+
+
+Okay, so let's try it out with a simple experiment first, and ensure that 
+we can get to some of the early goals (and make ourselves a convenient macro):
+
+<pre>
+>> (defmacro pathsto (goal)
+>>   `(length (setq *pathways* 
+>>                  (paths *env* (find-molecule ',goal)))))
+
+>> (pathsto g6p)
+:: 57
+</pre>
+
+So there are 57 pathways between whatever molecules are in *ENV*, and
+glucose 6-phosphate (g6p).  Let's look at one.  Conveniently, PATHSTO
+has left the results in *PATHWAYS*:
+
+<pre>
+>> (first *pathways*)
+(#S(REACTION :REACTANTS (#S(MOLECULE # # #) #S(MOLECULE # # #)) :CATALYST "Hexokinase"
+             :PRODUCTS (#S(MOLECULE # # #) #S(MOLECULE # # #))))
+
+Oops; I meant this:
+
+>> (pp-reactions (first *pathways*))
+glucose + ATP --[Hexokinase]--> glucose 6-phosphate + ADP
+</pre>
+
+Well, that's kinda boring, but right, I suppose.  Let's try something
+a little more challenging:
+
+<pre>
+>> (pathsto pyr)
+:: 9490
+
+Yow!
+
+>> (pp-reactions (first *pathways*))
+
+phosphoenolpyruvate + ATP --[Pyruvate kinase]--> pyruvate + ADP
+2-phosphoglycerate --[Enolase]--> phosphoenolpyruvate + H2O
+3-phosphoglycerate --[Phosphoglyceromutase]--> 2-phosphoglycerate
+1,3-bisphosphoglycerate + ADP --[Phosphoglycerate kinase]--> 3-phosphoglycerate + ATP
+glyceraldehyde 3-phosphate + NAD+ + phosphatate --[G3p dehydrogenase]--> 1,3-bisphosphoglycerate + NADH + H+
+fructose 1,6 bisphosphate --[Aldolase]--> glyceraldehyde 3-phosphate + dihydrozyacetone phosphate
+fructose 6-phosphate + ATP --[Phosphofructokinase]--> fructose 1,6 bisphosphate + ADP
+glucose 6-phosphate --[Phosphoglucomutase]--> fructose 6-phosphate
+glucose + ATP --[Hexokinase]--> glucose 6-phosphate + ADP
+</pre>
+
+Hey, they're backwards!  That's because we're collecting them in the
+head of the path list as we go deeper into the recursion.  So, reading
+backwards makes it a little more understandable.
+
+
+<p><hr><p>
+<a name=p2>
+<h2>Oops; Another Little Problem (Redundant Paths)</h2>
+
+
+But there are a TON of them (9490 to be exact!)  How could there be so
+many solutions to the same place where there are only 21 reactions in
+the whole knowledge base!?  Maybe it's just that the order of the reactions
+appears differently in the reaction list.  This could  happen because
+we're searching the <i>entire</i> space of all possible orders of
+reactions in every possible order, so if the environment allows
+reactions to happen in different orders, but still get to the same
+place, then we will see two different pathways.
+
+<p>
+
+It's easy to fix this problem by simply removing pathways that are
+either set-duplicates of others; that is, that have the same set of
+reactions, or that are supersets of others.  (Why do we want to drop
+supersets instead of just dropping duplicates?)
+
+<pre>
+;;; When the current path is NOT a superset of 
+;;; anything else in the path list then collect it.
+;;; (Careful not to remove it when it matches itself!)
+>> (defun remove-duplicate-paths (path*)
+>>   (loop for this-path in path*
+>>         when (loop for target-path in path*
+>>                    when (and (not (eq this-path target-path))
+>>                              (superset? this-path target-path))
+>>                    do (return nil)
+>>                    finally (return t))
+>>         collect this-path))
+                   
+>> (defun superset? (s1 s2)
+>>   (and (>= (length s1) (length s2))
+>>         (every #'(lambda (s) (member s s1)) s2)))
+
+We have to remake our PATHTO macro:
+
+>> (defmacro pathsto (goal)
+>>   `(length (setq *pathways* 
+>>                  (remove-duplicate-paths
+>>                    (paths *env* (find-molecule ',goal))))))
+</pre>
+
+Okay, let's give it a try now:
+
+<pre>
+>> (pathsto pyr)
+:: 3
+</pre>
+
+Ah, much better!  It makes a lot more sense for there to be 3
+different paths than 10,000 of them!  Let's use PP-REACTIONS to look
+at them all (let's also reverse them, so they come out in order).
+
+<pre>
+>> (defun ppp (&optional (pwys *pathways*))
+>>   (loop for path-n from 1 by 1
+>>         as path in pwys
+>>         do (format t "~%~%Pathway #~a:~%~%" path-n)
+>>            (pp-reactions (reverse path))))
+
+>> (ppp)
+  
+Pathway #1:
+
+glucose + ATP --[Hexokinase]--> glucose 6-phosphate + ADP
+glucose 6-phosphate --[Phosphoglucomutase]--> fructose 6-phosphate
+fructose 6-phosphate + ATP --[Phosphofructokinase]--> fructose 1,6 bisphosphate + ADP
+fructose 1,6 bisphosphate --[Aldolase]--> glyceraldehyde 3-phosphate + dihydrozyacetone phosphate
+glyceraldehyde 3-phosphate + NAD+ + phosphatate --[G3p dehydrogenase]--> 1,3-bisphosphoglycerate + NADH + H+
+1,3-bisphosphoglycerate + ADP --[Phosphoglycerate kinase]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate --[Phosphoglyceromutase]--> 2-phosphoglycerate
+2-phosphoglycerate --[Enolase]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP --[Pyruvate kinase]--> pyruvate + ADP
+
+
+Pathway #2:
+
+fructose --[Fructokinase]--> fructose 1-phosphate
+fructose 1-phosphate --[Fructose 1-phosphate aldolase]--> dihydrozyacetone phosphate + glyceraldehyde
+dihydrozyacetone phosphate --[Isomerase]--> glyceraldehyde 3-phosphate
+glyceraldehyde 3-phosphate + NAD+ + phosphatate --[G3p dehydrogenase]--> 1,3-bisphosphoglycerate + NADH + H+
+1,3-bisphosphoglycerate + ADP --[Phosphoglycerate kinase]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate --[Phosphoglyceromutase]--> 2-phosphoglycerate
+2-phosphoglycerate --[Enolase]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP --[Pyruvate kinase]--> pyruvate + ADP
+
+
+Pathway #3:
+
+fructose --[Fructokinase]--> fructose 1-phosphate
+fructose 1-phosphate --[Fructose 1-phosphate aldolase]--> dihydrozyacetone phosphate + glyceraldehyde
+glyceraldehyde --[G3p kinase]--> glyceraldehyde 3-phosphate
+glyceraldehyde 3-phosphate + NAD+ + phosphatate --[G3p dehydrogenase]--> 1,3-bisphosphoglycerate + NADH + H+
+1,3-bisphosphoglycerate + ADP --[Phosphoglycerate kinase]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate --[Phosphoglyceromutase]--> 2-phosphoglycerate
+2-phosphoglycerate --[Enolase]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP --[Pyruvate kinase]--> pyruvate + ADP
+NIL
+</pre>
+
+Wow; Looks great!  There's one path from glucose, and two from
+fructose, one of which (#2) goes via Isomerase, and the other (#3)
+goes through G3p kinase.
+
+
+<p><hr><p>
+<a name=eff>
+<h2>Making it a Little More Efficient</h2>
+
+
+Let's return to the concept at the beginning of this section that
+</i>pathways arise from explanations</i>. The PATHSTO function is
+essentially <i>simulating</i> the biochemistry of the cell (in a
+somewhat abstract way), but another way of thinking about what it is
+doing is as forming <i>explanations</i> -- that is: finding ways to go
+between a set of initial conditions (the environment, encoded in
+*ENV*) to a final state (the environment plus the goal). In what sense
+is this an "explanation?"  In what sense a "simulation?"  Might
+explanation and simulation be part-and-parcel of the same thing???
+
+<p><hr><p>
+
+Now, there are two problems with the approach we've been using so far.
+First, it won't scale up very well; with only 21 reactions we created
+nearly 10,000 paths, most of which turned out to be redundant.  When
+there are thousands of known reactions, as there are in any
+reasonably sized organism, there's no way that we'll be able to get
+away with the complete-search approach that we used above.  
+
+<p>
+
+It turns out that there's an easy way to make this <i>much</i> more
+efficient. In the foregoing code, we search through every possible
+reaction that could apply in the environment at every step.  Although
+this is a good <i>simulation</i> method, it isn't how you'd do it if
+you were thinking through the reaction pathways -- that is, if you
+were forming an <i>explanation</i> to yourself -- would you? Probably you'd
+only bother to look at the reactions that could apply, <i>and that
+were linked to the previous reaction in the pathway!</i> In other
+words, you'd only bother with those reactions that had reactants (left
+hand side molecules) that matched one of the products (the right hand
+side molecules) from the previous reaction!  (Otherwise, what's the
+point of having a pathway if the reactions don't link up?!)
+
+<p>
+
+This is called "constraining the search" -- in this case:
+"constraining the search to only track reactions that link to the
+previous reaction in the pathway."
+
+<p>
+
+While we're thinking about constraint, let's add one more efficiency
+constraint, which is that we're only going to track type "S"
+(specific) molecules This avoids tracking things like ATP that go
+everyplace!
+
+<p>
+
+Let's code that in Lisp:
+
+<pre>
+;;; We have to come from a particular molecule, and we have to pass 
+;;; the pathway down along with us, so that we can use the previous
+;;; reaction to constrain the search.
+
+>> (defun paths-between (from to &optional (env *env*) path)
+>>   (cond ((member to env) (list path)) ; If we've found our goal, we're done! (LIST for appends up the stack.)
+>>         (t (loop for reaction in (possible-reactions-from from env)
+>>                  when (not (member reaction path))
+>>                  append (paths-via (cons reaction path) to (apply-reaction reaction env))))
+>>         ))
+
+;;; Track each SPECIFIC reaction product molecule into a new path.
+
+>> (defun paths-via (path to env)
+>>   (loop for link-mol in (reaction-products (car path))
+>>         when (eq 's (molecule-type link-mol))
+>>         append (paths-between link-mol to env path)))
+
+;;; This is a constrained version of POSSIBLE-REACTIONS.
+;;; The only difference is the (AND (MEMBER ...) ...) which 
+;;; ensures that the reaction chosen also links to the FROM molecule.
+
+>> (defun possible-reactions-from (from env)
+>>   (loop for reaction in *reactions*
+>>         as reactants = (reaction-reactants reaction)
+>>         when (and (member from reactants)
+>>                   (loop for reactant in reactants
+>>                         when (not (find reactant env))
+>>                         do (return nil)
+>>                         finally (return t)))
+>>        collect reaction))
+
+;;; And we'll make a new PATHTO for this search as well; We'll
+;;; call it FPATHSTO -- F for "Fast"!  This version doesn't even
+;;; do the superset duplicate removal!
+
+>> (defmacro fpathsto (from to)
+>>   `(length (setq *pathways* 
+>>                  (paths-between (find-molecule ',from)
+>>                                 (find-molecule ',to)
+>>                                 *env*))))
+
+</pre>
+
+There's one small functional difference between the way that this
+works, and the way that the old search worked; Here we need to tell it
+which molecule to start off from (whereas before it used to just start
+from every molecule in the environment).  This will add constraints as
+well, but it requires us to choose a starting molecule.  This isn't
+too unnatural as, again, when you're thinking through pathways you
+are usually trying to go from one molecule to another.
+
+<p>
+
+Notice that we didn't even bother to do superset duplicate removal
+because I think that that was a result of insufficient constraint, and
+we won't need it this time.  I'm <i>so</i> confident that this is
+going to be <i>so much faster</i> than the old search, we're not even
+going to compile these functions!
+
+<pre>
+>> (fpathsto glu pyr)
+:: 2
+</pre>
+
+Compare that with 9490 before we did duplicate removal above!  But
+there really should be only one pathway from glucose if we're to
+believe our previous results.  Let's look at the two we got:
+
+<pre>
+>> (ppp)
+
+Pathway #1:
+
+glucose + ATP --[Hexokinase]--> glucose 6-phosphate + ADP
+glucose 6-phosphate --[Phosphoglucomutase]--> fructose 6-phosphate
+fructose 6-phosphate + ATP --[Phosphofructokinase]--> fructose 1,6 bisphosphate + ADP
+fructose 1,6 bisphosphate --[Aldolase]--> glyceraldehyde 3-phosphate + dihydrozyacetone phosphate
+glyceraldehyde 3-phosphate + NAD+ + phosphatate --[G3p dehydrogenase]--> 1,3-bisphosphoglycerate + NADH + H+
+1,3-bisphosphoglycerate + ADP --[Phosphoglycerate kinase]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate --[Phosphoglyceromutase]--> 2-phosphoglycerate
+2-phosphoglycerate --[Enolase]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP --[Pyruvate kinase]--> pyruvate + ADP
+
+
+Pathway #2:
+
+glucose + ATP --[Hexokinase]--> glucose 6-phosphate + ADP
+glucose 6-phosphate --[Phosphoglucomutase]--> fructose 6-phosphate
+fructose 6-phosphate + ATP --[Phosphofructokinase]--> fructose 1,6 bisphosphate + ADP
+fructose 1,6 bisphosphate --[Aldolase]--> glyceraldehyde 3-phosphate + dihydrozyacetone phosphate
+dihydrozyacetone phosphate --[Isomerase]--> glyceraldehyde 3-phosphate
+glyceraldehyde 3-phosphate + NAD+ + phosphatate --[G3p dehydrogenase]--> 1,3-bisphosphoglycerate + NADH + H+
+1,3-bisphosphoglycerate + ADP --[Phosphoglycerate kinase]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate --[Phosphoglyceromutase]--> 2-phosphoglycerate
+2-phosphoglycerate --[Enolase]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP --[Pyruvate kinase]--> pyruvate + ADP
+
+</pre>
+
+The only difference is the Isomerase reaction.  Superset duplicate
+removal was removing this before, but we don't do that any longer.  But
+even without that, we got just the right pathways, and it isn't clear
+whether or not you want the Isomerase superset pathway as it is
+a legal pathway, after all!
+
+<p>
+
+So, that's a <i>much</i> better way to do dynamic pathway creation!
+
+<p><hr><p>
+
+Remember that above I said there were <i>two</i> problems, but we only
+dealt with one of them (inefficiency).  The second problem will become
+apparent if you carefully examine then example that we gave at the
+very beginning of this section (here's one of the two again, with
+slightly different highlighting):
+
+<pre>
+Pathway #1
+
+fructose ---[Fructokinase (FRK)]--> fructose 1-phosphate
+fructose 1-phosphate ---[Fructose 1-phosphate aldolase (F1PA)]--> glyceraldehyde + dihydrozyacetone phosphate
+dihydrozyacetone phosphate ---[Isomerase (ISO)]--> glyceraldehyde 3-phosphate
+phosphatate + NAD+ + glyceraldehyde 3-phosphate ---[G3p dehydrogenase (GAPDH)]--> NADH + H+ + 1,3-bisphosphoglycerate
+1,3-bisphosphoglycerate + ADP ---[Phosphoglycerate kinase (PGK)]--> 3-phosphoglycerate + ATP
+3-phosphoglycerate ---[Phosphoglyceromutase (PYM)]--> 2-phosphoglycerate
+2-phosphoglycerate ---[Enolase (ENO)]--> phosphoenolpyruvate + H2O
+phosphoenolpyruvate + ATP ---[Pyruvate kinase (PYK)]--> pyruvate + ADP
+<font color=red>
+malate + NAD+ ---[Malate dehydrogenase (MDH)]--> oxaloacetate + NADH + H+
+pyruvate + NAD+ + CoA ---[ NIL]--> NADH + H+ + Co2 + acetyl CoA
+acetyl CoA + oxaloacetate ---[Citrate synthase (CSY)]--> citrate + CoA
+citrate ---[Aconitase (ACT)]--> isocitrate
+isocitrate + NAD+ ---[Isocitrate dehydrogenase (IDH)]--> a-ketoglutarate + NADH + H+ + Co2
+a-ketoglutarate + NAD+ + CoA ---[a-ketogluterate dehydrogenase complex (ADHC)]--> succinyl CoA + NADH + H+ + Co2
+succinyl CoA + GDP + phosphatate ---[Succinyl CoA synthase (SCS)]--> succinate + GTP + CoA
+succinate + FAD ---[Succinate dehydrogenase (SDH)]--> fumarate + FADH2
+fumarate + H2O ---[Fumerase (FAS)]--> malate
+</font>
+</pre>
+
+
+<p><hr><p>
+<a name=cycles>
+<h2>The Problem with Cycles</h2>
+
+There's something bizarre about the red path of this pathway: It's a
+cycle!  That is, it produces it's own starting products.
+Specifically, it's the TCA cycle (TCA is for 'Tri-Carboxylic Acid';
+it's also called the Citric Acid Cycle, or the Krebs Cycle). This
+takes the pyruvate created in glycolysis and produce a bunch of
+important molecules used as energy by the rest of your cellular
+system.  It also produces the carbon dioxide (CO2) that you eventually
+breath out!  <a
+href=http://chemistry.gsu.edu/glactone/PDB/Proteins/Krebs/Krebs.html>Here's<a>
+a nice description of this important part of metabolism, along with
+some nice 3D pictures of the enzymes that catalyze it!
+
+
+<p>
+
+What happens if we ask PATHTO
+to find one of the molecules in the TCA cycle, for example, MALATE:
+
+<pre>
+>> (pathsto mal)
+:: 0
+>> (pathsto aca)
+:: 0
+etc...
+</pre>
+
+Oops; what's up?  If you closely examine the reactions that we've
+given, and the environment, you'll see that we don't have all of the
+required intermediates to enter the TCA cycle, and all the reactions
+in the cycle require products from other reactions in the cycle!  Ack!
+How are we going to resolve this!?
+
+<p>
+
+In the next tutorial we'll see how to resolve both of these problems.,
+but I think that this lesson has gotten pretty long already, so let's
+take a break and come back to these problem in the next sections.
+
+<p><hr><p>
+
+(Exercises for this tutorial are at the end of the next one!)
+
+<p><hr><p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

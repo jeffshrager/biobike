@@ -1,0 +1,43 @@
+- Need a way to get the total results for a test function that
+  contains internal calls to check.
+
+- DEFTEST should not use the name as the name of a function so a test
+  can be defined with the same name as the function it tests.
+
+- Would be nice to have tests auto register in relation to their
+  package so we can define a TEST-PACKAGE function that runs all the
+  tests defined in the pcakage.
+
+
+
+  ;; define a function
+  (defun foo (x) (whatever x))
+
+  ;; define a test that tests that function
+  (deftest foo () (check (= (foo 123) 456)))
+
+  ;; define a test that takes a parameter.
+  (deftest bar (x) (check (= (bar x) (* 10 x))))
+
+  (defsuite smoketest ()
+    (test foo)
+    (test bar 0)
+    (test bar 1)
+    (test bar 100)
+    (test baz))
+
+
+  ;; test the named function
+  CL-USER> (test foo)
+
+  ;; Another way
+  CL-USER> (test #'foo) 
+
+  ;; Run a test function with arguments.
+  CL-USER> (test bar 10)
+
+  ;; run all the tests associated with a package
+  CL-USER> (test-package :com.gigamonkeys.the-package)
+
+
+

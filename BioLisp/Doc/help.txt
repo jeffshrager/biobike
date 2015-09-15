@@ -1,0 +1,456 @@
+"When I was younger, so much younger than today, I never needed
+anybody's help in any way."
+
+Put in way to handle doing multiple-word searches against symbols
+which have words separated by dashes.  The words should be broken up:
+so 'multiple-value-bind' should be treated as three tokens, 'multiple'
+'value' and 'bind' when doing a multiple-word search against it.  
+
+
+               Proposed specification for new Help functionality
+
+
+I. Introduction.
+
+It has been said many times now that the Help facility needs a
+complete overhaul.  Well, that time is drawing nigh.  
+
+This document specifically addresses what happens when the user types
+
+(help ...)
+
+We are not here addressing other additional help-like facilities such
+as live-tutorials, topics or glossaries, although they do find their
+way into the discussion.  We will at the end address the concept of
+asking for help in a VPL context.
+
+For this discussion assume there exists a Biobike glossary of terms,
+which has some kind of textual description and various references.
+Assume that a 'topic' refers to a longer description of some subject,
+again with references.  Assume that each glossary item and each topic
+are represented by some data structure in the system that we can
+reference and manipulate.
+
+
+II. The basics.
+
+A. Invoking Help.  
+
+Standard help can be invoked by the user in a number of ways:
+
+  -- from the Help menu at the bottom of the weblistener, by selecting
+     Help --> Using (help)
+  -- by typing     (help ...) 
+  -- by typing     :help ...
+  -- by typing     help ...
+
+The first only gets you an explanation of HELP, as if the user typed
+(help) or :help or just help.
+
+The last requires a slight additional hack to the weblistener REPL,
+but I think it makes sense to special case this one very special
+symbol.
+
+B. Syntax of Help.
+
+Everything between the initial HELP and either the end of the line (or
+form) or the first keyword (symbol that begins with a ':') is taken to
+be the subject that help is being requested for.  The first token
+which is a keyword and any tokens after it are considered to be
+keyword arguments to the help command which may affect how HELP
+operates.  Examples:
+
+(help organisms and orthologs) 
+
+(help organisms and orthologs :limit 10)
+
+In the second case :limit 10 is not part of what HELP is being asked
+about, it is a directive to HELP itself.
+
+
+
+
+"But now these days are gone, I'm not so self assured, Now I find I've
+changed my mind and opened up the doors."
+
+
+III. Semantics of (help)
+
+Asking for help without any arguments (including just typing :help or
+the word help) triggers a display which describes various mechanisms
+for obtaining help, documentation, and tutorials.
+
+We can argue over the exact layout and contents; here is one idea
+(a somewhat different 'menu' can be presented in BBL mode.)
+
+===================================================================
+
+
+Ways to get help:
+
+  -- Fast email support: biolangsupport@lists.stanford.edu, 
+     Or use the Help ... > Send Feedback pulldown, below.
+ 
+  -- An extended HELP page << a url >> 
+
+  -- The toplevel system documentation / tutorials  page << a url >> 
+     The toplevel BBL language documentation / tutorials  << a url >>
+
+  -- Use the Help... pulldown at the bottom of this page to try 
+     live tutorials and get at other information 
+
+  -- Type ':help any-function' to get a summary of what a function
+     does, some examples, and a pointer to further documentation.
+ 
+  -- Type ':help anything you like ...' to let the system try to 
+     determine relevant functions, tutorials, and documentation
+     based on what you typed.  
+
+Beginners might want to start with the Live Tutorial called "A Tour of
+BioBike" which you can get by selecting Help ... > Live Tutorials
+below and then clicking on the one that says "A Tour of  BioBike"
+
+
+========================================================================
+
+
+It's not clear to me at the moment what, if anything, should go on the
+'extended help' page.  Perhaps just a more in-depth discussion of the
+various options to obtain help and what you can expect from them.
+
+
+
+IV. Semantics of single word help.
+
+Single word help occurs when the user types help in any of its above
+forms followed by a single symbol or a single string with no spaces.
+(If a string is entered, it is effectively converted into an uppercase
+symbol for the purposes of the following discussion).
+
+Single word help may also occur if the user types in a set of tokens
+which the system recognizes as a single term, or a single string with
+multiple words that again the system recognizes as a single term.
+Examples:
+
+(help operating system)
+
+(help "operating system")
+
+If "operating system" is in fact an entry in the glossary or the title
+of a topic or the name of tutorial, then the term will be recognized as
+such.  If the term is not found then the tokens will be handled by the
+'multiple word' help algorithm, described below.  
+
+A. What a term can represent.  
+
+The term can be one or more of the following:
+
+  -- a known symbol with a variable or function definition (including 
+     DEFINE-FUNCTION, DEFMACRO, etc.)
+  -- a topic
+  -- a glossary entry
+  -- a module name 
+  -- a tutorial or live-tutorial name 
+  -- any other symbol, not known to represent anything in the system.
+
+For the purposes of topics, glossary entries, and module names, the
+package the symbol is in is irrelevant.  To identify a variable or
+function, the package is relevant (although in general a user will not
+type a package prefix and the symbol will have been interned in the
+current package.  A string will act as if its uppercase representation
+was interned in the current package.) 
+
+(Note: What if somebody types (help "utilities:one-string")?  We could
+handle this specially, but they probably just deserve to lose...)
+
+B. What gets shown to the user when a match occurs.  
+
+If a symbol denotes a known variable or function, its documentation
+string (or its summary string) is displayed, possibly with some
+examples and see-also links, depending on how much room is available.
+A link to the full documentation page is always provided as it is now.
+
+If a symbol denotes a topic, the introduction to that topic will be
+displayed, along with see-also links and a link to the full topic
+discussion.
+
+If a symbol denotes a glossary entry, the glossary text will be
+displayed, along with see-also links and a link to the entire
+glossary.
+
+If a symbol denotes a module name, the documentation for that module
+(or a summary) should be displayed along with a link to the module.
+(Note that at this time modules do not have descriptions, but they
+should).
+
+If a symbol denotes a tutorial or live-tutorial name, then a summary
+of that tutorial should be printed out along with a link to it.
+(Again, I don't think tutorials have descriptions or summaries, but
+they should for the purposes of help and general documentation.)
+
+If the symbol entered is unknown, then an attempt will be made to
+match it to symbols that are 'close' to it in the sense of
+EDIT-DISTANCE.  (This is done now when the system detects an unknown
+function call or unknown variable, but a different algorithm (word
+homology) is currently used by the help system.  The EDIT-DISTANCE
+algorithm seems to be far superior for this kind of matching.
+
+Example of EDIT-DISTANCE matching at work currently: 
+
+<22>> (one-sting "foo" "bar")
+:: 
+Warning: While compiling these undefined functions were referenced:
+         ONE-STING.
+
+> <<< Unbound function: ONE-STING >>>
+ Maybe you meant one of these?
+  ONE-STRING  	[f]  	[show modified form]  	[execute modified form]
+  NEW-STRING  	[f]  	[show modified form]  	[execute modified form]
+
+
+C. What gets shown to the user when multiple matches occur.  
+
+The general idea is that we don't want too much text to be displayed.
+We may have cases where a symbol matches multiple ways, or the
+documentation string is excessive, etc.  We want to limit the display
+to something like 25 to 30 lines.  If the information we want to
+display exceeds that, then we will display a summary of the
+information (e.g., a single line for each summary, the first two
+examples for each match instead of all 10, etc) and a 'more ...'  link
+that when clicked will open a new page which will have the full help
+display for all of the matched entries.
+
+One question is whether, when we do find exact matches, we should also
+print out information about non-exact matches.  (e.g., if the user
+asks for help about ONE-STRING, we might also suggest NEW-STRING, even
+if it isn't in the see-also list if it matches via EDIT-DISTANCE.)
+
+Another question is the exact ordering of the display when multiple
+matches are found.  A further point is that we want to make sure we
+show every exact match in the immediate display -- we don't want to
+have exact matches only shown via a 'more ...'  link.
+
+(Note: In the case of multiple matches, the algorithm to show them
+all may get fairly complex.  It may not be worth putting a tremendous
+amount of effort into getting this exactly right.)
+
+
+
+
+"Help me if you can, I'm feeling down and I do appreciate you being
+round."
+
+
+V.  Semantics of multiple word help.  
+
+Multiple word help is invoked when a user types 
+
+(help s1 s2 ...)
+
+:help s1 s2 ...
+
+help s1 s2 ...
+
+or the user types 
+
+(help "word1 word2 word3 ...")
+
+etc.
+
+If a user types 
+
+(help "word1 word2" "word3 word4 ...") 
+
+it is as if the strings were concatenated together with a space
+between them.
+
+What we want to do here is some approximation of a google-type algorithm.
+We want to search over:
+
+  -- a function or variable's documentation string or summary/text
+     (for document-function)
+  -- a topic's full introduction (and if computationally feasible, 
+     the whole description)
+  -- the full text for a glossary entry 
+  -- the full text for a module description
+  -- the full text for a tutorial description
+  -- (bonus) the full text of our documentation pages 
+  -- (bonus) text in the frames of the system
+
+In terms of the input string we want to remove what are referred to as
+'stop' words (e.g., and, or, with, to ...).  Note: we have a list of 
+stop words from the CACHE project.  
+
+Then we want to do some kind of matching.  The goal is to come up with
+rankings and display the top N matches, without taking up too much
+CPU, memory, or real time.  It may be necessary to pre-index and/or
+pre-process various texts we want to search and store them out on disk
+files.  The display should print out the first few most relevant
+matches and have a 'more ...' link which will open another page
+showing the full set of matches.
+
+One matching option involves using both EDIT-DISTANCE and word
+homology (which is more efficient if not more accurate for long texts,
+since the EDIT-DISTANCE algorithm is O(n**3)), and maybe some kind of
+semantic matching.
+
+Another option would be to try to find a real public-domain
+'google-like' algorithm running on a Unix box and call out to it just
+as we do with BLAST.  We might be able to do this by creating files to
+be indexed as the system loads.  (As DOCUMENT-FUNCTION, live-tutorial,
+glossary, and other documentation-related forms are defined as the
+system loads, files containing the text we want indexed would be
+written to disk, along with references back to the items that created
+them, and finally when the system was fully loaded the indexing
+algorithm would be run over the whole set of created files.)
+
+Another option would be to use google directly.  Peter has pointed out
+that one can restrict a google search to a particular URL or set of
+URLs.  If we could manage to get google to index everything we wanted
+indexed, then we could presumably run a google search using Jeff
+Shrager's facility that interfaces directly to Google.
+
+If we roll our own, one fairly simple algorithm would be to count up
+the number of matches of the non-stopped words in the user's query for
+each documentation/text string, with some weighting for the length of
+the documentation/text.  Matches could either be exact or in terms of
+1-off edit-distance.  (We could also do some sort of stemming or
+reverse stemming: If we had a term like 'sequenced', we could also use
+'sequence', but this gets into the morass of English idiosyncrasies.)
+We could also throw in some sort of weighting factor for a word
+homology score.
+
+An orthogonal idea is to use something like WORDNET to find synonyms
+for the words the user enters in his query, and also use those terms.
+It's probably not feasible to load all of WORDNET into core, but it
+may be efficiently accessible on disk if at any one time we're only
+looking up a couple of words to get their synonyms.
+
+We should probably start out with something simple to code and
+reasonably fast, and extend it as much as we are willing to devote
+effort to it.
+
+
+
+
+
+"Help me, get my feet back on the ground, won't you please, please
+help me?"
+
+
+VI. The concept of double links.  
+
+One problem with documentation and help is, for example, topic A
+refers to topic B, but topic B doesn't refer to topic A.  It would be
+nice to have a general mechanism in the system so that if we create a
+link reference from any A to any B, an automatic backlink reference is
+created from B to A.
+
+The problem with doing this is that every form of documentation has
+its own data structure (or none at all) and different methods of
+creating reference links (e.g., see-also for document-function, direct
+hyperlinks for html documents, etc.).
+
+We can't solve the problem in general, but for data structures that we
+create (such as document-function structures and whatever structures
+we come up with to hold glossary information, module description
+information, etc.)  we should be able to write methods that insure
+that backlinks are created.
+
+The most difficult issue here is that a reference in A to B may be
+created at a time when B in fact does not exist.  I think this can be
+partially solved by maintaining a list of unresolved references as the
+system loads, and then at the end of the system load making a pass
+over these unresolved references.  
+
+Note: Once we establish this network of double links then we effectively
+have created a semantic net of Biobike concepts.  I'm not sure that this 
+has any particular use...
+
+
+VII. Summary for simple help
+
+An overhaul of HELP will be a very resource-intensive task.  How good
+the ultimate system becomes will be partly determined by the design
+but mostly determined by the amount of effort we are willing to devote
+to it.
+
+
+VIII. VPL help.
+
+A. Help while constructing a form.
+
+VPL help is in some senses a lot simpler and in others a lot more
+complicated than (help ...).  Simple in the sense that at any point,
+positioned over any object, the user should be able to invoke HELP
+(presumably by clicking right and selecting one of the help options).
+Help would be context specific.  This is a simple concept but the
+implementation is anything but.
+
+Let's take an example.  Assume the user has a partially constructed form:
+
+(fit "abcd" 10 ...)
+
+The ... represents some sort of VPL indicator that further arguments are 
+allowed but not required.  
+
+If the mouse is hovering over FIT or the left paren of the FIT form,
+the standard help should bring up a more detailed description of the
+FIT function.
+
+If the mouse is hovering over "abcd" help should present a few options:
+  -- help about FIT
+  -- help about strings
+  -- help about the first argument to FIT, specifically
+ 
+If the mouse is hovering over some part of the ..., the help should
+indicate the set of valid flags and/or keywords allowed.  If a keyword
+has been selected and the mouse is hovering over the hole representing
+the value, then information about the type of object that is
+acceptable might be displayed.
+
+B. Help while doing other things.
+
+The user should also have a panoply of help tabs and menus to get the
+same sort of help he can get from the standard weblistener.
+
+Help should be available when hovering over an entry in the palette;
+presumably it should give you a link to the document-function form for
+that palette entry.
+
+Help should be available when hovering over a result form.  Presumably
+a menu of options, some of them actions and some of them help-related,
+would be presented.  
+
+Help should be available if and when the user enters a form and an
+execution error results.  This might be the trickiest of all.  
+
+We can experiment with help options automagically popping up if a user
+hovers over some place for a given amount of time; but that kind of thing
+can get really obnoxious. 
+
+C. Help with figuring out what you want.
+
+Jeff Shrager has talked about help in the sense of completion: if a
+user chooses to enter text, then in a manner similar to current
+browsers, the system can present valid completions.  
+
+Another aspect related to this kind of help is having navigable menus
+that will allow the users to easily find the functions and objects he
+is looking for.  We need ways of partitioning the space of objects
+along different dimensions, such as functionality, alphabetically,
+user vs. system, etc.
+
+D. Summary
+
+One can come up with an almost infinite number of possibilities here.
+Making the VPL help useful and yet possible to implement in less than
+an aeon is going to be a considerable challenge. 
+
+
+
+
+"Help!"
+
+
+

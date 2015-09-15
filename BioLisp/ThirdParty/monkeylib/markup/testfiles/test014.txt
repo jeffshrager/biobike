@@ -1,0 +1,9 @@
+This as a pargraph followed by a bullet list.
+
+  @ item 1
+
+  @ item 2
+
+  @ item 3
+
+Another paragraph.

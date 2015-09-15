@@ -1,0 +1,1262 @@
+<title>BioBike: Functional Phylogeny</title>
+
+<p>
+
+<h2>
+BioBike: Functional Phylogeny: Exploring phylogeny based upon gene function
+</h2>
+
+<p>
+<i>Copyright 2005 by Raymond Liu and The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+<ul>
+<a href=#Introduction><li>Introduction to Phylogenetic Trees</a>
+<a href=#phylip><li>Using Phylip to make trees in BioBike</a>
+<a href=#phyorth><li>Phylogeny from Orthology</a>
+<a href=#multiple><li>Trees from different genes</a>
+<a href=#manip><li>Some Tree Manipulation</a>
+<a href=#top><li>Topology</a>
+</ul>
+
+<p><hr><p>
+<a name=Introduction>
+<h2>Introduction to Phylogenetic Trees</h2>
+
+In this tutorial we're going to explore the way that types of
+organisms are supposed (by biologists) to be related to one another
+evolutionarily. In eukaryotes, like mammals and fish, the concept of
+phylogeny turns on the concept of "species". You've most likely seen
+lots of pictures that look like this (borrowed from <a target=_blank
+href=http://www.whozoo.org/mammals/Primates/primatephylogeny.htm>this
+page</a>):
+
+<br>
+<img src=livetutorial-files/phylotops/phylotops-images/primatetree.jpg>
+<br>
+
+What this diagram tells us is that, according to whatever measure of
+"near" was used in creating this diagram, humans' closest relatives
+are the bonobos and chimpansees. Each branch point in a diagram such
+as this one indicates a supposed evolutionary branch point -- that is,
+some point in evolutionary history when there was some sort of unknown
+organism that was a distant parent of both chimps and bonobos, and
+then some other organism that was the parent of <i>that</i> supposed
+organism, and us humans, and that all of organs through gorillas --
+the "hominidae" have a common ancestor -- equally unknown. (Although
+they keep finding organisms that supposedly could have been that
+missing hominid!)
+
+<p>
+
+Importantly, note that it is the structure of the tree, <i>not</i> the
+order in which is happens to be drawn that matters! For example,
+although these two tree look different, they actually represent
+<i>exactly</i> the same information, only the order in which the
+organisms are listed is different, so the structure <i>looks</i>
+different, but if you examine it carefully, you'll see that they
+have exactly the same <i>structure</i>:
+
+<pre>
+Tree #1:
+
+      Gibbons ----------------+
+                              |
+      Orangs  -------------+  +---...
+                           |  |
+      Chimps -------+      |  |
+                    +--+   +--+
+      Bonobos ------+  |   |
+                       +-+ |
+                       | | |
+      Humans ----------+ +-+
+                         |
+      Gorillas ----------+
+
+Tree #2:
+
+      Bonobos ------+      
+                    +--+   
+      Chimps -------+  |   
+                       +-+ 
+                       | | 
+      Humans ----------+ +-+
+                         | |
+      Gorillas ----------+ +-+
+                           | |
+      Orangs  -------------+ +---...
+                             |
+      Gibbons ---------------+
+</pre>
+
+So how are tree like that made? We said above "...according to
+whatever measure of "near" was used in creating this diagram..."
+Classically, the measure was physical -- the length of bones and the
+shape of the jaw, for example, and as you might imagine, there was
+lots of discussion (meaning "massive fights") over which measures were
+best. These days molecular biologists use "molecular phylogeny" by
+using the relationships between gene or protein sequences to determine
+phylogenetic trees of this sort. Of course this doesn't get rid of the
+fights, it just moves them to a molecular level!
+
+<p>
+
+Specifically, there are programs that, given a set of sequences, will
+produce a hypothetical phylogenetic tree, just like the one above,
+although we're going to do it for bacteria rather than primates. 
+
+<p>
+
+(It turns out that the concept of "phylogeny" for bacteria is in
+dispute beacuse bacteria don't reproduce sexually, and so don't have
+the usual mechanisms of gene transfer, nor can the usual definition of
+"species" be applied to them. There turn out to be many different ways
+to transfer genes between and among bacteria, so in reality all bets
+are off when it comes to bacteria -- but it's only a tutorial, so
+we'll suspend disbelief for the moment.)
+
+<p><hr><p>
+<a name=phylip>
+<h2>Using Phylip to make trees in BioBike</h2>
+
+<p>
+
+BioBike uses the program "phylip" to make phylogenetic trees. There
+are many other programs that can build phylogenetic trees based on
+sequence alignments. PHYLIP is one of the more popular ones and is
+available in BioBike.
+
+<p>
+
+Phylip
+requires that you give it a series of pre-aligned sequences -- one
+from each type of organism that we want to make a tree for, and it
+hands you back a phylogenetic tree, like the one above, telling you
+how these organisms relate -- <i>according to the measure of "near" we
+are using here</i>, which is how similar the sequences are to one
+another. 
+
+<p>
+
+We can see phylip work by taking a really simple case. Here are some
+sequences that have obvious relationships to one another, lets see if
+Phylip can discover this relationship:
+
+<pre>
+>> (setq four-dumb-seqs '(
+>>   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+>>   "AAAAAAAAAAAAAAAAAAAATTAAAAAAAAAAAAAAAAAAATTAAAAAAAAAAAA"
+>>   "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+>>   "TTTTTTTTTTTTTTTTTTTTAATTTTTTTTTTTTTTTTTTTAATTTTTTTTTTTT"))
+
+>> (seegraph (run-phylip four-dumb-seqs))
+</pre>
+
+If things worked out right, you got a tree that put the AAAA sequences
+close together to one another, and the TTTT sequences close together
+to one another. Note that the intermediate nodes and all the arcs have
+been named "NODE#" and "0_#" with # designated by
+RUN-PHYLIP. Phylogenetic trees commonly incorporate other pieces of
+information such as time of divergence, maybe in the length of the
+arcs, but in this tutorial we will focus only on the topology of the
+trees. 
+
+<p>
+
+Let's do another slightly less dumb experiment with phylip:
+
+<pre>
+>> (setq slightly-less-dump-seqs '(
+>>   "AGCTACGTAGCTACGTAGCTACGTAGCTACGTAGCTACGTAGCTACGTAGCTACG"
+>>   "TGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGG"
+>>   "TGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGC"
+>>   "AGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGG"))
+
+>> (seegraph (run-phylip slightly-less-dump-seqs))
+</pre>
+
+It's sort of hard to tell what happened, so let's give these some
+names:
+
+<pre>
+>> (setq slightly-less-dump-seqs '(
+>>   (a "AGCTACGTAGCTACGTAGCTACGTAGCTACGTAGCTACGTAGCTACGTAGCTACG")
+>>   (b "TGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGGATGG")
+>>   (c "TGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGC")
+>>   (d "AGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGGTAGG")))
+
+>> (seegraph (run-phylip slightly-less-dump-seqs
+>>                       :labelfn #'first
+>>                       :seqfn #'second))
+</pre>
+
+Surely you noticed the weird keyword arguments: :LABELFN and
+:SEQFN. ":labelfn #'first" tells RUN-PHYLIP to take the first element
+as the name label (a, b, c, d), and ":seqfn #'second" tells RUN-PHYLIP
+to consider the second part as the actual aligned sequence. (This will
+become important later!)
+
+<p>
+
+If things worked out, it should have put A and D together, and B and C
+together. I'll tell you a secret: That's exactly right! I constructed
+sequence A, then reversed every four characters to make sequence C,
+then I made sequences B and D by replacing the Cs in C and A
+respectively with Gs -- confirm this for yourself!
+
+<p>
+
+So, you see, phylip can discover the relationship between organisms
+based on their gene sequences, and in this lesson we're going to use
+it to discover the phylogenic relationship between cyanobacteria. Just
+one problem: Even the simple cyanobacterium has <i>thousands</i> of
+genes! Which one do we use to do the comparison?  Let's being with a
+little exploration.
+
+<p>
+
+<p><hr><p>
+<a name=phyorth>
+<h2>Phylogeny from Orthology</h2>
+
+<p>
+
+Let's make some phylogenetic trees to consider. We'll begin by
+looking at what we have. The organisms in our database are:
+
+<pre>
+>> (available-organisms)
+</pre>
+
+That's a cool bunch. 
+
+<p>
+
+Now let's pick one and get one of its genes to work with:
+
+<pre>
+>> (SETF org #$synechocystis_pcc6803)
+
+;;; Here are all the genes:
+
+>> (#^GENES org)     
+
+;;; How many are there?
+
+>> (length (#^GENES org))
+
+;;; Let's just take one at random and make it our target gene, 
+;;; which we'll call g:
+
+>> (SETF g #$S6803.slr1317)
+</pre>
+
+Now for our phylogenetic analysis we'll need the "orthologs" of this
+gene. The orthologs are the genes in the other cyanobacteria that
+serve the same function as this one. Finding the <i>actual</i>
+function is a complex process, so instead we'll just choose the gene
+that is the most similar by by "two-way homology". What that means is
+that, suppose we have another org, call it org2, and it has a gene,
+g2; if g2 is the most similar gene to g in org2, and g is the most
+similar gene to g2 in org, then they have two way homology, and we
+call them orthologs.
+
+<p>
+
+Fortunately, a great function for this has been provided by BioBike
+which finds all the orthologs of the genes in all the other
+organisms::
+
+<pre>
+>> (ORTHOLOGS-OF g)
+
+;;; Let's save those:
+
+>> (SETF g-orthologs *)
+</pre>
+
+I encourage you to check out (help ORTHOLOGS-OF) for more details about 
+the function. The definition of ortholog it uses will be important, 
+since conceivably different trees can be created from phylogenies 
+comparing protein sequences and from phylogenies comparing gene 
+sequences. Subtleties matter! There are also other similar functions 
+that you may use later, such as GO-ORTHOLOGS-OF, which gives you 
+orthologs based on GO categories rather than sequence similarity.
+
+<p>
+
+Here we're working with gene sequences. Now that we have them, we'll 
+need to align them before using our phylogeny program. For this we have 
+a function that calls the ClustalW alignment program to do the alignment:
+
+<pre>
+>> (ALIGN g-orthologs)   
+</pre>
+
+This gives us the result in a frame. Click to see the results. The
+results are in the 'alignments' slot in this frame, which can be
+accessed by using:
+
+<pre>
+>> (SETF g-alignments (#^alignments #$ClustalWResult1))
+</pre>
+
+(See the Frames tutorial for more information about using #^ to 
+access frames and symbols in frames.)
+
+<p>
+
+Now we can create a phylogeny using RUN-PHYLIP. (Look at (help
+RUN-PHYLIP) to see how to use this function.) As we did above, all we
+need to do is to feed the aligned genes to RUN-PHYLIP the alignments
+slot from the ClustalW results frame.
+
+<pre>
+>> (RUN-PHYLIP 
+>>     g-alignments
+>>     :labelfn #'first :seqfn #'second)
+</pre>
+
+Recall from above about :labelfn and :seqfn. If you look at the
+ClustalWResults frame you'll notice that in the alignments slot, the
+first element is the name of the gene, and the second element is the
+actual alignment, just like we set it up above!
+
+<p>
+
+And so now we have our phylogenetic tree representing the sequence 
+relationships between the orthologs of our gene!
+
+<p>
+
+This tree is given to us as a list of entries of the form (start-node
+arc end-node), or more simply, (a -> b). Each entry is a particular
+node-arc-node found on the tree, and the list, as a collection of all
+the parts, represents the entire tree. Let's look at it using:
+
+<pre>
+;;; First off, let's save it!
+
+>> (setf tree1 *)
+
+;;; And then look at it:
+
+>> (SEEGRAPH tree1)
+</pre>
+
+Notice that the tree resembles a binary tree, meaning each node has
+either 0, 1 or 2 children nodes (top node is the only exception
+here). All the leaf nodes are the gene names from our ortholog list,
+and all the gene name nodes are leaves. This makes sense considering
+we have a phylogenetic tree. 
+
+<p>
+
+On top of that the gene names are frame symbols, something we'll take
+advantage of later. The intermediate nodes represent common
+ancestors/sequences of the genes connected below it, leading all the
+way to the TOP which represents the common ancestor/sequence of them
+all.
+
+<p>
+
+As above, only the placement of the nodes and overall structure of the
+tree concern us (so don't worry about the node names or times -- the
+numbers).
+
+<p>
+
+Let's summarize things so far by writing a function to do everything
+we've done up to now, PHYLOGENY-ORTHOLOGS-OF:
+
+<pre>
+>> (defun PHYLOGENY-ORTHOLOGS-OF (target-gene)
+>>   (RUN-PHYLIP
+>>    ( #^alignments (ALIGN (ORTHOLOGS-OF target-gene)))
+>>    :labelfn #'first :seqfn #'second
+>>    )
+>>   )
+               
+;;; And test it:
+
+>> (seegraph (PHYLOGENY-ORTHOLOGS-OF g))
+
+;;; Let's further test by looping it through three genes:
+
+>> (loop for each-gene in (#^genes org)
+>>       as i from 1 to 3
+>>       collect (PHYLOGENY-ORTHOLOGS-OF each-gene))
+
+</pre>
+
+This gives us 3 trees representing the phylogeny of the orthologs of
+three genes. These separate trees are held in a list. To see each
+tree, try the following:
+
+<pre>
+>> (setq trees *)
+
+>> (seegraph (first trees))
+
+>> (seegraph (second trees))
+
+>> (seegraph (third trees))
+</pre>
+
+<p>
+
+
+<p><hr><p>
+<a name=multiple>
+<h2>Trees from different genes</h2>
+
+<p>
+
+Now let's work with some phylogenetic trees! Our motivation is to try to 
+answer some basic questions about relationships between phylogenies of 
+genes in similar organisms: How do the topology of phylogenetic trees 
+of homologous genes compare with one another? Given a set of genes with 
+homologies across several related organisms, do their individual 
+phylogenetic trees correspond with one another? Are the evolutionary 
+relationships of each gene similar to that of the others? What, if any 
+differences exist and what information can we obtain from the 
+topological analysis?
+
+<p>
+
+To begin our experiment let's narrow our scope and try our functions on 
+a limited number of genes. Once we have a functional set of code to work 
+with we can expand our analysis to a larger set of genes. To simplify 
+things, let's focus on genes with homologous counterparts in all the 
+organisms available to us. We have:
+
+<pre>
+>> (length (AVAILABLE-ORGANISMS))
+:: 13
+</pre>
+
+Because there are thirteen available organisms, we're looking for
+genes with a total of 13 orthologs Let's choose the organism with the
+fewest number of genes, and then iterate through its genes to get a
+small list of genes with 13 homologs.
+
+Here are the lengths of genes for our organisms:
+
+
+<pre>
+>> (loop for each-organism in (AVAILABLE-ORGANISMS)
+>>       collect (list each-organism (length (#^genes each-organism))))
+</pre>
+
+COLLECT gives us our result as a list, each entry of the form
+(organism number-of-genes). Looking at the list, we see that the
+organism with the least number of genes is
+#$prochlorococcus_marinus_med4 with 1760 genes.
+
+<p>
+
+If the list of organisms were larger, we should use a sort function to 
+sort our list:
+
+<pre>
+>> (setf org-list *)
+
+>> (sort org-list #'< :key #'second)
+</pre>
+
+SORT goes through through org-list, uses the 'second' function to get
+the second element (which is the number of genes), and sorts using
+this value and the '<' function. See the Functions tutorial for more
+information on how to use SORT.
+
+<p>
+
+Now that we have our organism with the small genome, let's go run
+through the organism and collect genes with 13 homologs. (We're just
+going to take the genes that are among the first hundred.)
+
+<pre>
+>> (loop for each-gene in (#^genes #$prochlorococcus_marinus_med4)   
+>>       as i from 1 to 100 
+>>       when (= (LENGTH (IGNORE-ERRORS (ORTHOLOGS-OF each-gene))) 13)
+>>       collect each-gene)
+
+;;; Save it while we've got it!
+
+>> (SETF genelist *)
+</pre>
+
+(About IGNORE-ERRORS: It appears that in the database some gene/protein 
+data for several genes is incomplete. The function affected is 
+orthologs-of, so a quick fix is the useful but dangerous function 
+IGNORE-ERRORS. This will let the ORTHOLOGS-OF function plow through 
+genes with missing information, skipping any genes that results in an 
+error so that the function can proceed. This function must be used with 
+caution because its use will hide bugs in the functions you write. Use 
+it only when you know that the rest of your code is perfect. Like mine ;)
+
+<p>
+
+Tidbit: We may also try changing the setting of the cutoff ORTHOLOGS-OF 
+uses. This can be done by adding ":CUTOFF e-value" to the ORTHOLOGS-OF 
+function as follows:
+
+<pre>
+ .......(ORTHOLOGS-OF :CUTOFF 10.0)....
+</pre>
+
+The default cutoff value is 1e-6. Check the help file for ORTHOLOGS-OF 
+for more information.
+
+<p>
+
+Alright so now we have a list of the first 100 genes in
+#$prochlorococcus_marinus_med4 that have orthologs in all the other
+organisms. Now we're ready to create trees out of these genes, and do
+some symbolic computing to compare their topologies! To save on
+computer time we'll only work with the first 3 of these 100
+genes. Still, this next loop takes a minute or two, so be sure to set
+your timeout to about 100 seconds and grab a drink:
+
+<pre>
+>> (loop for each-gene in genelist
+>>       as i from 1 to 3
+>>       collect (PHYLOGENY-ORTHOLOGS-OF each-gene))
+
+;;; And once again, save this important partial result::
+
+>>    (SETF trees *)
+</pre>
+
+
+<p><hr><p>
+<a name=manip>
+<h2>Some Tree Manipulation</h2>
+
+<p>
+
+The variable 'trees' now contains a list of phylogenies for each gene
+we ran PHYLOGENY-ORTHOLOGS-OF on (all 3 of them).  As mentioned above,
+all leaf nodes are gene names, and all the arcs and intermediate nodes
+are automatically labeled by RUN-PHYLIP. Let's clean up and simplify
+the tree by converting the gene names to the organisms they come from,
+renaming the arc names, and renaming the intermediate nodes.
+
+<p>
+
+By changing the gene name nodes to their organism names we're changing
+how we look at the trees a bit. Now instead of comparing the sequence
+relationships, we're using their trees as a way of looking at the
+evolutionary relationship among the organisms of the orthologous
+genes. Thus we're making the assumption that sequence similarity
+corresponds with the organisms' evolutionary history, and by comparing
+the different trees generated by different genes, we're gonna test
+this assumption to see how close that correspondence actually
+is. Basically we're scrutinzing the use of sequence homology as a
+phylogenetic determinant. Later we might want to figure out the
+different genes that fit well or do not fit well with the data, so we
+should also think about ways to retrieve this data.
+
+<p>
+
+Back to the real work: our first task is to rename the leaf nodes from 
+gene names to organism names. A leaf node will only appear in the 
+end-node of the (start-node arc end-node) entries of a tree. If we can 
+iterate through all these "end-node"s and isolate the ones that are 
+genes we'll be in business. One way to distinguish between the 
+intermediate nodes and the genes is to take advantage of the fact the 
+genes are frames. Since there is a function that can check to see if a 
+symbol is a frame (FRAMEP), we will use it here as our test for a gene. 
+Once we find one, we can rename it to the organism name using the frame 
+functions:
+
+<pre>
+>> (defun RENAME-LEAVES (one-tree)
+>>   (loop for entry in one-tree
+>>         if (framep (third entry))
+>>         do (setf (third entry) (#^organism (third entry)))
+>>         ))
+</pre>
+
+There are other ways to do this, such as testing to see if the node 
+begins with ":NODE". Try creating some functions of your own! In the 
+meantime let's test RENAME-LEAVES on tree1 from above:
+   
+<pre>
+>> (SEEGRAPH tree1)
+
+>> (RENAME-LEAVES tree1)
+
+>> (SEEGRAPH tree1)
+</pre>
+
+and bam it seems the leaf nodes are changed! Okay now to change the arc 
+names. (We can change them to anything we want, replacing the ugly 
+letter-numbers with something simple like NIL or arrow strings such as 
+'-->.)
+
+<p>
+
+Let's try NIL. Following generally the same format above:
+
+<pre>
+>> (defun RENAME-ARCS (one-tree)
+>>   (loop for entry in one-tree
+>>         do (setf (second entry) NIL))
+
+;;; Test it:
+
+>> (RENAME-ARCS tree1)
+</pre>
+
+Notice the tree looks cleaner in the listener output. The image still 
+sorta looks funky though, which leads us to think whether or not we can 
+make the arc labels disappear altogether. The first thing you should try 
+when encountering an idea like this is to check the help file of the 
+function in question.
+
+<pre>
+>> (help seegraph)
+</pre>
+
+Notice that if we change the arc name to '->, the arc labels will 
+disappear altogether in the seegraph! Great, let's modify our previous 
+function to do this:
+
+<pre>
+>> (defun RENAME-ARCS (one-tree)
+>>   (loop for entry in one-tree
+>>         do (setf (second entry) '->))
+
+>> (RENAME-ARCS tree1)
+
+>> (seegraph tree1)
+</pre>
+
+Now <i>that's</i> what I'm talking about!
+
+<p>
+
+Now on to the nodes. We can't rename all the nodes to "NIL" or "NODE"
+as we did with the arcs because then all nodes would merge to create
+one single intermediate node, changing the structure of the
+tree. We'll have to give them unique names. For simplicity let's just
+number them from 1 to n, and rename :TOP to TOP.  Notice that the
+nodes are already numbered in some order, which we'll get to
+later. We'll keep this order by getting a list of all the intermediate
+nodes, sorting them alphabetically to keep their numbered order, and
+assigning them number 1 to n according to that list. Then we'll
+iterate through all the nodes and make the substitutions. To keep
+track of the new node assignments, we'll use a hash table.  Finally
+we'll change all occurences of :TOP to TOP. 
+
+<p>
+
+This function is a doozy:
+
+<pre>
+>> (defvar node-table (make-hash-table :test #'equal))         
+
+>> (defun RENAME-NODES (one-tree)
+>>   (clrhash node-table)
+>>   (loop for entry in one-tree
+>>         if (not (framep (third entry)))
+>>         collect (third entry) into node-list
+>>         ;; collected the :NODE's
+>>         finally ; sort alphabetically
+>>         (setf node-list (sort node-list #'string<))
+>>         (loop for each-node in node-list
+>>           as i from 1 to (length node-list)
+>>           do (setf (gethash each-node node-table) i)))
+>>           ;assigning them 1 to n in hash table
+>>   (loop for entry in one-tree
+>>         do (loop for i from 0 to 2
+>>              ;; checking all the elements of each entry
+>>              as element = (nth i entry)
+>>              if (gethash element node-table)
+>>              ;; if this key  exists in the hash table...
+>>              do (setf (nth i entry) (gethash element node-table)))
+>>              ;; then substitute it to equal the value
+>>         if (equal (first entry) :TOP) ; Convert :top to top
+>>         do (setf (first entry) 'TOP)
+>>         ))
+</pre>
+       
+Some notes about the function: the strategy in the beginning is pretty 
+cool. If you look at the image of our trees, you'll notice each node can 
+only have one arrow converging on it (TOP has zero). This means that it 
+can be the third element of (a -> b) once and only once in the list of 
+entries. So, we go through all the end-nodes (all the children), 
+checking to see if it's a frame. If not, it must be a :NODE (TOP is 
+never a child).
+
+<p>
+
+Try this function on our test dummy:
+
+<pre>
+>> (RENAME-NODES tree1)
+
+>> (seegraph tree1)
+</pre>
+
+Cool!
+
+<p>
+
+Okay now let's put these three functions together and loop them through 
+all the trees in our trees
+
+<pre>
+>> (loop for each-tree in trees
+>>       do (RENAME-LEAVES each-tree)
+>>          (RENAME-ARCS each-tree)
+>>          (RENAME-NODES each-tree))
+</pre>
+
+And voila we have a cleaner phylogenetic tree to work with;
+See for yourself:
+
+<pre>
+>> (seegraph (first trees))
+
+>> (seegraph (second trees))
+
+>> (seegraph (third trees))
+</pre>
+
+<p><hr><p>
+<a name=top>
+<h2>Topology</h2>
+
+Alright now we've come to the fun part, looking at the topologies of the 
+phylogenies we've generated. The first question that we would probably 
+consider is: are the phylogenies topologically equivalent? In other 
+words, is it possible to take one tree and superimpose it on another 
+without changing its topological relationships? Considering that these 
+are homologous genes that we're looking at, our hypothesis would be to 
+expect that most of the phylogenies would superimpose on each other, 
+indicating that each set of homologous genes show the same evolutionary 
+relationship as the other sets (blah blah some more stuff here maybe)
+
+<p>
+
+So with Lisp we can compare trees using EQUAL, as:
+
+<pre>
+     (EQUAL tree1 tree2)
+</pre>
+
+This test returns T only if the trees are exactly the same in structure 
+and name. Here are some examples:
+
+<pre>
+>> (setf tree-a '((a -> b) (a -> c)))
+
+>> (setf tree-b '((a -> b) (a -> d)))
+
+>> (setf tree-c '((a -> c) (a -> b)))
+</pre>
+
+Use SEEGRAPH to look at the graphs and note their differences.
+   
+<pre>
+>> (EQUAL tree-a tree-b)
+
+>> (EQUAL tree-a tree-c)
+
+>> (EQUAL tree-a tree-a)
+</pre>
+
+The first two tests give us NIL. This test is pretty strict, as the only 
+difference between tree-a and tree-c is their entries are reversed. This 
+will cause a problem, because if we have trees are isomorphic but are 
+listed in a different order, or if isomorphic nodes are named 
+differently, EQUAL will give us NIL. We don't want that.
+
+<p>
+
+Fortunately, part of the problem is corrected by our renaming functions 
+above. To confess the main motivation for those functions was this (as 
+with all code you write, plan ahead!) to make comparison easier. Despite 
+our fixes, the ordering problem still remains. We can solve this in a 
+few ways. One is to pray RUN-PHYLIP orders isomorphic trees identically 
+somehow. Then our work is done -- we've renamed everything to a basic 
+format, so EQUAL should be sufficient as a comparison function.
+
+<p>
+
+If not, we have two choices: write our own test functions, or write 
+functions to rearrange entries according to some algorithm so that 
+isomorphic trees come out EQUAL.
+
+<p>
+
+If we want to write out own functions the best way to do it would be to 
+use recursion. This mindbender is introduced in the Graph R&R tutorial, 
+so check it out. There are lots of non-recursive methods, I encourage 
+you to figure out your own.
+
+<p>
+
+If we want to rearrange the entries, then there's something we have to
+go over to make sure we're on the same page. Consider the following
+graph below:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree001.jpg>
+<p>
+
+We are strictly comparing the topologies, so this means the following
+graph below is equivalent:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree002.jpg>
+<p>
+ 
+Why? Because we only care about how the leaf nodes (the organisms) are
+connected, neglecting everything in between. If we take the first
+graph and twist it a bit we can get this:
+ 
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree003.jpg>
+<p>
+
+and by renaming the intermediate node and TOP node we see that the
+graphs are equivalent. So, keeping this in mind, we realize that the
+initial directions of the arcs provided by the RUN-PHYLIP might be a
+problem, because we can have several versions of the (topologically)
+same tree as shown above.
+
+<p>
+
+One way we can fix this problem is to structure each tree so that it
+follows the same format given all the different connections. What we
+can do is choose an organism to be the top node each time, and then
+follow all the arcs (backwards or forwards) to the next node, setting
+each of the arcs to point away from our new top node. This removes all
+the information from the directions of the arcs, but again, since
+we're just looking at the topology and how each node is connected to
+each other, it doesn't matter. Thus, if we choose org1 to be the top
+node in the example above, the "formatted" tree will look like this:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree004.jpg>
+<p> 
+
+So again we're gonna have to do some tree manipulation! Let's make a
+function that can take in your choice as a top node, then rearranges
+all the arc directions so they face away from this node! We'll first
+start with a small helper function (SWAP-ARC) followed by the main
+function (REARRANGE-TREE). If you check the code below, the SWAP-ARC
+helper function is unnecessary, but I thought it would look neater to
+make it a separate function (purely a design choice). Anyway check out
+the main function there's a surprise -- it's recursive! You'll see why
+in a minute when I go over how the function works.
+
+<p>
+
+Here's our helper function, it mainly serves to switch the first and
+third elements of an entry, which effectively turns around the
+direction of the arc:
+
+<pre>
+>> (defun SWAP-ARC (entry)
+>>   ;; Switch the arc direction in an entry
+>>   (setf tempfirst (first entry))  
+>>   (setf (first entry) (third entry))
+>>   (setf (third entry) tempfirst)
+>>   )
+</pre>
+
+Here's the main function:
+
+<pre>
+>> (defun REARRANGE-TREE (one-tree topnode &optional parent) 
+>>   ;;input the tree, the node, and node's parent (if any)
+>>   (loop for entry in one-tree
+>>         if (and (equal (third entry) topnode) ;if the topnode is a child....
+>>                 (not (equal (first entry) parent)) ;and the first entry is not the parent
+>>                 )
+>>         collect entry into my-switch-list;record the entry into a list
+>>         finally
+>>         (loop for entry in my-switch-list ;go thru the switch list
+>>               do (SWAP-ARC entry)        ;swap the direction
+>>               finally
+>>               (loop for entry in my-switch-list        ;go thru the switch list again, repeat for children
+>>                     do (REARRANGE-SUBTREE one-tree (third entry) topnode)
+>>                     )
+>>               )
+>>         )
+>>   )
+</pre>
+
+Pictures are worth a thousand words so let's explain the function with a graphical example. Here is our favorite test dummy, tree1:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree005.jpg>
+<p>
+ 
+
+Assume we will do (REARRANGE-TREE tree1
+#$nostoc_punctiforme_atcc29133) to make nostoc the top node. Then,
+what happens is the function will take in tree1 and nostoc as
+arguments. It will then look for all the entries in which nostoc is a
+child, and stores them in my-switch-list. This will give us only one
+child, (2 -> nostoc) in my-switch-list. Then SWAP-ARC will be called,
+turning (2 -> nostoc) to (nostoc -> 2). Incidentally, this will also
+change the contents of my-switch-list so that it becomes (nostoc -> 2)
+as well. This is because my-switch-list contains only pointers to the
+entries, sort of like a street sign that tells you where to go. The
+directions may be correct, but what remains at your destination may be
+different (sort of like going to your favorite burger shop only to
+find it replaced by McDonalds).  Now, after this step, the graph would
+look like this:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree006.jpg>
+<p>
+
+Now the recursive part. After the switch, REARRANGE-TREE is called on
+the children of nostoc, proprogating down the tree. To find the
+children, well we can just use my-switch-list because it already
+contains the "new" children of nostoc. We thus do (REARRANGE-TREE
+tree1 2 nostoc). Notice the addition of the "parent" argument, which
+we input as nostoc. What this new argument does is it protects nostoc
+from being switched around again when REARRANGE-TREE does its work on
+2. The my-switch-list for 2 will be:(nostoc -> 2) and (1 -> 2). We
+don't want to switch (nostoc -> 2) around again, so we include the
+extra condition to check to see if the list contains the parent node
+(in this case, nostoc). Thus, the switch is only performed on (1 ->
+2), to make (2 -> 1). After this step, according to the recursion, we
+need to call REARRANGE-TREE on the new children of 1, feeding 1 as the
+parent so that it is similarly protected. Notice that in this
+algorithm, all the children that already have arrows pointed in the
+correct direction are ignored. How is this done? Well remember we're
+only looking for entries in which the desired topnode is a child --
+therefore we skip all the entries in which they are already
+parents. Thus, the algorithm will ignore those paths and assumes that
+all the arrows in that pathway are already pointed in the right
+direction (Look at the original tree1 to confirm this).  So now 1 is
+the parent, and the algorithm repeats the same process. It finds (TOP
+-> 1), and switches it to (1 -> TOP). Then the recursion passes in TOP
+as a parent, and it looks for children of TOP. There aren't any, so
+the recursion fizzles out and go back up to to finish up any processes
+it left hanging. This is a simple tree so the function practically
+ends at this point for this example.
+
+<p>
+
+The final result after the recursion is complete is the is the following:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree007.jpg>
+<p>
+ 
+
+which is what we want, with nostoc as the daddy node. 
+
+<p>
+
+This algorithm looks really simple but it's actually pretty complex
+and dense (that's the nature of recursion!!!). You can either believe
+that it works, or go over it carefully to make sure you understand all
+of its miniutiae :), which is what I encourage you to do!
+
+<p>
+
+Anyway, enough talk. Let's see the function in action. 
+
+<p>
+
+Let's actually run the function on on our test dummy tree1:
+
+<pre>
+>> (REARRANGE-TREE tree1 #$nostoc_punctiforme_atcc29133)
+</pre>
+
+and hopefully you'll see I haven't lied to you. Now to REALLY test it
+out, let's see it in reverse!
+
+<pre>
+>> (REARRANGE-TREE tree1 'TOP)
+</pre>
+
+This rearranges the tree back into its original order with TOP on top! Yay!
+
+<p>
+
+And for the final act to prepare us for the next section, let's use
+REARRANGE-TREE on the trees from our phylogenetic tree list. Remember
+our ultimate goal is to get all the trees pointed in the same
+direction. For our "standard format" let's have each tree begin with
+#$anabaena_pcc7120, the alphanumerically first organism in the list,
+as the top node.
+
+<pre>
+>> (loop for each-tree in trees
+>> do (REARRANGE-TREE each-tree #$anabaena_pcc7120)
+>> )
+</pre>
+
+Great! Have fun rearranging the trees, it's kinda cool to see the same tree from a different perspective. 
+
+<p>
+
+Topology -- for real this time :)
+
+<pe>
+
+Finally let's start working on that test function that we wanted to
+write. To summarize what we've done to our poor phylogenetic trees --
+we've renamed the leaf nodes to their organism names, we've renamed
+all the arc and intermediate nodes, and finally we've rearranged all
+the nodes so that #$anabaena_pcc7120 is the top node. Now let's write
+our test function to tell us if two trees have the same isomorphic
+structure.
+
+<p>
+
+What we will do is use another recursive function to start at #$anabaena_pcc7120, the top node, and progress through the tree comparing the structure as we move along. The general idea is, start at the top, #$anabaena_pcc7120, and move down the arc arrows (this is why we rearranged the tree to a standard format, to make this comparison a lot easier by just following the flow of the tree). We'll compare two trees in paralell using this technique. When we reach a an intermediate during our "graphwalk", we will make sure that both trees also have an intermediate node. When we hit a leaf node, we will make sure that each tree also has the correct leaf node. We will allow flexibility so that 
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree008.jpg>
+<p>
+ 
+comes out equivalent to:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree009.jpg>
+<p>
+
+Since topologically they are equivalent. We'll do this by asking
+whether or not EITHER of its two children are equivalent to the other
+tree's in our recursive function.  If this is satisfied for the entire
+tree then we have isomorphic trees.  This functions also makes use of
+a feature of the trees we're working with -- after rearrangment, each
+node only has two or no children. Check for yourself to convince
+yourself this is true!
+
+<p>
+
+The whole function will contain a sub-function that will serve as the
+recursive function, with the outer "wrapper" function helping to get
+things going. There's also another helper function to simplify things.
+
+<p>
+
+This is our helper function, which basically takes two nodes and tells
+us if they are isomophic:
+
+<pre>
+>> (defun ISOMORPHIC-NODE? (node1 node2)        ;tests for isomorphic nodes
+>>   (cond
+>>    ((and (not (framep node1)) (not (framep node2))) t) ;both nodes are intermediate nodes, or if....
+>>    ((equal node1 node2) t) ;both nodes are equal (both frames or both nil)
+>>    (t nil) ;otherwise we have a leaf node and intermediate node, return nil
+>>    ))
+</pre>
+
+Again, what we mean by isomorphic is by the following: if they are
+both intermediate nodes (basically not a leaf node/organism/frame)
+then it's okay for them to overlap, and thus we say they are
+equivalent. If the two nodes are frame nodes, meaning they are leaf
+nodes representing organisms, then they have to be equal in order for
+us to consider them isomorphic.
+
+<p>
+
+Here we define two hash tables we will use to keep track of all the children:
+
+<pre>
+>> (defvar node-table1 (make-hash-table :test #'equal)) ;will use to store information as we go along
+
+>> (defvar node-table2 (make-hash-table :test #'equal))
+</pre>
+
+Now here's the recursive function:
+
+<pre>
+>> (defun SUB-ISOMORPHIC-TREE? (node1 node2)
+>>   (cond
+>>    ( (and (equal node1 nil) (equal node2 nil)) t) ;if the two nodes are nil, then return true -- we've hit the end of the tree
+>>    ( (not (ISOMORPHIC-NODE? node1 node2)) nil) ;if one node is a frame and one is not, then it's not a match and return nil
+>>    ( (not 
+>>       (or 
+>>        (and 
+>>         (SUB-ISOMORPHIC-TREE? (first (gethash node1 node-table1)) (first (gethash node2 node-table2)))
+>>         (SUB-ISOMORPHIC-TREE? (second (gethash node1 node-table1)) (second (gethash node2 node-table2)))
+>>         )
+>>        (and
+>>         (SUB-ISOMORPHIC-TREE? (first (gethash node1 node-table1)) (second (gethash node2 node-table2)))
+>>         (SUB-ISOMORPHIC-TREE? (second (gethash node1 node-table1)) (first (gethash node2 node-table2)))
+>>         )
+>>        )
+>>       ) nil)
+>>    (t t)
+>>    )
+>>   )
+</pre>
+
+And here is the "wrapper" function to get everything started:
+
+<pre>
+>> (defun ISOMORPHIC-TREE? (tree1 tree2)
+>>   (clrhash node-table1)                        ; clear it
+>>   (clrhash node-table2)
+>>   (loop for entry in tree1 ;makes a list of all the children of each parent node
+>>         do (push (third entry) (gethash (first entry) node-table1)) ;for each parent, push all the different children it has onto its value slot of the hash table
+>>         )
+>>   (loop for entry in tree2
+>>         do (push (third entry) (gethash (first entry) node-table2))
+>>         )
+>>   (SUB-ISOMORPHIC-TREE? #$anabaena_pcc7120 #$anabaena_pcc7120)
+>>   )
+</pre>
+
+Alright now let's explain everything. Looking at SUB-ISOMORPHIC-TREE?
+we see that it takes in two nodes as input arguments. It then compares
+them using ISOMORPHIC-NODE? to see if they can overlap each other. If
+they are both nil, then we return T because by default no nodes are
+equivalent to each other. If the nodes ARE NOT equivalent, we
+immediately return NIL. If the nodes ARE equivalent, then we must
+continue to check the rest of the tree. Now we come to that huge block
+with the four recursive calls. After confirming that two nodes are
+isomorphic, we want to look at their children to see if they are
+isomorphic as well. So, we look at the different combinations they can
+pair up. Either the first child of tree1 can be isomorphic to the
+first child of tree2 (and second child of tree1 with second child with
+tree2) OR the first child of tree1 can be isomorphic to the second
+child of tree2 (with the second child of tree1 isomorphic to the first
+child of tree2). Here is an illustration with two simple trees to
+illustrate:
+
+<p>
+<img src=livetutorial-files/phylotops/phylotops-images/tree010.jpg>
+<p>
+ 
+We can have the following pairs:
+
+(first child of node1) ---- (first child of node2)AND(second child of node1) ---- (second child of node2)     (scenario 1)
+OR(first child of node1) ---- (second child of node2) AND(second child of node1) ---- (first child of node2)        (scenario 2)
+
+<p>
+
+So, the 4 recursive calls try to see if any of these two scenarios
+come true. For each scenario we need to satisfy two conditions as
+shown above. We have the first two recursive calls testing scenario 1,
+and the last two recursive calls testing scenario two. If you follow
+the OR and AND logic you'll see that we're looking for situations in
+which this DOESN'T occur. If it DOESN'T occur, the testing condition
+comes out T and we return nil. In this case, we see scenario 2
+occuring, meaning BOTH of the last two recursive calls are
+satisfied. The testing conditioning comes out nil, so we move on to
+the next condition. This is the merely an automatic T condition, which
+means we've gone through all the possibilities and , and the only
+conclusion we can draw is the nodes are isomorphic.
+
+<p>
+
+It's sorta hard to explain but you should see how the recursion
+propagates down the rest of the chain to the very end, and then slowly
+works its way back up to give us the different T/NIL values which
+allow us to get our final result.
+
+<p>
+
+As for the main wrapper function, it starts the cascade by inputting
+the top nodes, designated by us to be #$_anabaena_pcc7210, as the
+first nodes to compare. It also sets up two hash tables and stores the
+children of all the nodes in each tree -- this is mainly to save searh
+time. We run the search through the trees for each parent node
+beforehand, so that when we need the children nodes we won't have to
+do it in the middle of our test function, we can just access the hash
+table. Remember this handy tool of hash tables when you're writing
+your own stuff.
+
+<p>
+
+So so summarize the function: check to see if the nodes are equal or
+isomorphic. If they are, then check to see if their children are
+isomorphic. Keep on doing this until you get an answer for the entire
+tree.
+
+<p>
+
+Now to test it! Let's try using our favorite test dummy, tree1. This
+time we'll need to create a brother as well since we're comparing two
+trees:
+
+<pre>
+>> (REARRANGE-TREE tree1)
+
+>> (SETF tree2
+>>   '((1 -> #$synechocystis_pcc6803) (#$anabaena_pcc7120 -> 1)
+>>      (6 -> TOP) (6 -> #$anabaena_variabilis_atcc29413)
+>>         (TOP -> #$gloeobacter_violaceus_pcc7421)
+>>            (TOP -> #$nostoc_punctiforme_atcc29133) (1 -> 6))
+>>             )
+
+>> (SEEGRAPH tree1)
+
+>> (SEEGRAPH tree2)
+</pre>
+
+Look at the two graphs. They should look isomorphic to you, despite the different intermediate node names and the switched positions of some nodes.
+
+<pre>
+>> (ISOMORPHIC-TREE? tree1 tree2)
+</pre>
+
+but that's no match for our new function which can see through their
+disguises. They are isomorphic.
+
+<p>
+
+Now let's try it on two trees from our phylogenetic tree list!
+
+<pre>
+>> (REARRANGE-TREE (first trees) #$anabaena_pcc7120)
+
+>> (REARRANGE-TREE (second trees) #$anabaena_pcc7120)
+
+>> (ISOMORPHIC-TREE? (first trees) (second trees))
+</pre>
+
+After the rearrangement it should be easy to see that the two trees
+are not isomorphic. What does this tell us about the gene phylogenies
+between the two? That's up to your interpretation!
+
+<p>
+
+Even More Tree Manipulation
+
+<p>
+
+So now that we've spent so much time creating all these functions
+let's use our tools to actually get some useful information. We've
+already seen that two of the phylogenetic trees are not isomporphic by
+the standards of our algorithm. The question that naturally follows is
+--- well which genes DO have isomorphic trees? To answer this question
+we'll need to run the entire gamut of functions over the phylogenetic
+trees from the gene list we established earlier (genelist). Genelist
+only contains the first 100 genes of the ones with 13 homologs, so if
+want to compare all the genes we could expand this if possible. Given
+this huge selection of genes and trees that we'll get, we'll need a
+way to sort the information. The one and first thing that comes into
+mind should be the awesome hash table. We can make a hash table that
+will take a particular tree structure as a key and sort its genes to
+appropriate buckets. By pushing genes with the same phylogenetics
+structure into these buckets we can figure out the clusters of genes
+that share equivalent phylogenetic structures.  The problem with this
+is again recognizing isomorphic trees. The hash function can only use
+EQUAL or a very similar function to compare tree structures, which as
+demonstrated above is pretty strict. Unfortunately I don't know how to
+incorporate our new ISOMORPHIC-TREE? function in our hashing plan, so
+we'll have to do some more tree manipulation (YAY!). The plan is to
+basically build off the results of REARRANGE-TREE to rearrange trees
+so that isomorphic trees will now look EXACTLY the same. We already
+have a graph-walking like function in ISOMORPHIC-TREE? so we can look
+at that function for ideas. Chances are our resulting function will
+probably look very similar to it.

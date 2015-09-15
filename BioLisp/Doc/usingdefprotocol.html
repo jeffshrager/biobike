@@ -1,0 +1,368 @@
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+
+
+<html><head><title>Using Defprotocol</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Using Defprotocol (a way to write a function by example in easy steps)</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003 by <a
+href="http://aracyc.stanford.edu/~jshrager/personal/index.html">Jeff
+Shrager</a> and JP Massar</p>
+
+<p>Defprotocol is a rather involved mechanism for doing something that
+is conceptually simple: making something general (a program) out of a
+set of specific instructions.  As such, it is best to start in right
+away with an example, follow it with some discussion, and leave the
+detailed specification for the documentation.
+ 
+<p>Suppose we aren't quite sure of the BioLisp code to do good old
+Pythagoras' sum of squares.  In standard mathmatical notation we want
+to define f(x,y) = sqrt (x*x + y*y).  But how do we do that in Lisp?
+
+<p>Since we don't have an X or a Y defined, we'll use concrete values
+for our testing, namely 3 and 4.  Okay, we'll see if we can square
+a number, by typing (* 3 3) into the Command Entry Box and looking
+at the output when when hit ENTER.
+
+<pre>
+<5>> (* 3 3)
+:: 9
+</pre>
+
+<p> Well, that worked.  And clearly we can square 4 as well:
+
+<pre>
+<6>> (* 4 4)
+:: 16
+</pre>
+
+<p> Now we want to add our two results.  Notice the line number
+that occurs in the output area every time we evaluate anything.
+This is where it becomes significant!!
+
+<pre>
+<7>> (+ (hop 5) (hop 6))
+:: 25
+</pre>
+
+<p> What on Earth ????  What is HOP ????  HOP stands for History-OutPut.
+The History is the set of things you typed in (inputs) and the set of
+results (outputs) you got back.  (HOP &lt;number&gt) says to get me the
+result from line &lt;number&gt.  The result of line 5 was 9, and the result
+of line 6 was 16, so (+ (HOP 5) (HOP 6)) is 16.  
+
+<p>Ok, the last thing we need to do is take the square root and we're
+done with our experimenting.
+
+<pre>
+<8>> (square-root *)
+:: attempt to call `SQUARE-ROOT' which is an undefined function.
+</pre>
+
+<p>Ruh Roh.  I guess the function for taking the square root isn't
+called square-root.  Who designed this language anyway?  A quick visit
+to the <a
+href="http://www.lispworks.com/reference/HyperSpec/Front/index.htm">
+Hyperspec </a> and a quick scan of the symbols beginning with 's'
+tells us that the function is called 'sqrt'.
+
+<pre>
+<9>> (sqrt **)
+:: 5.0
+</pre>
+
+<p> Note that '*' refers to the latest result, and likewise '**' refers
+to the result previous to that.  You can probably guess what '***'
+refers to.  (That's it though, 3 stars and you're out.)
+
+<p> So we've figured out the steps necessary to honor Pythagoras.  Now
+all we have to do is combine them and use variables instead of specific
+numbers, and we'll be able to diagonalize anything!  What we need to do
+is use two variables -- call them X and Y, in place of 3 and 4.  And
+we need to have our program execute steps 5, 6, 7 and 9 from above
+(leaving out our unfortunate, but understandable, error on line 8).
+
+<p> Here we go (type this into the Expression Entry box and hit EVAL):
+
+<pre>
+<10>> (defprotocol pythag ((x :value 3) (y :value 4)) 
+        (steps 5 6 7 9))
+:: PYTHAG
+</pre>
+
+<p> This defines a new function PYTHAG, which accepts two arguments, X
+and Y.  The symbol X is substituted for the value 3 in every line
+(step) of the function, and the symbol Y is substituted for the value
+4 likewise.  The function definition consists of the input code on
+lines 5, 6, 7 and 9, but with the above substitutions made.  The result
+of the function is the result of executing the last line.
+
+<p> Effectively, we've defined a function which does, in Lispese,
+
+<pre>
+(sqrt (+ (* x x) (* y y))
+</pre>
+
+<p> We can see what the function 'really' looks like by using 
+the SHOW-PROTOCOL primitive:
+
+<pre>
+<11>> (show-protocol 'pythag)
+::
+;; Protocol substitution function: 
+
+(DEFUN PYTHAG (&KEY (Y NIL) (X NIL))
+  (LET ($$::S19-RESULT $$::S20-RESULT $$::S21-RESULT $$::S23-RESULT)
+    (DECLARE (IGNORABLE $$::S19-RESULT $$::S20-RESULT $$::S21-RESULT
+              $$::S23-RESULT))
+    (PROGN (SETQ $$::S19-RESULT (* X X)) (SETQ $$::S20-RESULT (* Y Y))
+           (SETQ $$::S21-RESULT (+ $$::S19-RESULT $$::S20-RESULT))
+           (SETQ $$::S23-RESULT (SQRT $$::S21-RESULT)))))
+
+;; Original history lines used:
+    Line 19:  (* 3 3)
+    Line 20:  (* 4 4)
+    Line 21:  (+ (HOP 19) (HOP 20))
+    Line 23:  (SQRT **)
+
+;; Original DEFPROTOCOL form:
+
+(DEFPROTOCOL PYTHAG ((X :VALUE 3) (Y :VALUE 4)) (STEPS 19 20 21 23))
+</pre>
+
+<p> On second thought, maybe we don't want to know what it 'really'
+looks like, because in fact it looks a lot like line noise, or at best the
+output of a compiler, one not particularly designed to produce
+human-readable code.
+
+<p> What we really care about is whether it works, so let's try it out:
+
+<pre>
+<12>> (pythag 6 8)
+:: Illegal keyword given: 6.
+</pre>
+
+<p> Sigh.  What's wrong now?  Well, DEFPROTOCOL is specified to create
+a function which accepts keyword arguments, and keyword arguments
+alone.  (It probably should be more flexible, but that would make it
+even more complicated!).  So if it wants keywords, we are going to
+have to give it keywords:
+
+<pre>
+<13>> (pythag :x 6 :y 8)
+:: 10.0
+</pre>
+
+<p> Muy bien.  Pythagoras, were he still alive, would be proud.
+
+<p> So how do you use this in a more practical, if less Grecian,
+context?  Let's do something with a microarray table.
+
+<pre>
+<14>> (read-microarray-table "biol:data;hiharadat.tbl")
+:: #&lt;COMMON-LISP-USER::TABLE-DATA @ #x728efea2&gt;
+</pre>
+
+<p> We read in a particular microarray table, taken from the infamous
+Hihara data.  We'll see in a moment how to generalize so that we can
+read in any file of microarray data we'd like.
+
+<p>Let's figure out which of the genes in this table were stimulated
+initially to a value of more than 2.0, save those genes away and
+determine how many genes were so stimulated.
+
+<pre>
+<15>> (table-data-select * #'(lambda (v) (> (aref v 0) 2.0)) :return :geneid)
+:: -- You should get a long list of genes here, which we won't reproduce --
+<16>> (setq *query-genes* *)
+:: -- The same long list of genes --
+<17>> (length **)
+:: 127
+</pre>
+
+So there are 127 genes in the table who's first data point is greater
+than 2.0.  This seems somewhat useful, but needs to be generalized.
+We'd like to be able to ask this question of any table, and we'd like
+to ask the question about any data point, not just the first one.
+Here's a defprotocol definition that (almost) does this generalization
+(we'll explain it in just a minute):
+
+<pre>
+<17>> (defprotocol stimulated-genes 
+          (((table "biol:data;hiharadat.tbl") :line 14 :position 2) 
+           ((datapoint 0) :line 15 :value 0)))
+        (steps 14 15 16 17)
+:: Position 2 does not exist in history form
+</pre>
+
+<p> Oops. Line 14 doesn't have a position 2, it only has positions 0 and 1.
+(Like most programming languages, Lisp, and hence BioLisp, start counting
+from 0).  Let's try again:
+
+<pre>
+<17>> (defprotocol stimulated-genes 
+          (((table "biol:data;hiharadat.tbl") :line 14 :position 1) 
+           ((datapoint 0) :line 15 :value 0)))
+        (steps 14 15 16 17)
+:: ; While compiling STIMULATED-GENES:
+Warning: Free reference to undeclared variable *QUERY-GENES* assumed
+         special.
+
+STIMULATED-GENES
+</pre>
+
+<p> We still get a warning, but that's OK.  It's telling us we never
+declared *QUERY-GENES* as a global variable, and that's true, we
+didn't.  But some warnings can sometimes be ignored, and this is one
+of them -- the program will work just fine.
+
+<p> But what does all the complicated stuff after 'stimulate-genes'
+in the DEFPROTOCOL definition mean?  
+
+<p> We're declaring that the function STIMULATED-GENES will take two
+keyword parameters (recall that all defprotocol parameters are
+keywords) called TABLE and DATAPOINT.  The first parameter, TABLE
+is to be given a default value of "biol:data;hiharadat.tbl" if no
+value is provided when it is called.  The second parameter, DATAPOINT,
+likewise has a default value of 0.
+
+<p> So we see that if you want to give a parameter a default value,
+put the name of the parameter and its default value into a list.  If
+not, as with our first example, we can just use the name of the
+parameter followed by the substitution instructions.  
+
+<p> The ':line 14' means substitute in 'TABLE' on line 14, and the
+':position 1' means substitute in 'TABLE' for whatever happens to
+be in position 1 on line 14 (recall again we start with position 0).
+
+<p> We can therefore restrict our substitutions to a particular line,
+and we further restrict a subsititution to a particular position.
+
+<p> Now with respect to DATAPOINT, we have ':line 15 :value 0', which
+means do the substitution on line 15, and substitute 'DATAPOINT' for
+every occurrence of 0 in the instruction, just as was done in the
+first DEFPROTOCOL example.  There's only one occurrence as it happens,
+and that is the index argument to AREF.  So instead of getting the 0th
+value from our array, we've generalized things to get the
+'DATAPOINT'-th value from the array.
+
+<p> Theoretically at least, we now have a function, STIMULATED-GENES,
+which can read any microarray table file we give it, and store into
+the variable *QUERY-GENES* the list of genes which are stimulated by
+more than 2.0 as their Nth data point, and return the number of genes
+so stimulated.  Let's try it:
+
+<pre>
+<18>> (stimulated-genes :datapoint 1)
+:: 144
+<19>> *query-genes*
+:: -- Another long list of genes --
+</pre>
+
+<p>  It looks like it worked.  Since we didn't give it a microarray file
+as an argument, it defaulted to the hihara data file.  But this time it
+compared against data point 1, rather than data point 0, and we see that
+144, compared to 127, genes were stimulated sufficiently when the 2nd
+data point value was used vs. the 1st.
+
+<p> This second example is a bit more complicated in terms of what it
+does with substitutions, and gives you a good flavor of what can be
+done.  To really understand the capabilities, syntax and semantics of
+the substitutions you will need to look at the formal specification,
+which you can get from one of the people who runs this site.
+
+<p> It's all well and good to be able to define a DEFPROTOCOL function
+to generalize what you've been doing, but it's probably not terribly
+useful unless you can store it away and load it back up another
+session and/or another day.  And sure enough, BioLingua allows you to
+do this using the SAVE-PROTOCOLS and LOAD-PROTOCOLS commands.
+
+<pre>
+<20>> (save-protocols 'stimulated-genes)
+:: "/home/visitors/massar/protocols.lisp"
+</pre>
+
+<p>
+By default, SAVE-PROTOCOLS will save a protocol (or a list of protocols)
+to a file in your BioLingua workspace directory called 'protocols.lisp'.
+In this case, user MASSAR's workspace directory is /home/visitors/massar/.
+
+<p> Now if we were to come back days later and login again, we can
+load our protocols file, and have all our protocols recreated:
+
+<pre>
+<1>> (fboundp 'stimulated-genes)
+:: NIL
+<2>> (load-protocols)
+:: ;;; Compiling file /home/visitors/massar/protocols.lisp
+; While compiling STIMULATED-GENES:
+Warning: Free reference to undeclared variable *QUERY-GENES* assumed special.
+Warning: Free reference to undeclared variable *QUERY-GENES* assumed special.
+         /home/visitors/massar/protocols.lisp.
+;;; Writing fasl file /home/visitors/massar/protocols.fasl
+;;; Fasl write complete
+; Fast loading /home/visitors/massar/protocols.fasl
+
+"/home/visitors/massar/protocols.lisp"
+<3>> (fboundp 'stimulated-genes)
+:: #&lt;Function STIMULATED-GENES&gt;
+</pre>
+
+<p> First we see that the function STIMULATED-GENES is not defined
+(remember, this is a different session than  before).  Then we load
+the protocols we've saved, and we see that it now <i>is</i> defined,
+and we can indeed use it:
+
+<pre>
+<4>> (stimulated-genes :datapoint 2)
+:: 137
+</pre>
+
+<p> Note that before the protocols file was loaded, BioLingua compiled
+the file, so it would run as fast as possible.  We see that we got a
+similar warning to the warning we got before, about *QUERY-GENES*,
+and, again, we can ignore it.  Our next session, if we haven't changed
+the file by saving more protocols to it, it will already be compiled
+and we won't see the warning as it loads.
+
+<p> You can save a protocol to a file of your own choosing by providing
+a filename, like so:
+
+<pre>
+(save-protocols 'my-protocol "my-protocol-file.lisp")
+</pre>
+
+<p>and then
+
+<pre>
+(load-protocols "my-protocol-file.lisp")
+</pre>
+
+
+</body>
+</html>

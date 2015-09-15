@@ -1,0 +1,35 @@
+* WHAT IS THIS?
+
+SLIME is the "Superior Lisp Interaction Mode for Emacs", a library
+comprising some Common Lisp and some Elisp that can talk to each other
+over a socket (using a protocol called SWANK), allowing a user to
+interact with a Common Lisp image from within Emacs.
+
+SLIME is most often used entirely from within Emacs--one runs M-x
+slime and the Elisp code launches Common Lisp as a separate process
+which then starts a SWANK server that listens on a socket until Emacs
+connects to it, at which point you're off and running. From the user's
+point of view, everything happens within Emacs.
+
+It is also, however, possible to run things in a less integrated
+fashion: from within any Lisp program it is possible to start a SWANK
+server and then connect to the server using M-x slime-connect.
+
+* A FEW IMPORTANT POINTS ABOUT SECURITY
+
+The SWANK protocol by itself provides no security. If it is listening
+on an accessible port, anyone can connect to it and then has complete
+control over the Lisp process, running with whatever privileges it has.
+
+One way to secure things is to have SWANK listen only for connections
+from localhost. Then only users who already have access to the machine
+can connect to SWANK. (Though they still gain whatever privileges the
+Lisp process is running with.) Remote access can then be provided by
+setting up an SSH port forwarding process that will allow
+authenticated connections from remote machines and then establish a
+local connection to SWANK. Only users with the ability to ssh into the
+box will be able to make such connections. FOR NOW, WE'VE DECIDED TO
+FORGO WORRYING ABOUT SECURITY.
+
+
+

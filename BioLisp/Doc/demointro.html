@@ -1,0 +1,177 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>BioBike Demo Intro</title></head>
+<body>
+
+</b><p>
+<center><h2><b>BioBike Demo Server Preliminary Information</b>
+</h2></center>
+
+
+<h3>About BioBike:</h3>
+<ul>
+<p><a href=intro.html>Introduction: <em>The BioBike Vision</em><small> (What is this thing?)</small></a>
+<br>
+Click <a target=_blank href=http://bioinformatics.oupjournals.org/cgi/content/full/bth465?ijkey=56vHZ9Co9fWyA&keytype=ref>here for a preprint (in PDF) of the BioBike paper</a>, appearing in BioInformatics (Oxford U. Press).
+<br>
+<a href="index.html">Visit the BioBike documentation page</a>
+</ul>
+
+<p><hr><p>
+
+<h3><center>Important information about the demo server</center></h3>
+
+<p>
+<center>
+<h2>
+<a href=http://nostoc.stanford.edu:8003/biologin>
+<i>By clicking this link I agree that I have read and understand all of 
+the below.
+</i>
+<br>
+<font size=3>
+(You will be sent to the login page.  Enter a login name (any name you like) 
+and your email address (optional), and off you go.)
+</font>
+</a>
+</h2>
+</center>
+
+<p>
+
+When you click above you will be given free access to the BioBike
+demo server.  You will have to make up a username (any name you like)
+and (optionally) give your email address.
+
+<p>
+You may wish to use <a target=_blank href=tour.html>this Tour of BioBike</a> to get started.
+<p>
+Although this is a fully operational BioBike cyanobacterial server, please note that:
+<ul>
+<p>
+<li>
+
+Because of changes and upgrades to BioBike since the appearance of
+<a target=_blank href=http://bioinformatics.oupjournals.org/cgi/content/full/bth465?ijkey=56vHZ9Co9fWyA&keytype=ref>our paper</a>, some of the examples work slightly differently in
+the online server than they appeared in the paper.  <a
+href="#examples">See the notes below for the latest updates to those
+examples.</a>
+
+<p>
+<li>The duration of computations that can be executed on the demo
+server is limited to 40 seconds per computation.  (Although your time
+online is not limited.)
+<p>
+<li>The demo server should not be used for commerical work; we do not
+guarantee the validity of the data, nor the stability of the server. (See
+legalese below.)
+<p>
+
+<li>The information that you leave on the server (e.g., your account,
+and any results that you create) may be erased without notice; <font
+color=red>You are responsible for backing up your own work.</font>
+
+<p>
+<li><h3><font color=Green>All interactions with the server are
+recorded and may be perused by the developers and system
+administrators.</h3></font>
+<p>
+
+<li>
+
+This service is not to be used for any purpose other than brief
+exploration of the BioBike system, or in conjunction with specific
+student projects and homework.  Any other use, as determined at the
+sole discretion of the operators of the site, will lead to immediate
+shutdown of the service.  
+
+<p>
+
+<li>Fine print legalese: <br>
+
+<font size=1> 
+
+THIS SERVICE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+</font>
+ </ul>
+ </h3>
+
+<a name=examples></a>
+
+<p><hr><p>
+
+<h3>Updates to the examples given in <a target=_blank href=http://bioinformatics.oupjournals.org/cgi/content/full/bth465?ijkey=56vHZ9Co9fWyA&keytype=ref>Massar, et al. (2005)</a>:</h3>
+
+
+<p>
+
+<u>Example #1 (Figure 2)</u> should work as in the paper.
+
+<p><p>
+
+<u>Example #2 (Figure 3)</u> requires a small change: Everywhere where a
+BioCyc frame is mentioned, you need to insert "oc." before the frames
+name.  For example, instead of: ...(#^reaction-list pathway)... it should read: 
+(#^oc.reaction-list pathway).  With these changes, the new example reads:
+
+<pre>
+>> (defun instantiate-pathway (pathway)
+     (loop for reaction in (ensure-list (#^oc.reaction-list pathway))
+           as enzymes = (loop for ez-reaction in
+                              (ensure-list (#^oc.enzymatic-reaction reaction))
+                              collect (#^oc.enzyme ez-reaction))
+           append (loop for enzyme in enzymes
+                        collect (#^oc.gene enzyme))))
+
+>> (instantiate-pathway #$oc.Phoslipsyn-Pwy)
+:: (#$S6803.slr1369 #$S6803.sll1522 #$S6803.slr0054)
+
+>> (loop for pathway in (#^allsubclasses #$oc.pathways)
+         collect (list pathway
+         (instantiate-pathway pathway)))
+</pre>
+
+<p><p>
+<u>Example #3 (Figure 4)</u> will not align all the sequences if run as described in the paper. To give the published results, change the first command:
+
+<pre>
+(ASSIGN cph-annotated (GENES-DESCRIBED-BY "cyanophycin synth"))
+</pre>to:
+
+
+
+<pre>
+(ASSIGN cph-annotated (GENES-DESCRIBED-BY "cyanophycin synth" MAKE-ONE-LIST T))</pre>
+.
+
+</body>

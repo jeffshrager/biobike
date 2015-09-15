@@ -1,0 +1,365 @@
+body {
+    padding: 0px;
+    margin: 0px;
+    overflow: hidden;
+}
+
+#everything {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    margin: inherit;
+    padding: inherit;
+    }
+
+#titleframe {
+    position: absolute;
+    /* text-align: center; */
+    /* color: red; */
+    /* color: #DC143C; */
+    color: #B87333;
+    background-color: #333333;
+    margin: 0;
+    border-bottom: 1px solid black; 
+    border-top: 5px ridge purple;
+    border-right: 5px outset purple;
+    padding: 20px;
+    height: 60px;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+}
+
+#titletext {
+    position: absolute;
+    top: 50%; 
+    right: 0%;
+    left: 0%;
+    /* text-align: center; */
+    margin-top: -50px;
+}
+
+#titleframetext {
+    position: absolute;
+    top: 50%; 
+    right: 0%;
+    left: 0%;
+    /* text-align: center; */
+    margin-top: -35px;
+}
+
+#error {
+    text-align: center;
+    color: red;
+    font-size: large;
+}
+
+#frames-and-edit-boxes {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    top: 107px;
+}
+
+.fsize1 {
+    bottom: 70%; 
+    max-height: 30%;
+    }
+
+.fsize2 {
+    bottom: 60%;
+    max-height: 40%;
+}
+
+.fsize3 {
+    bottom: 40%;
+    max-height: 60%;
+}
+
+.fsize4 {
+    bottom:0%;
+    max-height: 100%;
+}
+
+.esize1 {
+    top: 30%;
+    min-height: 70%;
+    }
+
+
+.esize2 {
+    top: 40%;
+    min-height: 60%;
+    }
+    
+
+.esize3 {
+    top: 60%;
+    min-height: 40%;
+    }
+
+.esize4 {
+    
+}	
+
+#frametable {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    background-image: url(/weblistenerdocs/bg2.jpg);
+    padding-top: 10px;
+    padding-left: 10px;
+    overflow: auto;
+    border-bottom: 2px solid black;
+}
+
+.slotnames {
+    padding-right: 5px;
+    font-size: medium;
+    float: left; 
+}
+
+.slotname {
+    color: green;
+    font-size: medium;
+    text-align: right;
+    overflow: hidden;
+    padding: 0px 5px 0px 0px;
+    margin: 0px;
+    vertical-align: bottom;
+}
+
+.slotname-link {
+    color: blue;
+    text-decoration: none;
+}
+
+.slotname-text {
+    text-decoration: none;
+    color: #483C32;
+    font-weight:bold;
+}
+
+a.slotname-text:hover {
+    color: #00A86B;
+    }
+
+td.slotname:hover {
+    color: blue;
+}
+
+a.slotname-link:hover {
+    text-decoration: underline;
+    color: blue;
+}
+
+a.frame-value {
+    text-decoration: none;
+    color: #120A8F;
+}
+
+a.frame-value:hover {
+    text-decoration: underline;
+    }
+
+.slotvalue {
+    font-size: medium;
+    text-align: left;
+    padding: 0px 5px 0px 5px;
+    margin: 0px;
+    vertical-align: bottom;
+    color: black;
+}
+
+td.slotvalue:hover {
+    color: brown;
+}
+
+#editboxes {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    background-color: #cccccc;
+    overflow: auto;
+    }
+
+#selecteditboxes {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    background-color: #abcdef;
+    overflow: auto;
+    }
+
+.editbox {
+    padding: 10px;
+    }
+
+.editbox-label {
+    color: green;
+    font-size: large;
+}
+
+.edit-submit {
+    margin-left: 15px;
+    color: brown;
+    font-size: x-small;
+    margin-bottom: 5px;
+}
+
+.select-submit {
+	margin-left: 15px;
+	margin-top: 10px;
+}
+
+.editarea {
+    border: 3px outset purple;
+    background-color: #FFFFFC; 
+}
+
+.visible-string {
+    color: 	#80461B;
+}
+
+.sequence-index {
+    min-width: 50px;
+    text-align: right;
+    padding-right: 10px;
+    }
+
+.sequence-index-url {
+    color: green;
+    text-decoration: none;
+}
+
+.sequence-element {
+    min-width: 100px;
+    text-align: left;
+    }
+    
+
+.visiblesequence {
+    color: #120A8F;
+    text-decoration: none;
+}
+
+a.visiblesequence:hover {
+    text-decoration: underline;
+}
+
+.hidden-string-box {
+    margin-top: 0em;
+    padding: 0;
+    list-style: none;
+    display: none;
+    width: 10em; 
+    text-align: left;
+    position: absolute;
+    font-size: 11pt;
+    font-family: monospace;
+}
+
+.visible-string:hover .hidden-string-box {
+    display: block; 
+}
+
+.visible-package:hover .hidden-string-box {
+    display: block; 
+}
+
+.visible-any:hover .hidden-string-box {
+    display: block;
+}
+
+
+.hidden-string-left {
+    width: 600px; 
+    background-color: white;
+    overflow: auto;
+    border: 2px solid black;
+    padding: 5px;
+}
+
+
+.hidden-string-right {
+    width: 600px; 
+    background-color: white;
+    overflow: auto;
+    border: 2px solid black;
+    padding: 5px;
+    margin-left: -300px;
+}
+
+#editcheckboxes {
+    margin-left: 15px;
+    margin-top: 10px;
+}
+
+.checkboxentry {
+    padding-right: 10px;
+}
+
+.addaslot {
+    border: 1px solid black;
+    }
+
+.sequence-control-box {
+    border: 1px solid black;
+    width: 50px;
+}
+
+.error-message {
+    padding-left: 30px;
+    color: red;
+    font-size: 16pt;
+    }
+
+.interpret {
+    font-size: 11pt;
+    color: green;
+    font-weight: bold;
+}
+
+.sequence-navigator-button {
+    text-decoration: none;
+    color: #4169E1;
+    }
+
+.sequence-navigator-disabled {
+    color: gray;
+    text-decoration: none;
+    }
+
+/*
+.sequence-navigator-button:visited {
+    color: blue;
+    }
+*/
+
+.sequence-navigator-button:hover {
+    text-decoration: underline;
+    }
+
+.sequencenavform {
+    font-size: 11pt;
+}
+
+.standard-controls {
+    padding-left: 10px;
+    margin-top: 0px;
+}
+
+.frame-controls {
+    padding-left: 10px;
+}
+
+.rcindex {
+    text-align: center;
+    color: green;
+    }

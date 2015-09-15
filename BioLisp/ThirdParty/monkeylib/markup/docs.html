@@ -1,0 +1,164 @@
+<html>
+  <head>
+    <title>Gigamonkeys Markup</title>
+    <link rel='stylesheet' type='text/css' href='style.css'>
+  </head>
+  <body>
+    <img style="float: right;" src="lisplogo_warning_128.png"><h1>Gigamonkeys Markup</h1>
+    <p>This library is based on the code I used while writing <i>Practical
+    Common Lisp</i> to generate both PDFs (which I used for my own
+    proofreading purposes) and the HTML version of the book that is
+    available on the web at <a href='http://www.gigamonkeys.com/book/'>http://www.gigamonkeys.com/book/</a>.</p>
+    <p>I had two goals:</p>
+    <ul>
+      <li>To be able to work in Emacs yet not have to embed an incredible
+      amount of formatting gunk in my text while I worked on it.</li>
+      <li>To be able to generate output in multiple forms, initially PDF
+      and HTML and later (when it came time to turn stuff in to Apress)
+      RTF.</li>
+    </ul>
+    <p>In the end I settled on a mix of TeX-style markup (such as \i{...} to
+    indicate italic) and various kinds of Wiki-inspired markup such as
+    indicating new paragraphs by separating them with blank lines and
+    inferring the style of certain paragraphs from their indentation. And
+    because part of the point was to be able to write in Emacs I decided
+    to make my markup language grok Emacs's outline-mode headers, lines
+    prefixed by a number of <code>*</code>'s. I found this to be a pleasing
+    format for writing</p>
+    <h2>Parsing</h2>
+    <p>The code here is a somewhat cleaned up version of the code I actually
+    used while working on the book. The markup language itself is
+    implemented in <code>parser.lisp</code>. The function <code>PARSE-FILE</code>
+    takes a pathname designator and returns a list of s-expressions
+    representing the parse tree. For instance if the file
+    <code>sample.txt</code> contained the following:</p>
+    <pre>
+* A Sample
+    </pre>
+    <pre>
+Here is a paragraph. Here's a sentence with some \i{formatting} in
+it. And another sentence.
+    </pre>
+    <pre>
+And this is another paragraph.
+    </pre>
+    <p>then <code>(parse-file "sample.txt")</code> would return this:</p>
+    <pre>
+((:H1 "A Sample")
+ (:P "Here is a paragraph. Here's a sentence with some "
+  (:I "formatting") " in" #\Newline "it. And another sentence.")
+ (:P "And this is another paragraph." #\Newline))
+    </pre>
+    <p>The <code>:H1</code> tag is derived from the number of asterisks leading the
+    line <code>"A Sample"</code>; the <code>:P</code> tags are inferred from the lack of
+    any other tag; and the <code>:I</code> tag is taken from the name between
+    the <code>\</code> and the <code>{</code>.</p>
+    <p>For the most part, the parser doesn't care about the names used as
+    tag names in the <code>\<i>name</i>{...</code>} syntax. However it does need to
+    know whether a given tag name is the name of paragraph tag (which can
+    appear where an untagged paragraph can) or a subdocument tag (which is
+    parsed like the document as a whole and thus can contain
+    paragraphs). It recognizes tags as being one of these two types using
+    the variables <code>*PARAGRAPH-TAGS*</code> and <code>*SUBDOCUMENT-TAGS*</code>
+    which are defined in <code>parameters.lisp</code> and can be bound or set as
+    you see fit.<sup>1</sup></p>
+    <h2>Rendering</h2>
+    <p>The files <code>pdf.lisp</code> and <code>html.lisp</code> each provide
+    implementations of the generic function <code>RENDER-AS</code> which takes
+    an argument indicating the type of output, (either <code>:pdf</code> or
+    <code>:html</code>), an s-expression as returned by <code>PARSE-FILE</code>, and
+    the name of the output file. The public interface to <code>RENDER-AS</code>
+    is the function <code>RENDER</code> which takes a an output type indicator,
+    the name of an input file, and, optionally, the name of an output file
+    which is otherwise derived from the name of the input file with the
+    the output type as the file extension. Thus this documentation which
+    is in the file <code>docs.txt</code> is rendered into PDF as:</p>
+    <pre>
+MARKUP&gt; (render :pdf "docs.txt")
+#P"/Users/peter/projects/lisp-libraries/development/markup/docs.pdf"
+    </pre>
+    <p>New output formats can be defined simply by defining a new method on
+    <code>RENDER-AS</code> specialized on a different output type.</p>
+    <h2>Possible improvements</h2>
+    <p><b>Styles</b> The current PDF rendering hard-wires assumptions about how
+    to render different document elements. And the HTML rendering simply
+    provides a way to map from document elements to HTML tags (possibly
+    with attributes), defaulting to mapping to the HTML tag of the same
+    name. Ideally there'd be a way to express style information and define
+    a mapping from the markup elements to the rendering style without
+    changing the code. Even more ideally it'd be possible to reuse that
+    same style information with different back-ends. Which I have some
+    ideas about but which I've not done anything about yet.</p>
+    <p><b>Footnotes</b> In both the PDF and HTML renderer, footnotes are
+    generated as end-notes. This is probably the best you can do for HTML
+    but in the PDF renderer it'd be nice to be able to place notes as true
+    footnotes. However this is a non-trivial problem because making room
+    for a footnote at the bottom of a page affects what body text fits on
+    the page which can affect what footnotes should appear on that
+    page. In the worst case scenario putting a footnote on a page causes
+    the text containing the footnote reference to no longer fit on the
+    page meaning the footnote shouldn't go on that page after all. So you
+    take it off but now the footnote reference is back on the page. And so
+    on.</p>
+    <p><b>Other output formats</b> When working on the book I implemented an
+    incredibly hacky RTF generator that allowed me to produce RTF
+    documents with all the Apress styles appropriately applied since I
+    ultimately had to turn in Word files to Apress. I'd like to clean that
+    up and add it back in in some form because there's nothing better than
+    not having to use Microsoft Word.</p>
+    <h2>Installation</h2>
+    <p>In theory all you need to do to use this library are grab the
+    distribution, unpack it, and arrange for ASDF to know about the
+     file, either by adding a symlink to it from a directory
+    that is already in <code>asdf:*central-registry*</code> or by adding the
+    directory created when you unpack the distribution to
+    <code>asdf:*central-registry*</code>. You'll also need my FOO library (which
+    is documented in Chapters
+    <a href='http://www.gigamonkeys.com/book/practical-an-html-generation-library-the-interpreter.html'>30</a>
+    and
+    <a href='http://www.gigamonkeys.com/book/practical-an-html-generation-library-the-compiler.html'>31</a>
+    of <i>Practical Common Lisp</i> and a couple libraries it depends on. All
+    these are also loadable using ASDF. And, of course, to render PDF
+    files you'll need Marc Battyani's excellent CL-PDF and CL-TYPESETTING
+    libraries. Those libraries are available here:</p>
+    <table>
+      <tr>
+        <td><b>Gigamonkeys Markup</b></td>
+        <td><a href='http://www.gigamonkeys.com/lisp/markup-0.3.tar.gz'>http://www.gigamonkeys.com/lisp/markup-0.3.tar.gz</a></td>
+      </tr>
+      <tr>
+        <td><b>Gigamonkeys FOO</b></td>
+        <td><a href='http://www.gigamonkeys.com/lisp/foo-0.3.tar.gz'>http://www.gigamonkeys.com/lisp/foo-0.3.tar.gz</a></td>
+      </tr>
+      <tr>
+        <td><b>Gigamonkeys Macro Utilities</b></td>
+        <td><a href='http://www.gigamonkeys.com/lisp/macro-utilities-0.1.tar.gz'>http://www.gigamonkeys.com/lisp/macro-utilities-0.1.tar.gz</a></td>
+      </tr>
+      <tr>
+        <td><b>Gigamonkeys Utilities</b></td>
+        <td><a href='http://www.gigamonkeys.com/lisp/utilities-0.1.tar.gz'>http://www.gigamonkeys.com/lisp/utilities-0.1.tar.gz</a></td>
+      </tr>
+      <tr>
+        <td><b>CL-PDF</b></td>
+        <td><a href='http://www.fractalconcept.com/asp/html/cl-pdf.html'>http://www.fractalconcept.com/asp/html/cl-pdf.html</a></td>
+      </tr>
+      <tr>
+        <td><b>CL-TYPESETTING</b></td>
+        <td><a href='http://www.fractalconcept.com/asp/html/cl-typesetting.html'>http://www.fractalconcept.com/asp/html/cl-typesetting.html</a></td>
+      </tr>
+    </table>
+    <hr>
+    <div class='note'>
+    <p><sup>1. </sup>In general subdocument tags are used for two kinds
+    of things.</p>
+    <p>The first are tags used to delimit content that can be embedded in a
+    paragraph but which may need to themselves consist of multiple
+    paragraphs. Footnotes such as this one are a prime example.</p>
+    <p>The other kind of subdocument elements are structural elements such as
+    lists and tables that consists entirely of other tagged elements. If
+    you want to use the tags <code>\bullets{...}</code> and <code>\item{...}</code> to
+    indicate a bulleted list, you should add <code>:bullets</code> to
+    <code>*SUBDOCUMENT-TAGS*</code> and <code>:item</code> to <code>*PARAGRAPH-TAGS*</code>.</p>
+    </div>
+  </body>
+</html>

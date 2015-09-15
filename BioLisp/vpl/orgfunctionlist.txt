@@ -1,0 +1,206 @@
+2level.bike
+
+CODING-GENES-OF 
+Only concerned with (slotv organism #$genes), 
+then loops through to find which ones encode for proteins
+Org is main argument, treated as a whole
+
+COMMON-ORTHOLOGS-OF
+Deals with lists of organisms, so only the frame name matters
+Org is treated as a whole
+
+GENE-LEFT-OF/GENE-RIGHT-OF
+Passes the organism to LONE-REPLICON-OR-ERROR which just accesses
+(SLOTV organism #$Contiguous-sequences), and changes the organism
+to a contig
+Org is a keyword, converted to a replicon via LONE-REPLICON-OR-ERROR
+
+GENE-OF
+Passes the organism to LONE-REPLICON-OR-ERROR which just accesses
+(SLOTV organism #$Contiguous-sequences), and changes the organism
+to a contig
+
+Also calls GENES-OF-ORGANISM which accesses
+(slotv (canonicalize-loaded-organism-designator org) #$Genes)
+
+Org is main argument, converted to a replicon via LONE-REPLICON-OR-ERROR
+But when calling GENES-OF-ORGANISM, treated as a whole
+
+GENE-NAMED
+Calls (BB-GENE-NAMED-GENERAL gene-name organism), which turns
+a string name into a frame
+Org is keyword, treated as a search space 
+
+CHROMOSOME-NAMED
+Gets the organism-prefix and contigs of all loaded organisms
+Org isn't an argument to the function, but is treated as all its contigs
+
+INVERSION-OF
+Loops over (SLOTV entity #$Contiguous-sequences) so that it can call
+EXTRACT-SEQUENCE on each replicon
+Treated as a whole of its contigs
+
+NAME-OF
+Calls BB-STRING-OF on entity, unless SHORT is provided
+Treated as a whole, just uses the prefix and calls BB-STRING-OF
+which just gets the name
+
+NICKNAMES-OF
+Simply calls (SLOTV entity #$NICKNAMES)
+Treats org as a whole, to get the nicknames slot
+
+NONCODING-GENES-OF
+Simply calls (SLOTV entity #$NONCODING-GENES)
+Treats org as a whole, to get noncoding-genes slot
+
+NUCLEOTIDE-DISTANCE
+Calls (SLOTV contig #$Contiguous-sequences) and sets entity to the
+first contig
+Changes org to a contig
+
+OFFICIAL-PREFIX
+Simply calls organism[.Organism-prefix]
+Treated as a whole
+
+ORGANISM-NAME 
+Simply returns the organism
+Treated as a whole
+
+ORGANISM-NAMED
+Accesses fname, nicknames, alternative-names, and organism-symbols of organism
+Treated as a whole
+
+ORTHOLOG-OF
+Calls BBI::TWO-WAY-ORTHOLOG-OF (via ORTHOLOG-OF-AUX) or another user-supplied
+function on a gene/protein and the organism
+Depends on what the user-supplied function is
+
+ORTHOLOG-OF*
+Calls BIOLISP::TWO-WAY-BEST-BLAST-ORTHOLOG-OF-TMP (via ORTHOLOG-OF-AUX-TMP)
+or another user-supplied function on a gene/protein and the organism
+Depends on what the user-supplied function is
+
+HOMOLOG-OF*
+Calls BIOLISP::FORWARD-BLAST-ORTHOLOGS-OF-TMP (via HOMOLOG-OF-AUX-TMP)
+or another user-supplied function on a gene/protein and the organism
+Depends on what the user-supplied function is
+
+PROTEIN-OF
+Calls PROTEINS-OF-ORGANISM on the organism
+Org is treated as a whole for its proteins
+
+REPLICON-OF
+Simply calls (SLOTV entity #$CONTIGUOUS-SEQUENCES)
+Treated as a whole, for all its replicons
+
+
+                  
+3level.bike
+
+INTERGENIC-SEQUENCES-OF
+Loops for gene in (GENES-OF entity)
+Treated as a whole, to get its genes
+
+CHROMOSOME-OF
+First checks to see if the organism is completed (SLOTV entity #$COMPLETED),
+then calls (FIRST (SLOTV entity #$CONTIGUOUS-SEQUENCES))
+Org argument becomes a contig
+
+GENES-DESCRIBED-BY
+If domain or (and domain full), calls kegg-genes-with-motifs-aux
+which calls (bio::KEYWORDIZE (FIRST (SPLIT org[.organism-prefix] AT ".")))
+Otherwise calls GENES-DESCRIBED-BY-AUX which loops for (gene-of entity)
+and gets $Description, $Best-hit-descr, $Annotation, $Sub-function, 
+$Sub-function, $EC-description, and #$Gene-name.
+Org is treated as a whole over the genes
+
+GENES-IN-PATHWAY/S
+Calls KEGG-ORG-OF on the organism
+Org treated as a whole
+
+LENGTH-OF
+Loops over the replicons in entity[.Contiguous-sequences]
+and sums the sequence-lengths
+Org treated as a whole
+
+Downstream-sequences-of/Upstream-sequences-of
+Simply calls entity[.Genes]
+Org treated as a whole
+
+Sequence-of
+Loops for contig in (SLOTV entity #$Contiguous-sequences)
+Org treated as a whole
+
+
+4level.bike
+
+COUNT-OF/COUNTS-OF
+Loops for replicon in (SLOTV target #$Contiguous-sequences), so it can extract
+the sequence
+Org treated as a whole
+
+BACKGROUND-FREQUENCIES-OF-NEW
+Calls TO-PSSM-SEQUENCE on the organism, which maps EXTRACT-SEQUENCE
+over the contig
+Treated as a whole
+
+BACKGROUND-FREQUENCIES-OF
+Calls either REPLICONS-OF or PROTEINS-OF on the organism
+Treated as a whole
+
+DISPLAY-SEQUENCE-OF
+Gets the LENGTH-OF entity, calls SEQUENCE-OF, and gets NAME-OF
+Treated as a whole
+
+GC-FRACTION-OF
+Calls (SEQUENCE-OF entity)
+Treated as a whole
+
+POSITION-OF
+Calls BB-POSITION-OF which calls (SEQUENCE-OF entity)
+Treated as a whole
+
+RANDOM-DNA
+Goes to RANDOM-DNA-AUX, which either calls (SEQUENCE-OF like)
+or (BACKGROUND-FREQUENCIES-OF like)
+
+HEADER-OF
+Gets (NAME-OF entity), then JOINs that with with the length and some strings
+Treated as a whole
+
+
+5level.bike
+
+BLAST-GENBANK
+Calls (REPLICONS-OF query)
+Converted to (First replicons)
+
+SEQUENCE-SIMILAR-TO
+A huge maze eventually creating a scanner
+
+GENES-SIMILAR-TO/PROTEINS-SIMILAR-TO
+BLASTs query against TARGET
+
+AMINO-ACID-COUNTS-OF
+Calls SEQUENCE-LIST-OF on a list of the entity via the aux function
+
+DINUCLEOTIDE-BIASES-OF/DINUCLEOTIDE-COMPARISON
+Gets NAME-OF entity and CONTIGS-OF entity via the aux function
+
+CODON-FREQUENCIES-OF
+Calls SEQUENCE-LIST-OF via the aux function, 
+
+CODON-FREQUENCY-COMPARISON
+Calls CODON-FREQUENCIES-OF and AMINO-ACID-FREQUENCIES-OF
+
+SAM
+Calls CODING-GENES-OF
+
+
+
+
+
+
+
+
+

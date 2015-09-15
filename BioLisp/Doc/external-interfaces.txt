@@ -1,0 +1,18 @@
+
+*** CAVE UNDER CONSTRUCTION *** 
+
+
+I. Where external programs generally live.  
+
+II. How to write interface code for an external program.  
+
+  a. How to create a pathname to the executable 
+
+  b. How to define a function to pass flags and parameters to the external program
+
+  c. Using DEFSHELL 
+
+  d. How to call standard Unix commands
+
+III. Installation notes for the external programs currently available
+from biobike.  

@@ -1,0 +1,460 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(in-package :bbi)
+
+;; ********************** CHECK-FLAGS-AND-KEYWORDS **********************
+
+(DEFINE-FUNCTION CHECK-FLAGS-AND-KEYWORDS
+  REQUIRED names-of-fk-row
+  REQUIRED values-of-fk-row
+  REQUIRED names-of-fk-col
+  REQUIRED values-of-fk-col
+  REQUIRED lists-of-compatibilities-per-row
+
+  BODY
+  (without-code-walker
+    (LET ((compatibility-table (NEW-TABLE {$ $})))
+
+      (FOR-EACH row-name IN names-of-fk-row
+                FOR-EACH compatibilities IN lists-of-compatibilities-per-row
+                (; FOR-EACH fk-col IN list-of-fk-col
+                 FOR-EACH col-name IN names-of-fk-col
+                 FOR-EACH true-or-nil IN compatibilities
+                 (ASSIGN compatibility-table[row-name col-name] = true-or-nil)))
+      (FOR-EACH 
+       row-value IN values-of-fk-row
+       FOR-EACH  row-name IN names-of-fk-row
+       (FOR-EACH col-value IN values-of-fk-col
+                 FOR-EACH col-name IN names-of-fk-col
+                 AS compatible = 
+                 compatibility-table[row-name col-name]
+                 ;; AS value = col-value ;(bbi::EVAL fk-col)
+                 (IF (AND row-value col-value (NOT compatible)) 
+                     (ERROR "BAD FLAGS AND/OR KEYWORDS COMBINATION, check the table above" 
+                            (DISPLAY-TABLE compatibility-table INVERT)
+                            )))))))
+
+;; ********************** REROOT-AND-RETURN-TREE **********************
+
+(DEFUN PROCESS-OUTGROUP (tree-dir tree-file label-file-path
+                                  outgroup retreecmd retree-out)
+  (without-code-walker
+    (LET* ((unrooted-tree 
+            (STRING-OF 
+              (BBL::READ FROM (FORMAT NIL "~a~a" tree-dir tree-file) JOIN-LINES)))
+           (labels-tmp (BBL::READ FROM label-file-path))
+           (short-labels 
+            (FOR-EACH i IN labels-tmp 
+                      AS short-label = (SECOND (SPLIT i EVERY "/")) 
+                      COLLECT short-label))
+           (matches 
+            (FOR-EACH sl IN short-labels 
+                      COLLECT (MATCH-OF-PATTERN-aux NIL sl unrooted-tree '(T T T T))))
+           (ordered-matches (BBL::SORT matches BY-POSITION 1))
+           (ll-vs-sl (MAKE-HASH-TABLE :TEST 'EQUALP))
+           (sl-vs-node (MAKE-HASH-TABLE :TEST 'EQUALP)))
+      (FOR-EACH label IN labels-tmp
+                AS splitted-label = (SPLIT label EVERY "/")
+                AS long-label = (THIRD splitted-label)
+                AS short-label = (SECOND splitted-label)
+                (ASSIGN ll-vs-sl[long-label] = short-label))
+      (FOR-EACH m IN ordered-matches
+                INITIALIZE x = 0
+                AS sl = (THIRD m)
+                ;; changed so without-code-walker will work
+                AS node = (setq x (1+ x)) ;; (INCREMENT x)
+                (ASSIGN sl-vs-node[sl] = node))
+      (LET* ((outgroup2 
+              (IF-TRUE (IS-FRAME? outgroup) 
+                       THEN (SECOND (SPLIT (STRING-OF outgroup) AT ".")) 
+                       ELSE outgroup))
+             (outgroup1 (GETHASH (GETHASH outgroup2 ll-vs-sl)  sl-vs-node)))
+        (FORMAT retreecmd "~a~%~a~%~a~a~%~a~%~a~%~a~%~a~%~a~%~a~%~a~%"
+                "0" "Y" tree-dir tree-file "O" outgroup1 "Q" "Y" "F" retree-out "R")))))
+
+;; ********************
+
+;; the function TREE-GEOMETRY moved to aux file
+
+;; ********************
+
+;; the function RETURN-TREE moved to aux file
+
+;;  ********************** REROOT-AND-RETURN-TREE *********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS REROOT-AND-RETURN-TREE in)
+(DEFINE-FUNCTION REROOT-AND-RETURN-TREE
+  REQUIRED ((in) tree-project)
+  KEYWORD outgroup
+  FLAG (unrooted midpoint-root)
+  FLAG bootstrap
+  FLAG (pdf png jpg eps newick)
+  KEYWORD width = 150
+  BODY
+  ;; actual body moved to post-aux file
+  (funcall 
+   'reroot-and-return-tree-aux 
+   tree-project outgroup unrooted
+   midpoint-root bootstrap pdf png jpg eps newick width))
+   
+;; ********************** CONSENSE **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS CONSENSUS-TREE in)
+(DEFINE-FUNCTION CONSENSUS-TREE
+  REQUIRED ((in) tree-project)
+  FLAG (extended-majority-rule majority-rule  strict)
+  KEYWORD user-majority-rule
+  BODY
+  ;; actual body moved to post-aux file
+  (funcall 
+   'consensus-tree-aux tree-project extended-majority-rule 
+   majority-rule strict user-majority-rule))
+
+
+;; ********************** BUILD-MAXIMUM-LIKELIHOOD-TREE-DNA **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS BUILD-MAXIMUM-LIKELIHOOD-TREE-DNA in)
+(DEFINE-FUNCTION BUILD-MAXIMUM-LIKELIHOOD-TREE-DNA
+  REQUIRED ((in) tree-project)
+  FLAG     user-tree
+  KEYWORD  user-tree-lengths
+  KEYWORD  transition-transversion-ratio
+  KEYWORD  base-frequencies
+  KEYWORD  number-of-site-categories
+  KEYWORD  category-rates
+  FLAG     (regional-gamma-distribution-rate  regional-gamma-distribution-rate+invariant-sites regional-user-distribution-rate)
+  KEYWORD  number-of-regional-rate-categories
+  KEYWORD  coefficient-of-variation-of-substitution-rate-among-positions
+  KEYWORD  fraction-of-invariant-sites ; if regional-gamma-distribution-rate+invariant-sites
+  KEYWORD  regional-category-rates ; if regional-user-distribution-rate
+  KEYWORD  probability-foreach-regional-category-rate ; if regional-user-distribution-rate
+  FLAG     correlation-of-rate-distribution-of-adjacent-sites ; if regional distribution rates defined
+  FLAG     read-weights-for-positions
+  FLAG     speedier-analysis
+  FLAG     global-rearrangements
+  KEYWORD  jumble-sequence-order
+  KEYWORD  (multiple-data-sets multiple-data-weights)
+  BODY
+  ;; actual body moved to post-aux file
+  (funcall
+   'build-maximum-likelihood-tree-dna-aux
+   tree-project user-tree user-tree-lengths 
+   transition-transversion-ratio base-frequencies
+   number-of-site-categories category-rates
+   regional-gamma-distribution-rate 
+   regional-gamma-distribution-rate+invariant-sites
+   regional-user-distribution-rate number-of-regional-rate-categories
+   coefficient-of-variation-of-substitution-rate-among-positions
+   fraction-of-invariant-sites regional-category-rates 
+   probability-foreach-regional-category-rate
+   correlation-of-rate-distribution-of-adjacent-sites
+   read-weights-for-positions speedier-analysis global-rearrangements
+   jumble-sequence-order multiple-data-sets multiple-data-weights))
+
+
+
+;; ********************** BUILD-PARSIMONY-TREE-DNA **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS BUILD-PARSIMONY-TREE-DNA in)
+(DEFINE-FUNCTION BUILD-PARSIMONY-TREE-DNA
+  REQUIRED ((in) tree-project)
+  FLAG    (user-tree thorough-search-best-tree thorough-search-one-best-tree less-thorough-search-best-tree)
+  KEYWORD jumble-sequence-order
+  KEYWORD threshold-parsimony
+  KEYWORD transversion-parsimony
+  FLAG    read-weights-for-positions
+  KEYWORD (multiple-data-sets multiple-data-weights)
+  BODY
+  ;; actual body moved to post-aux file
+  (funcall 
+   'build-parsimony-tree-dna-aux
+   tree-project user-tree thorough-search-best-tree 
+   thorough-search-one-best-tree less-thorough-search-best-tree
+   jumble-sequence-order threshold-parsimony transversion-parsimony
+   read-weights-for-positions multiple-data-sets multiple-data-weights
+   ))
+
+
+;; ********************** BUILD-MAXIMUM-LIKELIHOOD-TREE-Protein **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS BUILD-MAXIMUM-LIKELIHOOD-TREE-Protein in)
+(DEFINE-FUNCTION BUILD-MAXIMUM-LIKELIHOOD-TREE-Protein
+  REQUIRED ((in) tree-project)
+  FLAG     user-tree
+  KEYWORD  user-tree-lengths
+  FLAG     (JTT PMB PAM)
+  KEYWORD  number-of-site-categories
+  KEYWORD  category-rates
+  FLAG     (regional-gamma-distribution-rate  regional-gamma-distribution-rate+invariant-sites regional-user-distribution-rate)
+  KEYWORD  number-of-regional-rate-categories
+  KEYWORD  coefficient-of-variation-of-substitution-rate-among-positions
+  KEYWORD  fraction-of-invariant-sites ; if regional-gamma-distribution-rate+invariant-sites
+  KEYWORD  regional-category-rates ; if regional-user-distribution-rate
+  KEYWORD  probability-foreach-regional-category-rate ; if regional-user-distribution-rate
+  FLAG     correlation-of-rate-distribution-of-adjacent-sites ; if regional distribution rates defined
+  FLAG     read-weights-for-positions
+  FLAG     speedier-analysis
+  FLAG     global-rearrangements
+  KEYWORD  jumble-sequence-order
+  KEYWORD  (multiple-data-sets multiple-data-weights)
+  ;; actual body moved to post-aux file
+  BODY
+  (funcall 
+   'build-maximum-likelihood-tree-protein-aux
+   tree-project user-tree user-tree-lengths JTT PMB PAM
+   number-of-site-categories category-rates regional-gamma-distribution-rate
+   regional-gamma-distribution-rate+invariant-sites
+   regional-user-distribution-rate number-of-regional-rate-categories
+   coefficient-of-variation-of-substitution-rate-among-positions
+   fraction-of-invariant-sites regional-category-rates 
+   probability-foreach-regional-category-rate
+   correlation-of-rate-distribution-of-adjacent-sites
+   read-weights-for-positions speedier-analysis global-rearrangements
+   jumble-sequence-order multiple-data-sets multiple-data-weights 
+   ))
+
+
+
+;; ********************** BUILD-PARSIMONY-TREE-Protein **********************
+
+
+(DEFINE-DF-SYNTACTIC-TOKENS BUILD-PARSIMONY-TREE-Protein in)
+
+(DEFINE-FUNCTION BUILD-PARSIMONY-TREE-Protein
+  REQUIRED ((in) tree-project)
+  FLAG    user-tree
+  KEYWORD jumble-sequence-order
+  KEYWORD threshold-parsimony
+  KEYWORD genetic-code
+  FLAG    read-weights-for-positions
+  KEYWORD (multiple-data-sets multiple-data-weights)
+  BODY
+  ;; body moved to post-aux file
+  (funcall 
+   'build-parsimony-tree-protein-aux 
+   tree-project user-tree jumble-sequence-order threshold-parsimony
+   genetic-code read-weights-for-positions multiple-data-sets
+   multiple-data-weights
+   ))
+
+;; ********************** JOIN-NEIGHBORS **********************
+
+; ********* internal ***********
+
+;; Function NEIGHBOR moved to aux file
+
+; ***************
+(DEFINE-DF-SYNTACTIC-TOKENS JOIN-NEIGHBORS in)
+(DEFINE-FUNCTION JOIN-NEIGHBORS
+  REQUIRED ((in) tree-project)
+  FLAG    (neighbor upgma)
+  KEYWORD outgroup
+  FLAG    subreplicate
+  FLAG    randomize-input-order
+  KEYWORD multiple-data-sets
+  BODY
+  (NEIGHBOR tree-project :neighbor neighbor :upgma upgma
+            :outgroup outgroup :subreplicate subreplicate
+            :randomize-input-order randomize-input-order
+            :multiple-data-sets multiple-data-sets
+            ))
+
+
+
+;; ********************** BUILD-DISTANCE-TREE-DNA **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS BUILD-DISTANCE-TREE-DNA in)
+
+(DEFINE-FUNCTION BUILD-DISTANCE-TREE-DNA
+  REQUIRED ((in) tree-project)
+  FLAG (F84 Kimura Jukes-Cantor LogDet Similarity)
+  KEYWORD gamma
+  KEYWORD transition-transversion-ratio
+  KEYWORD substitution-rate-category-number
+  KEYWORD category-rates
+  FLAG weights-for-sites
+  KEYWORD base-frequencies
+  KEYWORD (multiple-data-sets multiple-data-weights)
+  FLAG    (matrix neighbor upgma)
+  FLAG    subreplicate
+  FLAG    randomize-input-order
+  BODY
+  ;; actual body moved to post aux file
+  (funcall
+   'build-distance-tree-dna-aux 
+   tree-project F84 Kimura Jukes-Cantor LogDet Similarity gamma
+   transition-transversion-ratio substitution-rate-category-number 
+   category-rates weights-for-sites base-frequencies multiple-data-sets
+   multiple-data-weights matrix neighbor upgma subreplicate
+   randomize-input-order))
+
+;; ********************** BUILD-DISTANCE-TREE-Protein **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS BUILD-DISTANCE-TREE-Protein in)
+
+(DEFINE-FUNCTION BUILD-DISTANCE-TREE-Protein
+  REQUIRED ((in) tree-project)
+  FLAG (JTT PMB PAM Kimura Similarity Categories)
+  FLAG gamma
+  KEYWORD coefficient-of-variation-of-substitution-rate-among-positions
+  KEYWORD substitution-rate-category-number
+  KEYWORD category-rates
+  FLAG    read-weights-for-positions
+  KEYWORD genetic-code
+  KEYWORD aa-categorization
+  KEYWORD probality-to-change-of-category
+  KEYWORD transition-transversion-ratio
+  KEYWORD base-frequencies
+  KEYWORD (multiple-data-sets multiple-data-weights)
+  FLAG    (matrix neighbor upgma)
+  FLAG    subreplicate
+  FLAG    randomize-input-order
+  BODY
+  ;; actual body moved to post-aux file
+  (funcall 
+   'build-distance-tree-protein-aux 
+   tree-project JTT PMB PAM Kimura Similarity Categories gamma
+   coefficient-of-variation-of-substitution-rate-among-positions 
+   substitution-rate-category-number category-rates read-weights-for-positions
+   genetic-code aa-categorization probality-to-change-of-category
+   transition-transversion-ratio base-frequencies multiple-data-sets
+   multiple-data-weights matrix neighbor upgma subreplicate
+   randomize-input-order))
+
+
+;; ********************** RESAMPLE-ALIGNMENT **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS RESAMPLE-ALIGNMENT in)
+
+(DEFINE-FUNCTION RESAMPLE-ALIGNMENT
+  REQUIRED ((in) tree-project)
+  FLAG (molecular-sequences discrete-morphology restriction-sites gene-frequencies) ; D
+  FLAG (bootstrap jackknife permute-species-for-each-character permute-character-order permute-within-species rewrite-data) ; J
+  KEYWORD altered-sampling-fraction      ; %
+  KEYWORD block-size                     ; B
+  KEYWORD number-of-replicates           ; R
+  FLAG    read-weights                   ; W !!! check file
+  FLAG    read-categories-for-sites      ; C !!! check file
+  FLAG    write-weights                  ; S default write data-set
+  FLAG    read-factors-information       ; F
+  FLAG    read-mixture-file              ; X
+  FLAG    read-ancestors-file            ; N
+  FLAG    enzyme-number-written-in-input-file ; E
+  FLAG    alleles-present-at-each-locus  ; A
+  BODY
+  ;; actual body moved to post-aux file
+  (funcall
+   'resample-alignment-aux
+   tree-project molecular-sequences discrete-morphology restriction-sites 
+   gene-frequencies bootstrap jackknife permute-species-for-each-character
+   permute-character-order permute-within-species rewrite-data
+   altered-sampling-fraction block-size number-of-replicates 
+   read-weights read-categories-for-sites write-weights 
+   read-factors-information read-mixture-file read-ancestors-file
+   enzyme-number-written-in-input-file alleles-present-at-each-locus
+   ))
+
+
+;; ********************** CREATE-A-TREE-PROJECT **********************
+
+;;; function STRIP-ALL-SPECIAL-CHARACTERS moved to aux file
+
+(DEFINE-DF-SYNTACTIC-TOKENS create-a-tree-project-from in)
+(define-function create-a-tree-project-from
+  required alignment
+  required ((in) tree-project)
+  flag overwrite
+  body
+  (unless (and (stringp tree-project) 
+               (< (length tree-project) 25)
+               (every 
+                (lambda (x) (or (alphanumericp x) (eql x #\-) (eql x #\_)))
+                tree-project
+                ))
+    (err+
+     :problem "Invalid name for your tree-project directory!"
+     :indent "You provided '~A'"
+     :advice "Use only numbers, letters, dashes, and underscores, and"
+     :indent "make your name less than 25 characters."
+     :format-args (limited-string tree-project 40)
+     ))
+  (without-code-walker
+    (let* ((ll-vs-sl nil)
+           (sl-vs-ll nil)
+           (consensus (equalp (first (first (last alignment))) "consensus"))
+           (clean-alignment (if consensus (cdr (reverse alignment)) alignment))
+           (seqn (length clean-alignment)) 
+           (seql (length (second (first clean-alignment))))
+           (tree-dir (bio::pathname-in-directory-form 
+                      (format nil "~a~a~a" (wb::visitor-directory *username*) "tree-project-" tree-project)))
+           (phyin (format nil "~a~a" tree-dir "alignment-phy"))
+           (sl-to-ll (format nil "~a~a" tree-dir "labels-sed")))
+      (if (and overwrite (probe-file (format nil "~a" tree-dir)))
+          (bio::PROTECTED-SHELL-COMMAND (FORMAT NIL "~a~a" "rm -r " tree-dir)))
+      (bio::ensure-directories-exist tree-dir)
+      (setf ll-vs-sl (make-hash-table :test 'equalp))
+      (for-each aligned-sequence in clean-alignment
+                initialize x = 0
+                as long-label = (strip-all-special-characters (first aligned-sequence))
+                ;; changed so we can use without-code-walker
+                as num-label = (setq x (1+ x)) ;; (increment x)
+                as short-label = (format nil "~a~a~a" "s" num-label "s")
+                (assign ll-vs-sl[long-label] = short-label))
+      (setf sl-vs-ll (make-hash-table :test 'equalp))
+      (for-each aligned-sequence in clean-alignment
+                initialize x = 0
+                as long-label = (strip-all-special-characters (first aligned-sequence))
+                ;; changed so we can use without-code-walker
+                as num-label = (setq x (1+ x)) ;; (increment x)
+                as short-label = (format nil "~a~a~a" "s" num-label "s")
+                (assign sl-vs-ll[short-label] = long-label))
+      (with-open-file (alignment-phy phyin :direction :output)
+        (format alignment-phy "~a ~a~&" seqn seql)  
+        (for-each aligned-sequence in clean-alignment
+                  as label = (gethash (strip-all-special-characters (first aligned-sequence)) ll-vs-sl)
+                  as sequence = (second aligned-sequence)
+                  do (format alignment-phy "~10a~a~a~&" label " " sequence)))
+      (with-open-file (labels-sed sl-to-ll :direction :output)
+        (for-each i in sl-vs-ll
+                  as short-label = (first i)
+                  as long-label = (string-of (second i))
+                  do (format labels-sed "~a~a~a~a~a~%" "s/" short-label "/" long-label "/g")))
+      tree-project)))
+
+;; ********************** TREE-OF **********************
+
+(DEFINE-DF-SYNTACTIC-TOKENS Tree-of in)
+
+(DEFINE-FUNCTION Tree-of
+  REQUIRED alignment
+  FLAG (distance maximum-likelihood parsimony)
+  FLAG (DNA AA)
+  FLAG (midpoint-root unrooted)
+  FLAG overwrite
+  FLAG (pdf png jpg eps newick)
+  KEYWORD named = *unprovided-string*
+    TYPE named = String
+  KEYWORD from = *unprovided+*
+  KEYWORD to = *unprovided+*   
+    TYPE (from to) = Positive-integer
+    CONVERT (from to) FROM Number TO Integer
+  KEYWORD bootstrap = NIL
+  KEYWORD outgroup = NIL
+  KEYWORD  WIDTH = 150
+  BODY
+    (WHEN (UNPROVIDED named)
+	   (SETF named "temp")
+	   (SETF overwrite T))
+  
+  ;; body moved to post-aux file
+  (LET ((seq-sample (JOIN (SPLIT alignment[1][2] EVERY "-"))))
+    (funcall 
+     'tree-of-aux 
+     alignment named distance maximum-likelihood parsimony 
+     DNA AA midpoint-root unrooted overwrite pdf png jpg eps newick 
+     bootstrap outgroup WIDTH seq-sample from to
+     )))
+
+
+
+

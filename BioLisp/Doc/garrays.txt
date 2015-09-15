@@ -1,0 +1,289 @@
+
+
+                 INTRODUCTION TO GARRAY CAPABILITIES
+
+
+GARRAYS are generalized arrays, combining the properties of Lisp arrays
+with hash tables and extending the concept of an index.
+
+A Lisp array can have any number of dimensions, but the indices for each
+dimension can only be non-negative integers and must start at 0.
+
+A garray can have any number of dimensions, while the indices for any
+dimension (axis) can be one of several types:
+
+  -- Integer indices; these can range from any minimum to any limit.
+ 
+  -- Enumerated indices; these can be one of a specific set of any Lisp object.
+
+  -- hash indices; these can be any Lisp object.
+
+
+CREATING GENERALIZED ARRAYS:
+
+
+To create a garray, one uses MAKE-GARRAY and provides a description of
+the indices for each dimension.  Some examples:
+
+  (setq g1 (make-garray '(5 6)))
+
+This is somewhat equivalent to a Lisp 2-dimensional array: (make-array '(5 6))
+
+  (setq g2 (make-garray '(3 $)))
+
+A 3-element array of hash tables ('$' is used to indicate a hash axis).
+
+  (setq g3 (make-garray '($ (:enum :foo :bar :baz))))
+
+A hash table of 3-element arrays.  Each three-element array is indexed
+using :foo, :bar or :baz exclusively.  ':enum' is used to designate
+an enumerated axis.
+
+  (setq g4 (make-garray '((-5 5) ($ equalp) ((:enum equal) "abc" "def") 5)))
+
+A 10-element array of hash tables whose test function is EQUALP
+(the default is EQUAL).
+
+Each hash table entry is a two-element enumerated array whose keys
+are "abc" or "def" exclusively.  The key test is specified as EQUAL
+(the default is EQL for enumerated keys) because EQL will not return T
+on two distinct strings that contain the same characters, but EQUAL will.
+
+Each element of the enumerated array is a 'normal' 5-element array.
+
+You can use DEFGARRAY as a toplevel form to define global garrays.
+
+
+STORING DATA INTO AND RETRIEVING VALUES FROM GENERALIZED ARRAYS:
+
+
+Use (setf (gref garray &rest indices) value) to store a value into a garray
+location.  And (gref garray &rest indices) to extract a value from a garray
+location.  Continuing with the above examples:
+
+  (setf (gref g1 3 4) 10)
+  (gref g1 3 4)
+  10
+
+  (setf (gref g2 2 "frob") 12)
+  (gref g2 2 "frob")
+  12
+  (gref g2 2 "frobbitz")
+  <<<Trying to access never set position in #<GARRAY>, indices
+    (2 frobbitz)>>>
+
+  (setf (gref g3 #\x :bar) 22)
+  (gref g3 #\x :bar)
+  22
+
+  (setf (gref g4 -4 "abc" "def" 1) 'foo)
+  (gref g4 -4 "ABC" "def" 1)
+  foo
+
+
+You can initialize a garray using the :initial-element keyword argument
+to MAKE-GARRAY:
+
+  (setq g1 (make-garray '(5 6) :initial-element 23))
+  (gref g1 1 3)
+  23
+
+This only fills in values if the garray contains all non-hash axes.
+When garrays with hash axes are created, the first hash axis is
+initialized with empty hash tables, and therefore nothing below that
+axis is in fact created.
+
+However, the :INITIAL-ELEMENT value also serves as the default value:
+
+  (setq g1 (make-garray '(3 $ 4) :initial-element 10))
+  (gref g1 0 :foo 2)
+  10
+  
+Contrast this with:
+
+  (setq g1 (make-garray '(3 $ 4))
+  (gref g1 0 :foo 2)
+  <<<Trying to access never set position in #<GARRAY>, indices
+    (0 FOO 2)>>>
+
+
+You can access all the existing elements of a garray using GMAP and GMAPSET.
+
+  (setq g1 (make-garray '(3 3) :initial-element 10))
+  (gmap	'1+ g1)
+  ((11 11 11) (11 11 11) (11 11 11))
+  (gmapset (lambda (x) (- x 10)) g1)
+  (gmap 'identity g1)
+  ((0 0 0) (0 0 0) (0 0 0))
+
+Note that GMAPSET side-effects the array it is called with while GMAP
+does not.  GMAP returns a list structure which is equivalent in
+nesting to the garray it is called on.  To return a single-level list
+use the :flatten? keyword to GMAP:
+
+  (setq g1 (make-garray '(2 2)))
+  (dotimes (j 2)
+    (dotimes (i 2)
+      (setf (gref g1 j i) (+ j i))))
+  (gmap 'identity g1 :flatten? t)
+  (0 1 1 2)
+
+
+GARRAY PROPERTIES:
+
+You can determine how many dimensions a garray has using GARRAY-RANK:
+
+  (setq g1 (make-garray '(3 $ 4)))
+  (garray-rank g1)
+  3
+
+You can determine how many elements a given dimension can contain using
+GARRAY-AXIS-EXTENT:
+
+  (setq g1 (make-garray '(3 $ 4)))
+  (garray-axis-extent g1 0)	
+  3
+  (garray-axis-extent g1 1)
+  NIL
+  (garray-axis-extent g1 2)
+  4
+
+(Calling GARRAY-AXIS-EXTENT on a hash axis returns NIL because there
+can be multiple hash tables along a given hash axis, and each hash table
+can hold an indeterminate number of elements)
+
+You can retrieve a list of indices for a given garray subcomponent using
+GARRAY-COMPONENT-INDICES
+
+
+  (setq g1 (make-garray '(3 $ 4)))
+  (garray-component-indices g1)
+  (0 1 2)
+  (garray-component-indices g1 0)
+  NIL
+  (setf (gref g1 0 :foo 0) 10)
+  (garray-component-indices g1 0)
+  (:FOO)
+  (setf (gref g1 0 :bar 2) 10)
+  (garray-component-indices g1 0)
+  (:foo :bar)
+  (garray-component-indices g1 0 :foo)
+  (0 1 2 3)
+
+GARRAY-COMPONENT-INDICES takes a list of indices no more than 1 less than
+the number of dimensions of the garray (and can take no indices, as shown
+above, in which case it returns a list of indices for the first axis).
+
+
+ADJUSTABLE GARRAYS
+
+When a garray is created, it is by default adjustable (unlike most Lisps
+when creating standard Lisp arrays).
+
+This means that its numeric axes can increase in extent.
+
+  (setq g1 (make-garray '(3 3)))
+  (setf (gref g1 0 0) 3)
+  (garray-axis-extent g1 1)
+  3
+  (setf (gref g1 0 4) 23)	
+  (garray-axis-extent g1 1)
+  5
+  (gref g1 0 4)
+  23
+  (setf (gref g1 -3 2) 'foo)
+  (garray-axis-extent g1 0)
+  6
+  (garray-component-indices g1)
+  (-3 -2 -1 0 1 2)
+
+A garray can be created without this ability:
+
+  (setq g1 (make-garray '(3 3) :adjustable nil))
+  (setf (gref g1 0 4) 23)	
+  <<<error message>>>
+
+A garray's enumerated axes are not adjustable -- you can neither add to
+nor subtract from the initial list of allowable keys.  
+
+A garray's hash axes are by definition always adjustable, because they
+are hash tables, which hold an arbitrary number of objects.
+
+
+IMPLICIT CREATION OF GARRAYS
+
+Garrays have the interesting property that they are implicitly created
+if you use (setf (gref <var> ...) <value>) and <var> does not evaluate
+to a garray object.  A garray object is created whose axes are based
+on the indices provided, and <var> is SETQ'ed to this object, then the
+actual SETF of <value> into the garray takes place.
+
+  (let ((x nil))
+    (setf (gref x 3 3) 23)
+    (gref x 3 3))
+  23
+
+
+COPYING GARRAYS and their COMPONENTS
+
+You can use GARRAY-COPY (aka COPY-GARRAY) to create a copy of a GARRAY.
+The data structures that compose the GARRAY (the axis descriptors and
+the hashtables and arrays holding the garray data) are consed up anew.
+However, the elements that compose the GARRAY, should they be structured
+objects themselves, are not copied.
+
+  (let ((x (make-garray '(3 3))))
+    (setf (gref x 0 0) #(1 2 3))
+    (let ((y (copy-garray x)))
+      (list (eq y x) (eq (gref x 0 0) (gref y 0 0)))
+      ))
+  (NIL T)
+
+You can use GARRAY-COMPONENT-GARRAY to create a garray which represents
+a subcomponent of a larger garray.  To do this you provide an 'initial'
+set of indices, i.e., a set of indices which is less than the number
+of dimensions of the input garray.
+
+  (let ((x (make-garray '(3 3 $ 4))))
+    (setf (gref x 1 2 :foo 3) :bar)
+    (let ((y (garray-component-garray x 1 2)))
+      (gref y :foo 3)
+      ))
+  :bar
+
+Y was created as a GARRAY with 2 axes, a hash axis and a 4-element numeric
+axis.  X's substructure at X[1 2] was copied (as in COPY-GARRAY) and a
+new garray created.
+
+
+You can use DESCRIBE-GARRAY and PPRINT-GARRAY to view a garray.
+DESCRIBE-GARRAY shows the properties of a garray, which PPRINT-GARRAY
+shows it elements.
+
+  (setq x (make-garray '(3 3 $ 4)))
+  (describe-garray x)
+
+Description of GARRAY #<GARRAY>
+  Rank: 4
+  Adjustable: T
+  Default action/value: :<GARRAY-ACCESS-ERROR-MARKER>
+  Axis 0: <Garray axis type: XA-AXIS, min: 0, limit: 3, extent: 3> 
+  Axis 1: <Garray axis type: XA-AXIS, min: 0, limit: 3, extent: 3> 
+  Axis 2: <Garray axis type: HASH-AXIS, test: EQUAL> 
+  Axis 3: <Garray axis type: XA-AXIS, min: 0, limit: 4, extent: 4> 
+
+
+SPECIFICATION of MAKE-GARRAY
+
+(defun make-garray
+       (axis-descriptors
+        &key
+        (initial-element *garray-default-value* initial-element-provided?)
+        (adjustable t)
+        (if-accessed-location-not-set :error)
+        (if-accessed-location-does-not-exist :error)
+        (create-arms? t)
+        )
+
+Type (help make-garray) for a complete description of its specification.  
+

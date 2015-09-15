@@ -1,0 +1,9 @@
+body {
+  margin: .25in .5in; 
+  font-size: 12pt;
+}
+h1, h2 { font-family: "Helvetica"; }
+
+sup { font-size: 9pt;  }
+pre {  margin: 0; font-size: 9pt; padding: 0; margin-left: .25in; }
+div.note { font-size: 10pt; }

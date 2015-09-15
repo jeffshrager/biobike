@@ -1,0 +1,73 @@
+(html
+  (head 
+   (title "AJAX REPL")
+   (meta http-equiv "Content-Script-Type" content "text/javascript")
+   (css
+     (body padding "6pt")
+
+     ;; REPL element styles
+     ((id "repl")
+      font-family courier
+      overflow scroll
+      height "80%"
+      border "solid thin"
+      padding "6pt")
+     ((id "cursor")
+      background "#00ff00")
+     (p padding "0pt")
+     ((id "expr") width "100%")
+     (.flash background "#ff00ff")
+     (.prompt color "#aaaaaa")
+     (.input color "#000000" font-weight bold padding "0pt" padding-top "6pt" margin "0pt")
+     (.result color "#0000ff" padding-top "3pt" margin "0pt")
+     (.output color "#ff00ff" padding-top "3pt" margin "0pt")
+     (.error color "#ff0000" padding-top "3pt" margin "0pt")
+     ((id arglists)
+      font-family courier
+      padding "3pt"
+      color "#222222"
+      background "#dddddd"
+      border "solid thin")
+     ;; PING element styles
+     ((id "speedometer")
+      font-family courier
+      color "#00ff00"
+      font-size "10")
+
+     ((and (id speedometer) (span class numbers))
+      float "left"
+      padding "3 6px"
+      margin "0px"
+      text-align "right"
+      background "#000000"
+      font-size "10pt"
+      font-family "courier"
+      width "4em")
+
+     ((and (id speedometer) (span class label))
+      float "left"
+      padding "3 6px"
+      margin "2px"
+      text-align "right"
+      color "#000000"
+      font-size "10pt"
+      font-family "courier"))
+
+   (script type "text/javascript" src "queue.js")
+   (script type "text/javascript" src "ajax.js")
+   (script type "text/javascript" src "http.js")
+   (script type "text/javascript" src "repl.js")
+   (script type "text/javascript" src "ping.js"))
+  ((body onload "startTransport(); printPrompt()" onunload "shutdownTransport()")
+   ((p id "speedometer")
+    (span class "label" "Pings: ") ((span class "numbers" id "ping") 0)
+    (span class "label" "Pongs: " ) ((span class "numbers" id "pong") 0)
+    (span class "label" "Round trips/second: ") ((span class "numbers" id "persecond") 0)
+    (input type button onclick "startPings()" value "Start"))
+   ((div id "repl") ((span id "cursor") (character "nbsp")))
+   #+(or)(p (input type text onkeyup "sendOnReturn(event);" id "expr"))
+   (p id "arglists" (character "nbsp"))))
+
+
+
+

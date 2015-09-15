@@ -1,0 +1,455 @@
+\modeline{-*- mode: outline; -*-}
+
+* Lispscript and Ajax FAQ
+
+\i{FAQs for the Lispscript and Ajax infrastructure provided by
+ThirdParty/monkeylib. (Last updated: \datestamp{})}
+
+** LISPSCRIPT
+
+*** What is Lispscript?
+
+Lispscript is a Lisp dialect that compiles to Javascript so it can be
+run in browsers. It does not aim for conformance with any existing
+Lisp dialect (e.g. Common Lisp or Scheme).
+
+*** How do I use Lispscript?
+
+You write \code{.ls} files which are then compiled into \code{.js}
+files by AllegroServe when the \code{.js} file is requested by the
+browser. You then load the generated \code{.js} files in your HTML
+with the \code{script} tag.
+
+*** How do names translate from Lispscript into Javascript?
+
+Lispscript is read with a case-sensitive reader so you can use normal
+Javascript names such as \code{getElementById}. But Lispscript also
+takes advantage of the fact that \code{-} is not a legal character in
+Javascript names to support a bit of syntactic sugar: lispy names like
+\code{get-element-by-id} are translated into Javascript names by the
+simple algorithm of removing all \code{-}'s and upcasing the following
+letter.
+
+*** What special forms and macros from Common Lisp can I use in Lispscript?
+
+TK
+
+*** How do macros work in Lispscript (can I use backquote and comma,
+can I use DEFMACRO)?
+
+You can write Lispscript macros. However, they are written in Common
+Lisp, not Lispscript. At the moment there is no way to include macros
+in \code{.ls} files. Instead you use the
+\code{DEFINE-JAVASCRIPT-MACRO} macro which is defined as part of the
+\code{COM.GIGAMONKEYS.FOO.JAVASCRIPT} package. This is not entirely
+convenient, assuming you are using the standard \code{:upcase}
+readtable case as Lispscript identifiers that you want to include in
+generated code need to be lowercase, and thus will need to be written
+escaped, which means macros tend to look like this:
+
+    (define-javascript-macro |when| (test &body body)
+      `(|if| ,test (|progn| ,@body)))
+
+*** What functions from Common Lisp can I use in Lispscript?
+
+TK
+
+*** What data types can I use in Lispscript? How do they get
+translated when I send them across to the sever.
+
+Lispscript doesn't support any datatypes that are not part of
+Javascript. At the moment the only mechanism for sending data between
+Common Lisp and Lispscript is to send XML documents via the Ajax
+machinery. Lispscript provides an \code{xml} macro that eases the pain
+of building XML documents on the Lispscript side (compared to the
+Javascript code necessary to build an XML document using the DOM) and
+those XML documents can be parsed into s-expressions on the Lisp side
+using any XML parser such as the parser provided by Allegro.
+
+*** What data types can I send from the server back to the Lispscript client?  How do they get translated?
+
+Again, communication between the two sides is done in terms of XML. At
+the moment parsing the contents of the XML into Javascript objects is
+left up to application code though we have some ideas about how to
+ease that burden.
+
+
+*** Can I use something like DEFSTRUCT in Lispscript? CLOS?
+
+No. However you can use Javascript's native prototype-based object
+system. But there is no special support for that in Lispscript other
+than two bits of syntax. Methods can be invoked by using a name
+starting with dot like this:
+
+    (.foo obj 1 2 3)
+
+which is translated into this Javascript:
+
+    obj.foo(1, 2, 3)
+
+And fields can be accessed using the \code{@} operator:
+
+    (@ obj x)
+
+is translated into:
+
+    obj.x 
+
+*** What are the gotchas in writing Lispscript?
+
+You tell me.
+
+*** What happens when an error occurs in Lispscript? How do I debug?
+
+At the moment debugging Lispscript is pretty much the same as
+debugging Javascript with the added hassle that the browser only knows
+about the generated Javascript, not the actual Lispscript source. The
+basic Javascript debugging tools are alert boxes and the Javascript
+console (\code{Tools->JavaScript Console} in Firefox).
+
+As a very slight aid to using the former, Lispscript provides a macro
+\code{debug}, a thin layer over the Javascript function \code{alert()}
+that takes care of concatenating together all its arguments and which
+also makes it obvious which bits of code are debugging output and
+which one are actual alerts that should be left in the code. Thus you
+can write:
+
+    (debug "foo: " foo "; bar: " bar)
+
+instead of:
+
+    (alert (+ "foo: " foo "; bar: " bar))
+
+Of course if your Javascript is failing mysteriously and isn't getting
+to you carefully crafted \code{debug} calls, then you have no choice
+but to look in the Javascript console. Be aware, however, that errors
+reported in the Javascript console will contain line numbers pointing
+to the offending code in the generated Javascript; at the moment it's
+up to you map that back to the corresponding location in the
+Lispscript source.
+
+*** Is there a way for me to translate my Lispscript file into
+Javascript from inside my Lisp process, instead of waiting to detect a
+syntax error via translation triggered by invoking the Javascript URL?
+
+*** What is an example of a simple Lispscript function?
+
+    (defun factorial (n) (if (= n 0) 1 (* n (factorial (1- n)))))
+
+*** What is a simple example of an HTML page and a Lispscript file,
+such that the HTML calls a function in the Lispscript file?
+
+HTML (\code{hello.html})
+
+    <html>
+      <head>
+	<title>Hello</title>
+	<script src="hello.js"/>
+      </head>
+      <body onload="hello();"/>
+    </html>
+
+Lispscript (\code{hello.ls}):
+
+    (defun hello ()
+      (debug "hello, world!"))
+
+
+*** What are some common examples of DOM manipulation using Lispscript?
+
+    (defun update-result (text)
+      (let ((result (.get-element-by-id document "result")))
+        (set (@ result value) text)))
+
+There are a couple of things to keep in mind when translating
+Javascript DOM into Lispscript.  Even though both methods and
+attributes are specified with the dot operator in Javascript, the
+mechanism is a bit different in Lispscript.  For example:
+
+    var node = document.getElementById("element-name");
+    var value = node.value;
+
+In both lines, the dot operator is used.  In the first, it is used to
+specify a method to be called on the document object.  In the second,
+it is used to specify an attribute of the node object.  Lispscript
+will look a bit different:
+
+    (let* ((node (.get-element-by-id document "element-name"))
+           (value (@ node value))))
+
+When node is bound, the object method is specified with a dot before
+the name. But when an attribute of node is accessed, we use the '@'
+operator. This is an important different to keep in mind, because in
+Javascript the dot notation does not clarify this. An easy way to
+remember is if you needed parentheses and possibly arguments in
+Javascript, it will be a dot-function in Lispscript. If you need a dot
+operator but \i{no} parentheses in Javascript, you probably need the
+'@' notation to access the class/object member or attribute.
+
+*** How do I use Lispscript code in a web page?
+
+To use Lispscript file in a web page you need to include a
+\code{<script>} tag with a \code{src} attribute naming the file except
+with a \code{.js} extension. On the Lisp side, a function registered
+with AllegroServe will look for a file with the same name but with a
+\code{.ls} extension in each of the directories listed in the variable
+\code{COM.BIOBIKE.AJAX:*AJAX-DIRECTORIES*}. When it finds the
+\code{.ls} file, it will compile it into a \code{.js} file and serve
+that file to the browser.
+
+*** Where are the Lispscript tests and how do I run them?
+
+After you load the system, in your Lisp, change directory (i.e. ,cd in
+SLIME or setf \cl{*DEFAULT-PATHNAME-DEFAULTS*}) to
+\code{BioLisp/ThirdParty/monkeylib/foo/} and run the function:
+
+    (com.gigamonkeys.foo.lispscript-tests::maketests)
+
+This will produce a file \code{lispscript-tests.html} and a Javascript
+file \code{lispscript-test-cases.js} in the \code{foo} directory. Load
+\code{lispscript-tests.html} in your browser and you should see a
+table of test cases, showing a Lispscript expression, the Javascript
+it compiles into, expected value, actual value, and a pass/fail
+indicator. At the top of the page it should say:
+
+    Passes: 141; Failures: 0 -- All tests completed.
+
+If not, something is wrong. If it still says "All tests completed" you
+can look in the table for red rows--those are the failures. If it says
+"Tests didn't complete" that means there was a deeper Javascript error
+and you'll need to look in the Javascript console to see what's going
+on. The tests should all pass in Firefox (and also Safari). It'd be
+interesting to see how they do in other browsers.
+
+You can add test cases by editing the file
+\code{lispscript-test-cases.txt}. The format of this file is a line
+containing a Lispscript expression followed by a line containing a
+Javascript expression. The Lispscript expression will be compiled into
+Javascript and run and the resulting value compared to the value
+produced by evaluating the Javascript expression. These pairs can be
+separated with blank lines and lines starting with semicolons. After
+you edit it, invoke \code{maketests} again to regenerate the html and
+Javascript files.
+
+** AJAX
+
+*** What is Ajax?
+
+Ajax is a shorthand name for techniques based on combining Javascript,
+XML, CSS, and DHTML to produce browser-based applications that broke
+out out of the "everything-happens-on-page-reload" model of the early
+web. It is not, according to Jesse James Garrett who coined the term
+inn a
+\link{\href{http://www.adaptivepath.com/publications/essays/archives/000385.php}
+\text{February 2005 essay}}, an acronym and thus is written "Ajax"
+rather than "AJAX".
+
+*** How do I initiate a request to the server from Lispscript using Ajax?
+
+First, create the message to be sent. You can create a message in
+plain text using 'make-simple-message-for-app' with the name of your
+application and the text to send:
+
+    (make-simple-message-for-app "YOUR-APP-NAME-HERE" your-message-text)
+
+Alternatively, you can create an XML message:
+
+    (make-message-for-app 
+       "YOUR-APP-NAME-HERE" (xml (:stuff (:you "like") (:here "abc"))))
+
+Then, send the message you just created:
+
+    (.send channel your-message-here)
+
+*** How do I set up a handler function on the server to handle an Ajax
+client request?
+
+Define a function that takes as its arguments a channel and a message.
+The channel will be used to respond to the message. The message itself
+will have the application name as its first item, and then the message
+contents as the second:
+
+    (defun server-handler-function (channel message) ...)
+
+Then register this function:
+
+    (register-message-handler :your-app-name 'server-handler-function)
+
+NB: You do not need to know any details about the channel object.
+This object is created when 'http.js' is loaded by the browser, and is
+a complex Javascript class designed to abstract away the asynchronous
+nature of Ajax messaging.  You just need to know that message handlers
+on the server side will receive a channel as their first argument, and
+must use the channel to send a response.
+
+*** How do I send back a response to an Ajax client from the handler function?
+
+Use the channel that was passed in when the handler was called, along
+with the 'send' function:
+
+    (send channel (list :your-app-name response))
+
+*** How do I define a handler in Lispscript in the browser to deal
+with a response from a server handler function?
+
+Create a Lispscript function that takes a message as an argument. The
+'textContent' attribute of the message can be accessed for the message
+text, or you can use DOM methods. Then register this handler:
+
+    (.register-message-handler channel "your-app-name" your-handler-function)
+
+Again, the \code{channel} object is an instance of a Javascript
+Channel class which was created when the browser loaded
+\code{http.js}. All you really need to know about it is that it
+uniquely identifies a browser connection to the server, and is used to
+send Ajax messages to handler functions on the server.
+
+*** What do I need to know about the asynchronous nature of the Ajax
+browser/server communications channel?
+
+Messages are not exactly like function calls. The call to \code{.send}
+will return right away and you can continue executing more code in the
+browser and the browser will continue to respond to UI events as well
+as to messages coming from the server. In general, you should try to
+think in terms of self-contained messages being sent between the
+browser and the server: you may send a message to the server that will
+cause it to do some work and send a message back but the message that
+comes back should, ideally, be something the code in the browser can
+handle without having to keep track of any context. Typically you can
+arrange for the message from the server to contain whatever context
+information the browser code will need to deal with the message.
+
+*** How do I define a handler in Lispscript in the browser to deal
+with asynchronous messages from the server
+
+E.g., a status line or stock ticker which only changes when some
+real-world event happens which is random)
+
+*** How would I package and send the lisp data (("foo" 3) ("bar" 54))
+to Lispscript?
+
+At the moment there's no automatic way to do that. In general
+Ajax-based apps should be written in terms of "messages" with named
+slots rather than arbitrary Lisp data. For instance the REPL
+application sends messages back and forth that look (in sexp-xml)
+like:
+
+    (:repl (:input "(+ 1 2 3)"))
+
+and 
+
+    (:repl (:output "6"))
+
+The outermost tag is handled on the Lispscript side by the
+application-level message dispatcher so the actual message handler only
+has to deal with the \code{(:input ...)} and \code{(:output ...)}
+parts of the message.
+
+*** How would I define a data structure in Lispscript to receive it?
+
+This part is a bit trickier.  The response will be placed in an xml
+structure for you, but you have the responsibility to parse it.  This
+is not really difficult, you just need to get the details correct.
+
+*** What would the code look like to actually receive such a data structure?
+
+    (defun foobar-on-message (message)
+      (let ((message-type (@ message node-name)))
+	(cond
+	  ((string= message-type "input")
+	   (do-stuff-with-input (@ message text-content)))
+	  ((string= message-type "output")
+	   (do-stuff-with-output (@ message text-content))))))
+
+The actual message that came in will be of the form:
+
+    <application-name><input>...</input></application-name>
+
+or
+
+    <application-name><output>...</output></application-name>
+
+but the \code{application-name} element will have been stripped off by
+the application-level message dispatcher which then passes the payload
+to the registered callback, assuming \code{foobar-on-message} was
+registered with the channel like this:
+
+    (.register-message-handler channel "application-name" foobar-on-message)
+
+*** What is a simple example of a complete html page, Lispscript file,
+server side handler definition and handler function?
+
+See the \code{ajax-howto.txt} file in the \code{.../BioLisp/Ajax/}
+directory.
+
+*** Is there a limit on the number of requests the client can have pending? 
+
+Depends what you mean by requests. Our Ajax infrastructure is built
+around asynchronous messages, not synchronous requests. Both the
+server and the client can send messages to each other whenever they
+want but the call to \code{send} returns immediately.
+
+At the application level it may make sense to think of one message
+being a "response" to another message--for instance in the Ajax REPL,
+the browser sends a message to the server containing an expression to
+be evaluated and the server then sends back a response containing the
+result--but that is purely an application-level matter. A single
+message from the client to the server could cause the server to send
+zero, one, or more messages "in response". And the server can send
+messages to a client out of the blue.
+
+On the browser side this model is completely natural since all the
+code in an HTML page runs in a singly threaded event loop anyway.
+Normal Javascript code, without Ajax, spends most of its time doing
+nothing and periodically some action by the user will generate an
+event which causes some event-handler code in the page to run and
+until the event-handler function returns no more events can be
+processed. So Javascript (and Lispscript) code is typically written to
+respond to events by doing something to update the state of the web
+page, either in a user-visible way or some internal data structure,
+and then returning. If an event handler blocked, say by busy-waiting
+in a loop waiting for some change in state that would be caused by
+another event handler, it would never unblock because no other
+event-handler would ever get a chance to run.
+
+When we add our Ajax infrastructure to the mix, it simply adds another
+thing that the client-side code can do (send messages) and another
+kind of event to which it can respond (incoming messages).
+
+On the server side, the Ajax infrastructure uses the same basic
+model--when a message comes in from the client it is dispatched to the
+appropriate message handler which must process the message and return
+before any more messages can be received from that client.\note{The
+client is not blocked nor prevented from sending more
+messages--because \code{send} is asynchronous it can call it as many
+times as it wants. However the Ajax infrastructure will not actually
+transmit the messages to the server until all previously sent messages
+have been acknowledged.} If the server needs to do something that
+could block, or that might take a long time, and the app needs the
+client to be able to send more messages in the meantime, the
+server-side event handler needs to pass that work off to another
+thread so the message handler can return and acknowledge receipt of
+the message.\note{We could change things so message handlers always
+run in a separate thread from the thread that actually does the
+low-level messaging protocol but at the moment we're trying to avoid a
+proliferation of threads. At any rate, a likely model would be to
+provide a queue per channel where messages are accepted by the
+messaging layer, allowing more messages from the same }
+
+*** Does it make sense to operate the Ajax interface in a simple
+request/wait-for-reply mode from the client's point of view?
+
+No, but this has more to do with Javascript's single-threaded
+threading model than anything else. There's no way to "wait" in
+Javascript--everything is driven by events. Our Ajax infrastructure
+just provides another kind of event to handle.
+
+*** If I want to cause the browser to do X, how do I figure out what
+to manipulate in the DOM to cause that to happen?
+
+Bang your head repeatedly against Google until the information you
+need appears or you lose consciousness.
+
+*** Where are the Ajax tests and how do I run them?
+
+None yet.

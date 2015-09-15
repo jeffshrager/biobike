@@ -1,0 +1,29 @@
+-*- mode: outline; -*-
+
+* HTML Macros
+
+We know when we define an HTML macro whether or not it wants access to
+the attributes based on whether it's parameter list contains an
+&attributes parameter or not. If it does not then the DEFINE-MACRO
+form should simply pass through the parameter list and let it be used
+to destructure the form as normal. However if it does contain an
+&attributes parameter, then we want to take more direct control over
+the parsing of the macro form. So we want to get the form in a &whole
+parameter. Then in the body of the macro we need to parse the form
+into the attributes and the body and bind the attributes to the
+&attributes parameter and destructure the body with the original
+parameter list (minus the &attributes parameter of course).
+
+    (define-html-macro :foo (&body body) `(:b (:i ,@body)))
+    (define-html-macro :bar (&attributes attrs &body body) `((:span ,@attrs) (:b (:i ,@body))))
+
+With &attribute parameter
+
+    (:tag :foo :xxx (:bar "baz")) -- &body == ((:bar "baz"))
+    ((:tag :foo :xxx) (:bar "baz")) -- &body == ((:bar "baz"))
+
+Without &attribute parameter
+
+    (:tag :foo :xxx (:bar "baz")) -- &body == (:foo :xxx (:bar "baz"))
+    ((:tag :foo :xxx) (:bar "baz")) -- &body == ((:bar "baz"))
+

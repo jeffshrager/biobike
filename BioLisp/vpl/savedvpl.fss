@@ -1,0 +1,852 @@
+;;; -*- lisp -*-
+;;; Static Structural begin
+     (body
+      ;; This disables vertical scroll bar on the browser window.
+      overflow hidden 
+      )
+
+     (.bigbox
+      bottom 0px
+      left 0px
+      position absolute
+      right 0px
+      top 0px
+      )
+     
+     ((id outer-bigbox)
+      margin inherit
+      padding inherit
+      )
+
+     (.box
+      border "solid thin black"
+      bottom 0px
+      left 0px
+      margin 3pt
+      padding 12pt
+      position absolute
+      right 0px
+      top 0px
+      )
+     
+     (.container
+      bottom 0px
+      left 0px
+      position absolute
+      right 0px
+      top 0px
+      )
+
+     (.contains-jbml
+      overflow auto
+      text-align center
+      vertical-align middle
+      )
+
+;;; ;;; Toolbox begin
+     (.toolbox
+      background-color inherit
+      height 0px
+      left 0px
+      position absolute
+      right 0px
+      top 0px
+      )
+     ((and .toolbox img)
+      border "none 0px"
+      margin 0px
+      top 0px
+      )
+     (.arrows
+      float left
+      height 23px
+      padding "2px 4px 0px 4px"
+      width 23px
+      )
+     (.container-expand
+      float right
+      height 14px
+      width 16px
+      )
+     (.container-shade
+      float right
+      height 14px
+      width 16px
+      )
+     (.container-clear
+      float right
+      height 16px
+      width 16px
+      )
+     ((id workspace-toolbox)
+      height 25px
+      )
+;;; ;;; Toolbox end
+
+     ((> div.container p)
+      margin-top 0px
+      )
+
+     ((id debugging)
+      border "solid thick red"
+      color "#550000" 
+      font-family "Courier"
+      font-size small
+      font-style normal
+      font-variant normal
+      height auto
+      text-align left
+      )
+
+     ((id palette-box) 
+      background "#ffffff" 
+      height 107px
+      padding 0px
+      text-align left
+      )
+     (.palette-menu.menu
+      display inline
+      float left
+      padding "3px 4px"
+      )
+
+     ((id wr-bigbox)
+      margin-top 6pt
+      ;; This is related to the height of the "palette"
+      top 107px
+      )
+
+;;; ;;; Workspace begin 
+     ((id workspace-bigbox)
+      bottom 15%
+      max-height 85%
+      ;overflow auto
+      )
+      
+     ((id workspace-box) 
+      background "#ccff99"
+      )
+     
+     ((id workspace)
+      padding-left 2em
+      ;padding-top 25px
+      top 25px
+      )
+;;; ;;; ;;; Workspace Status begin
+     (.workspace-status
+      background "#c1c1c1"
+      height 3ex
+      max-width 40%
+      overflow hidden
+      )
+     (.workspace-status-message
+      float left
+      height 3ex
+      margin 0px
+      padding "0px .5em"
+      position relative
+      )
+     (.workspace-status-ellipsis
+      position absolute
+      top 0px
+      right 0px
+      padding-right .5em
+      )
+     ((id workspace-status-server)
+      float left
+      )
+     ((id workspace-status-client)
+      float left
+      )
+;;; ;;; ;;; Workspace Status end
+
+     ((id workspace-message)
+      margin-left -2em ;; See #workspace padding-left
+      )
+;;; ;;; Workspace end
+
+;;; ;;; Results begin
+     ((id results-bigbox) 
+      min-height 15%
+      top 85%
+      z-index 100
+      )	
+
+     ((id results-box) 
+      background "#e2e2ff"
+      z-index 100
+      )
+     ((id results)
+      padding-left 2em
+      padding-top 16px
+      )
+     ((id results-message)
+      margin-left -2em ;; See #results padding-left
+      )
+;;; ;;; Results end
+;;; Static Structural end
+
+;;; Floating Dialog begin (see Dialog) 
+     (.dialog
+      background-color white
+      position fixed
+      )
+     (.dialog-interior
+      height 100%
+      margin 4px ;; This is the size of the border
+      position relative
+      )
+     (.dialog-body
+      height 100%
+      overflow auto
+      position relative
+      width 100%
+      )
+     (.dialog-contents
+      height 100%
+      padding "0px 4px"
+      position relative
+      text-align center
+      )
+     (.dialog-header
+      background-color "#808080"
+      cursor move
+      )
+     (.dialog-title
+      padding 1px
+      text-align center
+      )
+     (.dialog-buttons
+      cursor default
+      float right
+      )
+     (.dialog-buttons-balance
+      float left
+      position relative
+      )
+     
+     (.dialog-border
+      background-color black
+      height 4px
+      position absolute
+      width 4px
+      )
+     (.dialog-border-n
+      cursor n-resize
+      top 0px
+      width 100%
+      )
+     (.dialog-border-nw
+      cursor nw-resize
+      left 0px
+      top 0px
+      )
+     (.dialog-border-w
+      cursor w-resize
+      height 100%
+      left 0px
+      top 0px
+      )
+     (.dialog-border-sw
+      cursor sw-resize
+      bottom 0px
+      left 0px
+      )
+     (.dialog-border-s
+      cursor s-resize
+      bottom 0px
+      width 100%
+      )
+     (.dialog-border-se
+      cursor se-resize
+      bottom 0px
+      right 0px
+      )
+     (.dialog-border-e
+      cursor e-resize
+      height 100%
+      right 0px
+      top 0px
+      )
+     (.dialog-border-ne
+      cursor ne-resize
+      right 0px
+      top 0px
+      )
+;;; Floating Dialog end
+
+;;; Scroll Bar begin
+     ((adjacent .scroll-bar *)
+      height 100%
+      overflow hidden
+      padding-right 16px
+      )
+
+     (.scroll-bar
+      border "1px solid white"
+      border-left-color "#8c8982"
+      border-top-color "#8c8982"
+      bottom 0px
+      position absolute
+      right 0px
+      )
+     (.scroll-bar.scroll-horizontal
+      left 0px
+      height 14px
+      )
+     (.scroll-bar.scroll-vertical
+      top 0px
+      width 14px
+      )
+
+     (.scroll-bar-track
+      background-color "#c4c2bd"
+      position absolute
+      )
+     ((and .scroll-horizontal .scroll-bar-track)
+      height 100%
+      left 14px
+      right 14px
+      )
+     ((and .scroll-vertical .scroll-bar-track)
+      bottom 14px
+      top 14px
+      width 100%
+      )
+
+     (.scroll-bar-button
+      background-repeat no-repeat
+      height 14px
+      position absolute
+      width 14px
+      )
+     
+     ((and .scroll-bar-bar .scroll-bar-cap)
+      background-repeat no-repeat
+      position absolute
+      )
+
+     ((and .scroll-horizontal .scroll-bar-bar)
+      background-image "url('scroll-horizontal-1x14.gif')"
+      background-repeat repeat-x
+      )
+     ((and .scroll-horizontal .scroll-bar-cap)
+      height 100%
+      width 3px
+      )
+     ((and .scroll-horizontal .scroll-bar-begin)
+      background-image "url('scroll-horizontal-begin-3x14.gif')"
+      top 0px
+      )
+     ((and .scroll-horizontal .scroll-bar-end)
+      background-image "url('scroll-horizontal-end-3x14.gif')"
+      bottom 0px
+      )
+     
+     ((and .scroll-vertical .scroll-bar-bar)
+      background-image "url('scroll-vertical-14x1.gif')"
+      background-repeat repeat-y
+      )
+     ((and .scroll-vertical .scroll-bar-cap)
+      height 3px
+      width 100%
+      )
+     ((and .scroll-vertical .scroll-bar-begin)
+      background-image "url('scroll-vertical-begin-14x3.gif')"
+      top 0px
+      )
+     ((and .scroll-vertical .scroll-bar-end)
+      background-image "url('scroll-vertical-end-14x3.gif')"
+      bottom 0px
+      )
+
+     ((and .scroll-horizontal .scroll-bar-less)
+      background-image "url('scroll-left-14x14.gif')"
+      left 0px
+      )
+     ((and .scroll-vertical .scroll-bar-less)
+      background-image "url('scroll-up-14x14.gif')"
+      top 0px
+      )
+     ((and .scroll-horizontal .scroll-bar-more)
+      background-image "url('scroll-right-14x14.gif')"
+      right 0px
+      )
+     ((and .scroll-vertical .scroll-bar-more)
+      background-image "url('scroll-down-14x14.gif')"
+      bottom 0px
+      )
+;;; Scroll Bar end
+
+;;; Menu begin
+     (.menu
+      font-family "tahoma"
+      font-size 11px
+      font-style normal
+      position relative
+      )
+     (.menu-centered-text
+      text-align center
+      )
+     ((and .menu .menu-section-header)
+      display block
+      position relative
+      text-decoration none
+      white-space nowrap
+      )
+
+     ((and .menu .menu-section-header.menu-header)
+      color "#fff"
+      font-family "arial"
+      font-size 12px
+      font-weight bold
+      margin "0px 3px 3px 0px"
+      padding "3px 10px 3px 10px"
+      )
+     ((and .menu .menu-section-header.menu-subheader)
+      color "#000"
+      font-family "tahoma"
+      font-size 11px
+      font-weight bold
+      padding "3px 10px 4px 10px"
+      )
+     ((and .menu .menu-section-header.menu-subheader)
+      background "#f3f3ff"
+      )
+     ((and .menu (class menu-section-header.menu-subheader pseudo-class hover))
+      background "#fff"
+      )
+     ((and .menu .menu-section-header.menu-subheader.menu-active)
+      background "#fff"
+      )
+     ((and .menu .menu-arrow)
+      padding "3px 16px 4px 8px"
+      )
+     ((and .menu .menu-section-header.menu-subheader img)
+      border 0px
+      position absolute
+      right 1px
+      top 4px
+      )
+     ((and .menu .menu-section)
+      border-width 2px
+      border-style solid
+      border-color "#7f7fff"
+      position absolute
+      visibility hidden
+      z-index 500
+      )
+     ((and .menu .menu-empty)
+      font-style italic
+      )
+     ((and .menu.boxmenu .menu-section-header.menu-header)
+      color "#888"
+      font-size 8px
+      font-weight normal
+      margin 0px
+      padding 0px
+      )
+     ((and .menu.black .menu-section-header.menu-header)
+      background-color black
+      )
+     ((and .menu.green .menu-section-header.menu-header)
+      background-color "#3a5"
+      )
+     ((and .menu.blue .menu-section-header.menu-header)
+      background-color "#33a"
+      )
+     ((and .menu.red .menu-section-header.menu-header)
+      background-color "#a33"
+      )
+;;; Menu end
+
+;;; Popup Blocked Message begin
+     (.blocked-popup-message
+      text-align left
+      )
+     (.blocked-popup-title
+      font-weight bold
+      )
+;;; Popup Blocked Message end
+
+;;; Modal Popup Message begin
+     (.modal-popup
+      background "#fff"
+      border-style double
+      left 25%
+      line-height 100%
+      margin-left auto
+      margin-right auto
+      padding 20px
+      position absolute
+      width 60%
+      z-index 100000000
+      )
+     (.modal-popup-normal
+      font-family "'Courier New', Courier, monospace"
+      text-align right
+      )
+     (.modal-popup-error
+      )
+;;; Modal Popup Message end
+
+;;; JBML Structural begin
+     (.a-jbml
+      float left
+      margin 4px
+      )
+     (.box-jbml
+      background-color "#ffc"
+      padding 1pt
+      position relative
+      )
+     (.boxtext-jbml
+      border-style none
+      color inherit
+      font-family inherit
+      font-style inherit
+      font-weight inherit
+      text-decoration inherit
+      )
+     (.cr-jbml
+      clear left
+      height 0
+      line-height 0
+      )
+     (.icon-jbml
+      border-style none
+      border-width 0px
+      )
+     (.action-icon-jbml ;; Also .icon-jbml
+      margin 0px
+      position absolute
+      right 0px
+      top 0px
+      z-index 10
+      )
+     (.menu-menu-jbml
+      display inline
+      )
+     (.menu-title-jbml
+      border-style none
+      font-size xx-small
+      margin 1pt
+      )
+;;; JBML Structural end
+
+;;; JBML Top-Level begin
+     (.top-level-jbml
+      float left
+      position relative
+      display inline
+      )
+     (.top-level-edge
+      position absolute
+      )
+     (.top-level-horiz
+      height 4px ;; See .a-jbml margin
+      )
+     (.top-level-top
+      ;; Top Center to Top Left corner
+      left -4px		;; A
+      right 4px
+      top 0px		;; B
+      )
+     (.top-level-bottom
+      ;; Bottom Center to Bottom Right corner
+      bottom 0px	;; C
+      left 4px
+      right -4px	;; D
+      )
+     (.top-level-vert
+      width 8px ;; See .a-jbml margin x 2
+      )
+     (.top-level-left
+      ;; Left Center to Bottom Left corner
+      bottom 0px	;; C
+      left -4px		;; A
+      top 4px
+      )
+     (.top-level-right
+      ;; Right Center to Top Right corner
+      bottom 4px
+      right -4px	;; D
+      top 0px		;; B
+      )
+     (.top-level-hilight
+      left 3px
+      position absolute
+      width 2px
+      )
+     ((> .top-level-left .top-level-hilight)
+      bottom 4px
+      top 0px
+      )
+     ((> .top-level-right .top-level-hilight)
+      bottom 0px
+      top 4px
+      )
+;;; JBML Top-Level end
+
+;;; JBML begin (must come *AFTER* JBML Structural)
+;;; JBML border widths begin (must come *BEFORE* specifics)
+     (.jbml-thick
+      border-width thick
+      )
+     (.jbml-medium
+      border-width medium
+      )
+     (.jbml-thin
+      border-width thin
+      )
+;;; JBML border widths end
+;;; JBML border styles begin (must come *BEFORE* specifics)
+     (.jbml-solid
+      border-style solid
+      )
+     (.jbml-no-outline
+      border-style none
+      )
+     (.jbml-dotted
+      border-style dotted
+      )
+;;; JBML border styles end
+     ;; Collapse extra boxes
+     ((> .box-jbml.jbml-solid .box-jbml.jbml-no-outline)
+      margin 0px
+      border-width 0px
+      padding 0px
+      )
+     
+     (.jbml-dotdotdot
+      border-style none
+      )
+     
+     ((> .a-jbml input)
+      margin 3px
+      )      
+     
+     (.hilight-jbml
+      border-color red
+      border-style dotted
+      border-width 4px ;; See .a-jbml margin
+      margin 1px
+      )
+
+     (.jbml-exec-icon
+      )
+     (.jbml-close-icon
+      margin 0px
+      position absolute
+      right -3px
+      top -3px
+      )
+     (.jbml-go-icon
+      margin 0px
+      position absolute
+      right 14px
+      top -3px
+      )
+     (.jbml-menu-icon
+      )
+;;; JBML end
+
+;;; JBML Drag-N-Drop begin
+     ((and .dragging .contains-jbml (class drag-target pseudo-class hover))
+      border-color red
+      border-style double
+      border-width 4px ;; See .a-jbml margin
+      cursor crosshair
+      margin 1px
+      )
+;;;; JBML Top-Level DND hilight begin
+     ((and .dragging (> .top-level-jbml .top-level-edge))
+      cursor crosshair
+      )
+     ((and .dragging .contains-jbml.drag-forced)
+      cursor crosshair
+      )
+     ((and .dragging (> .top-level-jbml (class top-level-vert pseudo-class hover) .top-level-hilight))
+      background-color red
+      )
+     ((and .dragging (> .top-level-jbml (adjacent (class top-level-horiz pseudo-class hover) .top-level-vert) .top-level-hilight))
+      background-color red
+      )
+     ((and .dragging (> .top-level-jbml.dragged-after .top-level-right .top-level-hilight))
+      background-color red
+      )
+     ((and .dragging (> .top-level-jbml.dragged-before .top-level-left .top-level-hilight))
+      background-color red
+      )
+;;;; JBML Top-Level DND hilight end
+     ((and .dragging .drag-source)
+      opacity .5
+      filter "alpha(opacity=50)"
+      )
+     (.dragging
+      cursor move
+      -moz-user-select none
+      )
+     ((id drag-proxy)
+      opacity .5
+      filter "alpha(opacity=50)" ;; Must come after opacity
+      position absolute
+      )
+     ((> (id drag-proxy) *)
+      margin 0px
+      )
+;;; JBML Drag-N-Drop end
+
+     (.debug-workspace-dump
+      background-color white
+      border "black 1px dashed"
+      float left
+      margin 4px
+      padding 4px
+      text-align left
+      )
+
+;;; Unknown usage begin...
+;     (span 
+;      padding 1pt
+;      margin 2pt)
+
+     (div.labeled-hole
+      padding 3pt
+      text-align left
+      )
+
+     (.list
+      float left
+      font-family "Courier"
+      text-align left
+      )
+
+     (.symbol
+      float left
+      font-family "Courier"
+      font-weight bold
+      )
+
+     (div.value
+      float left
+      )
+
+     (.result 
+      float left
+      padding 3pt
+      margin 3pt
+      background "#ffffdd"
+      border "solid thin"
+      )
+
+     (.main-label
+      vertical-align middle
+      font-family "Courier"
+      float left
+      padding 3pt
+      )
+
+     (.label 
+      float left
+      font-family "Times-Roman"
+      font-size 10pt
+      )
+
+     (div.hole
+      float left
+      )
+
+     (div.mhole
+      float left
+      )
+
+     (.hole
+      padding 3pt
+      margin 3pt
+      border "solid thin"
+      )
+
+     (.mhole
+      padding 3pt
+      margin 3pt
+      border "solid thin"
+      )
+#|
+     ;; these boxes appear when moused over
+     (.helper
+      padding 3pt
+      margin 3pt
+      border "solid thin #fee"
+      )
+
+     (.helper-show
+      padding 3pt
+      margin 3pt
+      border "solid thin black"
+      background yellow
+      )
+|#
+     ;; these boxes are always visible and overlap
+     ;; the top left corner
+     (.helper
+      padding 3pt
+      float left
+      margin "-4pt 1pt 1pt -4pt"
+      border "solid thin black"
+      background yellow
+      )
+
+     (.helper-show
+      padding 3pt
+      border "solid thin black"
+      background yellow
+      float left
+      margin "-4pt 1pt 1pt -4pt"
+      )
+     
+     (.palette-item 
+      border "solid thin black"
+      padding 3pt
+      background  "#ddddff"
+      )
+
+     (.inserted-item 
+      float left
+      font-family "Courier"
+      text-align left
+      padding 3pt
+      margin 4pt
+      background "#ffddff"
+      border "solid thin"
+      )
+
+     (.show
+      z-index 10
+      visibility visible
+      )
+
+     (.hide
+      z-index -10
+      visibility hidden
+      )
+
+     (.popup
+      background lightcyan
+      position absolute
+      top 10px
+      left 10px
+      padding 1px
+      border "solid thin red"
+      )
+
+     (.menu-selected
+      color blue
+      background cyan
+      cursor pointer
+      )
+     
+     (.menu-unselected
+      color black
+      background lightcyan
+      )

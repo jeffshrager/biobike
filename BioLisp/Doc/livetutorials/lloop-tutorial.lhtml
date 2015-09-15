@@ -1,0 +1,99 @@
+;;; -*- Package: wb; mode: lisp; base: 10; Syntax: Common-Lisp; -*-
+
+(in-package :wb)
+
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+
+;;; Authors:  JP Massar, Mark Slupesky.  
+
+
+(defun html-for-live-lloop-tutorial (startup-link-function live?)
+  (html 
+   (:head
+    (:title "Introduction to Iteration, Loop, Mapcar and friends")
+    (:princ (make-javascript-for-live-tutorial))
+    ((:font :size 5)
+     (:center
+      (:b 
+       (:princ-safe 
+        "Introduction to Iteration, Loop, Mapcar and friends.")
+       :br
+       (when live?
+         (html
+          ((:font :color "green")
+           (:princ-safe "It's alive!!!  The Live Tutorial."))))))))
+   :br
+   (:body
+    ((:p :align "right") 
+     ((:font :size 3) 
+      (:princ-safe "Copyright (c) 2005 by The BioLingua Team")))
+    :p
+    (tutorial-instructions startup-link-function live?)
+    :hr
+    (:princ-safe 
+     (one-string-nl
+      "Lots of things you'll do with BioLingua involve"
+      "looping -- otherwise known as \"iteration\"."
+      "For instance, you might want to execute some"
+      "code for each organism in the current database,"
+      "or for each gene in an organism. Or perhaps you"
+      "want to do something over all organisms, over"
+      "all Contiguous Sequences in that organism,"
+      "over every other gene in that Contiguous sequence, etc"
+      ))
+    :p
+    (:princ-safe
+     (one-string-nl
+      "Lisp has a multitude of ways to express iteration."
+      "Here we'll show you simple examples of a few "
+      "different mechanisms, then concentrate on"
+      "Lisp's LOOP facility, which is a very powerful,"
+      "usually readable (if occasionally obscure),"
+      "iteration tool.  Then we'll demonstrate how"
+      "we use LOOP and other iteration constructs to"
+      "search for relevant frames."))
+    :p
+    (html-for-lloop-tutorial-1 :live? live?)
+    :p
+    (html-for-lloop-tutorial-2 :live? live?)
+    )))
+
+
+(defun html-for-lloop-tutorial-1 (&key (live? nil))
+  (description-live-action  
+   "A simple loop"
+   "(loop for j from 0 to 10 sum j)"
+   :live? live?))
+
+(defun html-for-lloop-tutorial-2 (&key (live? nil))
+  (description-live-action
+   (one-string-nl
+   "DOTIMES is good for numbers, but you have to use a \"collector\"" 
+   "variable (SUM, in the case) to get the result out.  Notice that"
+   "we use LET to make SUM local to this calculation.")
+   "(let ((sum 0))
+  (dotimes (j 11 sum) (incf sum j)))"
+   :live? live?))
+
+

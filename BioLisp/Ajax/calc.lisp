@@ -1,0 +1,35 @@
+(in-package :com.biobike.ajax)
+
+(defvar *result* 0)
+(defparameter *server-channel* nil)
+
+(register-message-handler :calc 'calc)
+
+(defun calc (channel message)
+  (format t "Received message: ~A~%" message)
+  (format t "Message type: ~A~%" (type-of (second message)))
+  (cond
+    ((string= (second message) "test")
+     (format t "Testing~%")
+     (setf *result* '(:stuff (:you "like") (:here "abc"))))
+    ((string= (second message) "add")
+     (format t "Adding~%")
+     (setf *result* (incf *result*)))
+    ((string= (second message) "sub")
+     (format t "Subbing~%")
+     (setf *result* (decf *result*)))
+    ((string= (second message) "mul")
+     (format t "Mulling~%")
+     (setf *result* (* *result* 2)))
+    ((string= (second message) "div")
+     (format t "Diving~%")
+     (setf *result* (/ *result* 2)))
+    ((string= (second message) "hello")
+     (format t "Saving server channel: ~A~%" channel)
+     (setf *server-channel* channel)))
+  (send channel (list :calc *result*)))
+
+(defun test-server-send (&optional (msg "hello from server!"))
+  (when *server-channel*
+    (format t "Sending message~%")
+    (send *server-channel* (list :calc msg))))

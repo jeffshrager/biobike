@@ -1,0 +1,835 @@
+<head>
+  <title>Simple Biological Natural Language Processing on PubMed</title>
+  <link rel="stylesheet" type="text/css" href="tutorial.css"/>
+</head>
+
+<p>
+
+<h2>
+Simple Biological Natural Language Processing on PubMed
+</h2>
+
+<p>
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+In this lesson we're going to see how one can extract complex
+biological relationship from biological literature, specifically, from
+PubMed abstracts. The idea is to write functions that automatically
+read the abstract and return regulatory relationships. Doing this
+"right" would require us to solve the ancient AI problem of "Natural
+Language Understanding", which hasn't been solved by anyone
+entirely. So we're not going to do it "right". Instead, we'll do what
+everyone does: throw various techniques at the problem and see what we
+can get out of it.
+
+<p>
+
+But before we can process PubMed abstracts, we need to get some of
+them. BioBike has a built-in interface to search pubmed. Since we're
+only going to do a small example here, we want to focus on some cases
+that we think as going to be interesting. Let's focus on the function
+of the p53 protein, which is a cell cycle checkpoing that is
+implicated in some cancers. We're interested in either p53 induction
+or things that p53 induces, so we'll start with a query that's likely
+to get us a focused set:
+
+<pre>
+ (set-timelimit 60) ; The pubmed query can take a little while.
+
+ (setq 100abs 
+   (mapcar #^abstracttext
+     (pubmed-query '("p53" "induces") 
+                   :RETURN-N 100))
+</pre>
+
+PUBMED-QUERY search pubmed for entries that have the indicated terms
+("p53" and "induces"), and returns result frames which have various
+fields: abstract, authors, etc. Since we only want the abstracts for
+now, we map over the results and just grab the abtsracttext slot.
+This, as I'm sure you noticed, resulted in a huge long list of strings
+of the abstract of these hundred papers. This set of strings will be
+our base set for the rest of this less.
+
+<p>
+
+Note that in what follows, you answers may vary slightly from those
+shown here because you might not get the exact same set of 100
+abstracts as I got just now while writing this tutorial. So just be
+aware that the outputs may look different. (Of course, eventually
+you'll want to try out your own queries, so the outputs <i>should</i>
+look different on those cases!)
+
+<p>
+
+Let's start out by figuring out what-all is in the dataset we have. By
+"what all" I mean, what common concepts are contained in the data. The
+concepts aren't just the words, but also are sets of words that form
+phrases. One thing that is always a problem in NLP is cleaning up the
+input -- especially getting rid of punctuation, and splitting up the
+strings at the right places. Let's write a function that does this for
+us. What it needs to do is, first, to replace all punctuation with
+spaces, and then split up the sentence at spaces, and then return
+anything that is a real word (that is, not just "" -- the empty
+string). And while we're at it, let's turn everything into lower case.
+Here's that function:
+
+<pre>
+ (defun break-up-sentence (sentence)
+   ;; Clean out random punctuation:
+   (loop for punc across ",-.;:?!()\/"
+         do (setq sentence
+                  (substitute #\space punc sentence)))
+   ;; Now break up into pieces and return anything with content:
+   (loop for word in (string-split sentence)
+         when (> (length word) 0)
+         collect (string-downcase word))
+   )
+
+;;; Let's try it out:
+
+ (setq spain-rain
+  (break-up-sentence "The rain in Spain ... or is it the snow? Who knows!"))
+:: ("the" "rain" "in" "spain" "or" "is" "it" "the" "snow" "who" "knows")
+</pre>
+
+Notice that there's no punctuation nor empty strings, and everything
+is in lower case. Great, let's apply this to our abstracts:
+
+<pre>
+>> (setq 100abs (mapcar #'break-up-sentence (remove-if-not #'stringp 100abs)))
+
+;;; [The remove-if-not is there because sometimes there's no abstract,
+;;;  or the abstract is weird, like a single number.]
+</pre>
+
+<p>
+
+Now let count phrases of length N, where we'll do N of 1, 2, 3,
+etc. (called "n-tuples", but we'll call them "n-phrases") To count
+n-phrases we'll make a hash table for them:
+
+<pre>
+>> (defvar *n-phrase->count* (make-hash-table :test #'equal))
+</pre>
+
+Next we need a function that will collect up all the phrases in a
+sentence that are a given length from an abstract. This is a tiny bit
+trick because you have to end before the end of the sentence:
+
+<pre>
+ (defun all-n-phrases (n words)
+   (loop for words+ on words
+         until (null (nthcdr (1- n) words+))
+         collect (loop for i below n
+                       as word in words+
+                       collect word)))
+
+;;; And we'll test it on our sentence from above:
+
+>> (all-n-phrases 1 spain-rain)
+:: (("the") ("rain") ("in") ("spain") ("or") ("is") ("it") ("the")
+    ("snow") ("who") ("knows"))
+>> (all-n-phrases 2 spain-rain)
+:: (("the" "rain") ("rain" "in") ("in" "spain") ("spain" "or") ("or" "is")
+    ("is" "it") ("it" "the") ("the" "snow") ("snow" "who") ("who" "knows"))
+>> (all-n-phrases 3 spain-rain)
+:: (("the" "rain" "in") ("rain" "in" "spain") ("in" "spain" "or")
+    ("spain" "or" "is") ("or" "is" "it") ("is" "it" "the")
+    ("it" "the" "snow") ("the" "snow" "who") ("snow" "who" "knows"))
+</pre>
+
+Perfect! Notice that the 1-tuples (1-phrases) are just lists of the
+words themselves, and that the 2- and 3- (etc.) phrases overlap one
+another. This is what we want because we're interesting in every
+subphrase.
+
+<p>
+
+Now we need a function to count up the phrases -- that is, to add them
+to table with a count of 1 if they aren't there already, and if they
+are there already, increment the count:
+
+<pre>
+ (defun count-n-phrase (phrase)
+   (if (gethash phrase *n-phrase->count*)
+     (incf (gethash phrase *n-phrase->count*))
+     (setf (gethash phrase *n-phrase->count*) 1)))
+</pre>
+
+Now all we need to do is to run this for the counts we want:
+
+<pre>
+ (defun phrase-count (ns abstracts)
+   (clrhash *n-phrase->count*)
+   (loop for abstract in abstracts
+         do (loop for n in ns
+                  do (loop for n-phrase in (all-n-phrases n abstract)
+                           do (count-n-phrase n-phrase)))))
+
+;;; Ready???
+
+>> (phrase-count '(1 2 3 4 5) 100abs)
+:: NIL
+
+;;; Hmmm. That was pretty unexciting. Let's see whether anything got
+;;; stored in our table:
+
+>> (showhash *n-phrase->count*)
+("have" "indicated") 1
+("chemopreventive" "agent") 1
+("completely" "abolished") 1
+("percutaneous" "transluminal" "coronary") 1
+("resting") 1
+("summit" "and") 1
+("damage" "through" "the" "phosphorylation" "of") 1
+("all" "produced" "concentration" "dependent" "suppression") 1
+("53bp2s" "mediated") 3
+("13q12" "3" "with" "the") 1
+</pre>
+
+Indeed, it looks like it worked! Let's write sort the
+phrases by count rank order:
+
+<pre>
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               collect (list count phrase))
+         #'>
+         :key #'first))
+
+((996 ("of")) (899 ("the")) (706 ("in")) (706 ("and")) (361 ("to"))
+ (320 ("p53")) (319 ("a")) (269 ("that")) (266 ("cells")) (241 ("by"))
+ (238 ("cell")) (213 ("apoptosis")) (201 ("is")) (201 ("with"))
+ (142 ("we")) (140 ("was")) (138 ("induced")) (129 ("of" "the"))
+ (124 ("expression")) (121 ("as")) (120 ("in" "the")) (114 ("dna"))
+ (103 ("for")) (91 ("not")) (90 ("protein")) (89 ("2")) (87 ("cancer"))
+ (83 ("activation")) (82 ("tumor")) (82 ("on")) (81 ("1"))
+ (80 ("this")) (79 ("induces")) (79 ("or")) (78 ("caspase"))
+ (78 ("an")) (72 ("of" "p53")) (69 ("human")) (69 ("these"))
+ (69 ("dependent")) (67 ("were")) (65 ("which")) (64 ("be"))
+ (64 ("death")) (63 ("growth")) (59 ("cycle")) (59 ("expression" "of"))
+ (59 ("cell" "cycle")) (58 ("activity")) (57 ("results"))
+ (55 ("apoptotic")) (53 ("damage")) (52 ("gene"))
+ (52 ("apoptosis" "in")) (51 ("are")) (51 ("activation" "of"))
+ ...
+</pre>
+
+Aha! Our first result! A few things are worth notice here. First off,
+there are a bunch of very high count words that are obviously useless:
+"of", "the", etc. although not <i>all</i> such words are useless: (87
+("cancer")), (55 ("apoptotic")), and some interesting phrases are
+recognizable, for example: (59 ("cell" "cycle")).  Let's try sorting
+it the other way 'round:
+
+<pre>
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               collect (list count phrase))
+         #'<
+         :key #'first))
+
+((1 ("have" "indicated")) (1 ("chemopreventive" "agent"))
+ (1 ("completely" "abolished"))
+ (1 ("percutaneous" "transluminal" "coronary")) (1 ("resting"))
+ (1 ("summit" "and"))
+ (1 ("damage" "through" "the" "phosphorylation" "of"))
+ (1 ("all" "produced" "concentration" "dependent" "suppression"))
+ (1 ("13q12" "3" "with" "the"))
+ (1 ("recently" "identified" "aldehyde" "originating" "from"))
+ (1 ("using" "an" "exclusion" "dye"))
+ (1 ("abolished" "by" "injection" "of" "a"))
+ (1 ("prostate" "colon" "and")) (1 ("the" "safety" "and" "activity"))
+ (1 ("it" "has" "been")) (1 ("cell" "lines" "exposed" "to" "hypoxia"))
+ (1 ("as" "well" "as" "healthy" "subjects"))
+ (1 ("a" "novel" "class" "of" "p53")) (1 ("this" "enzyme"))
+ (1 ("was" "significantly" "phosphorylated" "when" "human"))
+ ...
+</pre>
+
+Hmmmm. Again, some of these are useful and some aren't. As a first
+approximation, let's filter out any phrase that has obviously useless
+words in it. We can use the sorted list above to make up that list of
+words, called "stop words":
+
+<pre>
+ (defparameter *stop-words* '("of" "the" "in" "and" "to"
+   "a" "that" "by" "is" "with" "we" "was" "as" "for" "this" "or" "an"
+    "were" "which" "be" "are"))
+
+;;; Let's just drop these from our abstracts:
+
+ (setq 100abs 
+   (mapcar #'(lambda (sent) 
+               (loop for word in sent
+                     unless (member word *stop-words* :test #'string-equal)
+                     collect word))
+           100abs))
+
+;;; And we'll try again from the top:
+
+ (phrase-count '(1 2 3 4 5) 100abs)
+
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               collect (list count phrase))
+         #'>
+         :key #'first))
+
+
+((320 ("p53")) (266 ("cells")) (238 ("cell")) (213 ("apoptosis"))
+ (138 ("induced")) (124 ("expression")) (114 ("dna")) (91 ("not"))
+ (90 ("protein")) (89 ("2")) (87 ("cancer")) (83 ("activation"))
+ (82 ("tumor")) (82 ("on")) (81 ("1")) (79 ("induces"))
+ (78 ("caspase")) (69 ("human")) (69 ("these")) (69 ("dependent"))
+ (64 ("death")) (63 ("growth")) (59 ("cycle")) (59 ("cell" "cycle"))
+ (58 ("activity")) (57 ("results")) (55 ("apoptotic")) (53 ("damage"))
+ (52 ("gene")) (50 ("at")) (50 ("but")) (50 ("dna" "damage"))
+ (50 ("may")) (49 ("treatment")) (49 ("levels")) (49 ("also"))
+ (48 ("induction")) (47 ("from")) (46 ("induced" "apoptosis"))
+ (45 ("c")) (43 ("type")) (43 ("has")) (43 ("both"))
+ (41 ("cell" "death")) (41 ("can")) (40 ("kinase"))
+ (40 ("transcription")) (40 ("3")) (40 ("pathway")) (40 ("increased"))
+ (39 ("mediated")) (37 ("proliferation")) (37 ("phosphorylation"))
+ (37 ("been")) (36 ("senescence")) (35 ("effect")) (35 ("arrest"))
+ ...
+
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               collect (list count phrase))
+         #'<
+         :key #'first))
+
+((1 ("have" "indicated")) (1 ("chemopreventive" "agent"))
+ (1 ("(0" "4" "mg/ml)" "induced" "apoptosis"))
+ (1 ("metabolites" "13(s)" "hydroxyoctadecadienoic" "acid" "15(s)"))
+ (1 ("completely" "abolished"))
+ (1 ("percutaneous" "transluminal" "coronary")) (1 ("resting"))
+ (1 ("cancer" "dose" "form" "selenium" "determining"))
+ (1 ("agent" "these" "vitro"))
+ (1 ("all" "produced" "concentration" "dependent" "suppression"))
+ (1 ("expression" "p53" "induced"))
+ (1
+  ("benzo[a]pyrene" "investigate" "whether" "transformation"
+   "phenotypes"))
+ (1 ("surface" "protein" "expression" "p53" "independent"))
+ ...
+
+</pre>
+
+Hmmm. That's a little better. Maybe 1 word phrases are all that
+interesting, and maybe neither are 5 word phrases. Let's try just 3
+and 4 word phrases:
+
+<pre>
+ (phrase-count '(3 4) 100abs)
+
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               collect (list count phrase))
+         #'>
+         :key #'first))
+
+((15 ("wild" "type" "p53")) (15 ("cell" "cycle" "progression"))
+ (14 ("cell" "cycle" "arrest")) (13 ("15" "lox" "1"))
+ (9 ("apoptotic" "cell" "death")) (8 ("phase" "cell" "cycle"))
+ (8 ("induced" "cell" "death")) (8 ("colon" "cancer" "cells"))
+ (8 ("cytochrome" "c" "release")) (7 ("doi" "10" "1038/sj"))
+ (7 ("advance" "online" "publication")) (7 ("after" "dna" "damage"))
+ (7 ("2005" "doi" "10")) (7 ("2005" "doi" "10" "1038/sj"))
+ (7 ("p53" "expressing" "cells")) (7 ("p53" "tumor" "suppressor"))
+ (6 ("upregulation" "cox" "2")) (6 ("response" "dna" "damage"))
+ (6 ("trail" "induced" "apoptosis")) (6 ("cox" "2" "expression"))
+ (6 ("mitochondrial" "membrane" "potential"))
+ (6 ("cells" "treated" "e(2)")) (5 ("treated" "e(2)" "4" "ohe(2)"))
+ (5 ("<" "=" "0")) (5 ("(p" "<" "=")) (5 ("wiley" "liss" "inc"))
+ (5 ("cyclin" "dependent" "kinase")) (5 ("no" "induced" "apoptosis"))
+ ...
+</pre>
+
+Aha! That's a little more intersting. Let's explore this a little by
+writing a function to ask about specific phrases, or ones with
+specific words in them:
+
+<pre>
+ (defun word-phrases (word)
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               when (member word phrase :test #'string-equal)
+               collect (list count phrase))
+         #'>
+         :key #'first))
+
+>> (word-phrases "p53")
+
+((15 ("wild" "type" "p53")) (7 ("p53" "expressing" "cells"))
+ (7 ("p53" "tumor" "suppressor")) (5 ("tumor" "suppressor" "p53"))
+ (4 ("p53" "dependent" "apoptosis")) (3 ("p53" "mediated" "apoptosis"))
+ (3 ("left" "ventricular" "p53"))
+ (3 ("p53" "tumor" "suppressor" "gene"))
+ (3 ("mutant" "p53" "expressing"))
+ (3 ("phosphorylation" "p53" "at" "ser15"))
+ (3 ("wt" "p53" "expressing")) (3 ("phosphorylation" "p53" "at"))
+ ...
+
+>> (word-phrases "induces")
+
+((5 ("dna" "damage" "induces")) (2 ("induces" "apoptotic" "cell"))
+ (2 ("induces" "growth" "arrest")) (2 ("induces" "apoptosis" "cell"))
+ (2 ("induces" "htert" "expression"))
+ (2 ("proliferation" "induces" "apoptosis"))
+ (2 ("induces" "dna" "damage"))
+ (2 ("induces" "apoptotic" "cell" "death"))
+ (2 ("induces" "apoptosis" "caspase")) (1 ("ssx1" "induces" "cki"))
+ (1 ("induces" "expressions" "p19" "p21"))
+
+>> (word-phrases "suppresses")
+
+((1 ("proliferation" "suppresses" "apoptosis"))
+ (1 ("contrast" "nucleolin" "overexpression" "suppresses"))
+ (1 ("suppresses" "p53" "translation"))
+ (1 ("suppresses" "apoptosis" "leading" "epidermal"))
+ (1 ("keratinocyte" "proliferation" "suppresses"))
+ (1 ("nucleolin" "overexpression" "suppresses" "p53"))
+ (1 ("overexpression" "suppresses" "p53"))
+ (1 ("suppresses" "p53" "translation" "induction"))
+ (1 ("augments" "keratinocyte" "proliferation" "suppresses"))
+ (1 ("nucleolin" "overexpression" "suppresses"))
+ (1 ("keratinocyte" "proliferation" "suppresses" "apoptosis"))
+ (1 ("overexpression" "suppresses" "p53" "translation"))
+ (1 ("proliferation" "suppresses" "apoptosis" "leading"))
+ (1 ("suppresses" "apoptosis" "leading")))
+
+
+</pre>
+
+There are many interesting subphrases among the above, for example:
+("nucleolin" "overexpression" "suppresses" "p53"),
+("ssx1" "induces" "cki"), and ("induces" "expressions" "p19"
+"p21")....  [presumably we lost an "of" and an "and" in the last one.]
+
+<p>
+
+So it looks like we could try to focus our parsing on verb phrase
+forms like "something INDUCES something" or "something SUPPRESSES
+something", but the "somethings" on each side have to be of various
+lengths on order to make any sense. The problem is that phrases in
+biology can take on various word lengths ranging from simple words
+like "p53" to complex phrases like "p53 tumor suppressor gene" -- but
+how will be know when we have which kind of thing?! It's not clear
+that this counting-things approach is going to get us there
+alone. Let's try something a little more clever.
+
+<p>
+
+Really what we're after is grammatical forms that look like:
+
+<pre>
+  noun-phrase verb noun-phrase
+</pre>
+
+Now, it should be obvious that in order to make this work we need to
+know what part of speech each word has (noun versus verb) This is
+usually the realm of a dictionary. For the time being, however, we're
+just going to assign parts of speech to the words that we know to be
+verbs, and assume that everything else is a noun for now.  Let's
+define some verbs:
+
+<pre>
+  (defparameter *verbs* '("induce" "induces" "induced" ...
+</pre>
+
+Whoa! Wait a minute! Why do we have to put all of these in? Aren't
+they all just different forms of the same verb?!  Well, sure, but this
+is a second major issue in "real" natural language processing,
+sometimes called "morphological analysis", and we're not going to work
+on it at the moment. Suffice to say that it's not easy to decide, for
+example, wheras it might be easy to know that "dogs" is the plural of
+"dog", how do we know that "geese" is the plural of "goose" without
+<i>just knowing</i>?  That there are worse cases! So take it for now
+that we're going to have to put in every version of every word we want
+to have understood.  Now where were we.... Oh yes:
+
+<pre>
+ (defparameter *verbs* '("induce" "induces" "induced" 
+     "express" "expresses" "expressed"
+     "suppress" "suppresses" "suppressed"))
+</pre>
+
+Okay, that'll do for now.  So everything else is considered a
+noun. How about noun phrases; is any old sequence of nouns going to
+be acceptable? 
+
+<p>
+
+Let's restrict our nps to those that appear in our *n-phrase->count*
+table with more than some set number of appearances. Since we can
+build that table with any specific length of phrase, and excluding any
+word we like (the stop words) we can pretty carefully specify what we
+want to include as a noun phrase (np). Here's the final function to
+fill the table with just the nps we want:
+
+<pre>
+ (defun phrase-count (ns excluded-words count-limit abstracts)
+   (clrhash *n-phrase->count*)
+   (loop for abstract in abstracts
+         do (loop for n in ns
+                  do (loop for n-phrase in (all-n-phrases n abstract)
+                           unless (intersection n-phrase excluded-words
+                                     :test #'string-equal)
+                           do (count-n-phrase n-phrase))))
+   (loop for count being the hash-values of *n-phrase->count*
+         using (hash-key phrase)
+         when (< count count-limit)
+         do (remhash phrase *n-phrase->count*)))
+
+;;; Let's try it:
+
+ (phrase-count '(2 3 4) *verbs* 4 100abs)
+
+   (sort (loop for count being the hash-value of *n-phrase->count*
+               using (hash-key phrase)
+               collect (list count phrase))
+         #'>
+         :key #'first))
+
+((59 ("cell" "cycle")) (50 ("dna" "damage")) (41 ("cell" "death"))
+ (33 ("wild" "type")) (26 ("cell" "lines")) (24 ("cancer" "cells"))
+ (23 ("tumor" "suppressor")) (22 ("bcl" "2")) (21 ("but" "not"))
+ (19 ("did" "not")) (19 ("colon" "cancer")) (19 ("has" "been"))
+ (18 ("these" "results")) (17 ("tumor" "cells")) (17 ("caspase" "8"))
+ (16 ("caspase" "3")) (16 ("cell" "growth")) (15 ("wild" "type" "p53"))
+ (15 ("cell" "cycle" "progression")) (15 ("caspase" "2"))
+ (15 ("cycle" "progression")) (15 ("type" "p53")) (14 ("15" "lox"))
+ (14 ("cyclin" "d1")) (14 ("cycle" "arrest")) (14 ("cell" "line"))
+ (14 ("p53" "dependent")) (14 ("cell" "cycle" "arrest"))
+ ...
+</pre>
+
+That looks pretty nice. (There are some more stop words we should have
+excluded, like "but" and "these", but overall this looks like a pretty
+useable noun phrase list!)
+
+<p>
+
+So now all that we need to do is to write the code that parse the
+sentences. In a minute we'll get into a more complex parse, but for
+now all we need to do it to look for the pattern: (...noun-phrase verb
+noun-phrase...).
+
+<p>
+
+Let's start by defining functions to tell us whether a list of words
+is either a noun phrase or a verb phrase:
+
+<pre>
+ (defun np? (phrase)
+  (gethash phrase *n-phrase->count*))
+
+;;; and:
+
+ (defun vp? (phrase)
+   (and (= 1 (length phrase))
+        (member (first phrase) *verbs* :test #'string-equal)))
+</pre>
+
+Now all we need to do is to parse up the sentence into series of
+possible divisions, and ask for each one whether it's of the right
+form (noun-phrase verb noun-phrase).  The function that's going to do
+the asking is this one -- we'll pass it what we think is an np, and
+then what we think is a vp and then what we think is the second np:
+
+<pre>
+ (defun np-v-np? (np1 vp np2)
+   (and (np? np1) (vp? vp) (np? np2)))
+</pre>
+
+But what are we going to pass it? Well, given any number of words, we
+want all possible ways of breaking the words into triples. That's very
+slightly tricky; well do it with two positional counters:
+
+<pre>
+ (defun break-into-triples (words)
+   (loop for p1 from 1 to (- (length words) 1)
+         append (loop for p2 from (1+ p1) to (- (length words) 1)
+                      collect 
+                      (list (subseq words 0 p1)
+                            (subseq words p1 p2)
+                            (subseq words p2)))))
+                 
+
+>> (pprint (break-into-triples '(a b c d e f g h)))
+:: 
+(((A) (B) (C D E F G H)) ((A) (B C) (D E F G H))
+ ((A) (B C D) (E F G H)) ((A) (B C D E) (F G H))
+ ((A) (B C D E F) (G H)) ((A) (B C D E F G) (H))
+ ((A B) (C) (D E F G H)) ((A B) (C D) (E F G H))
+ ((A B) (C D E) (F G H)) ((A B) (C D E F) (G H))
+ ((A B) (C D E F G) (H)) ((A B C) (D) (E F G H))
+ ((A B C) (D E) (F G H)) ((A B C) (D E F) (G H))
+ ((A B C) (D E F G) (H)) ((A B C D) (E) (F G H))
+ ((A B C D) (E F) (G H)) ((A B C D) (E F G) (H))
+ ((A B C D E) (F) (G H)) ((A B C D E) (F G) (H))
+ ((A B C D E F) (G) (H)))
+</pre>
+
+Cool; Worked right out of the box! But, hmmmm. Actually, this is far
+more complex than it really needs to be because we know that a verb
+can only be a single word.  In fact, this is going to give us a
+<i>huge</i> number of obviously impossible sequences... and
+<i>huge</i> may be an understatement. Watch how many possibilities there
+are for a 100 word abstract:
+
+<pre>
+ (length (break-into-triples (loop for i from 1 to 100 collect i)))
+:: 4851
+</pre>
+
+Whoa! All we really need is the ones with one word in the middle:
+
+<pre>
+ (defun break-into-triples (words)
+  (loop for position from 1 to (- (length words) 2)
+        collect (list (subseq words 0 position) 
+                      (list (nth position words))
+                      (subseq words (1+ position)))))
+
+>> (pprint (break-into-triples '(a b c d e f g h)))
+:: 
+(((A) (B) (C D E F G H)) ((A B) (C) (D E F G H))
+ ((A B C) (D) (E F G H)) ((A B C D) (E) (F G H))
+ ((A B C D E) (F) (G H)) ((A B C D E F) (G) (H)))
+
+>> (length (break-into-triples (loop for i from 1 to 100 collect i)))
+:: 98
+</pre>
+
+Ahhhh. Much simpler ... and more importantly: <i>MUCH shorter!</i>
+That should speed things up substantially!
+
+<p>
+
+(Note that if this gets a list of words less than three long, I don't
+know what it'll do; I think it'll return a nil, but, technically, its
+behavior in that case is called "undefined"!)
+
+<p>
+
+Next we want to collect every reasonable-length sequence from the
+input sentence (one of the abstracts). That's also easy; n can only be
+up to 9 (4 + 1 + 4), and no smaller than 5 (2 + 1 + 2). Turns out we
+already have that function, way way above we wrote:
+ALL-N-PHRASES. Here it is again:
+
+<pre>
+ (defun all-n-phrases (n words)
+   (loop for words+ on words
+         until (null (nthcdr (1- n) words+))
+         collect (loop for i below n
+                       as word in words+
+                       collect word)))
+
+;;; Let's try it:
+
+>> (all-n-phrases 3 '(a b c d e f g h))
+:: ((A B C) (B C D) (C D E) (D E F) (E F G) (F G H))
+</pre>
+
+Do the outer loop that takes all phrases of 5, 6, 7, 8, and 9, breaks
+them into triples, and tries each one looks like this:
+
+<pre>
+ (defun parse-as-np-vp-np (words)
+   (loop for n from 5 to 9
+         append
+         (loop for phrase in (all-n-phrases n words)
+               append
+               (loop for (np1 vp np2) in (break-into-triples phrase)
+                     when (np-v-np? np1 vp np2)
+                     collect phrase))))
+</pre>
+
+Okay. We should be ready to do the wild thing... Do we dare? Oh what
+the heck:
+
+<pre>
+ (loop for abs in 100abs
+       append (parse-as-np-vp-np abs))
+
+[...long pause while it searches a HUGE number of possible phrases...]
+
+(("cancer" "cells" "express" "low" "levels")
+ ("tj" "135" "induced" "hsc" "apoptosis")
+ ("k" "bzip" "induce" "p53" "p21")
+ ("cell" "growth" "induced" "apoptotic" "cell")
+ ("cell" "growth" "induced" "apoptotic" "cell" "death")
+ ("dna" "damage" "induces" "atm" "dependent")
+ ("syt" "ssx1" "induced" "transcriptional" "activity")
+ ("syt" "ssx1" "suppressed" "cell" "growth")
+ ("cpd" "5" "induced" "apoptosis" "human")
+ )
+</pre>
+
+Wow! That's actually pretty neat... we found a set of actually
+sensible results. Some are clearly a little off, like "cancer cells
+express low levels" (of what?!), but others actually seem to make
+significant sense, like: "tj 135 induced hsc apoptosis", "cell growth
+induced apoptotic cell death", and "syt ssx1 suppressed cell growth"
+(as well as, we note "induced transcriptional activity"). If we were
+to add more verbs and refine our sense of what counts as a noun
+phrase, we might be able to extract a great deal of reasonable
+information from the literature abstracts in this fairly simple-minded
+way.
+
+<p>
+
+This lesson has got a bit long-winded, so were going to take a break
+and come back in a later lesson to do somewhat more refined BioNLP,
+but we note that in just a few lines of code we've managed go from raw
+pubmed abstracts to a set of fairly plausible analyses. For fun, let's
+wrap it all up in a bundle and try it on something new:
+
+<pre>
+ (defun pubmed-parse (query n-abstracts-to-analyze)
+   (let ((abstracts 
+          (mapcar #'(lambda (sent) 
+                      (loop for word in sent
+                            unless (member word *stop-words* 
+                                           :test #'string-equal)
+                            collect word))
+            (mapcar #'break-up-sentence 
+             (remove-if-not #'stringp
+               (mapcar #^abstracttext
+                 (pubmed-query query
+                   :RETURN-N n-abstracts-to-analyze)))))))
+     (clrhash *n-phrase->count*)
+     (phrase-count '(2 3 4) *verbs* 4 abstracts)
+     (loop for abs in abstracts
+           append (parse-as-np-vp-np abs))))
+
+;;; Darest we try it out???
+
+>> (pubmed-parse '("p53" "induces") 30)  ; Just do 30 to speed up a little
+:: 
+(("cancer" "cells" "express" "low" "levels")
+ ("tj" "135" "induced" "hsc" "apoptosis"))
+
+;;; Tada! Let's add some more verbs and try some others:
+
+<pre>
+ (defparameter *verbs* '("induce" "induces" "induced" 
+     "express" "expresses" "expressed"
+     "suppress" "suppresses" "suppressed"
+     "regulate" "regulates" "regulated"
+     "activate" "activates" "activated"
+     "inhibit" "inhibits" "inhibited"
+     ))
+
+>> (pubmed-parse '("dcmu" "inhibits") 60)
+:: 
+(("did" "not" "inhibit" "electron" "transport")
+ ("thylakoid" "membrane" "activates" "translation" "elongation")
+ ("photosystem" "ii" "induce" "delta" "ph")
+ ("1" "dimethylurea" "inhibits" "red" "light")
+ ("1" "1" "dimethylurea" "inhibits" "red" "light")
+ ("dichlorophenyl)" "1" "1" "dimethylurea" "inhibits" "red" "light"))
+
+;;; And if we want to get a general sense of what's hot:
+
+>> (pubmed-parse '("activates" "inhibits") 60)
+:: 
+(("transcription" "factor" "activates" "cell" "cycle")
+ ("trx" "1" "activates" "nf" "kappab")
+ ("mll" "af4" "induced" "cell" "lines")
+ ("mmp" "2" "inhibits" "beta" "ar")
+ ("inhibition" "mmp" "2" "inhibits" "beta" "ar")
+ ("mmp" "2" "inhibits" "beta" "ar" "stimulated")
+ ("inhibition" "mmp" "2" "inhibits" "beta" "ar" "stimulated")
+ ("glucose" "transport" "activated" "alpha" "pgg"))
+
+>> (pubmed-parse '("stem" "cell" "cycle") 60)
+:: 
+ ("cancer" "cells" "induced" "cell" "cycle" "arrest"))
+
+</pre>
+
+Now, you might well ask: "So what? What's this do for me?" Well, now
+that we have this tool that lets us look for common relationships in
+PubMed, let's so a little exploring. Recall the tutorial on regulatory
+simulation. Here's the picture from <a
+href=http://www.pnas.org/cgi/content/abstract/0305937101v1
+target=_blank>Li, et al. (2004) The yeast cell-cycle network is
+robustly designed. PNAS, 101(14), 4781-4786</a>:
+
+<p>
+<img src=http://nostoc.stanford.edu/Docs/livetutorials/jssymbiolietalfig1b.jpg>
+<p>
+
+Li et al. did a great deal of literature search to figure out this
+graph. Let's see if, using our new tools, we could have saved them
+some time. 
+
+<p>
+
+It looks like clb1 and clb2 are central to Li's model. Let's look up
+their relationships:
+
+<pre>
+>> (pubmed-parse '("clb1" "clb2") 60)
+:: 
+(("cell" "cycle" "regulated" "promoter" "activation")
+ ("cell" "cycle" "regulated" "cyclin" "dependent")
+ ("cln1" "cln2" "expressed" "g1" "s")
+ ("clb1" "clb2" "expressed" "g2" "m"))
+</pre>
+
+Lo and behold! Another piece of the same model: ("cln1" "cln2"
+"expressed" "g1" "s")! Hmmmm. Also "cyclin" is prominent; let's follow
+that up too:
+
+<pre>
+>> (pubmed-parse '("clb1" "cyclin") 60)
+:: 
+(("cell" "cycle" "regulated" "promoter" "activation")
+ ("cell" "cycle" "regulated" "cyclin" "dependent")
+ ("cln1" "cln2" "expressed" "g1" "s")
+ ("clb1" "clb2" "expressed" "g2" "m")
+ ("clb1" "clb2" "expressed" "g2" "m" "phases"))
+</pre>
+
+Yet another piece of the model: ("clb1" "clb2" "expressed" "g2" "m"
+"phases")). Let's try a different part:
+
+<pre>
+>> (pubmed-parse '("cyclin" "cdc2") 60)
+:: 
+(("nf" "y" "regulated" "cell" "cycle")
+ ("cyclin" "b" "induced" "s" "phase")
+ ("cell" "proliferation" "induced" "cell" "death")
+ ("silymarin" "silibinin" "induced" "g2" "m")
+ ("cell" "growth" "induced" "cell" "cycle"))
+</pre>
+
+Wow, we even found the very top node: ("cell" "growth" "induced"
+"cell" "cycle")!
+
+<p>
+
+This isn't to suggest that could do this automatically... Hmmmm. Or
+does it? What if we kept a record of the "factoids" (these little
+phrases) that we are discovered, just like we kept a record of the
+n-phrases above, and scanned pubmed over and over, using the same
+technology we just developed for every word that we come across that
+look like the name of an agent (maybe we could identify these by
+whether they have numbers, like "cdc20" etc), until we run out of new
+non-words. Would we end up with and entire theory of the cell?????
+
+<p>
+
+Exercise for the student!
+
+<p><hr><p>
+
+<i>Copyright 2002-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+

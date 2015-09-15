@@ -1,0 +1,253 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001, 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+
+
+              CREATING A LIBRARY MODULE AND HAVING IT INCLUDED 
+                     IN THE BIOWEBLISTENER SOFTWARE.
+
+
+Step 1.
+
+Create a file and put your code in it.
+
+It should probably be in the BIOLISP package, that is, it should
+probably have
+
+(in-package :biolisp)
+
+at the very top of the file.
+
+It should also have your name and a date, and a short
+description of what the purpose of the code is, as comments, 
+just below the IN-PACKAGE form.  The rest, as they say, is up to you.
+
+
+Step 2.
+
+Make sure your file compiles without any warnings.
+
+Files that generate compiler warnings will be summarily excised from
+the library.
+
+If you are on Unix and you have a file called foo.lisp in your home
+directory, then after starting up Lisp and loading in the BioLisp or
+BioWeblistener software (via bioload.lisp or webload.lisp,
+respectively, in /usr/local/BioLisp), type
+
+> (load (compile-file "~/foo.lisp"))
+
+If you see warning messages then you must fix your code so that the
+compiler does not produce them any more.  (This can be an art; we
+will not go into that here...)
+
+Note: It is in certain cases NOT enough to insure that no warnings are
+produced by a recompilation after you have edited your code.  In fact
+you need to insure that no warnings come up when you compile 'from
+scratch'.
+
+This is because if you do
+
+> (load (compile-file "~/foo.lisp"))
+
+and get some warnings, and then immediately do
+
+> (load (compile-file "~/foo.lisp"))
+
+again, it is possible to get less warnings or none at all.
+
+So in the worst case scenario you need to kill the Lisp and start it
+up again and compile again to make sure all the warnings have 
+disappeared.
+
+Note: there is method to this madness: when we do a recompile of the
+entire system from scratch, we want to be able to identify any
+problems with the system easily.  Having compilations normally spew
+out lots of warning messages makes it impossible to distinguish the
+real problems from the spew.  So to make it as easy as possible, we
+insist that the system compile from scratch with zero warnings.
+
+
+Step 3.
+
+Write some tests for your code.
+
+Tests are very easy to write.  A simple testing system is built into
+the BioLisp software (see the ...BioLisp/Testing/ directory).
+
+Let's take a nice simple example.
+
+Suppose you decide to write some code and you give it a name MY-MODULE.
+
+MY-MODULE consists of two functions, IOTA, and EVERY-OTHER.
+
+(IOTA n) returns a list of the first N integers, starting with 0.
+
+EVERY-OTHER (list) returns every other element of a list.
+
+-----------
+
+(in-package :biolisp)
+
+(defun iota (n) (loop for j from 0 below n collect j))
+
+(defun every-other (list)
+  (let ((count 0))
+   (mapcan
+    #'(lambda (x) (incf count) (when (evenp count) (list x)))
+    list)))
+
+-----------
+
+;; Now let's write a couple tests for IOTA.
+
+(deftest iota-1 (iota 1) '(0) :comparison #'equal :chapter :my-module)
+(deftest iota-2 (iota 5) '(0 1 2 3 4) :comparison #'equal :chapter :my-module)
+
+The first argument to the DEFTEST macro is the NAME of the test.
+(Usually this is the name of the function you are testing combined with
+some suffix to distinguish it from other tests that test the same
+function.  Here we just use -1 and -2).
+
+The second argument is a form to be evaluated, presumably it calls the
+function you want to test.
+
+The third argument is the result you expect from evaluating the second
+argument.  (Note that you need to quote non-atoms).
+
+The :comparison keyword argument says which function to use to compare
+the result that is actually obtained against the result you expect.
+
+The :chapter argument defines a particular set of tests to be run all
+at once.  
+
+So let's try it:
+
+> (run-chapter-tests :my-module :verbose t)
+
+Running tests for chapter :MY-MODULE.
+  Running test IOTA-1...OK.
+  Running test IOTA-5...OK.
+
+Tests for chapter :MY-MODULE completed.
+  STATUS: ALL 2 TESTS EXECUTED CORRECTLY.
+
+NIL
+
+Looks good!  Now a test for EVERY-OTHER:
+
+(deftest every-other-1 
+  (every-other (iota 10)) '(0 2 4 6 8)
+  :comparison #'equal :chapter :my-module)
+
+> (run-chapter-tests :my-module :verbose t)
+
+
+
+Running tests for chapter :MY-MODULE.
+  Running test IOTA-1...OK.
+  Running test IOTA-5...OK.
+  Running test EVERY-OTHER-1...
+*** Test EVERY-OTHER-1 failed.  Expected: (0 2 4 6 8), Actual: (1 3 5 7 9).
+
+Tests for chapter :MY-MODULE completed.
+  STATUS: 3 TESTS RUN.
+   CORRECT: 2, INCORRECT: 1, EXECUTION ERRORS: 0.
+
+FAILED TEST NAMES: 
+  EVERY-OTHER-1
+
+
+NIL
+
+
+Oops!  We need to fix our function.  We incremented COUNT before
+we tested it.  We need to increment it afterwards.
+
+(defun every-other (list)
+  (let ((count 0))
+   (mapcan
+    #'(lambda (x) (prog1 (when (evenp count) (list x)) (incf count)))
+    list)))
+
+BIOLISP 27 : 1 > (run-chapter-tests :my-module :verbose t)
+
+
+Running tests for chapter :MY-MODULE.
+  Running test IOTA-1...OK.
+  Running test IOTA-5...OK.
+  Running test EVERY-OTHER-1...OK.
+
+Tests for chapter :MY-MODULE completed.
+  STATUS: ALL 3 TESTS EXECUTED CORRECTLY.
+
+NIL
+
+
+That's better!
+
+Note:  Sometimes it can be beneficial to write the tests BEFORE you
+write the code.  That way you can spec out what your code is supposed to
+do and how you can be sure it does what you think it is supposed to do!
+
+Note:  We may sometime soon have a mechanism to automatically run tests
+for different library modules.  Right now it doesn't exist.
+
+Note:  It is possible to test that your code produces an error when it
+is supposed to, as well as producing correct results.  That is left
+as an exercise for the reader.  C.f. IGNORE-ERRORS.
+
+
+Step 4.
+
+Once it passes its tests, you can include your code in the system.
+
+We're not going to go into how to insert a file into the CVS /
+SourceForge system here, we'll just deal with the required changes to
+various files.
+
+First, copy your file into the Lib directory (making sure there isn't
+a name conflict with an existing file!!):
+
+cp ~/my-module.lisp /usr/local/BioLisp/Lib/
+
+Then edit the file 
+
+load.lisp
+
+in the /usr/local/BioLisp/Lib/ directory.
+
+In the obvious place near the top of the load.lisp file add your file
+(just the name, as a string, without the ".lisp") at the bottom of the
+list of files.  Save the file back out.
+
+That's it for now !!
+
+When you start the Bioweblistener system up again your file should
+compile and load as one of the library files.
+
+
+
+
+

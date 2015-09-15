@@ -1,0 +1,169 @@
+
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+
+     MANAGING TIMEOUTS and  KILLING 'INFINITE-LOOP' or RUNAWAY PROCESSES 
+   
+
+I.    MANAGING TIMEOUTS
+II.   KILLING PROCESSES
+III.  RUNNING LONG COMPUTATIONS AS A BACKGROUND PROCESS.
+
+
+I. MANAGING TIMEOUTS
+
+
+The variable *execution-timelimit* is set to 600 seconds.  Any form
+you enter from the Bioweblistener that takes more than that will
+result in something like the following:
+
+---------------------------------------------
+
+;; <<< *** TIMEOUT TIMEOUT TIMEOUT *** >>>
+;; <<< *** COMPUTATION ABORTED ***>>>
+;; <<< *** ADJUST *EXECUTION-TIMELIMIT* TO RUN LONGER *** >>>
+;; <<< *** CURRENT VALUE IS 600 SECONDS ***>>>
+
+NIL
+
+---------------------------------------------
+
+You can SETQ the value of *EXECUTION-TIMELIMIT* to be whatever you
+like, but if the value is larger than 600 seconds the Bioweblistener
+will make your form execute at low priority compared to other forms.
+(This variable is settable on a per-user basis).
+
+
+II. KILLING PROCESSES
+
+
+The following functions deal with killing processes:
+
+ALL-MY-PROCESSES
+ALL-WEBUSER-PROCESSES
+KILL-MY-PROCESS
+KILL-MY-PROCESSES
+
+ALL-MY_PROCESSES lists all your currently running webuser processes in
+a table.  (You should only have one process unless you have multiple
+browser windows open). System processes and other processes are not
+listed.
+
+Each process is identified in the display by a PID, a small integer.
+You can use this PID as the argument to KILL-MY-PROCESS.
+
+ALL-WEBUSER-PROCESSES lists not only your but all users' running
+webuser processes.
+
+KILL-MY-PROCESSES and KILL-MY-PROCESS are equivalent, each accepts any
+number of processes to kill, and kill them if they exist and they are
+owned by you.
+
+There is a secret way to enable KILL-MY-PROCESS so that you can use it
+to kill anyone's process, not just your own.  But if we told you what
+it was it would no longer be secret, and we'd have to kill you, at
+which point it would be secret again.  Quite the conundrum.
+
+
+III.  GOTCHAS
+
+A.  THERE IS ONE HUGE, GARGANTUAN, MASSIVE GOTCHA with killing processes:
+
+IF YOU KILL A PROCESS, IT WILL START RIGHT BACK UP AGAIN !!!!  (This
+is because you browser, when it detects that its request (the one it
+sent asking BioLingua to execute your form) died, it sends the request
+again!)
+
+So you can't just kill it, you have to drive a stake through it's
+heart.
+
+The way to do that is not with garlic and a cross, but rather the
+mundane action of first killing the browser window from which you are
+running the process, and then issuing the KILL-MY-PROCESS command.
+
+So, let's say you suddenly realize the expression you typed into the
+Bioweblistener causes an infinite loop or is going to execute for far
+longer than you initially thought.  Here's what you do:
+
+Step 1: In another browser or another browser window, connect again to
+the BioWebListener and log in again.
+
+Step 2: In this new Bioweblistener session, execute
+
+(all-my-processes)
+
+You should see two processes listed.  The one with the lower PID
+number is the one you want to kill (the one with the higher one is the
+one executing the all-my-processes command, the one you are 'in')
+
+Step 3:  Close the original browser or browser window.
+
+Step 4:  Go back to the new browser window.
+
+Step 5:  Issue the command
+
+(kill-my-process <pid>)
+
+where <pid> is the integer process-id listed by the all-my-processes
+command as discussed above.
+
+Step 6:  Issue the command
+
+(all-my-processes)
+
+There should only be one now listed.  The one with the PID
+you killed should be gone.  Note:  See Gotcha B below.
+
+
+B.  There is another, smaller, amusing yet annoying, gotcha associated
+with killing a process.
+
+Because of the way the Bioweblistener is structured, while it allows you
+to have multiple login sessions at the same time, it doesn't keep very
+good track of which one is which, and you may have noticed that the input
+and output history from one session will appear in the input and output
+history of another session.
+
+When you kill a process, the act of killing it 'resets' your history
+TO THE POINT IN TIME WHEN THE PROCESS YOU JUST KILLED STARTED.
+This means your display will often look totally different immediately
+after you kill a process than it did just before the process was killed.
+
+Not to worry.  As long as you are able to do Step 6 above and the
+process you were trying to kill has gone away things should be okay
+(aside from the fact that you've lost your history).
+
+
+III.  RUNNING LONG COMPUTATIONS AS A BACKGROUND PROCESS.
+
+Use the RUNJOB command (type (help runjob) at the Weblistener for more
+information).
+
+You can execute computations that take up to two hours using RUNJOB,
+while continuing to work on other things in the Weblistener.
+
+For tasks which might require more than two hours of real-time to
+execute, we ask that you contact the system support staff to determine
+what your needs are, and they will help you to set something up that
+will allow you to run such a large computation.
+

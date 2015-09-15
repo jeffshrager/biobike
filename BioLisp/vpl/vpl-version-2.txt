@@ -1,0 +1,816 @@
+
+
+			VPL VERSION 2.0 	
+
+
+I. Introduction
+
+This document describes the features that VPL version 2.0 should have
+(or at least, we wish it to have).
+
+(We are about to freeze development on version 1.0)
+
+First, we provide a simple list of features and tasks, then a more
+extensive writeup of each, hopefully specifying estimates of
+
+   a) difficulty: (Very hard, hard, moderate, easy, trivial)
+   b) how much time is involved (hours)
+   d) client side effort vs. server side effort
+   c) desirability (1-5 scale, 5 most desirable)
+
+
+Client software development approximate running estimate: 100 hrs
+Server software development approximate running estimate: 200 hrs
+   (does not include:
+     --  DWIM completion - 75 hours
+     --  Advanced search facility - 100 hours.
+     --  Code redevelopment
+     )
+
+Any sane actual estimate should at least double these numbers.
+
+IA. Jeff Elhai's priority list:
+
+  Priority 1 
+
+   Mode line or equivalent
+   Multiline text boxes
+   Popup input boxes
+   Reworking of Loop, For-each, If-true, If-false
+     with arrows, newlines, and invisible components as per 
+     Jeff Elhai's slides.
+   
+  Priority 2
+
+   Saving workspace to named file (requires popup input boxes from 1)
+   Arrows instead of dotdotdot
+   Removing unnecessary boxes 
+   Keywords and their values in same color field
+   New concept for the evil 'token' word
+
+  Priority 3
+
+   Revised VPL window layout (is already partially done by Johnny)
+   Delete and clear of workspace/results always visible
+   Tooltip for undo and redo
+   Tab opens next unfilled hole
+   Show local variables in variables menu
+   Uppercase of 'by' (everything else already uppercased/lowercased correctly)
+
+
+
+II. Desired Features List
+
+Workspace / layout features.
+
+  -- Revised layout for VPL window and subwindows, and revised mechanism
+	for expanding results area.
+  -- Menu arrow for workspace.
+  -- Mode line or other means of notifying user of what is happening.
+  -- Shrager hack to make menus always reachable.
+  -- Delete/Clear of workspace (and results?) always visible.
+  -- Tooltips for UNDO and REDO.
+  -- Gray out undo/redo as appropriate; generalize to other menus?
+
+Palette features.
+
+  -- Summary information for functions in palette displayed
+  -- COMMON and/or FAVORITES in palette.
+  -- Access to more data categories via hierarchical menus.
+
+Editing/display features.
+
+  -- Arrows instead of ... (Remove visible box around &rest, etc)
+  -- Arrows instead of &opt
+  -- Keywords and objects in same box.
+  -- Come up with some other word for 'token' or decide to just use 
+       an icon that means 'token' or something else.
+  -- Show local variables in variables menu.
+  -- Complete rethinking of how input boxes should work and their interaction
+	with mouse clicks and their interaction with the server.
+  -- Hidden components (as well as collapsed components).
+  -- Reasonable way to enter long, multi-line text into input boxes.
+  -- Improved copy/cut/paste semantics.
+  -- Drag and drop operations.
+  -- TAB goes to next unfilled hole form and opens it.
+  -- DWIM completion for user type-in (of what?)
+  -- Escape not in an input box should unselect the currently selected box 
+	or be a noop if nothing selected.
+  -- Newlines in workspace display for various BBL macros.
+  -- Translation of certain functions into syntax
+	(NEW-LIST -> {}, ELEMENT-OF-TABLE -> []).
+
+Semantics.
+
+  -- Type checking (simple stuff implemented).
+  -- Reworking of LOOP, FOR-EACH, and possibly other BBL macros
+	as per Jeff E's powerpoint slides.
+
+Results Area.
+
+  -- Links able to appear in the text output and printout.
+  -- Alternative views of RESULTS area.
+  -- More RESULTS operations on various types (graphing?). 
+  -- Simple formatting of lists to promote comprehension of structure.
+
+Miscellaneous.
+
+  -- Interface to search/help facility.
+  -- Advanced search/help facility. 
+  -- Saving a workspace to a named file.
+  -- Saving user's entire environment (like the weblistener's save-workspace).
+  -- Save of results interleaved with code that produced results.
+  -- REPORT PROBLEM facility to be VPL specific.
+  -- 'Edit function' operator (brings down snippets of user-defined function).
+  -- Make VPL work in IE, Safari, Opera...
+  -- Various preferences items for VPL.
+
+Code redevelopment.
+
+  -- Restructuring of server code.
+  -- Cleaning up of client code.
+  -- Revisiting node types.
+  -- Hash dispatch instead of case clauses for many special cases in code.
+  -- Manual test script.
+
+
+
+III.  DETAILED ANALYSIS
+
+
+WORKSPACE / LAYOUT FEATURES
+
+
+  -- Revised layout for VPL window and subwindows, and revised mechanism
+	for expanding results area.
+
+The desired (?) effect / algorithm is described in the to-do file.
+Many other specific tasks below fall under this general task.
+
+    . Difficulty: Hard (?)
+    . How much time:  20 hrs
+    . Client: 18 hrs
+    . Server: 2 hrs
+    . Desirability: 4
+
+
+  -- Menu arrow for workspace.
+
+Put arrow like one in upper left of boxes (or with some other
+appearance) in upper left of window, with various menu options.
+
+    . Difficulty: Easy
+    . How much time:  5 hrs
+    . Client : 2 hrs
+    . Server: 3 hrs
+    . Desirability: 3
+
+This is only useful if some useful menu items can be conceived.
+I'm not sure there are any that are not redundant.  OTOH, Windows
+typically provides redundant ways of doing things.
+
+
+  -- Mode line.
+
+A mode line either in the workspace or at the bottom of the window,
+like an Emacs mode line, which would provide confirmatory information
+("Executing...", "Saved...").  The mode line could also serve as an
+input buffer for Help/Search queries.  Having a mode line would effect
+revised VPL layout task, and if used for Help/Search, would interact
+with that task.
+
+    . Difficulty: Moderate
+    . How much time:  6 hours
+    . Client : 4 hrs
+    . Server: 2 hrs
+    . Desirability: 3
+
+It's not clear we really need this; the information to be displayed is
+minimal as far as we can conceive of it, and some of it can be
+displayed otherwise (with a popup, say, which is what we do now, I
+think).  The basic issue is notifying the user that the system is
+executing, either via a mode line or some other mechanism.
+
+OTOH, having somewhere to enter Help/Search queries immediately
+available may be a big win.
+
+
+  -- Shrager hack to make menus always reachable.
+
+Have a menu rotate as per previous discussions.
+
+    . Difficulty: Hard
+    . How much time: 8 hrs
+    . Client side: 8 hrs
+    . Desirability: 2
+
+Until such time as a menu option is actually unreachable and a user
+complains about it, AND it would be reachable if the menu were displayed
+rotated, we probably don't need to worry about this.
+
+The most annoying thing is the RESULTS menu going off the bottom so you
+have scroll; it may be possible to get into a state where you either
+can't get to the menu or can't get to the option.  This might be 
+remedied better with better RESULTS section expansion options (see
+'Revised Layout')
+
+
+  -- Delete/Clear of workspace (and results?) always visible.
+
+Keeping Delete/Clear (and other icons) on Screen when workspace is
+scrolled.  (You can't get to the D/C button in the Workspace if you've
+scrolled it down, without scrolling back up to the top of the
+Workspace).
+
+    . Difficulty: Medium
+    . How much time: 3 hrs
+    . Client side: 3 hrs
+    . Desirability: 5
+
+If implemented, this would go along with the 'Revised layout' task
+above.  The Workspace icon bar would become a subpane which was not
+subject to scrolling.
+
+We could do the same thing in the Results area, but there are no icons
+currently other than the Delete, so we would be wasting precious
+vertical space that could no longer be used for actual results. There
+may be no reasonable way to do this for the Results area.  One option
+would be to put operations/icons that affect the Results area in
+
+
+  -- Labels for UNDO and REDO.
+
+Put labels on, or tooltips for, Undo and Redo icons in the Workspace
+area.
+
+    . Difficulty: Easy
+    . How much time: 2 hrs
+    . Client side: 2 hrs
+    . Desirability: 3
+
+Tooltip text would be my preference here, rather than cluttering
+the Icon area with text.  (The meaning of the buttons should be
+self-evident, since they correspond to browser buttons of very
+similar semantics)
+
+
+  -- Gray out undo/redo as appropriate; generalize to other menus?
+
+Buttons/icons/menu items which aren't currently meaningful are usually
+greyed out some other indication is given that they are not clickable.
+Here we just give estimates for the Undo/Redo button, nothing else.
+
+    . Difficulty: Medium
+    . How much time: 7 hrs
+    . Client: 2 hrs
+    . Server: 5
+    . Desirability: 4
+
+Just doing the Undo/Redo buttons is fairly straightforward, but
+probably a fair amount of work.  This is because every time the Server
+sent back information to the Client it would want to check whether the
+status of the Undo/Redo buttons had changed, and if so, send an
+additional command to the client to change the Undo/Redo appearance.
+
+
+  -- Undo/Redo buttons smaller.
+
+Shrink vertical size of Undo/Redo buttons to save vertical space in
+Workspace and so that user-created boxes in upper left of workspace
+don't clip the bottom of the arrows (ugly).
+
+    . Difficulty:
+    . How much time: 1 hr
+    . Server: 1 hr
+    . Desirability: 3
+
+This would be trivial if we could figure out how to make paint save
+an edited .gif image with a transparent background, because we could
+just edit the existing icons.  But we can't figure it out.  If we
+can figure out how to save the edited .gif image properly (or use
+another program) then this would take about 1 hr. (It's actually
+a client-side task, but JP and Mark know how to do it.)
+
+
+
+PALETTE FEATURES
+
+
+  -- Display summary information for functions in palette listing
+
+Jeff E. orginally suggested displaying summary information as well
+as the function name in the palette menu itself.  But this has a
+nasty side effect: The menus get very wide, making it more difficult
+to get to submenus.
+
+A better (?) approach would be to have the summary information
+appear as a tooltip when the mouse hovers over the function menu
+entry.
+
+    . Difficulty: Unknown
+    . How much time: 10 hrs
+    . Client: 6 hr
+    . Server: 4 hrs
+    . Desirability: 4
+
+This would involve changing the menu-definition language to optionally
+include text to be displayed as a tooltop.  Then the client would have
+to parse this revised language and implement the tooltip stuff, while
+the server would have to revise the menu-creation code for modules to
+include summary information.  Since a lot more information would be
+sent down to the client at startup time this could affect the startup
+and refresh times.
+
+
+  -- COMMON and/or FAVORITES in palette.
+
+In order to get at a function one currently needs to go through a
+menu.  A small set of commonly used functions/macros could be made
+available directly by providing them as small icons/boxes with their
+names in the palette area.  (This would probably result in expanded
+vertical space for the palette).  Further, the user could have the
+ability to delete these icons and substitute their own favorites.
+
+    . Difficulty: Medium
+    . How much time: 20 hrs
+    . Client: 10 hrs
+    . Server: 10 hrs
+    . Desirability: 4
+
+Most of doing this is straightforward, it is just a lot of work.
+Without Drag and Drop, it may be difficult to devise a way for a
+user to dynamically add their favorites (it would be easy to
+have a file the user maintained store them, but that's hardly a
+VPL-like thing).
+
+The server would have to maintain a list of function boxes to be
+displayed, and send this information to the client at startup.  Then
+commands would need to exist for the server to add/delete; each box
+would need to be deleteable, probably via a rollover menu that would
+allow you to delete it.
+
+One way to add functions to the list without drap/drop would be for a
+menu item on the Edit menu to exist, "Add Favorite".  This would have
+to pop up an input box which the user could then type the name of the
+function to be added into.
+
+Popping up an input box within a specific context is a generally
+useful feature that probably needs to be implemented (it could also be
+used to allow the user to specify the name of a workspace to save his
+stuff to, and allow multi-line entry for input boxes, as examples)
+
+
+  -- Access to more data categories via hierarchical,scrollable menus.
+
+Jeff E gives a fuller description in the to-do file.
+
+    . Difficulty:
+    . How much time: 40 hrs.
+    . Client side: 2
+    . Server 38
+    . Desirability: 
+
+There are many issues here:  What to include, how to hierarchicalize
+what is included, how badly performance at startup will be affected.
+Can we delay sending info to client until it is needed?  (This would
+require significant client-side work).  Do we need scrolling? (This
+would also involve significant client-side work).
+
+In general, we cannot hope to access all knowledge via menus,
+hierarchically or otherwise.
+
+
+
+EDITING/DISPLAY FEATURES
+
+
+  -- Arrows instead of ... (Remove visible box around &rest, etc)
+
+Instead of a "..." 'icon' within a box and a main box menu attached,
+have "..." semantics be represented by an arrow similar to the Options
+arrow (but either labelled differently or with a somewhat different
+look to distinguish the two visually).  Like the Options arrow, moving
+the mouse over it causes a menu to display with the usual '...'
+options such as 'Add Another', 'Add Two More', 'Help'.
+
+    . Difficulty: Medium
+    . How much time: 8 hours
+    . Client side: 0
+    . Server: 8
+    . Desirability: 5
+
+As with Options, this would remove the need for a visible box around
+the '...'.  It also provides consistency between Options and &Rest
+options.
+
+
+  -- Hidden components (as well as collapsed components).
+
+Currently, users have the option to 'collapse' almost any node,
+reducing the node to a 'stub'. We would like to also have the option
+to 'hide' certain nodes: optional nodes associated with LOOP, the ELSE
+node of an IF, and nodes that are actually &optional constructs.
+When hidden they would disappear from the display entirely.
+
+    . Difficulty: Medium
+    . How much time: 8 hours
+    . Client side: 0
+    . Server: 8
+    . Desirability: 5
+
+The trick in doing this is how to 'unhide' nodes that are hidden,
+since there will be no trace of them on the display.  One mechanism is
+to have the main menu box for the parent box contain options to
+restore each of the various hidden options (and one to restore all of
+them, perhaps).  Another way would be to put in the display an invisible
+tiny icon between the two nodes surrounding an invisible node.  When
+moused over something would pop up that when clicked on would restore
+the invisible node.
+
+
+  -- Reasonable way to enter long, multi-line text into input boxes.
+
+Currently one cannot enter multi-line text (say a string) into an
+input box (nor cut and paste multi-line text into it).
+
+    . Difficulty: Medium
+    . How much time: 16 hrs
+    . Client side: 8, 
+    . Server: 8
+    . Desirability: 4
+
+See the discussion on 'FAVORITES' above.  Another way to do this is to
+provide an option in the main menu of the original hole form that
+would cause it to become a multi-line input box instead of a regular
+one-line input box.
+
+  -- Improved copy/cut/paste semantics.
+
+It's not clear this is useful.  This should be deferred until someone
+can come up with a real example of where improvements in what exists
+would be significantly beneficial.
+
+
+  -- Drag and drop operations.
+
+There are a lot of operations that could be transformed into drag and
+drop rather than (or along with) the current mechanism.  Cutting and
+pasting, bringing down functions/data from the palette, and bringing
+up results from the Results area are examples.
+
+    . Difficulty:  Unknown
+    . How much time: 30 hrs
+    . Client side: 10 hrs
+    . Desirability: 5
+
+What is needed on the server's end is a DROP message, which includes
+the ID of the object being dropped and the ID of the object it is
+being dropped into (certain things don't have ID's -- e.g., if
+something were to be dropped directly into the Workspace area not
+within a box).
+
+Another approach would be to have a BEGIN DRAG notification message,
+which identifies the object being dragged, and a DROP message,
+identifying the container.
+
+This is all probabably not terribly difficult on the server side,
+but probably fairly time consuming as there are lots of cases.
+
+The issue becomes how complicated is this to do on the client side?
+Dragging a menu item might be problematic, vs dragging an icon.
+
+(Note: John says that D&D client side is not that much effort)
+
+To do this we need to specify exactly what can be dragged and where
+it can be dropped.
+
+
+  -- TAB goes to next unfilled hole form and opens it.
+
+the next input box.  The trick here is that we don't want to go to the
+next input box, but to the next potential input box, and transform
+that hole into a real, selected, input box.  (Of course the usual TAB
+processing of the current input box would still be done).
+
+There are two approaches that could work: 1) it could all be done on
+the client; 2) on detecting a Tab, the client could send a message to
+the server, which would then send back a message saying which hole to
+move to.
+
+    . Difficulty: Medium
+    . How much time: 6 hours
+    . Client side: 3 hrs
+    , Server: 3 hrs
+    . Desirability: 5
+
+This would be an extremely useful feature from the point of view of
+a non-complete-novice user.
+
+
+  -- DWIM completion for user type-in (of what?)
+
+This would auto-complete whatever the user is currently typing.  There
+are any number of different ways this can work.  One is that the user
+specifically commands the auto-completion, say with Cntrl-Enter.
+Another would be the client detects when the user pauses typing, and
+sends an auto-complete request to the server.
+
+Whether a menu of completion choices is presented, or whether the
+'best' completion is entered automatically in the input box, is
+another choice.  How to get to the next completion choice is also
+a question.
+
+There is the question of what is to be searched over to find 
+completions (and if that set is too big to do a linear search,
+the set must be indexed somehow).
+
+    . Difficulty: Hard
+    . How much time: 80 hrs
+    . Client side: 4 hrs
+    . Server side: 76 hrs
+    . Desirability: 3
+
+Note that this is already done to a limited extend with gene/protein
+boxes.
+
+It's not clear this really needs to extended to be a general facility
+in a VPL.
+
+
+  -- Escape not in an input box should unselect the currently selected box 
+	or be a noop if nothing selected.
+
+    . Difficulty: Easy
+    . How much time: 4 hrs
+    . Client side: 2 hrs
+    . Server 2 hrs
+    . Desirability: 3
+
+A message has to be sent to the server, and then the server has
+to send a message back to unselect the currently selected box.
+
+
+  -- Newlines in workspace display for various BBL macros.
+
+    . Difficulty:  Medium
+    . How much time:  15 hrs
+    . Client side: 0
+    . Server side: 15 hrs
+    . Desirability: 5
+
+To implement this we need to extend the templates so that they contain
+information about where to put newlines, and then recode the routines
+that convert templates to snippets to understand this, and recode the
+routine that converts snippets to boxes to detect newlines information
+and put it in.  (The client already understands tokens in box notation
+to put in newlines).
+
+
+SEMANTICS
+
+
+  -- Type checking.
+
+Putting in more extensive type checking.  Right now, very little type
+checking is done.  For example, (+ "abc" 3) is acceptable, but should
+not be.  Similarly (+ (sequence-of all1234) 23) could be rejected,
+because there should be information that can be interpreted as saying
+that SEQUENCE-OF never returns a number.
+
+    . Difficulty:  Medium
+    . How much time:  10 hrs
+    . Client side: 0
+    . Server side: 10
+    . Desirability: 5
+
+Full type checking using propagating type inference is another matter
+altogether, and would require massive amounts of work.
+
+
+  -- Reworking of LOOP, FOR-EACH, and possibly other BBL macros
+	as per Jeff E's powerpoint slides.
+
+Given proper Newline insertion, arrows instead of '...', and the
+ability to hide components, it's not clear how much additional effort
+would be needed to do this.  It is pretty clear that each macro that
+desires this kind of work will require special casing in a number of
+places in the code.
+
+It's also not clear if client-side work will be necessary.  Some
+support will probably be necessary.
+
+    . Difficulty:  Hard
+    . How much time:  30 hrs
+    . Client side: 3 hrs
+    . Server side: 27 hrs
+    . Desirability: 5
+
+
+RESULTS
+
+
+  -- Links able to appear in the text output and printout.
+
+This is a matter of a) detecting links in the output, and b) creating
+new, improved box-language syntax and semantics to allow the server to
+send links (or more generally, random HTML) to the client as opposed
+to just a text block.  Said syntax then has to be parsed by the
+client and processed correctly.
+
+    . Difficulty:  Hard
+    . How much time: 15 hrs
+    . Client side: 10 hrs
+    . Server side: 5 hrs
+    . Desirability: 5
+
+
+  -- Alternative views of RESULTS area.
+
+Includes: Full screen RESULTS, Interleaved operations/results,
+Adjustable lines/result before ...
+
+We already have the ability to go to a full window results area (well,
+right now it clips half the palette area, which it shouldn't; it
+should either leave the full palette or take over the entire window)
+
+Doing interleaved operations/results, assuming this means interleaving
+code and results like the Weblistener (as opposed to snippets and
+results, which would probably be more difficult and not clearly
+desirable) should not be too hard, although I suspect a lot of work.
+
+If we want a mode where the workspace and results areas are combined
+with the results interleaved that doesn't make a lot of sense to me
+(since you'd often evaluate the same snippet or one with a minor
+variable repeatedly, and snippets tend to be big).
+
+I have no idea what the last part, "Adjustable lines/results before..."
+means.
+
+We would need a clearer specification before being able to make
+any estimates.
+
+    . Difficulty:  Unknown
+    . How much time:  Unknown
+    . Client side: Definitely some.
+    . Desirability: Unknown.
+
+
+  -- More RESULTS operations on various types (graphing?). 
+
+Jeff Elhai and I are in the process of developing this already,
+so we won't discuss this in detail, at least until Jeff E produces
+his specification of what he wants (which I've talked to him about).
+
+
+  -- Simple formatting of lists to promote comprehension of structure.
+
+As previously discussed in email and by phone, it's not clear this is
+desirable, nor exactly what it means.
+
+
+
+MISCELLANEOUS
+
+
+  -- Interface to search/help facility.
+
+This could function as part of the mode line stuff: if someone were to type
+into the mode line area and hit ENTER, it could be treated as a request 
+for information about what was typed.  
+
+Another approach would be to have a SEARCH/HELP menu option on the FILE 
+menu in the palette, which would just pop up an input box and send the
+typein off to the search facility. 
+
+The presentation of search results would probably be a separate page,
+much in the style of how the weblistener presents such information now.
+
+    . Difficulty:  Medium
+    . How much time:  6 hours.
+    . Client side: None, if we already have mode line interface and/or 
+interface for popup typein.
+    . Desirability: 4
+
+
+  -- Advanced search/help facility. 
+
+This is the same advanced search/help facility that was never implemented
+in the weblistener; basically search over more than one input term.
+
+To do this is a major effort.  We would need to somehow index all the
+documentation objects and other relevant documentation, store these indices,
+and then write code to search based on multiple input terms.  Something like
+Google does now!
+
+    . Difficulty:  Hard.
+    . How much time:  100 hours.
+    . Client side: None.
+    . Desirability: 3
+
+
+  -- Saving a workspace to a named file.
+
+This is simple once we have a facility to allow popup user typein.
+We just pop up an input box and tell the user to type in the file name
+that he wants.  The reason this has not been implemented yet is simply
+that we don't have such a facility within the VPL itself.
+
+    . Difficulty: Easy once popup input facility available.
+    . How much time:  3 hours.
+    . Client side: None.
+    . Desirability: 5.
+
+
+  -- Saving user's entire environment (like the weblistener's save-workspace).
+
+This would involve a complete redesign and reimplementation of the
+save-workspace facility from the point of view of BBL (or BBL and
+Lisp, to make it general).  This is further complicated if you wish to
+save the state of the VPL window itself rather than just the user's
+definitions.  (The latter facility already has an implementation; it
+would have to be integrated and probably made more robust.)
+
+    . Difficulty: Hard.
+    . How much time:  30 hours.
+    . Client side: None.
+    . Desirability: 4.
+
+
+  -- REPORT PROBLEM facility to be VPL specific.
+
+This would mean either generalizing the existing facility or cloning
+it and modifiying the clone to be VPL specific.  We'd need a
+specification of just what it is that wanted so that the facility
+would be VPL specific.
+
+    . Difficulty: Easy.
+    . How much time:  6 hours.
+    . Client side: None.
+    . Desirability: Unknown.
+
+	
+  -- 'Edit function' operator (brings down snippets of user-defined function).
+
+This would involve storing the snippets when the function definition
+is evaluated; this may already be done, or if not, it is easy to do
+so.
+
+The main problem involves how the user specifies which function he
+wants to bring down snippets for.  Right now user functions are
+displayed in a palette menu, but if you select one of them, a box
+representing the function is brought down into the workspace in the
+usual fashion.  One would need a separate facility to invoke the
+operator 'bring down the function's snippets' as opposed to 'bring
+down a box representing the function.'
+
+It's not clear what form this separate facility should take: a
+separate menu?  Right-clicking vs. left-clicking on the menu option?
+Right now we have no facilities for doing anything but left-clicking
+(selecting) an item on a palette menu.
+
+    . Difficulty: Medium.
+    . How much time:  Unknown.
+    . Client side: Potentially some.
+    . Desirability: Unknown.
+
+
+  -- Make VPL work in IE, Safari, Opera...
+
+John Meyers says "integration with IE etc. is probably a non-starter
+as the pipe layer is built strongly on Netscape / Firefox."
+
+If we really wanted this it would make sense to engage Peter Seibel
+again to at least give us an understanding of what the issues are and
+where in the code things would have to change, or do the
+implementation himself.  
+
+
+  -- Various preferences items for VPL.
+
+This would involve specifying what preference variables are appropriate
+for the VPL and then modifying the preferences code (which is pretty
+intricate, IIRC) to also display these variables when in VPL mode.
+
+    . Difficulty: Medium.
+    . How much time:  8 hours.
+    . Client side: None.
+    . Desirability: Unknown.
+
+Note that preferences imply that the system works somewhat differently
+depending on the users' choices.  This makes debugging all the more
+difficult and the implementation all the more intricate.
+
+
+
+CODE REDEVELOPMENT.
+
+  -- Restructuring of server code.
+  -- Cleaning up of client code.
+  -- Revisiting node types.
+  -- Hash dispatch instead of case clauses for many special cases in code.
+  -- Manual test script.
+
+Some of this is implied in the tasks specified in other sections.
+This is not further discussed here as it is internal; it is not a
+question of features the user would see or not see, it is a question
+of the structure and maintainabiltity of the VPL code base.

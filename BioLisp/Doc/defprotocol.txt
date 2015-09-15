@@ -1,0 +1,402 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001, 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+This hasn't been HTMLized yet.  Stay tuned.
+ 
+                  DEFPROTOCOL syntax and semantics.
+
+
+DEFPROTOCOL will produce a function which has exclusively keyword
+arguments; the keyword arguments are the unique symbols specified by
+the substitution directives (see below).  Their default values can be
+specified (see below).
+
+(DEFPROTOCOL name substitution-directives &body body)
+
+
+SUBSTITUTION DIRECTIVES SYNTAX AND SEMANTICS:
+
+
+Each substitution directive (SA) in the list can be
+
+  1. a symbol, 
+     simply denoting a keyword argument with identity substitution
+     throughout the steps
+
+  2. a list
+     The first element of the list is either a symbol or a
+     two-element (symbol initial-value) pair.
+     The rest of the list consists of substitution instructions (SI's)
+
+For case 2, if the second element of the list is not itself a list,
+there is only one SI, and its constitutents are the cdr of the
+original list.  If the second element is a list, then that list
+constitutes an SI, and subsequent SI's in list form can follow.
+
+Examples:
+
+Case 1:  
+
+  (DEFPROTOCOL fred (x y) (steps 1 2))
+
+Case 2, with an initial value but no substitution instructions for Y:
+
+  (DEFPROTOCOL wilma ((x :line 1 :position 2) ((y 5)))
+    (steps 1 2))
+
+Case 2, with multiple substitution instructions for X: 
+
+  (DEFPROTOCOL barney ((x (:line 1 :position 2) (:line 2 :value 4))        
+                       (y :line 2 :value 5)) 
+    (steps 1 2))
+
+An SI is a set of keyword/value pairs.  The allowable keywords, values
+and their meanings are:
+
+:line <valid history line number>
+
+Substitute the symbol into the form denoted by the history line number.
+A directive specifying the substitution method must also be persent.
+
+:lines <list of valid history line numbers | :all >
+
+Do the substitution over all the lines specified.
+A directive specifying the substitution method must also be persent.
+
+:position <n>
+
+Substitutes the variable at a particular (toplevel) position
+in the form or forms indicated by a :line or :lines directive,
+which must also exist.
+
+Effectively (setf (nth n form) symbol) is performed to create a new
+form.
+
+:value <subst-for-form>
+
+A tree substitution (using SUBST) is done on the form or forms
+indicated by a :line or :lines directive (or all lines).
+
+**> Note that this will substitute into quoted forms; nothing is safe
+from the substitution.  <**
+
+:keyval <keyword>
+
+If no :line or :lines directive is present, :lines :all is
+implied.  This substitutes into the forms indicated by the :line
+or :lines directive.
+
+Each form directly following an occurrence of <keyword> will be
+substituted for.  An error will be signalled if no form to be
+substituted for follows <keyword>.
+
+:keyval examples:
+
+1.  Given the form 
+
+  (person-age :person 'fred)
+
+ and the substitution directive
+
+  (p (:keyval :person)), 
+
+the revised form would be
+
+  (person-age :person p)
+
+2.  The form (person-age :person) given the same directive would
+signal an error because no form exists after the keyword.
+
+3.  The form   
+
+  (+ (person-age :person 'fred) (person-age :person 'wilma))
+
+and the same directive would produce
+
+  (+ (person-age :person p) (person-age :person p))
+
+(which is probably not what is desired; you would have to use the
+:value substitution mechanism to get different symbols for the two
+different people).
+
+A symbol may be specified more than once in the substitution
+directives list.  It is an error if the directives for that symbol
+conflict; the consequences are undefined.
+
+An error will be signalled if an attempt is made to use the :position
+directive on a form which is not long enough (i.e., the position is
+invalid).
+
+No warning or error will be issued if a substitution directive does not
+in fact result in a substitution.  E.g.,
+
+Given a form (foo bar baz) and a substitution directive
+(:value bas) no substitution will take place, but no error or warning
+will necessarily be signalled.
+
+
+An initialization value can be provided for each DEFPROTOCOL keyword
+arugment-to-be.
+
+Example:
+
+(defprotocol dino (((x 10) :line 1 :value 3)) (step 1))
+
+If history line 1 is (+ 3 4)
+
+then executing 
+
+(DINO)
+
+will result in
+
+14
+
+Instead of just <symbol>, replace it with (<symbol> <value>)
+to make <value> be the initialization form.
+
+
+Gotchas:
+
+
+Order of substitution is not guarenteed.  If substitutions A and B 
+are to take place for line 1, whether A is done first and then B or
+vice versa is not defined.  So if subsitution A happens to substitute
+in a form that subsitution B is supposed to substitute for, this
+'recursive' substitution may or may not occur.
+
+Example:
+
+Given the substitution directives 
+
+  ((x :line 1 :value 'y) (z :line 1 :value 'x))
+
+and the form
+
+  (x y z)
+
+whether the result is
+
+  (z x z)   (do Z substitution first, then X substitution)
+
+or
+
+  (z z z)   (do X substitution first, then Z)
+
+is undefined.
+
+ 
+
+DEFPROTOCOL BODY syntax and semantics
+
+
+The body consists of arbitrary Lisp forms interspersed with STEP or STEPS
+directives (STEP and STEPS are equivalent; we will use STEPS henceforth).
+
+STEPS &rest <valid-history-line-number>
+
+The forms denoted by the history line numbers are substituted in place
+of the STEPS form in the body of the DEFPROTOCOL, after they have been
+substituted into as per the substitution directives.
+
+The symbols '*, '** and '*** preserve their semantics when used by
+a history line which is incorporated into a DEFPROTOCOL body via a
+STEP or STEPS directive.
+
+
+So, for example, if we have
+
+1.  (+ 3 4)
+2.  (+ * 2)
+3.  (* * **)
+
+(the result is 16), and if we have
+
+(STEPS 1 2 3)
+
+as the body of a DEFPROTOCOL, this will work, returning 16 when
+the DEFPROTOCOL function is executed.
+
+But
+
+(STEPS 1 3)
+
+will generate a run-time error, as the second '* in step 3 refers to
+the result of step 2, but step 2 is not referenced in our (hypothetical)
+DEFPROTOCOL body from any STEP or STEPS statement.
+
+It is legal to do such things as
+
+(STEPS 3 3 1 3 2)
+
+just as long as the '* semantics constraints are not violated.
+
+It is also legal to have
+
+(STEPS 1 2 4)
+(print "Done first three protocol steps")
+(STEPS 5 8 9)
+
+where Step 5 has a '*, since Step 4 is referenced by a STEPS form
+and will be executed before STEP 5 is executed.
+===============================================
+
+Some further examples:
+---
+JE asks (and JS replies):
+> I am a biologist studying tryptophan metabolism, both biosynthesis and
+> degradation. I want to gather together all genes of Anabaena PCC 7120
+> encoding enzymes related to these processes. I know a lot about tryptophan
+> metabolism but nothing about KEGG IDs, GO IDs, COG IDs or EC numbers. 
+
+You might start by doing just what you said:
+
+ >> (find-frames "Tryptophan")
+
+You notice that there are LOTS of them, so you choose one at random to 
+explore.  I know that things with "Activity" are enzymes, so I choose the last 
+one on the list, just for convenience: #$Go.Tryptophan2,3-DioxygenaseActivity
+
+I notice that in its reaction chemistry, if the molecule frame #$Mol.L-
+Tryptophan (this was also in the Find-Frame result).  Upon click the link I 
+find a list of all the reactions that involve L-Trytophan either as a reactant 
+or as a product.  Looking at #$Go.TryptophanSynthaseActivity (at random 
+because it sounds good), I find that, under go.related-genes there is 
+Synechocystis's Tryptophan Synthase.  So now I have my method:
+
+(defun find-genes-pertaining-to-molecule (mol)
+  (append (mapcan #'(lambda (reaction) (#^go.related-genes reaction))
+                 (#^go.productin mol))
+          (mapcan #'(lambda (reaction) (#^go.related-genes reaction))
+                 (#^go.reactantin mol))))
+
+(This could obviously be simplified.)
+
+You'd have to constrain these to your preferred organism, and/or find their 
+ortologs if they are from another organism.  Unfortunately, as there aren't 
+many go bindings at the moment, this doesn't net you very much power.
+
+Another pathway toward similar results it via the #$pathways.
+---
+MT points out (and JS responds):
+
+> The general answer I think is that we want a programming-by-example system
+> that
+> lets people navigate the frame hierarchy and turns their explorations into
+> code. 
+
+Actually, we already have this capability, although it takes some care to work 
+it.  Here's the thing I did in the previous email done in the way you 
+described:
+
+<25>> (#^go.productin #$Mol.L-Tryptophan)
+:: (#$Go.TryptophanamidaseActivity #$Go.TryptophanSynthaseActivity)
+<26>> (mapcan #'(lambda (x) (#^go.related-genes x)) *)
+:: (#$S6803.slr0966 #$S6803.slr0966)
+<27>> (#^go.reactantin #$Mol.L-Tryptophan)
+:: (#$Go.Tryptophan-TrnaLigaseActivity
+ #$Go.Aromatic-L-Amino-AcidDecarboxylaseActivity
+ #$Go.TryptophanaseActivity #$Go.Tryptophan5-MonooxygenaseActivity
+ #$Go.Tryptophan2-MonooxygenaseActivity
+ #$Go.Indoleamine-Pyrrole2,3-DioxygenaseActivity
+ #$Go.Tryptophan2,3-DioxygenaseActivity
+ #$Go.Tryptophan2'-DioxygenaseActivity
+ #$Go.TryptophanAlpha,Beta-OxidaseActivity
+ #$Go.TryptophanDehydrogenaseActivity
+ #$Go.TryptophanDimethylallyltransferaseActivity
+ #$Go.TryptophanTransaminaseActivity
+ #$Go.Tryptophan-PhenylpyruvateTransaminaseActivity
+ #$Go.Tryptophan2-C-MethyltransferaseActivity)
+<28>> (mapcan #'(lambda (x) (#^go.related-genes x)) *)
+:: NIL
+<29>> (append * (hop 26))
+:: (#$S6803.slr0966 #$S6803.slr0966)
+<30>> (defprotocol frzs ((mol (:line 25 :value #$Mol.L-Tryptophan)
+                        (:line 27 :value #$Mol.L-Tryptophan)))
+  (steps 25 26 27 28 29))
+:: FRZS
+<33>> (frzs :mol #$mol.l-tryptophan)
+:: (#$S6803.slr0966 #$S6803.slr0966)
+<34>> (show-protocol 'frzs)
+:: 
+;; Protocol substitution function: 
+
+(DEFUN FRZS (&KEY (MOL NIL))
+  (LET ($$::S25-RESULT $$::S26-RESULT $$::S27-RESULT $$::S28-RESULT
+        $$::S29-RESULT)
+    (DECLARE (IGNORABLE $$::S25-RESULT $$::S26-RESULT $$::S27-RESULT
+              $$::S28-RESULT $$::S29-RESULT))
+    (PROGN (SETQ $$::S25-RESULT (BIOLISP::|GO.productIn-ACCESSOR| MOL))
+           (SETQ $$::S26-RESULT
+                 (MAPCAN #'(LAMBDA (X)
+                             (BIOLISP::|go.related-genes-ACCESSOR| X))
+                         $$::S25-RESULT))
+           (SETQ $$::S27-RESULT
+                 (BIOLISP::|GO.reactantIn-ACCESSOR| MOL))
+           (SETQ $$::S28-RESULT
+                 (MAPCAN #'(LAMBDA (X)
+                             (BIOLISP::|go.related-genes-ACCESSOR| X))
+                         $$::S27-RESULT))
+           (SETQ $$::S29-RESULT
+                 (APPEND $$::S28-RESULT $$::S26-RESULT)))))
+
+;; Original history lines used:
+    Line 25:  (BIOLISP::|GO.productIn-ACCESSOR| #$Mol.L-Tryptophan)
+    Line 26:  (MAPCAN #'(LAMBDA (X)
+                          (BIOLISP::|go.related-genes-ACCESSOR| X))
+                      *)
+    Line 27:  (BIOLISP::|GO.reactantIn-ACCESSOR| #$Mol.L-Tryptophan)
+    Line 28:  (MAPCAN #'(LAMBDA (X)
+                          (BIOLISP::|go.related-genes-ACCESSOR| X))
+                      *)
+    Line 29:  (APPEND * (HOP 26))
+
+;; Original DEFPROTOCOL form:
+
+(DEFPROTOCOL FRZS
+             ((MOL (:LINE 25 :VALUE #$Mol.L-Tryptophan)
+               (:LINE 27 :VALUE #$Mol.L-Tryptophan)))
+             (STEPS 25 26 27 28 29))
+
+---
+JP Notes:
+><30>> (defprotocol frzs ((mol (:line 25 :value #$Mol.L-Tryptophan)
+>                         (:line 27 :value #$Mol.L-Tryptophan)))
+>   (steps 25 26 27 28 29))
+
+You should be able to substitute globally for #$Mol...
+instead of doing it line by line.
+
+I forget the exact syntax.   I think it is the default.  Yes, that's what
+the doc says.
+
+I think you could have also said :lines (25 27)
+
+So really it could be simplified to
+
+(defprotocol frzs ((mol (:value #$Mol.L-Tryptophan)))
+   (steps 25 26 27 28 29))
+
+I think.
+

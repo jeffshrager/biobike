@@ -1,0 +1,39 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Pathway</title>
+<base target="main">
+</head>
+
+<body>
+
+<form method="GET" action="/cgi/pathway/query" target="main">
+  Initial EC: <input type="text" name="initial" size="20" value="2.4.1.4"> to final 
+  EC:
+  <input type="text" name="final" size="20" value="1.1.99.7">
+  <br> Max # of queries: 
+  <select size="1" name="links">
+  <option value="-1" selected>all</option>
+  <option>1</option>
+  <option>2</option>
+  <option>3</option>
+  <option>4</option>
+  <option>5</option>
+  </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Refresh 
+  rate (seconds): <select size="1" name="refresh">
+  <option>1</option>
+  <option selected>5</option>
+  <option>10</option>
+  <option>25</option>
+  <option>60</option>
+  <option value="-1">don't refresh</option>
+  </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="submit" value="Find Pathway"></form>
+
+</body>
+
+</html>

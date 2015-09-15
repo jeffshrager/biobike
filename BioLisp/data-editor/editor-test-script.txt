@@ -1,0 +1,476 @@
+
+*-Editor test script
+
+The purpose of this document is to describe a basic runthrough 
+of all aspects of the editor system.  
+
+Bring up a weblistner and load the nostoc organism.  
+mds -- check this
+Bring up a VPL by going through the login procedure again.
+Other-commands --> internal --> Edit-object
+In the 'obj' box, type 'npun'
+Execute the edit-object box.
+
+Testing the frame editor:
+
+The page should have a bar across with top saying: 
+  Data Frame Nostoc_Punctiforme_Atcc29133
+
+Roll your mouse over 'Annotation-Sources', the text should turn change color
+
+Roll over the word 'terrestrial', the vaue of the 'habitat' slot.
+A popup should appear saying 'An eleven character string'
+
+Roll over the value of the 'description-html' slot, a large
+popup box should appear with some text
+
+Roll over the value of the 'genes' slot, the text should underline
+and a popup with the list's length should appear
+
+Click the link, which looks like a list of genes.
+The sequence editor will appear...click on the first element, Npun.Npf0001
+
+Roll your mouse over the ':F', the value of the 'direction' slot.
+The text should change color and a popup should appear saying 'A keyword symbol'
+
+Roll your mouse over the value of the Organism slot, a popup should appear
+saying how many slots are in the data frame
+
+Roll your mouse over '1546', the value of the 'to' slot.  A popup
+should appear with the number in hex and binary.  Any letters in the
+hex value should be uppercase.  
+
+Click the value of the 'organism' slot, a link back to the npun frame. 
+
+Click the + to the left of the 'Isa' slot.  You should go to the Isa frame.   
+
+mds -- there's no back button in chrome.
+Go back in your browser (to npun's frame)
+
+Click on the word "Version", one of npun's slots.  
+A box should open up in the bottom of the screen 
+with "Version" in the top left 
+
+In the box, erase the text with the the dates and simply type 'foo'
+Click the enter button above the textarea, the box should go away and
+the value of the 'version' slot should change to foo
+
+Roll your mouse over 'foo', the value of the 'version' slot, verify
+it is a string
+
+Click on the word version again, leave the text in the box the same, but click 
+the bubble to the right of 'Form' in the top right of the box
+Click Enter
+
+Verify that 'foo' is now in all caps, roll your mouse over the text and 
+a large popup box should appear with its package and property list.  
+
+mds -- say to change it back
+
+In the 'Add a slot' box, type 'bar', and click 'Add'
+A box should open at the bottom, and you should see 'bar' appear
+as one of npun's slots, with a value of '-' (which represents NIL).
+
+Type 3 into the text area of the edit box at the bottom
+of the page, and hit enter.  The bar slot's value should change to 3.  
+
+mds -- this doesnt work
+Type 'bar' into the 'add a slot' box again and click the 'add' button,
+the box should pop up with 3 already in the text area.
+
+Hit cancel.  The bottom box should disappear and none of the slots or values
+should change.  
+
+
+Sequence editor
+
+Go back to the weblistener, and execute the following:
+
+(setq de::testlist (utils::iota 1000))
+Then go the VPL and bring down another edit-object box, type in 'de::testlist'
+and execute the box.  
+
+The sequence editor will appear.  
+
+In the top left, roll your mouse over the words 'start' and 'prev'...
+nothing should happen and they should not be clickable.  Roll your mouse
+over 'next' and 'end', the text should underline.  
+
+Click next.  'start' and 'prev' should change to blue. 
+mds -- these numbers are wrong...here have to specify which mode
+You should now be viewing elements 121 through 240.  
+Click end.  You should be viewing elements 881 through 1000.
+
+Click Prev.  You should now be viewing elements 761 through 880.
+
+Go to the 'start' box, and type in 500.  Click 'Display'
+The elements visible should now start at 500 and go to 619.
+
+Type '100' in the 'show...# of items' box and click 'Display'.
+The number of elements visible should go from 500 to 599.  
+
+Type 5 in the '# of columns' box and click 'display', you should 
+still be viewing items 500-599, but now in 5 columns.  
+Click Prev.  
+You should now be viewing elements 400-499 in 5 columns.  
+
+Click on element '400' (click on the green text that says 400).
+A box should appear on the bottom of the screen.  
+Erase the text, type "foo", and click enter.  
+The value of element 400 should change to the symbol FOO.  
+Click on '400' again, leave the text in the textarea, but
+click on 'String' in the interpret bubble.  The value of element
+400 should change to the string FOO, which you can verify by mousing
+over the text.  
+
+Go back to the weblistener and type 
+
+(setq de::testvec (coerce de::testlist 'vector))
+
+Then go back to the VPL and type de::testvec into an edit-object box and 
+execute it.  
+
+The sequence-editor should appear.  
+The title should say "A Vector of 1000 elements"
+
+mds -- again these numbers are wrong
+Click end. You should see elements 881 through 1000.  
+
+Type '200' into the start box, '100' into the 'show...items' box, 
+and '5' into the 'number of columns' box.  Click Display.
+The screen should display elements 200 through 299 displayed in 5 columns.  
+
+In the weblistener, type  
+(setf (ref de::testvec 1) (find-package :bio))
+and click Start in the top left of the sequence editor.  
+
+Roll your mouse over #<The Biolisp Package>
+A large popup box should appear with information about the package.  
+
+;;; investigate why its possible to have no horizontal scroll bar but the
+;;; #<the biolisp package> can be stacked in 2 lines
+
+In the weblistener, type
+(setf (ref de::testvec 1) (utils::make-garray '(2 2)))
+and refresh the sequence editor
+Roll your mouse over the first element in the vector,
+a large popup should appear with information on the table.  
+
+In the weblistener, type
+(setf (ref de::testvec 1) nil)
+and refresh the sequence editor.  
+The value of the first element should simply be '-'
+When you roll your mouse over it, the dash should change color.
+
+In the weblistener, type
+(setf (ref de::testvec 1) #C(1 2))
+and refresh the sequence editor.  
+The value of the first element should be #C(1 2).
+Roll your mouse over it...the text should change color and
+a popup should appear saying 'A complex number'
+
+
+In the weblistener, type
+(setf (ref de::testvec 1) 1.0d0)
+and refresh the sequence editor.  
+The value of the first element should be 1.0d0.  
+Roll your mouse over it...the text should change color.  
+
+In the weblistener, type
+(setf (ref de::testvec 1) 23/2)
+Refresh the sequence editor.  
+The value of the first
+element should change to 23/2, and when you roll
+your mouse over it, it should change color and a small
+popup should appear with the decimal approximation.  
+
+In the weblistener, type
+(setf (ref de::testvec 1) (make-hash-table))
+and refresh the sequence editor.  
+Roll your mouse over the first element, a popup should appear
+saying 'an empty (no keys or values) hash table using EQL'
+
+Click on the 1.  In the text area, type 
+#(1 2 3) and press enter.  Roll your mouse over the new value, 
+a popup box should appear saying 'a vector of length 3
+
+mds -- are we using zero-based or one-based?
+
+Like before, click on the 1.  In the text area, erase
+the text and type ')(' without the quotes.
+That is, type a right parenthesis and then a left parenthesis.
+Click the Enter button.    
+
+The value of the first element should change to 
+be a string beginning with '*** Invalid'
+Roll your mouse over this text...a large popup box should appear
+with an error message.  
+Click the 1 again.  
+Erase the text in the textarea and type 3.  
+Click the Enter button.  The value of the first element
+should change to 3.  
+
+Close the sequence editor window. 
+In the weblistener, type
+(setf (ref de::testvec 1) (utils::make-garray '(5) :initial-element 10))
+Go back to the VPL, and again execute the EDIT-OBJECT box with de::testvec
+
+
+In the weblistener, type
+(setf (ref de::testvec 1) (utils::make-garray '(5) :initial-element 10))
+and refresh the sequence editor.  The value of the first element of de::testvec
+should say <Table 1d (Numeric)>  Roll your mouse over the link, and 
+a large popup should appear.  Now, click this link.  
+
+The title at the top should say 'A 1d Table of 5 elements'
+
+In the 'start' box at the top, type 2.  
+In the 'show...items' box at the top, type 2.  
+In the '# of columns' box at the top, type 1.  
+Click the display button.  
+
+Elements 2 and 3 should now appear in a single column.  Click
+on the number 2.  In the textarea, erase the 10 and type 11.
+Click the enter button.  The value of the element 2 should change to 11.  
+
+Click 'Start' at the top left.  
+You should now see elements 0 and 1, each with a value of 10.  
+In the '# of columns' box, type 80, and click Display.  
+You should now see elements 0 and 1 in 2 columns.  
+
+Close the sequence editor window.  
+
+Object editor: 
+
+In the weblistener, type:
+(setq de::x (bbi::make-labeled-sequence :label "abc" :sequence '(1 2 3)))
+
+Go the VPL and bring down an EDIT-OBJECT box, and type in de::x
+Execute the box.  
+
+The object editor should appear.  The title at the top should say:
+Object of type Labeled-Sequence
+
+mds -- this errors out!
+Click the word 'label'.  In the textarea, erase 'abc' and type 'def'
+Click the enter button...the value of the label should change.  
+Roll over (1 2 3), the value of the sequence slot, a popup should appear saying
+'a list of length 3'
+Click the word 'sequence'.  In the textarea, erase (1 2 3) and type 
+'abcdef' without the quotes.  Now click the the bubble to the right of 'String'
+in the upper right of the edit box.  
+The value of the sequence should change.  Roll over the newly-shown abcdef...
+the text should change color and a popup should appear 
+saying 'a six character string'
+
+Close the object editor window
+
+Go to the weblistener and execute:
+(setf (#^version npun) #$testframe)
+
+Go the VPL and bring down an edit-object box and type in npun...
+execute the box.  
+Click the value of the version slot, Testframe
+
+
+whats going on here?
+Click the value of the Det slot, #<DE-TEST> 
+The top of the screen should say 
+CLOS Object of type De-Test
+
+You should see:
+A: 5
+B: 6
+
+Click the B...the edit box will appear on the bottom of the screen.  Erase
+the 6 and type in "abcdef", then click the bubble to the right of 'String' 
+The value of the B slot should change.  
+
+Close the object editor window.  
+
+Array editor:
+
+In the weblistener, type:
+
+(lisp)
+
+then 
+
+(bio::cl "biol:data-editor;de-tests.lisp")
+
+Now type:
+
+mds  -- this fails
+
+(de::set-up-test-objects)
+
+This will take some time to execute.  
+
+Go back to the VPL.  In an EDIT-OBJECT box, 
+enter de::testvec and execute the box.  The sequence editor will appear.  
+Click on the number '1'.  The edit box will open on the bottom of the screen.  
+In the textarea, erase the text and type #$testframe, 
+and make sure the bubble to right of 'Form' is chosen.  
+Click the Enter button.  
+
+The value of the first element of the vector should now say Testframe.
+Click it.  
+	
+There should only be a single column of slots and values.  
+In the 'add a slot' box, type 'baz' and click add
+In the text area, type 'baz' and click 'Enter'
+There should now be two columns of slots and values.  
+
+Right click on Eet's value, and click 'open link in new tab'.  
+The title at the top should say "A table of size 3 by 3"
+Along the left side should be a column containing 	
+0  a
+1  b
+2  c
+
+Along the top should be the row:
+1  :FRED  2   :WILMA   3   :US
+
+;; problem with 0 vs 1 base
+
+Click the (1,1).  In the textarea, erase the number and type in 1001.
+Click the enter button.
+The value of (1,1) should change.  
+
+Close this tab.  
+
+Click the value of the Est slot.  
+The title at the top should say "A table of size 3 by 5"
+Along the left side should be a column saying:
+0  a
+1  b
+2  c
+
+and each value in the table should have a (<number>,<number>) next to it. 
+
+Go back in your browser.  
+
+Click the value of Hht.  
+The title at the top should say "A table of 7412 keys by 3 keys"
+Along the left should be a column beginning with
+1 Npun.Npf0001
+2 Npun.Npf0002 
+
+Along the top should be a row saying
+ 1	 :DIRECTION	   2	 :FROM	   3	 :TO
+
+and each value in the table should have a (<number>) next to it. 
+Go back in your browser.  
+
+Click the value of Set.  
+The title at the top should say A table of size 5 by 3
+Along the left should be a column:
+0 
+1
+2
+3
+4
+
+Along the top should be a row: 
+   1	 a	   2	 b	   3	 c
+
+and each value in the table should have a (<number>,<number>) next to it. 
+Go back in your browser.  
+
+Click on the value of Sst.  
+The title at the top should say: A table of size 99 by 99
+Along the left should be a column of successive integers starting at 0
+and each value in the table should have a (<number>,<number>) next to it. 
+Go back in your browser.  
+
+Click on the value of Eht. 
+The title at the top should say: A table of size 3 by 3 keys 
+Along the left should be a column: 
+0  a
+1  b
+2  c
+
+Along the top should be a row:
+   1	 :FRED	   2	 :US	   3	 :WILMA
+and each value in the table should have a (<number>) next to it. 
+Go back in your browser.  
+
+Click on the value of Het.
+The title at the top should say 'A table of 3 keys, each with 3 elements'
+Along the left should be a column
+1  :FRED
+2  :US
+3  :WILMA
+
+Along the top should be a row
+ 1	 a	   2	 b	   3	 c
+and each value in the table should have a (<number>) next to it. 
+Go back in your browser.  
+
+Click on the value of Hst.  
+The title at the top should say: A table of 7412 keys, each with 10 elements
+Along the left should be a column beginning with 
+1 Npun.Npf0001
+2 Npun.Npf0002 
+
+and each value in the table should have a (<number>) next to it.  
+Go back in your browser.  
+
+Click the value of Sht.  
+The title at the top should say: A table of size 7412 by 4 keys
+Along the left should be a column of successive integers starting at 0.
+
+Along the bottom should be a row:
+   1	 :DIRECTION	   2	 :FROM	   3	 :GENE	   4	 :TO
+and each value in the table should have a (<number>) next to it.  
+
+Click on the 'Down' button in the top left.  The leftmost column should still
+have integers starting at 0, but the values in parentheses 
+should now start at 41.  
+;; really?
+
+In the 'row' box, type 100
+In the 'col' box, type 1
+In the # of rows box, type 10
+In the # of cols box, type 1
+Click Display.  
+You should now see 10 rows with 1 column labeled :Direction
+
+In the 'row' box, type xy
+In the col box, type ()
+In the # of rows box, type -
+In the # of cols box, type nil
+Click display...the table should look like when you first opened it...
+40 rows, 4 columns, starting at row 1 and column 1, and these values should
+appear in the respective boxes at the top.  	
+	
+
+Close the editor window.  
+
+Go back to the VPL and bring down an edit-object box and type in npun.  
+Execute the box.  
+
+The npun frame will appear in the frame editor.  
+
+Click the the value of the genes slot, which looks
+like a list of genes...you should now be in the sequence
+editor, looking at npun's genes.  Click on the first one.  
+
+Click the value of the contiguous-sequence slot, Npun.chromosome
+Click the value of the Genes-Sorted-By-Position slot, taking
+you to the list of genes again.  
+
+Now, click the Parent link at the top left corner.  
+You should now be back at the Npun.chromosome frame.
+
+Click the Parent link again, you should now be back at
+npun.npf0001 frame.
+
+Click the Parent link again, you should be back at the list of genes.
+
+Click the parent link again, you should be back at npun's frame.
+
+
+		
+
+

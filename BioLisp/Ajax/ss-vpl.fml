@@ -1,0 +1,151 @@
+;;; -*-lisp-*-
+
+(html
+  (head 
+   (title "SS VPL")
+   (css
+     ((> body div)
+      padding 12pt
+      margin 3pt
+      border "solid thin black"
+      text-align center
+      vertical-align middle)
+
+     ((> body div p)
+      margin-top 0pt
+      font-style italic)
+
+     ((id palette)
+      background "#ffeeee"
+      height "20%"
+      line-height 200%)
+     ((id workarea) background "#eeffee" height "40%")
+     ((id results) background "#eeeeff" height "20%")
+
+     (span 
+      padding 1pt
+      margin 2pt)
+
+     (div.labeled-hole
+      padding 3pt
+      text-align left)
+     
+     (.cursor)
+
+     (.list
+      float left
+      font-family "Courier"
+      text-align left)
+
+     (.symbol
+      float left
+      font-family "Courier"
+      font-weight "bold")
+
+     (div.value
+      float left)
+
+     (.value)
+
+     (.result 
+      float left
+      padding 3pt
+      margin 3pt
+      background "#ffffdd"
+      border "solid thin")
+
+     (.main-label
+      vertical-align middle
+      font-family "Courier"
+      float left
+      padding 3pt)
+
+     (.label 
+      float left
+      font-family "Times-Roman"
+      font-size 10pt)
+
+     (div.hole
+      float left)
+
+     (div.mhole
+      float left)
+
+     (.hole
+      padding 3pt
+      margin 3pt
+      border "solid thin")
+
+     (.mhole
+      padding 3pt
+      margin 3pt
+      border "solid thin")
+
+     ;; these boxes are always visible and overlap
+     ;; the top left corner
+     (.helper
+      padding 3pt
+      float left
+      margin "-4pt 1pt 1pt -4pt"
+      border "solid thin black"
+      background yellow
+      )
+
+     (.helper-show
+      padding 3pt
+      border "solid thin black"
+      background yellow
+      float left
+      margin "-4pt 1pt 1pt -4pt"
+      )
+     
+     (.palette-item 
+      border "solid thin black"
+      padding 3pt
+      background  "#ddddff")
+
+     (.inserted-item 
+      float left
+      font-family "Courier"
+      text-align left
+      padding 3pt
+      margin 4pt
+      background "#ffddff"
+      border "solid thin")
+
+     (.show
+      z-index 10
+      visibility visible)
+
+     (.hide
+      z-index -10
+      visibility hidden)
+
+     (.popup
+      background lightcyan
+      position absolute
+      top 10
+      left 10
+      padding 1px
+      border "solid thin red")
+
+     (.menu-selected
+      color blue
+      background cyan
+      cursor pointer)
+     
+     (.menu-unselected
+      color black
+      background lightcyan))
+
+   (script type "text/javascript" src "queue.js")
+   (script type "text/javascript" src "ajax.js")
+   (script type "text/javascript" src "http.js")
+   (script type "text/javascript" src "ss-vpl.js")
+   (script type "text/javascript" src "sexp.js"))
+
+  ((body id "thebody" onload "setup()")
+   ((div id "palette") (:p "This space intenionally left blank."))
+   ((div id "workarea") (:p "This space intenionally left blank."))
+   ((div id "results") (:p "This space intenionally left blank."))))
+

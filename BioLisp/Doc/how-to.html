@@ -1,0 +1,1431 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002-2005 JP Massar, Jeff Shrager, Mike Travers           |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<html><head><title>Weblistener/BioLingua System How To and FAQ</title></head>
+
+<body>
+<center>
+<h2><b>Weblistener/BioLingua System How-To and FAQ</b></h2>
+</center>
+
+		
+<a name="TAG-TOP"></a> 
+<center>
+<h2><b>
+How To Do Various Things Having To Do With The Weblistener/Biolingua System
+<br>
+(Directed at system developers and system maintainers)
+<br>
+</b></h2>
+</center>
+
+<ul>
+
+<li><b>Starting the WebListener process</b>
+
+<ul>
+<li>    <a href="#TAG-START-SYSTEM">HOW TO START THE SYSTEM</a>
+</ul>
+<p>
+
+<li><b>Loading and recompiling the software.</b>
+
+<ul>
+<li> <a href="#TAG-LOAD-SOFTWARE">LOAD THE BIOLISP SOFTWARE</a>
+<li> <a href="#TAG-RUNNING-ON-SERVER">RUNNING ON THE SERVER</a>
+<li> <a href="#TAG-CONFIGURE-SOFTWARE">CONFIGURE THE SOFTWARE</a>
+<li> <a href="#TAG-LOAD-TUTORIAL">LOAD THE TUTORIAL</a>
+<li> <a href="#TAG-RECOMPILE-SYSTEM">RECOMPILE/RELOAD</a>
+<li> <a href="#TAG-LOAD-PROCEDURES">SYSTEM LOAD PROCEDURES</a>
+<li> <a href="#TAG-SOURCEFORGE-CVS">SOURCEFORGE, CVS</a>
+<li> <a href="#TAG-TORTOISE">SETTING UP TORTOISE CVS (Windows)</a>
+<li> <a href="#TAG-CVS-NEW-DIRECTORIES">CVS AND NEW SOURCE DIRECTORIES</a>
+<li> <a href="#TAG-STARTUP-SCRIPT">BIOWEBLISTENER STARTUP SCRIPT</a>
+</ul>
+<p>
+
+<li><b>Running the tests and adding new test sets.</b>
+
+<ul> 
+<li> <a href="#TAG-RUN-TESTS">RUN BIOLISP TESTS</a>
+<li> <a href="#TAG-CREATE-TESTS">CREATE A SET OF TESTS</a>
+</ul>
+<p>
+
+<li><b>Starting, accessing, and debugging the Weblistener.</b>
+
+<ul>
+<li> <a href="#TAG-START-BWL">START UP THE WEBLISTENER</a>
+<li> <a href="#TAG-ACCESS-BWL">ACCESS THE WEBLISTENER</a>
+<li> <a href="#TAG-DEBUG-BWL">DEBUG THE WEBLISTENER</a>
+<li> <a href="#TAG-BWL-WORK">HOW DOES THE WEBLISTENER WORK</a>
+<li> <a href="#TAG-BBL-WORK">HOW DOES BBL MODE WORK</a>
+<li> <a href="#TAG-LOGGING-WORK">HOW DOES LOGGING WORK</a>
+<li> <a href="#TAG-FILEBROWSER-WORK">HOW DOES THE FILE BROWSER WORK</a>
+<li> <a href="#TAG-HISTORY-COMPLETION">HOW DOES HISTORY COMPLETION WORK</a>
+<li> <a href="#TAG-SPECIAL-DISPLAY">DISPLAYING OBJECTS IN A SPECIAL FORMAT</a>
+<li> <a href="#TAG-KILL-PROCESS">HOW DO I KILL ONE OF MY PROCESSES</a>
+<li> <a href="#TAG-TIMEOUT">WHAT'S THE DEAL WITH TIMEOUTS</a>
+</ul>
+<p>
+<li><b>Various weblistener mechanisms.</b>
+<ul>
+<li> <a href="#TAG-LOGIN">WHAT HAPPENS WHEN A USER LOGS IN</a>
+<li> <a href="#TAG-MODULES">WHAT ARE MODULES AND HOW DO THEY WORK</a>
+<li> <a href="#TAG-INSTANCE-INIT">WHAT ARE INSTANCE-INIT FILES AND HOW DO THEY WORK</a>
+</ul>
+<p>
+
+
+<li><b>Dealing with the MYSQL database.</b>
+
+<ul>
+<li> <a href="#TAG-MYSQL-INSTALL">INSTALLING THE MYSQL DATABASE</a>
+<li> <a href="#TAG-MYSQL-ACCESS">ACCESS THE MYSQL DATABASE</a>
+<li> <a href="#TAG-MYSQL-NOSTOC">MYSQL DATABASE ON NOSTOC</a>
+<li> <a href="#TAG-MYSQL-RESTART">RESTART MYSQL</a>
+</ul>
+<p>
+
+<li><b>Organisms.</b>
+
+<ul>
+<li> <a href="#TAG-ADD-ORGANISM">ADD AN ORGANISM</a>
+<li> <a href="#TAG-DELETE-ORGANISM">DELETE AN ORGANISM</a>
+<li> <a href="#TAG-NCBIXLATE">TRANSLATE NCBI FORMAT XML GENOMES FOR UPLOAD</a>
+</ul>
+<p>
+
+<li><b>Miscellaneous.</b>
+
+<ul>
+<li> <a href="#TAG-R-TOOLS">'R' TOOLS</a>
+<li> <a href="#TAG-DEFPROTOCOL">DEFPROTOCOL</a>
+<li> <a href="#TAG-GOCODE">How do I reload the gene ontology?</a>
+</ul>
+<p>
+
+</ul>
+
+
+
+<pre>
+
+<p><hr><Hr><p>
+
+<center><big>0.  STARTING THE WEBLISTENER SYSTEM </big></center>
+
+<p><hr><p>
+<a name="TAG-START-SYSTEM"></a><i><font color=green>Q.  How do I start or restart the user-level system?</font></i>
+
+333A.  Log into the machine running the Weblistener as the unix user which
+started the Weblistener process you want to kill (e.g., BioLingua, BioDemo).
+Also log in to the Weblistener you want to kill from your browser.
+Once you get to the main Weblistener page look at the tip top of your browser
+and you will see the unix process id just before your login name.  From the
+unix shell kill that process id:
+
+<!-- mds do we need to add a -9 here? -->
+% kill &lt;pid&gt;
+
+Then make sure you are the home directory and type:
+
+<!-- maybe mention via cd ~ ? -->
+
+% startbiolingua
+
+or the appropriate startup script name (e.g., startbiodemo)
+
+Hint: the BioLingua account password starts with 'b...56...'.
+
+First you may want to check if anyone is running.
+You can use the 
+
+>> (users)
+
+command to see if anyone has been using the system recently, and if so
+you can issue a
+
+>> (wb::announce-reboot)
+
+command (it takes an optional argument in minutes, which defaults to 5).
+This will send messages to active users, and then in five minutes you
+can bring down the system as above.
+
+<p><hr><Hr><p>
+<center><big>I.  LOADING AND RECOMPILING THE SOFTWARE </big></center>
+
+
+<p><hr><p>
+<a name="TAG-LOAD-SOFTWARE"></a><i><font color=green>Q.  How do I load the biolisp software?</font></i>
+
+<!-- mds is this still the proper way? -->
+
+A.  Load the blload.lisp file in the toplevel Biolisp directory:  e.g.,
+
+>> (load "/usr/local/BioLisp/blload.lisp")
+>> (in-package :bio)
+
+
+<!-- this seems completely irrevelant -->
+<p><hr><p>
+<a name="TAG-RUNNING-ON-SERVER"></a><i><font color=green>Q.  How does the software know it's running on the server?</font></i>
+
+A.  The configuration variable user:*biowebserver* is used to determine
+this.  If this variable is T the feature :BIOWEBSERVER is also pushed onto
+Lisp's *features* list for read-time conditionalization.
+
+If this variable is NIL, the Lisp software will load, but the databases
+associated with BioLingua (the knowledge) does not, nor do any organisms load.
+Setting this to NIL is generally used by system developers to load in the
+software for a quick test.
+
+<p><hr><p>
+<a name="TAG-CONFIGURE-SOFTWARE"></a><i><font color=green>Q.  How do I configure the software?</font></i>
+
+There are configuration files for the Weblistener,
+.../Webconfig/weblistener-configuration.lisp, and independently for BioLingua,
+.../Biodefs/configuration.lisp
+
+There is a sample configuration file called, oddly enough,
+.../sample-config.lisp.
+
+If you copy and modify the config files appropriately, and make it so
+that the copies gets loaded via your Lisp initialization file (e.g.
+clinit.cl), then when you load the system (see above) the system
+will configure itself via the parameters defined in your configuration
+file.  (This is how BioLingua and BioDemo are configured, by having
+a config.lisp file in their home directories that gets loaded
+by their respective clinit.cl files).
+
+If any or all of the configuration parameters are not SETQ'ed, then
+when the system loads up default values are provided (defined in the
+aformentioned configuration files).  Some of these defaults are in
+themselves contingent on whether you are running on Windows or Unix.
+
+If you SETQ one of the non-required configuration parameters to NIL,
+the system is supposed to not try to do operations which depend on
+this configuration variable.  The system will theoretically tell you
+on startup if a parameter you set to NIL is actually required.
+
+If and when an installation is done using an executable instead of
+loading from source, a configuration file will be a requirement,
+and it will have to contain calls to initialization functions.
+
+<a name="TAG-LOAD-TUTORIAL"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I load the tutorial software?</font></i>
+
+<!-- mds if theyre all live, we should change the question, and point to 
+  the new tutorial pages -->
+
+A. Most of the tutorials have been converted to so-called 'live'
+tutorials.  These are preloaded into the system; just use the 
+Help menu at the bottom of the screen and select 'Live Tutorials'.
+
+<p>
+
+The old tutorials code can be found i n.../Biolisp/Tutorials/,
+but it is extremely obsolete at this point.  
+
+<p><hr><p>
+<a name="TAG-RECOMPILE-SYSTEM"></a><i><font color=green>Q.  How do I do a complete recompile/reload of the system?</font></i>
+
+A.  The function FORCE-ALL is defined in bootstrap.lisp and is shown below:
+
+(defun force-all (&optional (undo nil))
+  (if (not undo)
+      (progn
+        (setq *force-requires-reloads* t)
+        (set 'cl-user::*force-load-system*-recompile* t)
+        (format t "~&;; REQUIRES will reload module file always now.~%")
+        (format t ";; LOAD-SYSTEM* will recompile all component files now.~%"))
+    (progn
+      (setq *force-requires-reloads* t)
+      (set 'cl-user::*force-load-system*-recompile* t)
+        (format t "~&;; REQUIRES won't reload module file if already loaded.")
+        (format t ";; LOAD-SYSTEM* won't recompile files unless necessary."))
+    ))
+
+If you put a copy of it in your startup file (clinit.lisp, .lispworks)
+you will be able to call it before loading the software.
+
+This function configures the file-loading mechanism to do forced
+recompiles and reloads of everything that gets loaded via load files.
+
+So, to answer the question, do the following:
+
+> (force-all)
+
+> (load "/usr/local/BioLisp/blload.lisp")
+
+
+Note that this only recompiles and reloads code that gets loaded via
+blload.lisp.  This doesn't include some modules such as the code in
+the Matching directory, the tutorial code, or the tests.  It also does
+not recompile the PPCRE code, even though that code is loaded into
+BioLingua during the standard load procedure.  Some of the code in the
+ThirdParty directory gets recompiled also because there is a hack in the 
+.../BioLisp/Help/load.lisp file; otherwise the third party code gets loaded via
+ASDF, which does not honor these flags.  
+
+<p>
+
+You can setq the variables  
+  cl-user::*force-load-system*-recompile* 
+  cl-user::*force-requires-reloads* 
+individually as well.
+
+<p><hr><p>
+<a name="TAG-LOAD-PROCEDURES"></a><i><font color=green>Q.  How in general do the system load procedures work?</font></i>
+
+Most directories have a load.lisp file.  At the very start of start up,
+the system defines a logical pathname, websrc:.  To load code from a
+directory 'foo' the start up code (or, after start up, the developer), does
+
+> (load "websrc:foo;load.lisp")
+
+The microloader, found in bootstrap.lisp, is used to actually
+compile/load the set of files defined in each load.lisp file.
+
+REQUIRES is used to cause each required directory's load.lisp file
+to be loaded.
+
+REQUIRES and PROVIDES are variations on the Common Lisp REQUIRE and
+PROVIDE facilities which we use to prevent the useless reloading of
+code. This functionality is not particularly useful given the load
+structure of the system.  See bootstrap.lisp for more information and
+the code.
+ 
+Once the Weblistener code has been loaded, the BioLingua code is loaded.
+At the start of the BioLingua load process, the logical pathname biol:
+is defined.  Code specific to BioLingua uses this logical pathname in
+its load.lisp files instead of websrc:.
+
+
+<p><hr><p>
+<a name="TAG-SOURCEFORGE-CVS"></a><i><font color=green>Q.  How do I download the code from SourceForge to Nostoc and vice versa?</font></i>
+
+;; As a random person you can only download, not upload.
+;; First you login as 'anonymous', then you do the download.
+;; From whatever directory you are in, it will create a BioLisp
+;; subdirectory (if it doesn't already exist) and all its subdirectories.
+
+cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/biolingua login
+cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/biolingua co BioLisp
+
+;; As a developer.  Become root and chmod all the permissions.
+
+su 
+cd /usr/local
+chmod -R 775 BioLisp
+exit
+
+;; As yourself tell CVS about ssh.
+
+export CVS_RSH=ssh
+
+;; To do an UPDATE (download), cd to the /usr/local directory.
+;; To do a COMMIT (upload), cd to the /usr/local/Biolisp directory.
+
+;; UPDATE (change the login, here 'roton', appropriately)
+
+cd /usr/local
+cvs -d :ext:roton@cvs.sf.net:/cvsroot/biolingua update BioLisp
+
+;; It will ask you for your SourceForge password.
+
+;; It's probably a good idea to chmod all the permissions again once
+;; the files have been downloaded.
+
+;; COMMIT (change the login appropriately)
+
+cd /usr/local/Biolisp
+cvs -d :ext:roton@cvs.sf.net:/cvsroot/biolingua commit
+
+;; This should pop up an editor or something and you take it from there.
+
+;; CHECKOUT
+
+cvs -d :ext:roton@cvs.sf.net:/cvsroot/biolingua co BioLisp
+
+<a name="TAG-TORTOISE"></a>
+<i><font color=green>
+<p><hr><p>
+Q. How do I set up Tortoise CVS to access BioLingua on SourceForge?  
+</font></i>
+
+A. Once you have Tortoise CVS downloaded and installed, you should make a 
+directory called BioLisp perhaps below a 'lispcode' top-level directory
+under C:/ (note that the exact capitalization here is important).
+
+(You will have needed to be set up as a developer for the BioLingua project on
+Sourceforge.)
+
+Click right on the BioLisp directory and choose CVS -> Make New Module 
+This will bring up a form to fill in.  
+
+The CVS root should look something like 
+
+:ext:roton@biolingua.cvs.sourceforge.net:/cvsroot/biolingua
+
+where 'roton' is replaced by your login on Sourceforge
+
+The protocol should be 'Secure shell (:ext:)' 
+
+Note: Jeff Elhai needed to make the protocol be :ssh circa Sep. 2010
+
+The server should be biolingua.cvs.sourceforge.net
+
+The repository folder should be /cvsroot/biolingua
+
+User name should be your own login name on Sourceforge.
+
+Module should be BioLisp
+
+Once everything is filled in, click on OK.  This should cause Tortoise
+to initiate a CVS checkout of all the BioLingua source code.  It will
+ask you for your password incessantly.  To fix this, click right on
+the BioLisp directory folder and select CVS -> Preferences -> Tools
+
+Under SSH parameters, you can put -pw &lt;password&gt;
+(replace &lt;password&gt; with your sourceforge password)
+
+Under External diff application, we recommend that you get the
+<a href="http://www.prestosoft.com/ps.asp">ExamDiff</a> program and install 
+it and then put C:\Program Files\ExamDiff\ExamDiff.exe in that field.
+
+Consult the Tortoise CVS online documentation and tutorial for more
+instructions on how to actually use Tortoise CVS.
+
+<a name="TAG-CVS-NEW-DIRECTORIES"></a><i><font color=green>
+<p><hr><p>
+Q. Sometimes you can't get CVS (on nostoc) to create new directories
+that are created elsewhere when you update.  In other words, you
+create a new directory on, say, your own private machine, and check it
+in.  But when you log into Nostoc, and do cvs update, it doesn't
+create the directory, and you can't cvs checkout (co) it.  What to do?
+</font></i>
+
+A. You CAN cvs co the directory, but you have to be in the ABOVE directory:
+
+   cd /usr/local
+   cvs ...(the usual junk)... co BioLisp/{newdir}
+
+Another solution is to wipe out the entire BioLisp directory hierarchy
+(or save it away by renaming it) and do a cvs checkout of the entire
+source tree again.
+
+
+<p><hr><p>
+<a name="TAG-STARTUP-SCRIPT"></a><i><font color=green>Q.  Where is the startup script for the BioWebListener, and how does it work?</font></i>
+
+A.  .../BioLisp/Scripts/runbwl-instance.sh
+
+and this starts up a Lisp which evaluates the file
+
+    .../BioLisp/Scripts/new-bwlinit.lisp
+
+The runbwl-instance.sh shell script takes some required path arguments
+and optionally takes an argument which is an http port number.
+
+The runbwl-instance.sh script is generally called now from another
+script in the instance directory (e.g., /home/BioLingua/startbiolingua)
+which just calls runbwl-instance.sh with the proper arguments defined.
+
+New-bwlinit.lisp loads in all the BioLingua software, starts up the
+Weblistener, verifies the password file, starts up various other
+services like XML-RPC, and finally puts itself into an infinite sleep
+look (since the Weblistener, using AllegroServe, runs in another
+thread).
+
+The output of the startup procedure is logged to a file in the system
+logs directory which has a file extension of .bwlscript.
+
+
+<p><hr><Hr><p>
+<center><big>II.  RUNNING AND CREATING TESTS </big></center>
+
+<a name="TAG-RUN-TESTS"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I load and run the biolisp tests?</font></i>
+
+A.  Most of the biolisp tests are now loaded with the system load, and
+run as one of the last steps of the system load.  You can check on the
+status of the test runs by looking at the log file for the latest
+startup of the weblistener.  The blload.lisp file calls
+RUN-STARTUP-BIOLISP-TESTS near the end of the system load procedure to 
+run these tests. 
+
+<p>
+
+Some tests are only run under certain conditions: the organisms tests
+are only run if the cyanobacterial organisms are present; the
+biotools tests are only run when the organisms tests are run and then
+only one out of four times stochastically (because they take a fairly 
+long time to run). 
+
+<p>
+
+Some tests are not run at system startup time at all.  To run these and 
+other tests, after you've loaded the biolisp software, do 
+
+> (ld "biol:Testing;load")
+
+This will load in the files which contain tests, and load in other
+software that gets tested (e.g., the files in the Matching directory).
+
+Then do
+
+> (bio::run-biolisp-tests)
+
+<!-- mds we can also mention bllnt -->
+(You can scan the output to see if there are any errors.)
+
+<a name="TAG-CREATE-TESTS"</a><i><font color=green>
+<p><hr><p>
+Q.  How do I create a set of tests and include them in the biolisp test suite?
+</font></i>
+A.  Look in the directory .../Testing and use one of the *-tests.lisp files
+as a template.
+
+Basically you create a test using
+
+DEFTEST &lt;name&gt; &lt;test-form&gt; &lt;expected-result-form&gt; 
+        &key (comparison #'eql) :chapter &lt;chapter-name&gt;
+
+When the test is run, &lt;test-form&gt; is executed and the result compared
+to &lt;expected-result-form&gt; using COMPARISON.
+
+You run all the tests in a chapter by doing
+
+> (run-chapter-tests &lt;chapter-name&gt; :verbose t)
+
+To add your tests to the test suite edit the files
+
+  load.lisp
+  driver.lisp
+
+<!-- mds do we still use driver files?  do we mean a defs file? -->
+
+appropriately.
+
+You can run an individual test using 
+
+> (run-test &lt;test-name&gt; &lt;chapter-name&gt;)
+
+
+<p><hr><Hr><p>
+<center><big>III.  BIOWEBLISTENER INTERNALS </big></center>
+<a name="TAG-START-BWL"</a><i><font color=green>
+
+<p><hr><p>
+Q.  How do I start up the Weblistener?</font></i>
+
+A.
+
+> (wb::start-weblistener)
+
+This starts up Allegroserve listening on port *weblistener-port*.
+You can give the function a value for the :port keyword argument to
+change the port, or change the value of the variable before calling
+the function.
+
+<a name="TAG-ACCESS-BWL"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I access the BioLingua Weblistener from a browser?</font></i>
+
+A.  Open the URL http://localhost:&lt;port&gt;/biologin
+
+where &lt;port&gt; is the port number you started Allegroserve with as
+above.  You can replace 'localhost' with the name of a remote machine
+(e.g., 'nostoc.stanford.edu') if BioLisp/Allegroserve is running on a remote
+machine and you know the machine web address and port number.
+
+<a name="TAG-DEBUG-BWL"></a><i><font color=green>
+<p><hr><p>
+Q.  How can I debug the Weblistener?</font></i>
+
+A.  If you run locally on Windows using Allegro, you open the Console
+Window and look at the output.  Print statements in the dynamic web
+page creation code will get printed out to this Console window.  If
+you trace a function the trace results will also get printed out to
+the Console.
+
+If you run on Linux on the server using Allegro, output will get 
+printed to the terminal window (or Emacs buffer) that you started
+up the weblistener from.
+
+<a name="TAG-BWL-WORK"></a><i><font color=green>
+<p><hr><p>
+Q.  How does the Weblistener work, generally speaking?</font></i>
+
+A.  When someone logs in for the first time to a new Weblistener
+process, a package is created whose name is the same as the user name
+of the person logged on.  Many things are keyed off of this
+username/package name.  Each time a user logs in a new session is
+created for the user, independent of previous sessions (the user has
+the option of reconnecting to a previous session).  Each session has a
+SESSIONID, and pretty much everything else is keyed off of this
+sessionid.
+
+The user has or is given a home directory (a subdirectory of a
+toplevel Weblistener user home directory specified by a configuration
+variable (on Nostoc 8002 it is /home/visitors/&lt;username&gt;/.)  The
+names and values of dynamic variables that are specific to a session
+(all Lisp exported dynamic variables and some other specific to the
+Weblistener e.g., *print-length*, *username*) are stored away using
+the SAVED-VARIABLES-MECHANISM defined in .../Utils/symbol-utils.lisp
+
+Whenever a user asks for an expression to be evaluated the string
+constituting what is in the expression box is sent from the browser to
+the Lisp/AllegroServe/BioLisp process, which executes a complicated
+READ-EVAL-PRINT sequence.  It first binds the dynamic variables to their
+user-specific values, then it reads the string and evaluates the 
+resulting form.  All errors are trapped; it is not possible for the
+user to fall into the debugger.  Finally the result is turned into
+a string, and both the input and the output are sent back to the
+browser for display.  Multiple values are dealt with correctly; all
+values returned are displayed, along with any output generated by
+print statements and their ilk in the executing expression.
+
+There are innumerable hacks to make the browser display and user
+interaction work.  See the files high-level-repl.lisp,
+low-level-repl.lisp and redisplay-listener.lisp in the .../weblisten/
+directory.
+
+<a name="TAG-BBL-WORK"></a><i><font color=green>
+<p><hr><p>
+Q.  How does bbl mode work?</font></i>
+
+A. There is a function which determines whether the user is in 
+biolisp mode (the default mode) or bbl mode.  The weblistener REPL calls
+this function at appropriate times to determine how to process the
+user's input.  
+
+If the user is in bbl mode, things work a little differently than 
+in biolisp mode.  
+
+For starters, user input is read using a different, bbl-specific
+readtable.  This readtable has special handling for [, ], {, and }.
+
+Instead of simply calling READ-FROM-STRING to read the input string,
+the REPL calls BIOBIKE-READ-FROM-STRING which can process multiple
+forms.  (This is necessary because in bbl mode a user can type
+something like 'x[3]' which is read using the bbl-specific reader, as
+four separate tokens: x, [, 3, and ].  These need to be aggregated
+into a single form to be executed, and the []-notation needs to be
+transformed into calls to REF.)
+
+Once a form is obtained, the form is subject to preprocessing before
+it is compiled and executed.  This preprocessing involves a codewalk
+and within it the transformation of certain symbols into frames.  This
+preprocessor is invoked by calling BIOBIKE-FORM-TO-LISP-FORM.  
+
+<! -- we can also mention that bbl functions can only be used in bbl mode -->
+
+<a name="TAG-LOGGING-WORK"></a><i><font color=green>
+<p><hr><p>
+Q.  How does logging work?</font></i>
+
+A.  The variable cl-user:*logs-directory* can be either
+
+    -- SETQ'ed to NIL in your configuration file, in which
+       case no logging will be done.
+
+    -- SETQ'ed to a directory pathname, in which case logging
+       is done using this directory as a base
+
+    -- LEFT as its default, which is /home/visitors/ on Unix, and
+       C:/Biomisc/Biologs/ on Windows.
+
+In the latter two cases the simple logical pathname host 'LOGS:' is set
+up to point to the logging directory when the system is loaded.
+
+Logs for a user FOO are in fact written two subdirectory levels deep
+from the directory specified by *logs-directory*.  E.g., user FOO's
+logs on Nostoc get written to the directory
+/home/visitors/foo/session-logs. Into this logfile is stored every
+input form the user executes and every output form that the system
+prints in reply.  Also messages about loading initialization files
+and other miscellany are printed here.
+
+When the Weblistener starts up a logfile is created in LOGS:SYSTEM;
+whose name is in the format &lt;tag&gt;-&lt;date&gt;-&lt;time&gt;.log
+Into this logfile is stored the startup and halt of the
+Bioweblistener, user login events, (successful and unsuccessful), and
+attempts by users to execute verboten commands.  Each event is
+timestamped.
+
+When the system starts up, the output from the startup script and all
+subsequent I/O directed to standard output is written to a file in
+LOGS;SYSTEM; with a file type of '.bwlscript'.  If an error occurs in
+the Weblistener and the system halts you may be able to see what the
+error was by looking in this file.  Problems in the startup sequence
+can also be inspected by looking at this file.
+
+<a name="TAG-FILEBROWSER-WORK"></a><i><font color=green>
+<p><hr><p>
+Q.  How does the file browser work?</font></i>
+
+When the file browser is used to view a directory, it grovels over all the
+files in that directory, deciding what to do with each.
+
+If the file is actually a subdir, it creates a recursive 'directory
+viewing' computed URL for it.
+
+If the file is one it determines should not be shown (.fasl, .fsl, for
+now) it doesn't create a URL for it or display it.
+
+If the file is one it knows nothing about (anything but .lisp or
+.lisp~ presently) it creates a standard, non-computed URL that
+directly points to the file and leaves it up to the web-browser's
+semantics as to what will be done when that URL is clicked (e.g., for
+.html files the obvious thing happens; for .txt files the web browser
+displays the raw text, for random .xxx files it pops up a menu asking what
+you want to do with it).
+
+If the file is a .lisp or .lisp~ file it creates a computed URL, which
+when clicked calls the code that does all the hyperlinking, adds all
+the header links, etc.
+
+This computed URL for .lisp files adds an additional header URL
+('Download Source') which is a standard, non-computed URL that points
+directly at the .lisp file. 
+
+Once the file browser has decided what files/subdirs to show and the
+URL's to associate with each one, it creates the HTML for the computed
+page, etc, etc.
+
+(The creation of "standard, non-computed URL's that point directly at
+a file" would be trivial except for the complication that a level of
+indirection is currently introduced because we don't allow the
+directory browser to look at the entire Nostoc directory hierarchy, we
+only allow it to look at a restricted set of directories.  Currently
+on Nostoc, /usr/local/BioLisp, /home/visitors/, and /usr/local/bioetc/
+are the toplevel viewable directories.  They are given 'logical'
+prefixes (Topdir1, Topdir2, and Topdir3, respectively) and the
+Allegroserve function PUBLISH-FILE is called to map a 'logical'
+pathname for a file (e.g., /Topdir1/bootstrap.lisp) to the actual
+location on disk (e.g., /usr/local/BioLisp/bootstrap.lisp).  It's not
+clear this is necessary, but that's the way it's done at the moment.)
+
+<a name="TAG-HISTORY-COMPLETION"></a><i><font color=green>
+<p><hr><p>
+Q.  How does the history completion mechanism work?</font> </i>
+
+A. There is a subdirectory of the user's weblistener home directory,
+.cih; In it are two kinds of files, a global-cih.lisp file which
+stores up to 5000 distinct previous user inputs, and session files,
+one for each user session since the Weblistener was started up.
+When a user logs in for the first time since the weblistener process
+was started, the session files and existing global file are merged
+together into a new global file and the existing session files are
+then deleted.
+
+There is a hash table on a per-session basis which stores each user
+input of more than a certain length (currently 10).
+
+When a user asks for a completion, the in-core cache is first searched;
+if an appropriate match is not found, the global file is searched.
+
+When a user types in a normal entry, the entry is stored in the in-core
+cache and also in the session cache file (which is open in :append mode).
+
+This redundancy allows the history record to be maintained despite the
+fact that a user is never required to log out, while allowing
+efficient searching of the history list.  See the .../Weblisten/cih.lisp
+file for more details.
+
+<!-- should we also mention that * is the last output? -->
+
+<a name="TAG-SPECIAL-DISPLAY"></a><i><font color=green>
+<p><hr><p>
+Q.  How can I make the BioWeblistener display something in a special format?</font></i>
+
+A.  See the file special-output.lisp in the .../Weblisten directory.
+You need to define a class that will contain the object you want to
+display specially, and a method named OUT-RECORD-TO-HTML specialized
+on that class.  Then your program needs to return an object of the
+class you defined.
+
+
+<a name="TAG-KILL-PROCESS"></a><i><font color=green>
+<p><hr><p>
+Q.  How can I kill my program?
+</font></i>	
+
+ 
+See the file process-info.txt in this directory, .../Doc/.
+
+Basically:
+
+   1. Close your listener window -- THIS IS CRITICAL!!
+   2. Log in again
+   3. Get the PID number, produced by (ALL-MY-PROCESSES)
+   4. Kill the process: (KILL-MY-PROCESS pid-number)
+
+<a name="TAG-TIMEOUT"></a><i><font color=green>
+<p><hr><p>
+Q. How can I have my program not timeout?
+</font></i>	
+
+Timeout is controlled by a user-specific variable,
+*EXECUTION-TIMELIMIT*.  (This variable is settable from the
+Tools->Prefs menu).  This is actually an internal variable; the
+function SET-TIMELIMIT is used as the external interface (although
+there is no corresponding GET-TIMELIMIT function, so the variable
+needs to be accessed directly).
+
+The default value of *EXECUTION-TIMELIMIT* is controlled by the
+configuration variable *DEFAULT-EXECUTION-TIMELIMIT*.
+
+The maximum timelimit a user is allowed is controlled by the
+configuration variable *MAXIMUM-EXECUTION-TIMELIMIT*.
+
+So the answer to the question is to either use SET-TIMELIMIT or 
+the tools->prefs page to modify the current timelimit.  
+
+<a name="TAG-LOGIN"></a><i><font color=green>
+<p><hr><p>
+Q. What happens when a user logs in? 
+</font></i>
+
+To be done.
+
+<a name="TAG-MODULES"></a><i><font color=green>
+<p><hr><p>
+Q. What are modules and how do they work?
+</font></i>
+
+To be done.
+
+<a name="TAG-INSTANCE-INIT"></a><i><font color=green>
+<p><hr><p>
+Q. What are instance-init files and how do they work?
+</font></i>
+
+To be done.
+
+<p><hr><Hr><p>
+<center><big>IV.  ACCESSING THE MYSQL DATABASE</big></center>
+
+<a name="TAG-MYSQL-INSTALL"></a><i><font color=green>
+<p><hr><p>
+Q. How do I install a MySQL database?
+</font></i>
+
+<pre>
+
+To get yourself started from scratch, for example on a new machine
+that hasn't seen BioBike before, you'll need to do the following
+steps. (Sometimes, if you're very very lucky, this all Just Works --
+Ha Ha! -- If it doesn't, you need to be pretty used to dealing with
+MySQL, or get someone who is to help you work through the problems
+that are sure to arise!):
+
+1. Ensure that mysql exists on the machine and that it gets 
+   autorun at boot time. 
+
+This can be as simple as typing:
+
+  mysql
+
+and it'll just come up! Otherwise, run screaming to your sysadmin.
+
+2. Get mysql root access (make a mysql root password), and then login
+   as root.
+
+  mysql --user=root --password='myrootpassword'
+
+Again, if you don't know this, run screaming, as above.
+
+3. Create a biobike database (called 'cyanobacteria' in these examples).
+
+   CREATE DATABASE cyanobacteria;
+
+4. Give biobike @ localhost access to it.
+
+   GRANT ALL ON cyanobacteria.* TO 'biobike'@'localhost';
+
+   [[NOTE THAT THE DATABASE AND USER NAMES ARE CaSeSeNsItIvE!!!!!!!!!!!!!!]]
+
+   FLUSH PRIVILEGES;
+
+[[This has to be done for each account that has a server.
+No password is needed since it's constrained to localhost.]]
+
+5. Make sure that the configuration of the biobike server matches
+   the database info. (Lots of defaults to set in the config.lisp)
+
+6. Test. (See below)
+
+More details on all of the above follow:
+
+================================================================
+MySQL installation and management should be done by a competent
+database administrator (DBA). The following notes will only be helpful
+if you've done this sort of thing before before, and are familiar with
+SQL and/or MySQL. If you don't know what-all this is talking about,
+best to get someone who knows what they're doing to help you here.
+
+The local mysql socket is: /var/lib/mysql/mysql.sock This is created
+when MySQL starts up. You'll usually want it to startup at Boot
+time. This has to be done by your root-enabled sysadmin using
+chkconfig:
+
+[[JS20070830: For some reason chkconfig doesn't work on recent linux
+systems, even though it's documented in the man pages! The simplest
+way to tell that mysql is started on your server, is just to try to
+run it by using the mysql command. If it doesn't work, talk to your
+sysadmind.]]
+
+Not started:
+
+  [root@mymachine ~]# chkconfig --list mysqld
+  mysqld         0:off   1:off   2:off   3:off   4:off   5:off   6:off
+
+The following command makes it startup at boot time:
+
+  [root@mymachine ~]# chkconfig mysqld on
+
+Verify:
+
+  [root@mymachine ~]# chkconfig --list mysqld
+  mysqld          0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+The numbers are the various run levels that the system may be in. On
+this particular server, the 'id:' line in /etc/inittab indicates that
+runlevel 3 is the default run level.
+
+If you have't installed the help files, on initial startup it will
+appear as though something terrible has gone wrong, but it does appear
+to start:
+
+  [root@mymachine ~]# service mysqld start
+  Initializing MySQL database:  Installing all prepared tables
+  Fill help tables
+  ERROR: 1064  You have an error in your SQL syntax; check the manual
+  that corresponds to your MySQL server version for the right syntax to
+  use near '' at line 1
+  060225  3:11:06 [ERROR] Aborting
+  060225  3:11:06 [Note] /usr/libexec/mysqld: Shutdown complete
+  WARNING: HELP FILES ARE NOT COMPLETELY INSTALLED!
+  The "HELP" command might not work properly
+
+To start mysqld at boot time you have to copy:
+
+  support-files/mysql.server
+
+to the right place for your system
+
+================================================================
+*** REMEMBER TO SET A PASSWORD FOR THE MySQL root USER ***
+
+To do so, start the server, then issue the following commands:
+
+  /usr/bin/mysqladmin -u root password 'new-password'
+  /usr/bin/mysqladmin -u root -h mymachine.com password 'new-password'
+
+[[JS20070830: Um, what's the mymachine.com line for, and what do you
+replace for mymachine.com (for example: nostoc.stanford.edu?) I should
+have made more notes on this line when I wrote it. For now, until I
+figure out what the second line is for and give more detail, I'd skip
+it!]]
+
+or you can use the various instructions on how to change a user's
+password in the mysql help pages:
+
+    http://dev.mysql.com/doc/mysql/en/Adding_users.html
+
+================================================================
+You can start the MySQL daemon with:
+
+  cd /usr ; /usr/bin/mysqld_safe &
+
+You can test the MySQL daemon with the benchmarks in the 'sql-bench'
+directory:
+
+  cd sql-bench ; perl run-all-tests
+
+Please report any problems with the /usr/bin/mysqlbug script!
+
+The latest information about MySQL is available on the web at:
+
+  http://www.mysql.com
+
+===================================================
+Mysql administration:
+
+Useful web pages:
+
+    http://dev.mysql.com/doc/mysql/en/Access_denied.html
+    http://dev.mysql.com/doc/mysql/en/Adding_users.html
+
+Mysql has caching issues; It's user to restart it.  The easiest way
+to do this is:
+
+   FLUSH PRIVILEGES;
+
+to reload the tables.
+
+Or (from root):
+
+   /etc/rc.d/init.d/mysqld restart
+
+To set a user password, you have to pass it through the
+PASSWORD('...')  function if you want to do it directly.
+
+Log in as root to do admin stuff:
+
+    mysql -uroot -p<yourrootpassword> mysql
+
+To remove a user you have to remove all of his/her priv, and then use:
+
+   delete from user where User = 'name';  [[WARNING: name is CaSeSeNsItIvE!!!]]
+
+to remove him/her from the user table.
+
+Adding a new user (example):
+
+mysql> delete from user where User = 'BioDemo';
+Query OK, 1 row affected (0.00 sec)
+
+mysql> grant all on cyanobacteria.* to 'BioDemo'@'localhost';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0.01 sec)
+
+================================================================
+To create a new database:
+
+  CREATE DATABASE name; [[WARNING: name is CaSeSeNsItIvE!!!]]
+
+Setup CONFIG.LISP terms:
+
+;;;; GENERIC DATABASE ACCESS INFORMATION (NOT FULLY IMPLEMENTED)
+(setq *DEFAULT-DB-CONNECTION-METHODOLOGY* :mysql)
+(setq *DEFAULT-MYSQL-LOCAL-FILE-ARG* "/var/lib/mysql/mysql.sock")
+(setq *DEFAULT-MYSQL-REMOTE-MACHINE* nil)
+(setq *DEFAULT-MYSQL-REMOTE-USER-NAME* "biobike")
+(setq *DEFAULT-MYSQL-REMOTE-PASSWORD* nil)
+(setq (dosql "show tables")
+*DEFAULT-MYSQL-DATABASE-NAME* "cyanobacteria")
+(setq *DEFAULT-MYSQL-LOCAL-OR-REMOTE-DEFAULT* :local)
+
+Test through the web listener:
+
+> (dosql "show tables")
+:: :: 
+;; Executing SQL command CONNECT, with arguments
+;; (:FILE "/var/lib/mysql/mysql.sock" :DATABASE "cyanobacteria")
+;; Executing SQL query: "show tables"
+;; Executing SQL command SQL, with arguments
+;; ("show tables" :DB
+    #<DBI.MYSQL:MYSQL connected to "/var/lib/mysql/mysql.sock" @
+      #x101f2db362>)
+;; Executing SQL command DISCONNECT, with arguments
+;; (:DB
+    #<DBI.MYSQL:MYSQL connected to "/var/lib/mysql/mysql.sock" @
+      #x101f2db362>)
+
+> NIL
+> ("Tables_in_cyanobacteria")
+
+This is okay, as long as you didn't get an error, because there are no tables.
+
+More complete test:
+
+(progn
+  (dosql "create table foo (aname varchar(10))")
+  (print (dosql "show tables"))
+  (loop for name in '("jeff" "jane" "john" "judy" "joe")
+        do (dosql "insert into foo (aname) values (~s)" name))
+  (print (dosql "select * from foo"))
+  (dosql "drop table foo")
+  (print (dosql "show tables"))
+  )
+
+Should see (about the middle of the various messages):
+
+  (("jeff") ("jane") ("john") ("judy") ("joe")) 
+
+This is the result of: (print (dosql "select * from foo"))
+
+================================================================
+What happens if you get: 
+
+>> (bio::dosql "show tables")
+;; Executing SQL command CONNECT, with arguments
+;; (:FILE "/var/lib/mysql/mysql.sock" :DATABASE "cyanobacteria")
+;; In exec-mysql-command: DBI.MYSQL error.
+;; Actual error is mysql error 1044:
+                   #42000Access denied for user 'biobike'@'localhost' to database 'cyanobacteria'
+*** An error occurred...
+  within the form (GENERICDB:XSQL "show tables")
+    In the form (BIOLISP:DOSQL "show tables")
+> <<< Evaluation failed. Actual error: >>>
+<<< mysql error 1044:
+    #42000Access denied for user 'biobike'@'localhost' to database 'cyanobacteria'>>>
+
+See: http://dev.mysql.com/doc/mysql/en/Access_denied.html
+
+My experience has been that I mitakenly created the database and/or
+user in the wrong case! (Unix is iDiOtIc!)
+
+================================================================
+Creating the crossblast table:
+
+  ** See notes in the installation isntructions.
+
+================================================================
+Loading data:
+
+http://www.modwest.com/help/kb.phtml?qid=253&cat=6  -- how to import tables from tab-delim files
+
+To load tab delimeted files, you have to start with:
+ 
+   mysql --local-infile=1 dbname
+
+Then do something like:
+
+   load data local infile '/home/jshrager/chlamy/jgidb/finalModelsV2.txt' into table finalModelsV2 fields terminated by '\t';
+
+This will do a bunch of them if you make a script:
+ 
+  echo "load data local infile '/home/jshrager/chlamy/jgidb/userModels.txt' into table userModels fields terminated by '\t';" | mysql --local-infile=1 jgichlamy
+
+Here's an example also from the GO load docs, if you get a bunch of .sql and .txt files:
+
+  tar -zxvf go_daily-termdb-tables.gz
+  cd go_daily-termdb-tables
+  echo "create database mygo" | mysql
+  cat *.sql | mysql mygo
+  mysqlimport -L mygo *.txt
+
+</pre>
+
+
+<a name="TAG-MYSQL-ACCESS"></a><i><font color=green>
+<p><hr><p>
+
+Q.  How do I access the MYSQL database that BioLisp uses?</font></i>
+
+A. Mysql access is controlled by a number of configuration variables,
+all starting with '*DEFAULT-MYSQL-'.
+
+Here are a couple of examples using commands defined in
+.../Organisms/new-dbaccess.lisp to look at the database:
+
+(This only works on the server (but see below for remote access),
+unless you've managed to install MYSQL locally and duplicate the
+database.)
+
+;; Open the db
+> (oodb)
+;; Run SQL an SQL query
+> (esql "show tables")
+
+;; Disconnect from the db
+> (edisconnect)
+
+;; Do all three steps in one
+> (dosql "describe new_organisms")
+
+There is a macro called WITH-ORGANISMS-DB that wraps code to connect
+and disconnect from the MYSQL database around your code.
+
+Note that if you use it, or run code that uses it, the database will
+become disconnected even if you opened it previously with a call to
+OODB as above.
+
+So if you are just playing around, writing your own SQL expressions,
+use DOSQL which uses WITH-ORGANISMS-DB itself; then you never need to
+worry about whether the database is open or not.  But if you are using
+system code you would be wise to wrap WITH-ORGANISMS-DB around all
+your database accesses.
+
+<a name="TAG-MYSQL-NOSTOC"></a><i><font color=green>
+<p><hr><p>
+
+Q.  How can I access the MYSQL database on NOSTOC remotely?</font></i>
+
+You need a version of Allegro that has MYSQL included with it.
+Currently this is only the Enterprise Edition.
+
+> (require :mysql)
+
+> (dbi.mysql:connect :host "nostoc.stanford.edu" :cl-user "root"
+              :database "cyanobacteria")
+
+(You could use bio::econnect instead of dbi.mysql:connect for a bit
+of shorthand.)
+
+> (dosql "show tables")
+(("crossblast") ("crossblast_detailed") ("crosstables") 
+ ("crosstemp1") ("crosstempHIHARADAT") ("foo")
+ ("genes") ("go_assignments") ("jptest1") ("mytempcross") ...)
+("Tables_in_cyanobacteria")
+
+<a name="TAG-MYSQL-RESTART"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I restart MYSQL on Nostoc?</font></i>
+
+A. To start mysql when it doesn't startup at reboot:
+
+from root:
+
+  cd /etc/init.d/
+  ./mysqld start
+
+
+<p><hr><Hr><p>
+<center><big> V.  ORGANISMS </big></center>
+
+
+<a name="TAG-ADD-ORGANISM"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I add an organism to the system?</font></i>
+
+A.  
+
+<!-- mds uhhh...what? -->
+
+  -- First see the organism-submission-format.txt file in this directory.
+  -- Make sure that you backup all current organism info (the .zip files)
+  -- Move (to bkup) the old organism directory in /usr/local/bioetc/data
+  -- Assuming that you have a .zip file for an organism, then move it to
+     /usr/local/bioetc/data/ and unzip it.  This should create a subdir
+     with the name of the organism:
+
+As:
+
+[BioLingua@nostoc data]$ unzip synechocystis_pcc6803.zip
+Archive:  synechocystis_pcc6803.zip
+replace synechocystis_pcc6803/genome/genome.tbl? [y]es, [n]o, [A]ll, [N]one, [r]ename: A
+  inflating: synechocystis_pcc6803/genome/genome.tbl  
+  inflating: synechocystis_pcc6803/genome/genome.fasta  
+  inflating: synechocystis_pcc6803/proteins/proteins.fasta  
+  inflating: synechocystis_pcc6803/proteins/proteins.tbl  
+  inflating: synechocystis_pcc6803/documentation/genes.test  
+  inflating: synechocystis_pcc6803/genes/genes.tbl  
+  inflating: synechocystis_pcc6803/synechocystis_pcc6803.plist  
+
+  -- You may want to modify the .plist file; go for it.  
+
+  -- You'll probably want to create a postload file.  Copy a postload.lisp
+     file from one of the existing organism directories and rename it
+     appropriately and make appropriate changes in its contents.
+
+  -- You will need to modify the available-organisms.lisp file found in 
+     the .../bioetc/data/ directory.  Edit it and add in your organism.
+     (This file location can be found by executing
+
+  (cl-user::translate-simple-lp "bioetc:data;available-organisms.lisp")
+
+     at a weblistener prompt.)
+
+  -- Execute (load-organism "syn6803") at a weblistener prompt (replacing 
+     "syn6803" with the name of your organism).  This 
+     will produce a large amount of output, which you will want to examine
+     for any errors; but if it doesn't error out completely, you're probably
+     in good shape.  
+
+     There is also a way of loading an organism 'privately' from a 
+     user-specified directory.  (If will still be visible to all the users
+     of the system; but you would be able to use UNLOAD-ORGANISM to remove it
+     from the running system.)  See the documentation for LOAD-ORGANISM and
+     UNLOAD-ORGANISM for more details.  
+
+  -- The configuration variable *ORGANISMS-TO-LOAD-LIST* controls which 
+     organisms are actually loaded at system initialization time. You can
+     add your organism to this list (in your configuration file), or if
+     the value of this variable is :all, your organism will get loaded
+     automatically.  
+
+  -- Once a new organism is installed, you may want to create a new 
+     crossblast table.  Here's how to do that:
+
+<font color=red>Note that the following instructions are probably
+obsolete. Contact Jeff Shrager if you really need/want to do this.  
+</font>
+
+The crossblast code is in Lib/orthologs.lisp
+ (should already be loaded)
+
+Do this from the BioListener:
+
+1. Make sure all organisms are loaded by looking at *loaded-organisms*
+   Load any that aren't:
+
+   > (in-package :bio)
+   > (mapcar #'load-organism (available-organisms))
+
+2. (start-crossblast :organisms *loaded-organisms* :e-limit "1e-3")
+   Those are the default for those keys.  Note that the 1e-3 is double quoted!
+
+This will take some time, and then it will return and then you go away
+until the started subprocess is done!  You can check on the process by
+looking at the /tmp files: allproteins.fa (created first), then when
+the blast actually starts it creates: allproteins.crossblast
+
+When that stops changing, go on to the next steps.  Depending upon the
+e value you've chosen, this could be a REALLY long time!
+
+When that's done, get back into BioLingua and execute:
+
+> (in-package :bio)
+> (replace-crossblast-table &lt;file&gt; [&key (include-symmetries? t)] )
+
+You might want to do this through a non-web listener as it can take
+some time, although it's not nearly as slow as the above step!  It
+loads about 2500 lines/second, so it can take a few tens of minutes!
+
+  -- Recreate the organism object tables:
+
+1. Again, ensure all organisms are loaded (as above).
+2. From the listener, do:
+
+   > (bio::recreate-orgobj-tables :really-delete-the-old-tables?? t)
+
+This can take a few tens of seconds -- maybe up to a minute.
+
+  -- For each organism, you'll want to create a new GO guesses table as well.
+
+     (Need to be explained.)
+
+<a name="TAG-DELETE-ORGANISM"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I delete an organism from the system?</font></i>
+
+A.  We purposely do not give you an automatic way to do this.
+
+If you have loaded an organism privately, then you can remove it from
+the running system by using UNLOAD-ORGANISM. 
+
+If you want to delete a system-wide organism (which you shouldn't be
+doing unless you know exactly what you're doing), then all you need do
+is to remove that organism's name from the
+.../bioetc:data;available-organisms.lisp file.  You can also delete
+the entire organism's directory, found in
+.../bioetc:data;<organism-name>;
+
+You should also remake the crossblast table.  
+
+<a name="TAG-NCBIXLATE"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I setup to load an organism from the published (NCBI) genome?</font></i>
+
+<!-- mds still relevant? -->
+
+A. Lots of complex steps:
+
+I. Create a directory for your organism in the bioetc/data directory.
+(See doc on uploading format for details.)
+
+II. Find and download the organism info in XML from the NCBI:
+
+   Go to: http://www.ncbi.nlm.nih.gov/
+   Select: Search: Genome
+   Enter the name (e.g., "ss120") and press ENTER
+   Click the genome (NC_....) link
+   From the resulting graphic click the Accession: ... link (near the upper left)
+   Select Display: XML
+   Select SEND TO file
+   Create a directory (.../<orgname>/)
+   Click SEND TO
+   It will save a file called "batchseq"
+   For clarity, rename this to the name, and .XML
+   Create a file called "<orgname>.plist" as per
+     the BioLingua documentation.  Add properties
+     as needed to clarify where the data was found
+     and who and when it was downloaded, as:
+
+     ... other propoerties ...
+     (nc-number "NC_005042")
+     (gi-number "GI:33239452")
+     (download-date "20040512")
+     ... other propoerties ...
+
+   See the pro1375.plist for an example.
+
+III. Load and run (usually in a separately started direct lisp listener,
+     although this might work from a web listener as well):
+
+> (in-package :bio)
+> (c/l "Biol:Organisms;ncbixlate.lisp")
+> (translate-ncbi-organism-xml "pro1375") ; or whatever
+
+This will create all the relevant subdirectories.  All you should have
+to do then is follow the directions above in the add-organism section.
+
+Notes:
+
+* If anything breaks, you may have to delete various left-over files, such
+  as the <orgname>.lisp file.
+
+<p>
+
+<p><hr><Hr><p>
+<center><big>VI.  MISCELLANEOUS.  DATA SUBDIRECTORY, R TOOLS, DEFPROTOCOL </big></center>
+
+
+<p><hr><p>
+Q.  How should the 'data' subdirectory be used?
+
+A.  The data subdirectory of the main source directory is pretty much
+obsolete.  Most data files are now in bioetc:data; which is not inside
+the CVS source tree or under CVS control
+
+<a name="TAG-R-TOOLS"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I interface to the 'R' tools ?</font></i>
+
+A.  See the file .../Lib/rtable.lisp, in particular the
+R-CLUSTER-MEANS function and its auxiliaries. 
+
+<font color="red">Note: This is way obsolete, and almost certainly
+will not work.</font>
+
+
+<a name="TAG-DEFPROTOCOL"></a><i><font color=green>
+<p><hr><p>
+Q.  How do I use DEFPROTOCOL ?</font></i>
+
+A.  See the tutorial file, usingdefprotocol.html, and/or the 
+specification file, defprotocol.txt.
+
+
+<a name="TAG-GOCODE"></a><i><font color=green>
+
+Q.  How do I reload the gene ontology?</font></i>
+
+A. <a href=kdbs.html>click here to see instructions in the KDBs help file</a>
+
+<a href="#TAG-TOP">Back to Index</a>
+
+</pre>
+

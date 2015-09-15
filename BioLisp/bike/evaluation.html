@@ -1,0 +1,634 @@
+<html>
+  <head>
+    <title>The BioBike Language</title>
+    <link rel='stylesheet' type='text/css' href='style.css'>
+  </head>
+  <body>
+    <h1>The BioBike Language</h1>
+    <p>Some features that have been requested for the BioBike language
+    require us to provide our own evaluation rule that is slightly
+    different from Common Lisp's. One in particular is the ability to use
+    bare symbols to refer to genes and organisms (which are represented by
+    frames in the frame system) without any reader macros such <code>#$</code>
+    and <code>#^</code> and also without having to include the frame "prefix"
+    (the <code>Npun.</code> in names like <code>Npun.NpF0001</code>). Other features
+    that are best handled by taking control of evaluation are the
+    <code>[...]</code>  notation for subscripting operations and the need to
+    allow BioBike functions to be defined as macros without having to
+    forward declare them.</p>
+    <h2>The new evaluation rule</h2>
+    <p>The main difference between the BioBike evaluation rule and Common
+    Lisp's is that BioBike is aware of the frame system and can evaluate a
+    bare symbol in a value position as a reference to a
+    frame. Conceptually we want to make it appear that the BioBike
+    environment is prepopulated with constants whose names are the names
+    and nicknames of all the named frames in the frame system and whose
+    values are the frames. We could in fact implement it that way except
+    that when the frame system has several billion named frames (stored in
+    AllegroCache) we won't be to keep them in memory as Lisp constants.</p>
+    <p>Instead we will implement the following evaluation rule for symbols in
+    value positions:</p>
+    <ol>
+      <li>If the symbol is the name of locally bound variable, the symbol
+         evaluates to the value of the variable.</li>
+      <li>If the symbol is the name of a globally bound variable or constant,
+         the symbol evaluates to the value of the variable.</li>
+      <li>Otherwise we attempt to resolve the symbol as the name of a
+         frame. If the name contains a dot it is resolved as a
+         fully-qualified frame name. If there is no dot in the name, then we
+         look in each of the current "frame modules" (described below) for a
+         name consisting of the frame module's prefix, a dot, and the
+         <code>SYMBOL-NAME</code> of the symbol.</li>
+    </ol>
+    <p>If none of these cases provide a value for the symbol, we signal an
+    error.<sup>1</sup></p>
+    <h2>Frame modules</h2>
+    <p>In order to allow users to use "simple" names such as <code>NpF0001</code>
+    to refer to frames whose fully-qualified names include a prefix
+    (<code>Npun</code> in this case) we need to provide a mechanism by which
+    users can control how simple names are resolved into fully-qualified
+    names.</p>
+    <p>The mechanism will be "frame modules" which map simple names to frames
+    in a way analogous to how Common Lisp packages map simple names to
+    interned symbols.<sup>2</sup> A frame module defines a set of prefixes that can be
+    used to form fully-qualified names from simple names. A simple frame
+    module consists of a single prefix such as <code>Npun</code>. Composite
+    frame modules can be built up by "using" other frame modules. As with
+    packages, there is always a "current" frame module. In the weblistener
+    each user will be given their own frame module so that new frames they
+    create will be in a distinct namespace from frames created by other
+    users. But just as user's packages use the packages containing the
+    names of standard Common Lisp and BioBike functions, so too will their
+    per-user frame modules use the frame modules containing the names of
+    the frames they are likely to need ready access to. The administrator
+    of a BioBike installation will be able to specify the base frame
+    module for per-user frame modules, making sure that things "just work"
+    for users making normal use of the system. For instance, on a system
+    used primarily by cyanobacteriologists the base frame module would
+    likely include the frame modules containing the relevant organisms, GO
+    data, Kegg data, and possibly OC frames.</p>
+    <p>Since it is possible that a frame module could be composed by
+    combining two or more frame modules that share certain simple names,
+    we'll need some mechanism for resolving the ambiguity. We could adopt
+    an approach similar to Common Lisp packages, requiring the author of a
+    frame module to resolve any ambiguities when they define the frame
+    module, choosing the name from one frame module or the other. However
+    this requires that the system can detect such ambiguities efficiently
+    which may not be feasible if some of these frame modules are going to
+    contain billions of names. There are a number of ways to resolve this
+    from a simple minded ordered search (search module Foo before Bar so
+    if they share a simple name, the one in Foo is used) to providing an
+    easy way to include only a specific subset of the names in another
+    frame module. We'll have to think more about this once we've got the
+    basic frame module machinery in place.</p>
+    <h2>Preventing redefinition of globals</h2>
+    <p>Because the built-in frames are conceptually constant values we want
+    to make sure that users can't accidentally redefine those names. And
+    because frame names will now live in the variable namespace that means
+    that we need to prevent two things:</p>
+    <ol>
+      <li>Creating a new frame with the same (simple) name as an existing
+         frame in the current frame module.</li>
+      <li>Defining a new global variable with the same name as the simple
+         name of any existing frame in a used frame module.</li>
+    </ol>
+    <p>The motivation for these restrictions to increase the
+    comprehensibility of programs. If most users are using a user-specific
+    frame module that uses a standard set of other domain relevant
+    modules, then it will improve program clarity if globally accessible
+    names mean the same thing from program to program. We may provide a
+    way for sophisticated users to get around this restriction, perhaps by
+    selectively removing certain names from their frame module.</p>
+    <p>It might also be worthwhile to extend whatever mechanism we implement
+    for protecting frames to protecting global variables--if the system
+    defines global variables other than frames, the same argument against
+    allowing users to arbitrarily redefine them applies. Note however that
+    the prohibition against redefining frames and possibly global
+    variables does not prevent locally rebinding these names. It's
+    perfectly legal (though maybe not entirely wise) to say:</p>
+    <pre>
+(let ((NpF0001 (random 100)))
+  ...)
+    </pre>
+    <p>All this means is that within the scope of that <code>LET</code>, the simple
+    name of frame <code>Npun.NpF0001</code> is shadowed by the local variable
+    <code>NpF0001</code>.<sup>3</sup></p>
+    <h2>New syntax: [] and {} </h2>
+    <p>The new BioBike language will also provide two new syntactic features:
+    the use of <code>[</code> and <code>]</code> as a subscripting operator as in
+    C/Perl/Java/Python and the use of <code>{...}</code> as a shorthand way of
+    building lists, to avoid having to write <code>(list ...)</code>.</p>
+    <p>The <code>{...</code>} to <code>(list ...)</code> transformation is easily
+    implemented with a regular Common Lisp reader macro. The only cost is
+    that we are then burning <code>{</code> and <code>}</code> for this purpose--they
+    can't be used later for something else like delimiting a section of
+    infix math, e.g. <code>(setf x {y * (2 + z)})</code>.</p>
+    <p>Using <code>[</code> and <code>]</code> as subscripting operators requires both
+    customizing the reader and support from the BioBike
+    evaluator. Basically we will cause the reader to read <code>[</code> and
+    <code>]</code> as separate tokens and then in the evaluator to look for
+    occurrences of these tokens and translate:</p>
+    <pre>
+<i>thing</i> [ <i>subscripts</i>* ]
+    </pre>
+    <p>into:</p>
+    <pre>
+(ref <i>thing</i> <i>subscripts</i>*)
+    </pre>
+    <p>where <code>REF</code> is a macro that expands into code that does run-time
+    type checking on the value of <i>thing</i> as necessary to determine how
+    to treat the values of <i>subscripts</i> as subscripts.<sup>4</sup> The objects that will support subscripting are frames (which can
+    be subscripted with slot names), hash tables (subscripted with keys),
+    and arrays (subscripted with integer indices). We could also define a
+    generic function protocol for subscripting so new kinds of objects can
+    be used with the <code>[]</code> syntax.</p>
+    <p>We have not yet completely defined the exact semantics of <code>REF</code>
+    (and thus of the <code>[]</code> syntax).  Some examples given during
+    discussion implied that a form like <code>a[x y z]</code> should be
+    equivalent to <code>(list a[x] a[y] a[z])</code> but we haven't discussed
+    all the details. Some folks might expect it to be equivalent to a
+    multidimensional indexing operation, i.e. <code>a[x][y][z]</code>. We'll
+    need to sort that out.</p>
+    <h2>BioBike DEFINE-FUNCTION</h2>
+    <p>While several of the basic BioBike language features will be provided
+    by the new evaluator, there are a number of features that will be
+    provided by a new <code>DEFINE-FUNCTION</code> macro. These include:</p>
+    <ul>
+      <li>Handling of keyword arguments including allowing use of bare
+        symbols and synonyms.</li>
+      <li>"Flag" arguments--keyword arguments that take now subsequent
+        argument but are simply provided or not (i.e. their value is always
+        <code>T</code> or <code>NIL</code>.)</li>
+      <li>Runtime checking of argument types and generation of meaningful
+        error messages.</li>
+      <li>Runtime coercion of arguments by type.</li>
+      <li>Automatically generating documentation of allowed argument types.</li>
+      <li>Providing infrastructure for better error messages.</li>
+    </ul>
+    <p>The new <code>DEFINE-FUNCTION</code> will actually be slightly misnamed
+    because it's actually going to define a macro (and an associated
+    function). The basic idea is that <code>DEFINE-FUNCTION</code> will allow
+    the function author to specify declaratively how the argument list is
+    to be parsed and will generate a macro to do the parsing, binding the
+    parameters appropriately before invoking an auxiliary function
+    containing the actual code. For instance, the following definition:</p>
+    <pre>
+(define-function foo 
+  required (x)
+  keyword (y)
+  flag (z)
+  body
+    (if z (do-stuff x y) (do-other-stuff x y)))
+    </pre>
+    <p>might generate something like the following macro<sup>5</sup>:</p>
+    <pre>
+(defmacro foo (&amp;whole form &amp;rest args)
+  `(let ((*stack* (cons ',form *stack*))
+         (x ,(first args))
+         (y ,(cadr (member 'y args :test #'symequal)))
+         (z ,(if (find 'z args :test #'symequal) t nil)))
+     (foo-aux x y z)))
+    </pre>
+    <p>and the following definition of <code>FOO-AUX</code><sup>6</sup>:</p>
+    <pre>
+(defun foo-aux (x y z)
+  (if z (do-stuff x y) (do-other-stuff x y)))
+    </pre>
+    <p>Which can then be called like this:</p>
+    <pre>
+(foo 10)
+(foo 10 y 20)
+(foo 10 y 20 z)
+(foo 10 z y 20)
+    </pre>
+    <p>The dynamic variable <code>*STACK*</code> will be used when generating error
+    messages and stack traces.</p>
+    <p>More elaborate functions will specify that certain arguments must be
+    of certain types and the macro will generate code that checks the
+    types at runtime, generating uniform error messages in the case of a
+    type mismatch. It can also generate code that knows how to coerce
+    actual arguments to the required types in well-defined ways. For
+    instance we might define that a coding gene can be coerced to the
+    protein that it codes for. Then (again using a particular syntax for
+    illustration only) the following definition:</p>
+    <pre>
+(define-function bar
+  required p
+  type p (or gene protein)
+  convert p to protein
+  summary "Does stuff with a protein."
+  (do-stuff p))
+    </pre>
+    <p>might define a macro like this:</p>
+    <pre>
+(defmacro bar (&amp;whole form &amp;rest args)
+  `(let ((*stack* (cons ',form *stack*))
+         (p (let ((#:g1 ,(first args)))
+              (cond
+               ((gene-p #:g1) 
+                (or (convert #:g1 'protein)
+                    (error "~a argument to ~a in ~s is a ~a but can not be converted to a ~a"
+                           'p 'bar ',form 'gene 'protein)))
+               ((protein-p #:g1) #:g1)
+               (t (error "~a argument to ~a in ~s not a ~{~a~^ or ~}"
+                         'p 'bar ',form '(gene protein)))))))
+     (bar-aux p)))
+    </pre>
+    <p>The type information attached to the function parameters will also be
+    used to automatically generate part of the function documentation. For
+    instance the documentation of <code>BAR</code> might start something like
+    this:</p>
+    <pre>
+Function BAR
+    </pre>
+    <pre>
+  Does stuff with a protein.
+    </pre>
+    <pre>
+Arguments:
+    </pre>
+    <pre>
+  <i>p</i> -- a gene or protein. If a gene, must be a coding gene
+  which is converted to the protein for which it codes.
+    </pre>
+    <p>The last bit, about the gene needing to be a coding gene, etc. will be
+    boilerplate that is specified once, when we define how to convert a
+    gene to a protein. This does, of course imply that there is a single
+    way to convert a gene to a protein. Which seems like a good idea given
+    the goal of providing consistency across functions BioBike. However we
+    have some flexiblity there. Our current thinking is that there will be
+    a way to define a conversion from one type to another. Perhaps
+    something like this:</p>
+    <pre>
+(defconversion gene -&gt; protein (g) ...)
+    </pre>
+    <p>where <code>...</code> is the code that does the conversion. This defines
+    the default conversion which will be used when a
+    <code>DEFINE-FUNCTION</code> contains a clause like "<code>convert p to
+    protein</code>" and the actual type of the argument is a gene. Always using
+    the same conversion obviously increases the overall consistency of the
+    language and its libraries. However there may be times when the
+    default conversion is inapproriate. If we need to support other
+    conversions we can allow <code>DEFCONVERSION</code> to define named
+    conversions, perhaps like this:</p>
+    <pre>
+(defconversion gene -&gt; protein (g) :named foo
+  ...)
+    </pre>
+    <p>and then in <code>DEFINE-FUNCTION</code> change the <code>convert</code> clause
+    to:</p>
+    <pre>
+convert p to protein using foo
+    </pre>
+    <p>In general the hope is that as we develop the library of standard
+    BioBike functions well converge on a small set of useful conversions
+    which can then be used consistently in the standard functions and in
+    new user-defined functions.</p>
+    <p>We do expect that new programmers are gaing to use
+    <code>DEFINE-FUNCTION</code> to write their functions. Indeed part of the
+    point of providing a declarative syntax for argument types and
+    conversions is to minimize the amount of code folks have to write--by
+    specifying:</p>
+    <pre>
+type p (or gene protein)
+convert p to protein
+    </pre>
+    <p>the programmer will get a whole pile of code generated for them that
+    will check the actual types of arguments passed to the function, will
+    convert arguments to the expected type in a consistent and correct
+    way, and will emit comprehensible error messages if the function is
+    called with incorrect argument types or with objects that can't be
+    converted to the desired type. Additionally, programmers who think
+    clearly about what types of arguments their functions are supposed to
+    be called with will be well on their way to writing functions that
+    actually that work.</p>
+    <h2>The Just in Time compiler</h2>
+    <p>When Common Lisp is compiled the programmer needs a fair bit of
+    sophistication to understand when different bits of code need to be
+    compiled relative to each other and when different pieces need to be
+    recompiled to pick up changes made in other code. For instance, a
+    macro must be defined before you can compile a function that uses that
+    macro. And if the macro is changed, already compiled function that use
+    it must be recompiled to pick up the new macro definition.</p>
+    <p>In BioBike these problems will get even worse because every BioBike
+    function defined with <code>DEFINE-FUNCTION</code> will be defined partly as
+    a macro so every function redefinition could potentially require
+    recompiling all callers of that function.</p>
+    <p>Rather than force BioBike users to deal with those kinds of issues we
+    will remove any notion of explicit compilation from the language,
+    relying instead on a Just in Time (JIT) compiler that will be built
+    into the BioBike evaluator.<sup>7</sup></p>
+    <p>Thus if a user defines the following two functions:</p>
+    <pre>
+(define-function foo (x) 
+  (bar x))
+    </pre>
+    <pre>
+(define-function bar (x)
+  (if (plusp x) (foo (1- x))))
+    </pre>
+    <p>the BioBike evaluator will defer compilation of <code>FOO</code> until
+    <code>BAR</code> has been defined since it doesn't know how to compile the
+    form <code>(bar x)</code> until it knows the definition of <code>BAR</code>. In
+    fact there is no need to compile <code>FOO</code> until the first time it is
+    called, at which point all the operators used in <code>FOO</code> must have
+    been defined.</p>
+    <p>Similarly, after <code>FOO</code> and <code>BAR</code> have both been defined and
+    run, and thus compiled, if the user redefines <code>BAR</code> the JIT
+    infrastructure will note that <code>FOO</code> depends on <code>BAR</code> and
+    thus needs to be recompiled.<sup>8</sup> Under
+    the covers the JIT may go ahead and try to recompile <code>FOO</code> rather
+    than waiting until it is called (to increase the responsiveness of the
+    system) but it will not bug the user with an error message if the
+    change to <code>BAR</code> has rendered the current version of <code>FOO</code>
+    invalid--instead it will add an element to a list of current
+    inconsistencies indicating that there is an inconsistency between
+    <code>FOO</code> and <code>BAR</code> that was introduced by a change to
+    <code>BAR</code>. If the user then redefines <code>FOO</code> to be compatible
+    with the new version of <code>BAR</code>, the JIT will remove the
+    inconsistency from the list and the user will never be
+    bothered. However if the user tries to invoke <code>FOO</code> before the
+    inconsistency has been resolved, the JIT will issue an error message,
+    explaining when the inconsistency was introduced. In other words, the
+    system won't bother a user about inconsistencies between definitions
+    until it absolutely has to--when it is asked to run some code which is
+    presenly ill-defined.</p>
+    <p>However, we do expect to provide a user interface that will allow the
+    user to browse the inconsistency list at any time. This list can then
+    be used as a short-term todo list--after the user changes <code>BAR</code>
+    the system will be able to tell them all the places they need to
+    change to bring the whole system back into a consistent
+    state.<sup>9</sup></p>
+    <h2>Open issues</h2>
+    <p>After several go-rounds, the only wrinkle introduced by this proposal
+    that JP and I can think of is the question of what to do with
+    <code>#$</code> and <code>#^</code>. </p>
+    <p>One theory is that they are not supported in BioBike. Which, I
+    suspect, certain biologists will see as a feature, not a bug. The only
+    drawback of that approach is that we then we can't use <code>#$Foo</code> as
+    a (Lisp) readable syntax for printing frame objects. Which may not
+    matter since frames can now be referred to simply with a symbol.</p>
+    <p>An variant on that theory is that they are half supported--the printer
+    will use <code>#$</code> to print frame objects and the reader will
+    understand it. However the name that appears after <code>#$</code> will
+    always be fully qualified--the reader macro and printer will no
+    nothing about frame modules.</p>
+    <p>A more radical alternative is to keep <code>#$</code> and to enhance it to
+    understand frame modules so you can say <code>#$NpF0001</code> instead of
+    <code>#$Npun.NpF0001</code>. The problem with this approach it is a fairly
+    serious change to the existing frame system as used from existing
+    Common Lisp code and thus could break stuff, requiring us to spend a
+    lot of time tracking things down and fixing them. Thus one of the
+    first two theories (no support or half support) seem preferable.</p>
+    <h2>Sample transcript</h2>
+    <p>What follows is a sample (fake) transcript demonstrating how some of
+    the proposed features and semantics would work in the new BioBike
+    environment.</p>
+    <p>First we interrogate the frame modules used by the current
+    module. "System" is the special frame module which has no prefix.</p>
+    <pre>
+&gt; (frame-modules)
+("Jelhai" "System" "Npun" "P9313" ... "Go" "Kegg" "OC")
+    </pre>
+    <p>The <code>FROM</code> frame is in the System module, and thus available via
+    it's simple name:</p>
+    <pre>
+&gt; from
+#$from
+    </pre>
+    <p>Other frames can likewise be accessed via their simple names:</p>
+    <pre>
+&gt; pmt0016
+#$P9313.pmt0016
+    </pre>
+    <pre>
+&gt; pmt0016[from]
+18916
+    </pre>
+    <p>The system protects us from redefining names that already name
+    existing, accessible frames:</p>
+    <pre>
+&gt; (setq pmt0016 5)
+    </pre>
+    <pre>
+Error: PMT0016 is an alias for frame #$P9313.pmt0016
+You are not allowed to change its meaning by assigning it a new value.
+    </pre>
+    <p>The frame <code>virginia</code> doesn't exist, so it gets created in the
+    user's frame module:</p>
+    <pre>
+&gt; #$virginia
+#$jelhai.virginia
+    </pre>
+    <p>Since <code>virginia</code> is a frame, the system knows that <code>capital</code>
+    must be the name of a frame, but it doesn't know what <code>richmond</code>,
+    which doesn't exist, might be. There the system must be told that it
+    is a frame.  This is done using either '.' notation as a prefix or
+    with <code>NEW-FRAME</code>, shown below. The '.' notation is a special
+    syntax for referring to frames in the user's frame module. This
+    notation is normally only needed to refer to frames that are just
+    being created since using a plain symbol would result in an undefined
+    variable error since the frame doesn't exist yet. In other words,
+     is a shorthand for writing <code>(new-frame foo)</code>.</p>
+    <pre>
+&gt; (assign virgina[capital] richmond)
+Error: RICHMOND is not a variable which has a value or
+the name or alias of a frame.
+    </pre>
+    <pre>
+&gt; (setf virginia[capital] .richmond)
+#$jelhai.richmond
+    </pre>
+    <pre>
+&gt; capital
+#$jelhai.capital
+    </pre>
+    <pre>
+&gt; (setf virginia[governor] fred-flintstone)
+    </pre>
+    <pre>
+Error: fred-flintstone is not a variable which has a value or
+the name or alias of a frame.
+    </pre>
+    <pre>
+&gt; (setf virginia[governor] (new-frame fred-flintstone))
+#$jelhai.fred-flintstone
+    </pre>
+    <pre>
+&gt; (df virginia)
+    </pre>
+    <pre>
+Slots of #$jelhai.virginia
+  capital: #$jelhai.richmond
+  governor: #$jelhai.fred-flintstone
+    </pre>
+    <p>Lexically bound variables are always allowed, and always take
+    precedence:</p>
+    <pre>
+&gt; (let ((virginia 10))
+    (virginia[governor]))
+    </pre>
+    <pre>
+Error: Attempt to access a component of '10', but no method has been
+defined to access an object of type 'fixnum'
+    </pre>
+    <p>Since #$VIRGINIA is "shadowed" by the lexical variable
+    <code>virginia</code>, the only way to refer to the frame is with '.'
+    notation.  However, it's bad form to lexically shadow a frame you want
+    to refer to, because it makes the code really obscure</p>
+    <pre>
+&gt; (let ((virginia 10))
+    (setq virginia 5)
+    (setf .virginia[governor] .wilma-flintstone)
+    (list virginia .virginia[governor]))
+    </pre>
+    <pre>
+(5 #$jelhai.wilma-flintstone)
+    </pre>
+    <p>But sometimes it makes sense to shadow frame names because the names
+    have useful connotations / meanings:</p>
+    <pre>
+&gt; (let ((from 5) (to 10)) (subseq my-string from to))
+"xyzzy"
+    </pre>
+    <p>All the frames and global variables conceptually live in a single
+    namespace and the system protects the user from accidentally
+    clobbering preexisting definitions:</p>
+    <pre>
+&gt; (new-frame from)
+Warning: The frame #$From already exists. No new frame
+is being created.
+NIL
+    </pre>
+    <pre>
+&gt; (new-frame elhai.from)
+Error:  You cannot create your own frame FROM, because a
+sytem frame FROM already exists.
+    </pre>
+    <pre>
+&gt; (define my-own-variable 3)
+my-own-variable
+    </pre>
+    <pre>
+&gt; (new-frame my-own-variable)
+Error: You cannot create a frame called MY-OWN-VARIABLE because
+a global variable of that name already exists and has a value.
+Type (undefine my-own-variable) to undo the global variable
+definition and then you will be able to create a frame by that name.
+    </pre>
+    <pre>
+&gt; (new-frame alabama)
+#$alabama
+    </pre>
+    <pre>
+&gt; (define alabama 4)
+Error: A frame, #$JELHAI.ALABAMA already exists. You cannot define
+a global variable with the same name. Type (undefine alabama)
+to delete the ALABAMA frame from the system and then you can
+define it as a global variable.
+    </pre>
+    <p>Here are some examples of the proposed <code>[]</code> subscripting syntax
+    (assuming 0-based indexing for the moment):</p>
+    <pre>
+&gt; (setq x (copy-seq "abcdefg"))
+"abcdefg"
+    </pre>
+    <pre>
+&gt; (assign x[1 3 5] "xyz")
+"xyz"
+    </pre>
+    <pre>
+&gt; x
+"axcyezg"
+    </pre>
+    <p>And here's the <code>{}</code> notation:</p>
+    <pre>
+&gt; (define my-genes {pmt0001 pmt0003 pmt0016})
+(#$p9313.pmt0001 #$p9313.pmt0002 #$p9313.pmt0016)
+    </pre>
+    <p>And the new doless <code>LOOP</code>:</p>
+    <pre>
+&gt; (loop for g in my-genes (print g[from]))
+(1256 19484 34555)
+    </pre>
+    <pre>
+&gt; (loop for g in my-genes collect g[from to] finally (print 'foo))
+FOO
+((1256 1350) (19484 20111) (34555 36999))
+    </pre>
+    <hr>
+    <div class='note'>
+    <p><sup>1. </sup>If we decide to support symbol macros we will insert a
+    rule for local symbol macros between 1 and 2 and a rule for global
+    symbol macros between 2 and 3.</p>
+    </div>
+    <div class='note'>
+    <p><sup>2. </sup>One might ask why we don't just name frames
+    with symbols and use packages to manage the namespace issues. The
+    reason is that we anticipate having "billions and billions" of frames
+    in the database (once it moves into AllegroCache) and we don't want to
+    devote several gigs of main memory just to holding the names of all
+    those frames.</p>
+    </div>
+    <div class='note'>
+    <p><sup>3. </sup>From a Common Lisp point of view frames are thus
+    more like global variables than true constants since it is undefined
+    behavior to bind the name of a constant. However they are not like
+    Common Lisp global variables (i.e. those created with <code>DEFVAR</code> or
+    <code>DEFPARAMETER</code> since the frame names are not declared special--a
+    local variable binding of a name that happens to be the name of a
+    frame is still a lexical, as opposed to dynamic, binding. In fact we
+    may choose to provide "global lexical" variables--variables that are
+    global but not special, probably as the default style of global
+    variable. Dynamic variables will be available to those who really want
+    them, when they want them, either via a declaration or, possibly, via
+    a naming convention--variables with names starting and ending with
+    <code>*</code> will be made special.</p>
+    </div>
+    <div class='note'>
+    <p><sup>4. </sup>One issue we
+    need to resolve is whether to do this transformation before or after
+    macro expansion. Doing it before has the advantage of shielding macro
+    writers from a non-sexp syntax. However it has the possible
+    disadvantage that there's now a disconnect between the forms of the
+    code as written (and read by the Lisp reader) and the forms seen by a
+    macro. However, that's arguably no different from the disconnect
+    introduced by <code>CL:QUOTE</code> so maybe we don't need to worry about
+    it.</p>
+    </div>
+    <div class='note'>
+    <p><sup>5. </sup>The actual
+    argument list parsing needs to be a bit more sophisticated than what is
+    shown here but not a lot more. The specific syntax shown here is also
+    just for illustration--we can fight about the exact syntax later.</p>
+    </div>
+    <div class='note'>
+    <p><sup>6. </sup>The actual name
+    will, of course, be gensymed. We have to put the actual body in a
+    separate function to allow mutually recursive BioBike functions--if we
+    put the body from the <code>DEFINE-FUNCTION</code> form directly into the
+    macro expansion and it contained "calls" to itself or to another
+    BioBike function (i.e. macro) that contained calls to the original
+    function (macro) the macro expansion would never terminate.</p>
+    </div>
+    <div class='note'>
+    <p><sup>7. </sup>From a Lisp point of view, one way to
+    look at this is that we're providing a purely interpreted language
+    (semantically speaking) but that our technique for interpretation uses
+    just in time compilation.</p>
+    </div>
+    <div class='note'>
+    <p><sup>8. </sup>Strictly speaking, <code>FOO</code> only
+    needs to be recompiled if the argument parsing (macro) part of
+    <code>BAR</code> has changed. The JIT may be able to detect that, and avoid
+    unnecessary recompilation but that is an implementation detail.</p>
+    </div>
+    <div class='note'>
+    <p><sup>9. </sup>Because the JIT will have to keep fairly detailed
+    dependency information to implement this feature, we will also
+    probably provide a way to browse that information. Then the user can
+    check for semantic consistency between callers and callees after
+    making changes, even in code that is syntactically consistent.</p>
+    </div>
+  </body>
+</html>

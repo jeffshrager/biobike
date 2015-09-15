@@ -1,0 +1,13 @@
+This as a pargraph followed by a numbered list.
+
+  # item 1
+
+  # item 2
+
+    @ foo
+
+    @ bar
+
+  # item 3
+
+Another paragraph.

@@ -1,0 +1,612 @@
+<!--
+;;; +============================================================================+
+;;; | Copyright (c) 2001-2008 by The BioBike Team                                |
+;;; |                                                                            |
+;;; | Permission is hereby granted, free of charge, to any person obtaining      |
+;;; | a copy of this software and associated documentation files (the            |
+;;; | "Software"), to deal in the Software without restriction, including        |
+;;; | without limitation the rights to use, copy, modify, merge, publish,        |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to         |
+;;; | permit persons to whom the Software is furnished to do so, subject to      |
+;;; | the following conditions:                                                  |
+;;; |                                                                            |
+;;; | The above copyright notice and this permission notice shall be included    |
+;;; | in all copies or substantial portions of the Software.                     |
+;;; |                                                                            |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,            |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF         |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.     |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY       |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,       |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE          |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                     |
+;;; +============================================================================+
+-->
+<html><head><title>BioBike: Microarray Data Clustering</title>
+  <link rel="stylesheet" type="text/css" href="tutorial.css"/>
+</head>
+<body><center>
+
+</b><p>
+<h2><b>Microarray Data Clustering</h2>
+</b></p><p>
+</p></center>
+
+
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p>
+
+In order to work with microarray data, we first have to get the data
+into the BioBike server, and then into the listener.  This is
+actually the hardest part of microarray analysis, because there are
+many different ways in which a table of data might be interpreted.
+
+<p>
+
+Let's take it step by step:
+
+<p>
+
+Let's first get the data that's going to be used in this example. I've
+conveniently put it on this server <a
+href=livetutorial-files/arrayclustering/hihara.tbl>here</a>.  Download
+the data to some convenient place on your computer. If you open this
+file with, say, WordPad or some other editor, you'll see that it's
+just a table of microarray ratios over four time points, indexed (on
+the left) by gene names from Synechocystis (slr1234, etc.)  The top
+line is a header line, and tells us, in this case, that the time
+points are at 30, 60, 360, and 900 minutes.
+
+<p>
+
+(Note that if you just download the file using Internet Explorer, and
+leave the file type selection as "text file", it'll actually call the
+file "hihara.tbl.txt". You can either set the file type to "all
+files", or rename the file once you've downloaded it, or use
+"hihara.tbl.txt", in all of the following; Your choice!)
+
+<p>
+
+Now we want to get this table into the BioBike server so that we can
+work with it.  To do this, click on the "UPLOAD" button below the
+expression entry box.  You can either type in the file that you saved
+(probably C:\temp\hihara.tbl), or browse for it, and then give it a
+name on the server.  How about calling it "hihara.tbl" (don't type the
+double-quotes!)  This will upload the data to the server in the
+indicated file. 
+
+<p>
+
+Next we have to get the table into BioBike.  There's a table reading
+primitive built in.  Cut-and-paste this expression into the expression
+entry box, and evaluate it:
+
+<pre>
+>> (simple-read-table "hihara.tbl")
+:: 
+(("geneID " 15 60 360 900)
+ ("s6803.ssr3571" 0.97 1.05 0.96 0.92)
+ ("s6803.ssr3570" 0.99 1.11 0.91 0.96)
+ ("s6803.ssr3532" 1.46 1.15 1.21 0.88)
+ ("s6803.ssr3467" 1.08 1.51 0.98 0.84)
+ ("s6803.ssr3465" 0.51 0.76 1.16 0.7)
+ ...
+
+</pre>
+
+Let's assign this to a variable for future reference:
+
+<pre>
+>> (setq mytable *)  ; Recall that * refers to the last result!
+</pre>
+
+Now we are ready to try some analysis.  Let's start with simple
+things, like clustering.  BioBike uses the R statistical package,
+which has a lot of microarray statistical tools.  For now we're just
+going to use a simple clustering package from R, called "cclust" which
+does k-means clustering of tabular data. With k-means clustering, you
+have to give the clustering program the number of groups you want to
+find.  We'll use 5 just for example here, but usually you'd want this
+to reflect your theoretical position somehow.
+
+<p>
+
+To do the clustering, you use this command:
+
+<pre>
+     (r-cluster-kmeans data n-clusters iterations :verbose? t)
+</pre>
+
+For example:
+
+<p>
+<pre>
+>> (setq cluster-results (r-cluster-kmeans mytable 5 20 :verbose? t))
+</pre>
+<p>
+
+The number of iterations (20, in this case) tells the clustering
+package how many tries to attempt to refine the clustering before
+giving up and deciding that the clusters are fine as is.  (You'd have
+to read up on clustering to understand what this means; for now, just
+take our word for it that this value is reasonable.)
+
+<p>
+
+r-cluster-kmeans returns a frame (called something like #$Temp123)
+that contains the cluster centers and a vector that assigns each gene
+in the table to a particular cluster.  Because of the setq above,
+we've already captured that frame in the variable CLUSTER-RESULTS.
+This frame has a number of slots that enable us to use the result
+of clustering in later analysis, and we're about to do just that!
+
+<p>
+
+First let's look at the cluster centers.  You can just do:
+
+<pre>
+>> (#^centers cluster-results)
+</pre>
+
+And you'll get something like this:
+
+<pre>
+  :: #2A((8.336956 2.6795652 1.7404348 1.3195652)
+         (1.2564787 1.5049518 1.5292985 1.2145942)
+         (1.0566963 1.0633571 1.049478 0.963274)
+         (0.62611 0.6859725 0.7238114 0.7328094)
+         (2.2658956 2.4494777 2.0722387 1.7027612))
+</pre>
+
+Those are the centers okay, but really what we want to do is find out
+what these clusters represent in conceptual terms -- that is, for
+example, in terms of concepts in the Gene Ontology. There are a few
+functions which help you do to this that we've already written, and you
+can also easily invent more on your own.
+
+<p>
+
+Here's one that we've written:
+
+<p>
+<pre>
+>> (display-clusters cluster-results)
+</pre>
+<p>
+
+This tells you what the cluster centers are (as above), and the number
+of genes in each cluster, but also determines how many of the genes in
+the data have representatives in the Gene Ontology.
+
+<p>
+
+The output will look something like this:
+
+<p>
+<pre>
+;; Displaying cluster means: 
+;; Cluster 1, Center: #(1.987027 2.3041081 2.0377297
+                        1.6457838), Members: 185
+;; Cluster 2, Center: #(0.9667406 0.9612508 0.9465003
+                        0.8881947), Members: 1623
+;; Cluster 3, Center: #(1.2127599 1.3634677 1.3790501
+                        1.1384408), Members: 1116
+;; Cluster 4, Center: #(8.0804 2.6592 1.7644 1.3784), Members: 25
+;; Cluster 5, Center: #(0.13115385 0.39584616 0.5466923
+                        0.67415386), Members: 130
+</pre>
+
+In other words Cluster 3, for example, has 1116 genes in it.  Although
+this is vaguely interesting, we'd like to get a lot more detailed
+about what's really represented among these clusters.
+
+<p>
+
+<p>
+
+Now, suppose that we wanted to actually get the genes that are in a
+particular cluster.  This takes a very small amount of extra work:
+
+<pre>
+>> (genes-in-cluster mytable (#^membership cluster-results) 1)
+:: ("s6803.ssl3044" "s6803.slr2075" "s6803.slr1963" "s6803.slr1675" "s6803.slr1641" "s6803.slr1544" "s6803.slr1512"
+    "s6803.slr1291" "s6803.sll1884" "s6803.sll1733" "s6803.sll1732" "s6803.sll1514" "s6803.sll1483" "s6803.sll1032"
+    "s6803.sll1028" "s6803.sll0846" "s6803.sll0528" "s6803.sll0430" "s6803.sll0219" "s6803.sll0218" "s6803.sll0217"
+    "s6803.sll0170" "s6803.sll0005")
+</pre>
+
+Let's setq those into a convenient variable:
+
+<pre>
+>> (setq c1genes *)
+</pre>
+
+Now, at the moment these are just the NAMES of the genes.  In order to
+make these actual gene frames we have to load up the information for
+that organism:
+
+<pre>
+>> (load-organism :syn6803)
+</pre>
+
+Then there's a convenient function that turns everything that's the name of
+a frame, into the frame itself:
+
+<pre>
+>> (help ->frames)
+
+  Translates all of the strings in any sort of complex list structure 
+  into the frames names by those strings.  Returns a new structure 
+  exactly like the given one, where the strings are translated into 
+  frames wherever possible.  If CREATE is true, strings which do not 
+  currently name frames have frames created with that name. 
+</pre>
+
+So all we have to do is:
+
+<p>
+<pre>
+>> (->frames c1genes)
+:: (#$s6803.ssr3465 #$s6803.ssr3383 #$s6803.ssr3307 #$s6803.ssr3304 #$s6803.ssr3300 #$s6803.ssr3189 #$s6803.ssr3129
+    #$s6803.ssr2972 #$s6803.ssr2848 #$s6803.ssr2843 #$s6803.ssr2831 #$s6803.ssr2803 #$s6803.ssr2711 #$s6803.ssr2708
+    #$s6803.ssr2406 #$s6803.ssr2194 #$s6803.ssr2153 #$s6803.ssr2142 #$s6803.ssr2062 #$s6803.ssr1768 #$s6803.ssr1765
+    #$s6803.ssr1698 #$s6803.ssr1425 #$s6803.ssr1375 #$s6803.ssr1169 #$s6803.ssr1114 #$s6803.ssr1041 #$s6803.ssr0761
+    #$s6803.ssr0759 #$s6803.ssr0756 #$s6803.ssr0693 #$s6803.ssr0390 #$s6803.ssl3692 #$s6803.ssl3549 #$s6803.ssl3093
+    #$s6803.ssl2982 #$s6803.ssl2823 #$s6803.ssl2733 #$s6803.ssl2501 #$s6803.ssl2420 #$s6803.ssl2384 #$s6803.ssl2069
+    #$s6803.ssl1923 #$s6803.ssl1918 #$s6803.ssl1807 #$s6803.ssl1707 #$s6803.ssl1533 #$s6803.ssl1498 #$s6803.ssl1464
+    #$s6803.ssl1300 #$s6803.ssl1263 #$s6803.ssl1046 #$s6803.ssl1045 #$s6803.ssl0832 #$s6803.ssl0750 #$s6803.ssl0738
+    #$s6803.ssl0707 #$s6803.ssl0563 #$s6803.ssl0511 #$s6803.ssl0483 #$s6803.ssl0353 #$s6803.ssl0350 #$s6803.ssl0259
+    #$s6803.smr0010 #$s6803.smr0007 #$s6803.smr0004 #$s6803.smr0001 #$s6803.sml0008 #$s6803.sml0003 #$s6803.sml0001
+    #$s6803.slr2074 #$s6803.slr2073 #$s6803.slr2067 #$s6803.slr2057 #$s6803.slr2052 #$s6803.slr2051 #$s6803.slr2038
+    #$s6803.slr2037 #$s6803.slr2032 #$s6803.slr2018 #$s6803.slr2016 #$s6803.slr2015 #$s6803.slr2008 #$s6803.slr2007
+    #$s6803.slr1986 #$s6803.slr1978 #$s6803.slr1964 #$s6803.slr1957 #$s6803.slr1944 #$s6803.slr1939 #$s6803.slr1931
+    #$s6803.slr1930 #$s6803.slr1928 #$s6803.slr1918 #$s6803.slr1912 #$s6803.slr1907 #$s6803.slr1906 #$s6803.slr1871
+    #$s6803.slr1860 #$s6803.slr1859 ...)
+  
+And Bob's your Uncle!
+</pre>
+
+Sine that looks right, let's replace it into c1genes:
+
+<p>
+<pre>
+>> (setq c1genes *)
+</pre>
+
+Okay, so now we can analyze these in a slightly more interesting
+way. Each gene frame has information about the Gene Ontology (GO)
+categories that are related to the gene. For example:
+
+<pre>
+>> (#^Go-Id #$S6803.slr2026)
+::(#$GO.TransferaseActivity #$GO.FolicAcidAndDerivativeMetabolism
+   #$GO.ResponseToAntibiotic #$GO.DihydropteroateSynthaseActivity
+   #$GO.FolicAcidAndDerivativeBiosynthesis)
+</pre>
+
+This indicates that this gene is related to these functions. Notice
+that these functions are related to one another, but describe the
+function at various levels of specificity.
+
+<p>
+
+So all that we need to do is to group the genes into categories by
+their GO identities. It turns out the BioBike has a function called
+CATEGORIZE that does just that!
+
+<pre>
+>> (help categorize)
+
+     Given a list of object, and a function that applies to those objects and returns
+     a single category or list of categories re-organize the objects by the cateogies.
+     This uses EQUAL hash tables, so the function must return something that can be EQUAL tested.
+     Example: (categorize '(1 2 3 4 5) #'evenp) => ((NIL 5 3 1) (T 4 2))
+     [The order of the result categorize and objects in each is indeterminate.]
+     More complex example:
+     (categorize '("Jeff" "Joe" "Sam" "Sall") #'(lambda (object) (list (elt object 0) (length object))))
+     ((3 "Sam" "Joe") (4 "Sall" "Jeff") (#J "Joe" "Jeff") (#S "Sall" "Sam"))
+     Note that we get BOTH categories in this case by first letter AND by length.
+</pre>
+
+So we should be able to just pass CATEGORIZE the list of gene frames and the #^go-id function:
+
+<pre>
+>> (setf cats1 (categorize c1genes #^go-id))
+::
+((#$GO.GlycerateKinaseActivity #$S6803.slr1840)
+ (#$GO.ProteinAminoAcidPhosphorylation #$S6803.slr1840)
+ (#$GO.PhospholipidBiosynthesis #$S6803.slr1755)
+ (#$GO.Glycerol-3-PhosphateDehydrogenase[Nad+]Activity #$S6803.slr1755)
+ (#$GO.Glycerol-3-PhosphateDehydrogenaseComplex #$S6803.slr1755)
+ (#$GO.Glycerol-3-PhosphateMetabolism #$S6803.slr1755)
+ (#$GO.N-Acetylmuramoyl-L-AlanineAmidaseActivity #$S6803.slr1744)
+ (#$GO.PeptidoglycanCatabolism #$S6803.slr0795 #$S6803.slr1744)
+ (#$GO.TranscriptionFactorActivity #$S6803.sll0567 #$S6803.sll0594
+  #$S6803.sll0794 #$S6803.sll1286 #$S6803.sll1423 #$S6803.sll1924
+  #$S6803.slr0395 #$S6803.slr1738)
+ (#$GO.InnerMembrane #$S6803.sll0683 #$S6803.sll0684 #$S6803.slr0677
+  #$S6803.slr0678 #$S6803.slr1453 #$S6803.slr1455 #$S6803.slr1471
+  #$S6803.slr1728)
+ ...
+</pre>
+
+Cool! We can sort those by length to find the most representative categories:
+
+<pre>
+>> (sort cats1 #'> :key #'length)
+</pre>
+
+Confirm that the result seems to be sorted so that the largest categories come first.
+
+<p>
+
+So let's put it all together into a function that does the steps we
+just did on one of the clusters:
+
+<pre>
+ (defun analyze-cluster (data-table cluster-results cluster-number how-many-go-ids-to-return)
+   (loop for (go-id) in (sort
+                          (categorize 
+                           (->frames
+                            (genes-in-cluster data-table (#^membership cluster-results) cluster-number))
+                           #^go-id)
+                          #'> :key #'length)
+         as n below how-many-go-ids-to-return
+         collect go-id))
+</pre>
+
+Let's try it:
+
+<pre>
+>> (analyze-cluster mytable cluster-results 4 5)
+<178>> (analyze-cluster mytable cluster-results 4 5)
+:: 
+<<< Evaluation failed. Actual error: >>>
+<<< You are trying to use SLOTV to access or set "s6803.ssr2786", but
+    that
+function can only be used with frames.  You called it with
+    "s6803.ssr2786",
+which is of type (SIMPLE-ARRAY CHARACTER (13)).
+<<< Use (EXPLAIN) to see a stack trace. >>>
+</pre>
+
+Oops... Seems like some of the genes don't have frames (so ->FRAMES
+didn't convert them). Hmmm. Let's put in a filter for that:
+
+<pre>
+ (defun analyze-cluster (data-table cluster-results cluster-number how-many-go-ids-to-return)
+   (loop for (go-id) in 
+       (sort (categorize 
+                 (loop for frame? in 
+                           (->frames
+                            (genes-in-cluster data-table (#^membership cluster-results) cluster-number))
+                       if (framep frame?)
+                       collect frame?)
+                 #^go-id)
+                 #'> :key #'length)
+         as n below how-many-go-ids-to-return
+         collect go-id))
+</pre>
+
+Let's try that again:
+
+<pre>
+>> (analyze-cluster mytable cluster-results 4 5)
+:: (NIL #$GO.AtpBinding #$GO.Membrane #$GO.TransferaseActivity
+    #$GO.CatalyticActivity)
+</pre>
+
+Cool!
+
+<p>
+
+Now let's try it for all the clusters:
+
+<p>
+
+<pre>
+ (loop for cluster from 1 to 5
+       do (print (analyze-cluster mytable cluster-results cluster 5)))
+:: 
+(NIL #$GO.AtpBinding #$GO.Membrane #$GO.TransferaseActivity
+     #$GO.ProteinBiosynthesis) 
+(NIL #$GO.ChaperoneActivity #$GO.OxidoreductaseActivity
+     #$GO.ElectronTransport #$GO.HeatShockProteinActivity) 
+(NIL #$GO.ProteinBiosynthesis #$GO.StructuralConstituentOfRibosome
+     #$GO.Intracellular #$GO.Ribosome) 
+(NIL #$GO.AtpBinding #$GO.Membrane #$GO.TransferaseActivity
+     #$GO.CatalyticActivity) 
+(NIL #$GO.Photosynthesis #$GO.ElectronTransport #$GO.Membrane
+     #$GO.IntegralToMembrane) 
+> NIL
+</pre>
+
+(That NIL which is always there is slightly annoying, but
+we can easily get rid of it, and will in a moment!)
+
+<p>
+
+So each cluster is conveniently described by slightly different GO
+categories, grossly:
+
+<pre>
+   Cluster 1 = AtpBinding
+   Cluster 2 = ChaperoneActivity
+   Cluster 3 = ProteinBiosynthesis
+   Cluster 4 = AtpBinding
+   Cluster 5 = Photosynthesis
+</pre>
+
+Okay, so this isn't the most perfect analytical technique, but it
+gives you a sense of what's going on. In other tutorials we'll look
+more carefully at understanding what's going on in microarray data.
+
+<p>
+
+Maybe we can get a little more clever about figuring out what's
+different about the various results. Conceptually, we want to figure
+out what differs among a bunch of lists. So, for example, if we had:
+(a s d f) (a q w s d e) and (a w d r), we see that (a d) are the same
+for every list. This happens to be the intersection of these lists,
+watch:
+
+<pre>
+>> (intersection '(a s d f) '(a q w s d e))
+::  (D S A)
+>> (intersection * '(a w d r))
+:: (A D)
+</pre>
+
+It turns out that there's a magic way to "map" a function over a list
+of lists pairwaise like this; it's called REDUCE:
+
+<pre>
+>> (reduce #'intersection '((a s d f) (a q w s d e) (a w d r)))
+:: (A D)
+</pre>
+
+[Here's a harder, but more obvious way to do the same thing:
+
+ (setf lists '((a s d f) (a q w s d e) (a w d r)))
+
+ (loop with result = (first lists)
+       as next in (rest lists)
+       do (setf result (intersection result next))
+       finally (return result))
+:: (A D)
+</pre>
+]
+
+<p>
+
+Give (a d) we now have to REMOVE that subset from each member. Again,
+there's a function already there to do this:
+
+<pre>
+>> (set-difference '(a q w s d e) '(a d))
+:: (E S W Q)
+
+Note that you need to do this the right way around or you'll get
+nothing:
+
+>> (set-difference '(a d) '(a q w s d e))
+:: NIL
+</pre>
+
+SET-DIFFERENCE is like subtraction: subtract the second list from the first.
+
+<p>
+
+Okay, so now we should be able to improve our method of
+reporting. Here's what we did above:
+
+<pre>
+ (loop for cluster from 1 to 5
+       do (print (analyze-cluster mytable cluster-results cluster 5)))
+</pre>
+
+Here's the same thing, but this time using reduce, intersection, and
+set-difference to show only the differences between the groups:
+
+<pre>
+ (let* ((clusters 
+          (loop for cluster from 1 to 5
+                collect (analyze-cluster mytable cluster-results cluster 50)))
+        (common-elements (reduce #'intersection clusters)))
+   (loop for cluster in clusters
+         do (print (first-n 5 (set-difference cluster common-elements))))
+</pre>
+
+Note that we asked for the top 50 elements of the cluster at first,
+and then restricted it to only the first 5 <i>after</i> we had the
+set-differences.
+
+<p>
+
+Here's the result:
+
+<pre>
+(#$GO.ProteinFolding #$GO.MetallopeptidaseActivity #$GO.CellAdhesion
+ #$GO.ProteinModification #$GO.NickelIonBinding) 
+(#$GO.Glycolysis #$GO.TrnaProcessing #$GO.TranscriptionFactorActivity
+ #$GO.DnaRepair #$GO.NucleaseActivity) 
+(#$GO.PeptidoglycanBiosynthesis #$GO.ResponseToStress
+ #$GO.InnerMembrane #$GO.NucleaseActivity #$GO.AminoAcidMetabolism) 
+(#$GO.IntracellularProteinTransport #$GO.TrnaProcessing
+ #$GO.Two-ComponentSensorMoleculeActivity #$GO.LigaseActivity
+ #$GO.Photosystem) 
+(#$GO.Glycolysis #$GO.DnaReplication
+ #$GO.Peptidyl-ProlylCis-TransIsomeraseActivity
+ #$GO.OxidoreductaseActivity,ActingOnNadhOrNadph,QuinoneOrSimilarCompoundAsAcceptor
+ #$GO.MolecularFunctionUnknown) 
+</pre>
+
+Note that this only removes elements common to ALL the lists, so, for
+example, #$GO.Glycolysis is still there even though it's in two of the
+lists, because it's not in ALL of them, but still, this is a more
+useful list than the one above! (nd notice that we got rid of that pesky NIL!)
+
+<p>
+
+Okay, so now we can put it all together (and we'll get rid of those
+annoying nils at the same time!):
+
+<pre>
+ (defun analyze-microarray-data (table-file k-means &key (trials 20) (how-many-go-ids-to-return 5))
+  (let* ((mytable (simple-read-table table-file))
+         (cluster-results (r-cluster-kmeans mytable k-means trials :verbose? t))
+         (clusters 
+           (loop for cluster from 1 to k-means
+                 collect (analyze-cluster mytable cluster-results cluster 50)))
+         (common-elements (reduce #'intersection clusters)))
+    (loop for cluster in clusters
+         do (print (first-n how-many-go-ids-to-return (set-difference cluster common-elements))))
+    ))
+</pre>
+
+And we try it:
+
+<pre>
+>> (analyze-microarray-data "hihara.tbl" 5)
+:: 
+;; Writing table data to /tmp/biotmp/T237-temp.rtable
+;; Writing rscript to /tmp/biotmp/T238-temp.rscript
+----- /tmp/biotmp/T238-temp.rscript -----
+library(cclust)
+data<-read.table("/tmp/biotmp/T237-temp.rtable")
+mdata<-matrix(data.matrix(data),ncol=4)
+clusterinfo<-cclust(mdata,5,20,verbose=FALSE,method="kmeans")
+write.table(clusterinfo$cluster,file="/tmp/biotmp/T240-temp.rmembers",quote=FALSE)
+write.table(clusterinfo$centers,file="/tmp/biotmp/T239-temp.rcenters",quote=FALSE)
+----- /tmp/biotmp/T238-temp.rscript (end) -----
+;; Running R clustering
+;; R clustering finished
+;; R exit status: 0
+;; Reading center result table from /tmp/biotmp/T239-temp.rcenters
+;; Reading members result table from /tmp/biotmp/T240-temp.rmembers
+
+(#$GO.ResponseToStress #$GO.SignalTransduction
+ #$GO.MolecularFunctionUnknown #$GO.NickelIonBinding
+ #$GO.UroporphyrinogenDecarboxylaseActivity) 
+(#$GO.PeptidoglycanBiosynthesis #$GO.CellWall
+ #$GO.MetalloendopeptidaseActivity #$GO.MetallopeptidaseActivity
+ #$GO.TrnaAminoacylationForProteinTranslation) 
+(#$GO.DnaRecombination #$GO.SignalTransducerActivity
+ #$GO.ResponseToStress #$GO.ArginineBiosynthesis #$GO.DnaReplication) 
+(#$GO.Nucleotide-SugarMetabolism
+ #$GO.TrnaAminoacylationForProteinTranslation
+ #$GO.PeptidoglycanBiosynthesis #$GO.IsomeraseActivity #$GO.RrnaBinding) 
+(#$GO.ProteinFolding #$GO.MetallopeptidaseActivity #$GO.CellAdhesion
+ #$GO.ProteinModification #$GO.NickelIonBinding) 
+> NIL
+</pre>
+
+Cool! Experiment with other values of the arguments, esp. the k-means
+one, which tells how many clusters to make!
+
+<p>
+<i>Copyright 2005-2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

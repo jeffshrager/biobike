@@ -1,0 +1,31 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Gene query</title>
+<base target="main">
+</head>
+
+<body topmargin="0">
+
+<form method="POST" action="/cgi/mycogs/query" target="main">
+  <br>Enter a sequence:&nbsp; <textarea rows="4" name="sequence" cols="66">ATGACGAGCTCTGCATCTGCATGTGTGTCATTCCTGCCACCATCAGCAACAATGTGCCGGGCTAGACTTCAGCCTGGGGGCAGATACTGCGGTAAACGCCGCCATGGAGAGCTGTGATAAAATCAAGCAGCCTGCATCAGGAACCAAACGCCGCGTCTTCAT</textarea>
+  <p>Target region&nbsp;&nbsp;&nbsp; Left:
+  <input type="text" name="leftpos" size="7" value="5">&nbsp;&nbsp;&nbsp; Right:
+  <input type="text" name="rightpos" size="7" value="110">&nbsp;&nbsp;&nbsp; Refresh rate : <select size="1" name="refresh">
+  <option>1</option>
+  <option selected>5</option>
+  <option>10</option>
+  <option>25</option>
+  <option>60</option>
+  <option value="-1">none</option>
+  </select>&nbsp;&nbsp;&nbsp; 
+  <input type="submit" value="Find similar sequences"></p>
+</form>
+
+</body>
+
+</html>

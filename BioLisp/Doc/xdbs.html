@@ -1,0 +1,152 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+<html><head><title>External Knowledge Bases</title></head>
+<body><center>
+
+</b><p>
+<h2><b>Getting Things from External Knowledge Bases</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2006 by The BioBike Team (contact <a
+href="http://nostoc.stanford.edu/jeff/personal/index.html">Jeff
+Shrager</a> for more information)</p>
+
+<p>
+
+(This module is not complete, in part because the tools for
+interaction with external knowledge bases are an ongoing project.)
+
+<p>
+
+
+BioBike can easily extract knowledge from external knowledge bases,
+like PubMed, which conform to a special knowledge-communication
+standard called "XML".  Later, we'll see how to write our own code to
+interact with external knowledge bases that speak XML, but for now,
+let's look at the tools that are already available in BioBike.
+
+<p>
+
+<h3>Searching PubMed (the easy version)</h3>
+
+<p>
+
+Let's try an example to get right into it:
+
+<pre>
+  >> (pubmed-query "biolingua")
+  :: (#$pubmed-result140 #$pubmed-result141)
+
+  >> (setq results *)        ; Sset that into a variable for later use.
+</pre>
+
+
+
+Notice that we got back a list containing two frames.  If you examine
+those (by clicking on them), you'll see that each represents a
+different paper, one in 2004 and the other in 2002 (the #^year slot
+tells us the publiaction year).  The authors are buried one more layer
+deep.  We can get them either by clicking, or prgrammatically, for example:
+
+<pre>
+  >> (loop for result in results 
+           collect (loop for author in (#^author result)
+                    collect (#^lastname author)))
+  :: (("Shrager" "Elhai" "Travers" "Massar")
+      ("Pohorille" "Langley" "Shrager"))
+</pre>
+
+Notice that we had to use a double loop: one to go through the
+articles (each seaprate #$pubmed-result), and one to go through the
+authors in each article.  And, as one would expect, we got back an
+author list for each article.
+
+<p>
+
+Let's actually make that a function for later use:
+
+<pre>
+  >> (defun extract-authors (pm-results)
+       (loop for result in pm-results 
+             collect (loop for author in (#^author result)
+                      collect (#^lastname author))))
+</pre>
+
+<p>
+
+The PUBMED-QUERY function has a few useful arguments.  Let's try
+something a little more likely to have a lot of results:
+
+<pre>
+  >> (pubmed-query "smith")
+  :: (#$pubmed-result145 #$pubmed-result146 #$pubmed-result147)
+</pre>
+
+What?! Only three papers with SMITH in their names?  It turns out that
+the function only returns up to three hits.  But this is easy to change:
+
+<pre>
+  >> (pubmed-query "smith" :return-n 100)
+  ::  (#$pubmed-result148 #$pubmed-result149 #$pubmed-result150
+       #$pubmed-result151 #$pubmed-result152 #$pubmed-result153
+       #$pubmed-result154 #$pubmed-result155 #$pubmed-result156
+       #$pubmed-result157 #$pubmed-result158 #$pubmed-result159
+       ...etc...
+
+  >> (extract-authors *)
+  :: (("Perry" "Smith" "Cash" "Zhu" "Aliev" "Siedlak" "Moreira")
+      ("Smith" "Krauthamer")
+      ("Perry" "Smith" "Zhua" "Moreira" "Honda" "Nunomura" "Siedlak" "Xie" "Liu")
+      ("Folsom" "Smith" "Weitzman" "Bell" "Sorlie" "Chambless" "Rosamond")
+      ("Mitchell" "Dowson" "Clarke" "Smith" "Jefferies")
+      ...etc...
+</pre>
+Ah, much better! 
+
+<p>
+
+Now, suppose you wanted a paper that you know exists by Smith and
+Jones, about musculoskeletal services in northwest Wales.  You could,
+in principle, run a query on "smith", and another on "jones", and
+another on "wales" and yet another on "musculoskeletal", and put
+:return-n 100000 on each (to make sure you got back every possible
+paper for each), and then integrate the results using complex
+intersections on the paper ID, or some such thing.  But that would be
+impossibly complex, and anyway, pubmed does all that work for us.  All
+we need to do is:
+
+<pre>
+  >> (pubmed-query '("smith" "jones" "musculoskeletal" "Wales"))
+  :: (#$pubmed-result251)
+
+Hey, cool, just one paper; Let's see if it's the one we want:
+
+  >> (#^articletitle (first *))    ; FIRST because notice that the result is a list!
+  :: "Improved access and targeting of musculoskeletal services in northwest Wales: targeted early access to musculoskeletal services (TEAMS) programme."
+</pre>
+
+Tada!
+

@@ -1,0 +1,974 @@
+<title>BioBike: Reverse Engineering of Regulatory Networks</title>
+<p>
+
+<p>
+
+<h3>
+Reverse Engineering of Regulatory Networks
+</h3>
+
+<p>
+<i>Copyright 2005 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+This tutorial is one in a series where we try to reverse engineering
+biological models -- in this case a regulatory model. By "reverse
+engineer" we mean: given some observational data on gene and/or
+protein expression levels through time, we're going to try to figure
+out what the model is -- that is, which genes/proteins regulate which
+and in what way.
+
+<p>
+
+The principal thing that we'll learn in this tutorial isn't the
+specifics of how to reverse engineer a biological model, but how
+<i>incredibly hard</i> it is to do so without using background
+knowledge. Throughout the tutorial we're going find that we have to
+"cheat" by, in a sense, looking at the answer in the back of the book,
+and cribbing enough information from it to get the "search space" down
+to a tractable size, otherwise the problem will be impossibly
+big. This sort of "cheating" amounts to using <i>background
+knowledge</i> in order to constrain the number of possible models that
+we have to search through to find the one we're after. You'll see what
+we mean when we get there.
+
+<p>
+
+The data that we're going to use is actually the data that resulted
+from the regulatory model of Li et al. that we replicated in Tutorial
+#5. In fact, let's start by getting the code from that lesson back,
+and testing it out. You don't actually have to load it all back in
+function by function (although going back through that lesson might be
+useful for you if you don't remember it). We've hidden away the code
+from that lesson in a file. All you have to do to get it back in is to
+load it up:
+
+<pre>
+>> (ld "websrc:Doc;livetutorials;jssymbiolietal.lisp")
+</pre>
+
+Now we'll test it out. Recall that in that tutorial we modelled this
+regulatory system: 
+
+<p>
+<img src=/livetutorial-files/graphsearch/jssymbiolietalfig1b.jpg>
+<p>
+
+Here's what Li et al. got in terms of simulated behavior:
+
+<p>
+<img src=/livetutorial-files/graphsearch/jssymbiolietaltable2.gif>
+<p>
+
+And here's what we get:
+
+<pre>
+>> (litest :cycles-to-run 50)
+</pre>
+
+Note that they specifically state that "the number of time steps in
+each phase do [sic] not reflect its actual duration." Given that, can
+you confirm that your results are the same as theirs?
+
+<p>
+
+So, what we want to do here is instead of going from the model to the
+behavior we want to go the other way around, that is, to go from the
+behavior to the model. There are a number of ways to do this --
+basically, there's a whole field called "machine learning" that is
+essentially trying to do this! Here's we're going to do the very
+simplest version of this problem. Conveniently, we're all set up
+already to do it. The general procedure is this:
+
+<p>
+
+<ol>
+<li>Pick a model from all possible models.
+<li>Simulate it just the way we just simulated the Li model.
+<li>Compare the simulation result with the Li et al. result.
+<li>If it's wrong, pick another model, and go to step 1, above.
+</ol>
+
+<p>
+
+And that's about it.
+
+<p>
+
+(You might be asking yourself: "Why do we have to simulate our model
+and compare the behaviors?; Why not just compare our model with their
+model, which we already know?" If you are asking yourself this, then
+you aren't in the right frame of mind: We're just doing this as an
+example, under normal circumstances we wouldn't have the target model
+in hand, just some observations of protein levels.  We're just using
+the Li et al. model, which we already know, as an example to check our
+work -- the Li et al model is like the answer in the back of the book,
+<i>no cheating!</i>... yet! :-)
+
+<p>
+
+Okay, so let's start by getting our hands on the behavioral data --
+the output that we just saw, above. We'll store it in a list for
+convenient comparison later on. We'll do this by making a global
+variable to store it in, and then replace the simulation function with
+one that actually hands the reuslt back instead of printing it, and
+then simply setf the result into our global.
+
+<pre>
+>> (defvar *target-data* nil)
+
+;;; Here's the new litest function that collects the results:
+;;; This collects up the results in the variable RESULT and then
+;;; returns them at the end. We'll also have to change the 
+;;; REPORT-STATES function to actually return the result instead
+;;; of printing them out.  Note, finally, that we've added the
+;;; model as an explicit parameter (this isn't actually complete
+;;; because we'd want to also be able to change the self-degradation 
+;;; loops, but for the moment, this is adequate.).
+
+>> (defun litest (*model-graph* &key (initially-on-proteins '(size))
+>>                     (cycles-to-run 50))
+>>  (let ((result nil))
+>>     (initialize-current-states)
+>>     (set-proteins initially-on-proteins 1)
+>>     (push (report-states 0) result)
+>>     (run-one-cycle)
+>>     (push (report-states 1) result)
+>>     (set-proteins initially-on-proteins 0)
+>>     (loop for cycle from 2 to cycles-to-run
+>>           do (run-one-cycle)
+>>              (push (report-states cycle) result)
+>>           ) 
+>>     result
+>>     ))
+
+;;; Here's the new REPORT-STATES:
+
+>> (defun report-states (cycle)
+>>   (loop for p in *proteins*
+>>         collect (gethash p *protein->current-state*)))
+</pre>
+
+(If you compare these functions to the same functions in Tutorial #5,
+you'll see that these are actually <i>simpler</i> than those; It's
+generally simpler to return results than to format them for human
+readability!)
+
+<p>
+
+<p>
+
+Let's try it:
+
+<pre>
+>> (setq *target-data* (litest *model-graph* :cycles-to-run 50))
+::
+((0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (0 0 0 0 0 1 1 0 0 0 0 0)
+ (0 0 0 0 0 1 1 0 0 0 0 0) (1 0 0 0 0 1 1 0 0 0 0 0)
+ (1 0 0 0 0 1 1 0 0 0 0 0) (1 0 0 0 0 1 1 0 0 0 0 0)
+ (1 0 0 0 0 1 1 0 0 0 0 0) (1 0 0 0 0 1 1 0 0 0 0 0)
+ (1 0 0 0 0 1 1 0 0 0 0 0) (1 1 0 0 0 1 1 0 0 0 0 0)
+ (1 1 0 0 0 1 1 0 0 0 0 0) (1 1 0 0 0 1 1 0 0 0 0 0)
+ (1 1 0 0 0 1 1 0 0 0 0 0) (1 1 0 0 0 1 1 0 0 0 0 0)
+ (1 1 0 0 0 1 1 0 0 0 0 0) (1 1 1 0 0 1 1 0 0 0 0 0)
+ (1 1 1 0 0 1 1 0 0 0 0 0) (1 1 1 0 0 1 1 0 0 0 0 0)
+ (1 1 1 0 0 1 1 0 0 0 0 0) (1 1 1 0 0 1 1 0 0 0 0 0)
+ (1 1 1 0 0 0 1 0 0 0 0 0) (1 1 1 1 0 0 1 0 0 0 0 0)
+ (1 1 1 1 0 0 0 0 0 0 0 0) (1 1 1 1 0 0 0 1 0 0 0 0)
+ (1 1 1 1 0 0 0 1 0 0 0 0) (1 1 1 1 0 0 0 1 0 0 0 0)
+ (1 1 1 1 0 0 0 1 0 0 0 0) (1 1 1 1 0 0 0 1 0 0 0 0)
+ (1 1 1 1 1 0 0 1 0 0 0 0) (1 1 1 1 1 0 0 1 1 1 0 0)
+ (1 1 1 1 1 0 0 1 1 1 1 0) (0 1 1 1 1 0 0 1 1 1 1 0)
+ (0 0 1 1 1 0 0 1 1 1 1 0) (0 0 0 0 1 0 0 1 1 1 1 0)
+ (0 0 0 0 0 0 0 0 1 1 1 0) (0 0 0 0 0 0 0 0 0 0 1 1)
+ (0 0 0 0 0 0 0 0 0 0 0 1))
+
+;;; (While we're here let's get rid of that silly "degrading" message 
+;;;  by redefining the function from tutorial 5 that's printing it!)
+
+>> (defun do-self-degradations ()
+>>   (loop for p in *self-degrading-proteins*
+>>         when (time-to-degrade? p)
+>>         do (setf (gethash p *protein->current-state*) 0)))
+</pre>
+
+If you carefully examine this result, you'll notice that it's
+<i>reversed</i> -- that is, what was the first output state is
+actually the last in this list. This is correct, and careful
+examination of our new litest function will explain why (hint: it has
+to do with the PUSHes we added!) But actually this doesn't matter
+because we don't really care what order it's in as long as the results
+always come back the same way.
+
+<p>
+
+Next we're going to need a function that compares a result with the
+target result. The simplest way to do this is simply to see if
+they're equal:
+
+>> (equal *target-data* *target-data*)
+:: T
+</pre>
+
+Okay, that looks good. To check, let's change the model and see if we
+can tell the difference.
+
+<p>
+
+Here's the old model:
+
+<pre>
+>> *model-graph*
+::
+((SIZE + CLN3) (CLN3 + MBF) (CLN3 + SBF) (SBF + CLN12) (CLN12 - SIC1)
+ (CLN12 - CDH1) (SIC1 - CLB56) (SIC1 - CLB12) (MBF + CLB56)
+ (CLB56 + MCM1/SFF) (CLB56 - SIC1) (CLB56 + CLB12) (CLB56 - CDH1)
+ (CDH1 - CLB12) (CLB12 - CDH1) (CLB12 + MCM1/SFF) (CLB12 + CDC20&14)
+ (CLB12 - SIC1) (CLB12 - SWI5) (CLB12 - MBF) (CLB12 - SBF)
+ (MCM1/SFF + CDC20&14) (MCM1/SFF + SWI5) (MCM1/SFF + CLB12)
+ (CDC20&14 + SWI5) (CDC20&14 + CDH1) (CDC20&14 - CLB12)
+ (CDC20&14 + SIC1) (CDC20&14 - CLB56) (SWI5 + SIC1))
+</pre>
+
+Let's make a tiny little change and see if it makes any perceptible
+difference. We'll just remove the very first edge, that is, this one:
+(SIZE + CLN3) by popping it off the graph:
+
+<pre>
+>> (setq *different-model* (rest *model-graph*))
+
+>> *different-model*
+:: 
+((CLN3 + MBF) (CLN3 + SBF) (SBF + CLN12) (CLN12 - SIC1) (CLN12 - CDH1)
+ (SIC1 - CLB56) (SIC1 - CLB12) (MBF + CLB56) (CLB56 + MCM1/SFF)
+ (CLB56 - SIC1) (CLB56 + CLB12) (CLB56 - CDH1) (CDH1 - CLB12)
+ (CLB12 - CDH1) (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1)
+ (CLB12 - SWI5) (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CDC20&14)
+ (MCM1/SFF + SWI5) (MCM1/SFF + CLB12) (CDC20&14 + SWI5)
+ (CDC20&14 + CDH1) (CDC20&14 - CLB12) (CDC20&14 + SIC1)
+ (CDC20&14 - CLB56) (SWI5 + SIC1))
+
+;;; Let's see what it looks like! (Because the various
+;;;  function in litest use *model-graph* as a global, we need
+;;;  to "let bind" it to the new model: *different-model*. That 
+;;;  way all the functions called by litest will see the new model
+;;;  where they call for *model-graph*):
+
+>>  (litest *different-model* :cycles-to-run 50)
+:: 
+((0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 0)
+ (0 0 0 0 0 0 0 0 0 0 0 0) (0 0 0 0 0 0 0 0 0 0 0 1)
+ (0 0 0 0 0 0 0 0 0 0 0 1))
+
+;;; Oh my, well, we'd better be able to see that!
+
+>> (equal *target-data* (litest *different-model* :cycles-to-run 50))
+:: NIL
+</pre>
+
+Okay, well that works, although it's not too informative. (Later on
+we'll see what we can do about getting a little more info.)
+
+<p>
+
+Okay, so now to the hard part: Trying all possible models. First, let
+see how many possible models there are, just to see how long this is
+going to take us. There are 12 vertices (nodes) in the graph, and
+there can be either a +, -, or no edge (arc) between each one in each
+possible direction. That's like having a 12x12 matrix where each entry
+is either a +, - or blank. Like this for our latest model::
+
+<pre>
+                           To:
+                        
+                  cln3  sbf  cln12  sic1 ...etc...
+            
+            cln3         +     
+            
+            sbf                +
+  From:                
+            cln12                    -
+            
+            sic1
+
+            ...etc...
+
+</pre>
+
+If you think about this for a minute, you'll see that you can string
+it out to make a 12x12 = 144 long trinary (base-3) number by stringing
+all the rows one after the other.  If there were only 2 choices (say,
++ or -, excluding "no arc") then there would be 2-to-the-144 possible
+models [or, in Lisp: (expt 2 144)]. This is 3-to-the-144 (+, -, or no
+arc), so there are this many possible models: (And this isn't even
+counting the 2-to-the-12 combination of self-degradations!)
+
+<pre>
+>> (expt 3 144)
+:: 507528786056415600719754159741696356908742250191663887263627442114881
+</pre>
+
+The phrase: <em>"Uh oh!"</em> should be coming quickly to mind.... On
+the bright side, it's a lot less than a googol (which is 1 followed by
+100 zero, this is only 69 zeros. So if we do this the naive way, it's
+going to take quite some time, even on a really big computer. In fact,
+it's going to take quite a number of centuries, even if every computer on
+earth was working on it!
+
+<p>
+
+There are a number of approaches to reducing this enormous search
+problem, but for the moment we're just going to cheat massively and
+reduce the problem to a very very simple search. We'll assume that we
+know everything about the model <i>except</i> how Clb12 is connected
+up. That is, everything in the model is linked up, just like in the Li
+et al. model, and including all the self-degradations, <i>except</i>
+for any connection to or from clb12 -- those we need to search. So
+we'll start with this base model in which I've commented out all the
+entries having to do with clb12.:
+
+<pre>
+>> (defparameter *base-model* ; (fig 1b)
+>>   '((size + cln3)
+>>     (cln3 + mbf)
+>>     (cln3 + sbf)
+>>     (sbf + cln12)
+>>     (cln12 - sic1)
+>>     (cln12 - cdh1)
+>>     (sic1 - clb56)
+>>     ;; (sic1 - clb12)
+>>     (mbf + clb56)
+>>     (clb56 + mcm1/sff) ; weird yellow/green in the paper
+>>     (clb56 - sic1)
+>>     ;; (clb56 + clb12) ; weird yellow/green in the paper
+>>     (clb56 - cdh1)
+>>     ;; (cdh1 - clb12)
+>>     ;; (clb12 - cdh1)
+>>     ;; (clb12 + mcm1/sff)
+>>     ;; (clb12 + cdc20&14)
+>>     ;; (clb12 - sic1)
+>>     ;; (clb12 - swi5)
+>>     ;; (clb12 - mbf)
+>>     ;; (clb12 - sbf)
+>>     (mcm1/sff + cdc20&14)
+>>     (mcm1/sff + swi5)
+>>     ;; (mcm1/sff + clb12)
+>>     (cdc20&14 + swi5)
+>>     (cdc20&14 + cdh1)
+>>     ;; (cdc20&14 - clb12)
+>>     (cdc20&14 + sic1)
+>>     (cdc20&14 - clb56)
+>>     (swi5 + sic1)
+>>     ))
+
+;;; Let's see how it compares:
+
+>> (equal *target-data* (litest *base-model* :cycles-to-run 50))
+:: NIL
+</pre>
+
+Okay, good. Now let's write a program to put back in every possible
+combination of arcs to or from clb12, and find the one that fits best.
+First let's prove that we can enumerate all possible combinations of
+arcs.  This isn't as simple a you might think because it's not just
+one arc at a time, but you have to add every possible combination of
+arcs.  One way to do this is to write a program and gives you every
+possible combination of some set, and then feed it the set of all the
+arcs into/out of clb12.
+
+<p>
+
+Here's the code for all-combinations. It's a little tricky, but some
+study of it will deepen our understanding of recursive functions:
+
+<pre>
+>> (defun all-combinations (l)
+>>   (if (null l)
+>>      (list nil)
+>>      (append (loop for i in (all-combinations (cdr l))
+>>               collect (cons (car l) i))
+>>            (all-combinations (cdr l)))))
+
+;;; Let's try it:
+
+>> (all-combinations '(a b))
+:: ((A B) (A) (B) NIL)
+
+;;; This actually gets pretty big pretty fast:
+
+>> (all-combinations '(a b c))
+:: ((A B C) (A B) (A C) (A) (B C) (B) (C) NIL)
+
+>> (all-combinations '(a b c d))
+:: 
+((A B C D) (A B C) (A B D) (A B) (A C D) (A C) (A D) (A) (B C D) (B C)
+ (B D) (B) (C D) (C) (D) NIL)
+
+</pre>
+
+<p>
+
+(In fact, the length is 2-to-the-N power, where N is the number of
+elements: ab -> 4, abc -> 8, abcd -> 16... You can see why this must
+be right if you think of each of the combinations as a position in an
+n-long binary number where each digit is either a 1, when the n'th
+element is included, or 0, when the n'th element is excluded. So, for
+example (a b c d) = 1111, (a c) = 1010, and () = 0000. The number of
+values you can have with n bits is, of course, 2-to-the-n.)
+
+<p>
+
+Okay, so no let's produce the list of all possible arcs into or out of
+clb12. Recall that in tutorial #5 we created a list of all the
+proteins, and left it in *proteins*:
+
+<pre>
+>> *proteins*
+:: (SWI5 CDC20&14 MCM1/SFF CLB12 CLB56 CDH1 SIC1 CLN12 SBF MBF CLN3 SIZE)
+</pre>
+
+Okay, so now all we need to do it to create all combinations of (clb12
++ each-other-protein, (clb12 - each-other-protein),
+(each-other-protein + clb12), and (each-other-protein - clb12). That's
+not too hard:
+
+<pre>
+>> (defun possible-to/from-arcs (tofrom proteins)
+>>   (loop for type in '(+ -)
+>>         append (loop for protein in proteins
+>>                      append (list (list tofrom type protein)
+>>                                    (list protein type tofrom)))))
+
+;;; Does it work? 
+;;;                   (Don't need to go to/from clb12 itself, so remove it.)
+>> (possible-to/from-arcs 'clb12 (remove 'clb12 *proteins*))
+::
+((CLB12 + SWI5) (SWI5 + CLB12) (CLB12 + CDC20&14) (CDC20&14 + CLB12)
+ (CLB12 + MCM1/SFF) (MCM1/SFF + CLB12) (CLB12 + CLB56) (CLB56 + CLB12)
+ (CLB12 + CDH1) (CDH1 + CLB12) (CLB12 + SIC1) (SIC1 + CLB12)
+ (CLB12 + CLN12) (CLN12 + CLB12) (CLB12 + SBF) (SBF + CLB12)
+ (CLB12 + MBF) (MBF + CLB12) (CLB12 + CLN3) (CLN3 + CLB12)
+ (CLB12 + SIZE) (SIZE + CLB12) (CLB12 - SWI5) (SWI5 - CLB12)
+ (CLB12 - CDC20&14) (CDC20&14 - CLB12) (CLB12 - MCM1/SFF)
+ (MCM1/SFF - CLB12) (CLB12 - CLB56) (CLB56 - CLB12) (CLB12 - CDH1)
+ (CDH1 - CLB12) (CLB12 - SIC1) (SIC1 - CLB12) (CLB12 - CLN12)
+ (CLN12 - CLB12) (CLB12 - SBF) (SBF - CLB12) (CLB12 - MBF)
+ (MBF - CLB12) (CLB12 - CLN3) (CLN3 - CLB12) (CLB12 - SIZE)
+ (SIZE - CLB12))
+
+;;; Looks plausible, how many are there?
+
+>> (length *)
+:: 44
+</pre>
+
+Above we learned that all combinations if N elements is 2-to-the-N. I
+hope that you're getting that <em>"Uh oh!"</em> feeling again...
+
+</pre>
+>> (expt 2 44)
+:: 17592186044416
+</pre>
+
+<i>WHAT?!</i> You mean to tell me that there are <i>over 17 trillion</i>
+ways of hooking <i>just one protein</i> into the model?!
+
+<p>
+
+In a word: yes. It's every combination of ways to hook one node to
+every other node, and back. That's a <i>lot</i> of ways! Just look at
+the figure from the paper at the top of this page! clb12 has a huge
+number of connections, but not all of them, and they go in different
+ways with different values. This is why the total number of models is
+so huge -- just the ways you could connect <i>one node</i> is huge
+enough!
+
+<p>
+
+We can reduce this by adding more constraints, although we'd have to
+cheat again. This time we'll tell it that we know (because we can read
+it off the Li et al. model) the specific proteins that clb12 interacts
+with. In fact, they are:
+
+<pre>
+>> (setq *clb12-targets* '(sic1 clb56 cdh1 mcm1/sff cdc20&14 swi5 mbf sbf))
+
+>> (possible-to/from-arcs 'clb12 *clb12-targets*)
+::
+((CLB12 + SIC1) (SIC1 + CLB12) (CLB12 + CLB56) (CLB56 + CLB12)
+ (CLB12 + CDH1) (CDH1 + CLB12) (CLB12 + MCM1/SFF) (MCM1/SFF + CLB12)
+ (CLB12 + CDC20&14) (CDC20&14 + CLB12) (CLB12 + SWI5) (SWI5 + CLB12)
+ (CLB12 + MBF) (MBF + CLB12) (CLB12 + SBF) (SBF + CLB12) (CLB12 - SIC1)
+ (SIC1 - CLB12) (CLB12 - CLB56) (CLB56 - CLB12) (CLB12 - CDH1)
+ (CDH1 - CLB12) (CLB12 - MCM1/SFF) (MCM1/SFF - CLB12)
+ (CLB12 - CDC20&14) (CDC20&14 - CLB12) (CLB12 - SWI5) (SWI5 - CLB12)
+ (CLB12 - MBF) (MBF - CLB12) (CLB12 - SBF) (SBF - CLB12))
+>> (length *)
+:: 32
+>> (expt 2 *)
+:: 4294967296
+</pre>
+
+So, even knowing the <i>whole rest of the model</i>, and knowing
+<i>exactly</i> which proteins interact with the one we're after, there
+are <i>still</i> over 4 <i>billion</i> possible ways to make these
+connections with just 3 possible values (+, -, or not connected).
+
+<p>
+
+<i>Gag!</i>
+
+<p>
+
+What now? Cheat <i>again</i>! How about if we know <i>exactly how many
+arcs there are</i>; that's 12 by my count (the number of commented-out
+lines in the *base-model* defparamter above), but not their direction
+[(clb12 +- other) v. (other +- cbl12)] or value [+ v. -].  So from
+among those 4.2 billion, we only want those that have exactly 12 arcs,
+and all we need to do is choose their direction and value. How are we
+going to get those? We could call ALL-COMBINATIONS and then filter out
+those that aren't 12 long and with the appropriate directions and
+values, but that's going to be a mess -- creating 4.2 billion subsets
+and then dropping most of them on the floor. Let's take a different
+enumeration approach that just creates the 12-long entries that we
+want. We're going to have to be extra clever to do this, but we
+already have a hint about how to get there without creating all
+possible lists. 
+
+<p>
+
+We know that the set must be among those in the result of
+(possible-to/from-arcs 'clb12 *clb12-targets*) -- those 32
+above. Recall, now, our counting trick for all-combinations: raising a
+binary number to the. A clever way to enumerate only the sets we want
+is to count up to 2-to-the-n, and for each value, expand it to its
+binary. When there are exactly twelve 1s in the binary expansion
+select from the set of 32 possible arcs only those that are in a
+position that has a 1 in the binary expansion. 
+
+<p>
+
+For example, if our set is: (a s d f), and we're looking for all
+subsets with exactly 2 elements, we count (in decimal): 0, 1, 2,
+etc. and expand each to four-position binary: 0000, 0001, 0010, 0011,
+0100, 0101, etc. Of those, only 0011, 0101, 0110, 1001, 1010, and 1100
+have exactly two 1s, so that tells us that the subsets we want are:
+df, sf, sd, af, ad, as. Kinda cool, eh?
+
+<p>
+
+There are several ways to go about all this. We could write 12 nested
+loops that just go from 0 to 1, and keep count of the 1s we get deeper
+into the list. That's kind of messy, and we can get the same effect by
+writing a simple recursive function:
+
+>> (defun m-ones-in-n-bits (m n &optional (count 0) stack)
+>>  (cond ((= 0 n) (if (= count m) (list stack)))
+>>        (t (append (m-ones-in-n-bits m (- n 1) (+ count 1) 
+>>                                     (cons 1 stack))
+>>                 (m-ones-in-n-bits m (- n 1) count 
+>>                                   (cons 0 stack))))))
+
+;;; Let's try it:
+
+>> (m-ones-in-n-bits 3 4)
+:: ((0 1 1 1) (1 0 1 1) (1 1 0 1) (1 1 1 0))
+
+<p>
+
+That looks pretty good. So we can use that function to find all the
+values among 32 bit numbers that have exactly 12 ones. We can
+actually speed it up a little by breaking off the search when we hit
+m+1 ones, which will be a a <i>lot</i> of cases:
+
+>> (defun m-ones-in-n-bits (m n &optional (count 0) stack)
+>>  (cond ((> count m) nil)
+>>        ((= 0 n) (if (= count m) (list stack)))
+>>        (t (append (m-ones-in-n-bits m (- n 1) (+ count 1)
+>>                                     (cons 1 stack))
+>>                 (m-ones-in-n-bits m (- n 1) count 
+>>                                   (cons 0 stack))))))
+
+;;; This shouldn't affect the result, but will be MUCH faster:
+
+>> (m-ones-in-n-bits 3 4)
+:: ((0 1 1 1) (1 0 1 1) (1 1 0 1) (1 1 1 0))
+</pre>
+
+Cool. Okay, so how many amount the 32 bit numbers have exactly 12
+bits?  Before trying that, let's see how this grows:
+
+<pre>
+>> (loop for n from 12 to 20
+>>       do (print (list n (length (m-ones-in-n-bits 12 n)))))
+::
+(12 1) 
+(13 13) 
+(14 91) 
+(15 455) 
+(16 1820) 
+(17 6188) 
+(18 18564) 
+(19 50388) 
+(20 125970) 
+</pre>
+
+So there's only 1 12 bit number among 12 bit numbers -- that's right,
+and 455 12 bit numbers among the 15 bit numbers, okay, and 125970 12
+bit numbers among the 20 bit numbers.... We need to go up to 32, and
+it's rising at more than double each step (although the rate of
+increase -- the derivative -- appears to be decreasing....) 
+
+<p>
+
+You should be having another one of those "Uh oh!" moments... at this
+rate, 32 bits is going to be way too big a number of results for us to
+cope with.  Me thinks it time to think about cheating again... <i>Phooey!</i>
+
+<p>
+
+So we have to get our 32 possible arcs down to something like 20, and
+then try all the 12-long subsets of those. We know how to get the
+12-long subsets, not we just need some principled way of reducing our
+set of 32 to about 20. Hmmm. Suppose that we know not only the
+possible arcs, but exactly which arcs there are, but not their value
+(+ v. -), that is, whether they are excitatory or inhibitory.
+
+<p>
+
+Doing that leaves us with just these possibilities (extracted from the
+defparameter now <i>way</i> above):
+
+<pre>
+;; (sic1 ?? clb12)
+;; (clb56 ?? clb12)
+;; (cdh1 ?? clb12)
+;; (clb12 ?? cdh1)
+;; (clb12 ?? mcm1/sff)
+;; (clb12 ?? cdc20&14)
+;; (clb12 ?? sic1)
+;; (clb12 ?? swi5)
+;; (clb12 ?? mbf)
+;; (clb12 ?? sbf)
+;; (mcm1/sff ?? clb12)
+;; (cdc20&14 ?? clb12)
+</pre>
+
+where all we need to do is chose the ?? to be + or - for each
+one. It's easy to figure out how many combinations of that there are:
+Again we're choosing a 1 (+) or a 0 (-) for a 12 bit binary number, so
+that's 2-to-the-12 = 4096:
+
+<pre>
+>> (expt 2 12)
+</pre>
+
+So, <i>finally!</i> a reasonable number of mutations! Creating these
+is just like all-combinations, way above, except that we put a + or -
+in the middle of the set:
+
+<pre>
+>> (defun all-value-mutations (l)
+>>   (if (null l)
+>>      (list nil)
+>>      (append (loop for i in (all-value-mutations (cdr l))
+>>                  collect (cons (list (first (first l)) '+ (third (first l))) i))
+>>              (loop for i in (all-value-mutations (cdr l))
+>>                  collect (cons (list (first (first l)) '- (third (first l))) i)))))
+
+;;; And we'll need out master list (or master cheat-sheet!):
+
+>> (defparameter *cheat-sheet* '(
+>>  (sic1 ?? clb12)
+>>  (clb56 ?? clb12)
+>>  (cdh1 ?? clb12)
+>>  (clb12 ?? cdh1)
+>>  (clb12 ?? mcm1/sff)
+>>  (clb12 ?? cdc20&14)
+>>  (clb12 ?? sic1)
+>>  (clb12 ?? swi5)
+>>  (clb12 ?? mbf)
+>>  (clb12 ?? sbf)
+>>  (mcm1/sff ?? clb12)
+>>  (cdc20&14 ?? clb12)
+>>  ))
+
+;;; And now we should be able to try it out:
+
+>> (defvar *all-mutations* nil)   ; Declare this global.
+
+>> (setq *all-mutations* 
+>>   (all-value-mutations *cheat-sheet*))
+
+;;; How many are there?
+
+>> (length *all-mutations*)
+:: 4096
+</pre>
+
+Whew! That was way too hard, but we're almost home all we need to do
+now is to test all of those additions to the base model against our
+target data, and report the one that has zero differences. No sweat:
+
+<pre>
+>> (defun discover! ()
+>>  (loop for mutation in *all-mutations* 
+>>        when (equal *target-data* 
+>>                    (litest (append *base-model* mutation) :cycles-to-run 50))
+>>        collect mutation))
+
+;;; This will both print out the results, and collect them and their scores.
+
+;;; Let's go for it!
+
+>> (discover!)
+:: 
+(((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 + CLB12) (CLB12 - CDH1)
+  (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 - SWI5)
+  (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CLB12) (CDC20&14 - CLB12))
+ ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 - CDH1)
+  (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 - SWI5)
+  (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CLB12) (CDC20&14 - CLB12))
+ ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 - CDH1)
+  (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 - SWI5)
+  (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF - CLB12) (CDC20&14 + CLB12)))
+</pre>
+
+Hunh; That's odd -- there are three results. First, let's see if one
+of them is the one we were expecting, the one that matches the Li et
+al model, and which we removed. Here's what we removed:
+
+<pre>
+     ;; (sic1 - clb12)
+     ;; (clb56 + clb12) ; weird yellow/green in the paper
+     ;; (cdh1 - clb12)
+     ;; (clb12 - cdh1)
+     ;; (clb12 + mcm1/sff)
+     ;; (clb12 + cdc20&14)
+     ;; (clb12 - sic1)
+     ;; (clb12 - swi5)
+     ;; (clb12 - mbf)
+     ;; (clb12 - sbf)
+     ;; (mcm1/sff + clb12)
+     ;; (cdc20&14 - clb12)
+</pre>
+
+Do any of those match this? They're in the same order, so all you have
+to do is match the pluses and minuses. Here are all those put into an
+easy-to-compare format:
+
+<pre>
+Target:   -+--++----+-
+Result 1: -++-++----+-
+Result 2: -+--++----+-
+Result 3: -+--++-----+
+</pre>
+
+Interestingly, Result 2 matches the target, so we found our
+target model, but we've also demonstrated that you can get the <i>very
+same behavior</i> from at least two other models: The one where (cdh1 -
+clb12) reads, instead: (cdh1 + clb12); and, alternatively, the one where
+(mcm1/sff + clb12) and (cdc20&14 - clb12) are inverted to: (mcm1/sff -
+clb12) and (cdc20&14 + clb12).
+
+<p>
+
+Have we discovered something interesting? Maybe not biologically, but
+certainly it's and interesting lesson. Let's think a little about why
+there are multiple solutions. Look carefully at that latter
+"surprising" result. Look carefully at the Figure, too:
+
+<p>
+<img src=/livetutorial-files/graphsearch/jssymbiolietalfig1b.jpg>
+<p>
+
+
+If you carefully locate the arcs represented by: (mcm1/sff to clb12),
+and (cdc20&14 to clb12) on the figure, you'll notice that each of them
+has an inverse arc as well; let's call these the "from" arcs: (clb12
+from mcm1/sff) and (clb12 from cdc20&14). Notice that in the case of
+cdc20&14, the arcs are different colors (TO is red (inhibitory), and
+FROM is green (excitatory)), but in the mcm1/sff case, both TO and
+FROM are green (excitatory). Now cock your head a little to the left,
+so that the diagram turns clockwise a tiny bit, so that swi5 is on the
+very bottom, and look at the relationship between cdc20&14, clb12, and
+mcm1/sff -- they should form a symmetric triangular "hat" just above
+swi5. (Both cdc20&14 and mcm1/sff are also both self-degrading
+proteins -- they have little yellow self-arcs.) Now look at what the
+alternative theory does: (mcm1/sff - clb12) (cdc20&14 + clb12) -- that
+changes the mcm TO arc to red, and the cdc FROM arc to green. Notice
+the symmetry! Basically what this mutation does is to swap the sides
+of the symmetry between cdc and mcm with respect to clb12!
+
+<p>
+
+Okay, that was really obscure.
+
+<p>
+
+Although the rest of the model isn't as obviously symmetric it's very
+plausible that there is a hidden symettry that this discovery
+reveals. More generally, it will be the case that among the 507
+zillion possible models (remember 3-to-the-144!), it's very very
+likely that <i>many</i> models will exhibit exactly the same behavior!
+
+<p>
+
+How close are the behaviors between models? As is, since we're just
+using EQUAL to check whether the simulated because matches the target,
+we can't really tell, but it's easy to get a better idea of
+this. Let's create a function that compares the new behavior to the
+old by counting the number of differences:
+
+<pre>
+>> (defun compare-results (r1 r2)
+>>   (loop for row1 in r1 as row2 in r2
+>>         sum (loop for element1 in row1 as element2 in row2
+>>                   sum (if (= element1 element2) 0 1))))
+
+;;; Does it work?
+
+>> (compare-results *target-data* *target-data*)
+0
+
+;;; And this should be really bad:
+
+>> (compare-results *target-data* (litest *base-model* :cycles-to-run 50))
+:: 317
+
+;;; Yeah, that's pretty bad!
+</pre>
+
+Now let's put that back into the discovery function and collect the
+results by score, and then sort them:
+
+<pre>
+>> (defun discover2! ()
+>>  (sort (loop for mutation in *all-mutations* 
+>>              as results = (litest (append *base-model* mutation) :cycles-to-run 50)
+>>              as score = (compare-results results *target-data*)
+>>              collect (list score mutation)
+>>              )
+>>       #'< ; we want the least (closet to the target data) first.
+>>      :key #'first))
+
+>> (discover2!)
+::
+((0
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 + CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 - SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CLB12) (CDC20&14 - CLB12)))
+ (0
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 - SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CLB12) (CDC20&14 - CLB12)))
+ (0
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 - SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF - CLB12) (CDC20&14 + CLB12)))
+ (1
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 + CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 + SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CLB12) (CDC20&14 - CLB12)))
+ (1
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 + SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF + CLB12) (CDC20&14 - CLB12)))
+ (1
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 + CDC20&14) (CLB12 - SIC1) (CLB12 + SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF - CLB12) (CDC20&14 + CLB12)))
+ (21
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 + CLB12) (CLB12 + CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 - CDC20&14) (CLB12 + SIC1) (CLB12 + SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF - CLB12) (CDC20&14 - CLB12)))
+ (21
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 + CLB12) (CLB12 - CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 - CDC20&14) (CLB12 + SIC1) (CLB12 + SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF - CLB12) (CDC20&14 - CLB12)))
+ (21
+  ((SIC1 - CLB12) (CLB56 + CLB12) (CDH1 - CLB12) (CLB12 + CDH1)
+   (CLB12 + MCM1/SFF) (CLB12 - CDC20&14) (CLB12 + SIC1) (CLB12 + SWI5)
+   (CLB12 - MBF) (CLB12 - SBF) (MCM1/SFF - CLB12) (CDC20&14 + CLB12)))
+  ...
+</pre>
+
+So the top 3 are the results that we already knew about, but there are
+several that have just one difference, and then the number of
+differences jumps up to 21, and beyond!
+
+<p>
+
+Let's do the same little reformatting trick on the ones with just 1
+difference also:
+
+<pre>
+Target:   -+--++----+-
+same 1:   -++-++----+- (from above)
+same 2:   -+--++----+- (from above)
+same 3:   -+--++-----+ (from above)
+1-away 1: -++-++-+--+-
+1-away 2: -+--++-+--+-
+1-away 3: -+--++-+---+
+</pre>
+
+Well, you can lie awake at night trying to decide if that's
+interesting.  For now, let's review what we've learned...
+
+<p>
+
+We've learned two important lessons:
+
+<p>
+
+I. Finding the "one true model" is computationally <i>intractable</i>:
+In order to deal with the massive size of the search problem (among
+3-to-the-144 models!) we <i>cheated</i>. In search, such cheating is
+called "adding constraint" to the problem to reduce the size of the
+search space. In our case, we got our constraints from what we knew
+was a correct answer (so we really did cheat!) But in the real world
+very similar constraints would have come from, for example, things
+that you read in the papers, or experimental evidence. Constrains can
+come in many forms, but they always make the search problem simpler by
+reducing the size of the search space.
+
+<p>
+
+II. Finding the "one true model" is <i>impossible</i>: There <i>isn't</i>
+"one true model" -- at least not that we can find in this way -- that
+is, reverse engineering from one particular dataset. There are many
+models that produce the same data and which are therefore
+indistinguishable by this method. What you have to do is to use
+multiple methods, including going back to the library, and web, and
+god forbid, the <i>lab</i> in order to check the models that are
+otherwise indistinguishable.

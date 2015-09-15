@@ -1,0 +1,92 @@
+
+        A THEORY ON HOW PROCESS PRIORITIES SHOULD WORK IN THE WEBLISTENER
+
+The goal here is to not allow a single thread to hog the lisp process
+such that other interactive processes are significantly slowed down or
+even made completely unresponsive.  Right now for unknown reasons
+sometimes this happens even though the process priority scheme should
+give interactive processes a go reasonably often.
+
+There are two parameters that can be tweeked for a given process: The
+process' priority and the process' quantum.
+
+As we understand it the quantum is the amount of time the process is
+given to run before it can be interrupted so that another process can
+run (unless the process suspends itself perhaps by doing I/O).  By
+default the quantum is two seconds (although it appears that the
+default for the debug window process is 0.1 seconds, the minimum
+allowed, while the quantum for the startup process on linux using Emacs
+is 2).
+
+By making these quanta smaller for standard weblistener threads (which
+are actually Allegroserve worker threads) we should get better
+response time for each user.
+
+The priority is a number that theoretically can be any integer.  The
+higher the number the higher the process priority.  In playing with
+this we have occasionally seen strange effects when we set the
+priority to a negative value.  Therefore we want to restrict priority
+values to be non-negative numbers (the default priority is 0).  As we
+understand it the magnitude of the priorities for different processes
+is irrelevant.  All that matters is the ordering of the priorities; e.g.
+if there are three processes and they have priorities 1, 2, and 3,
+that is effectively exactly the same as them having priorities 0, 50,
+and 10000 (as long as there are no other processes in the
+calculation).  
+
+To gain the highest level of interactivity we therefore want to make
+the process that accepts requests from the browser (ie the main
+allegroserve process, named "aserve-accept-6") have the very highest
+priority.  We will do this when the weblistener is started up.
+
+When the allegroserve main process receives a request it immediately
+hands it off to a worker-thread (called something like
+"5-aserve-worker") which is the thread in which the execution of the
+user's form is done in.  At some point the weblistener code itself
+gets called and at that point we can diddle with the process quantum
+and process priority for that worker thread.
+
+What we do is the following: 
+
+First we create another process when the weblistener is started up
+that wakes up every *overseer-wakeup-interval* seconds (now 5) and
+checks up on the priority of all the worker threads.
+
+We set the priority of the main allegroserve thread to be
+*highest-priority*.  Then when we get control of a worker thread we
+set its priority to be (1- *highest-priority*), wrapped with an
+unwind-protect to set it back to whatever it was once we've finished
+evaluating the user's form.  
+
+When our overseer thread wakes up any worker thread that has a
+priority greater than 0 is automatically decremented by 1.  This
+insures (we hope) that as time goes by user execution forms which take
+a lot of time get lower and lower priorities.
+
+Also we decrease the time quantum of any worker thread whose priority
+is less than 19 (which means that its been around for a few seconds
+anyway).  What we do is initially set the time quantum for a worker
+thread to be *initial-worker-quantum* seconds (now 1) and decrease it
+down to *continuing-worker-quantum* (now 0.5) seconds. (We can tune these
+numbers if they don't work out.)
+
+PROBLEMS
+
+A- It is possible for worker threads to die, although using
+KILL-MY-PROCESS doesn't seem to cause a worker thread to go away (it
+may be that the latest version of allegroserve reconstitutes worker
+threads if they die; I know in the past that I've seen allegroserve
+have fewer worker threads than it started with).  So this doesn't
+really seem to be a problem now.
+
+B- It is possible that the behavior of threads on Linux and windows is
+sufficiently different that different parameters for priority and
+quantum or a different algorithm altogether should be used on each.
+For now we'll just hope that this algorithm works well on Linux...
+
+
+IMPLEMENTATION
+
+Code that implements this is in .../Weblisten/startup.lisp.  
+Also the macro WITH-PROCESS-INFORMATION-BOUND implements the 
+initialization and reset of the worker thread priority and quantum.  

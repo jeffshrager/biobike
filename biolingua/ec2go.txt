@@ -1,0 +1,986 @@
+!version: $Revision: 1.1.1.1 $
+!date: $Date: 2001/07/27 16:54:52 $
+!Mapping of GO function_ontology "enzymes" to Enzyme Commission Numbers.
+!Michael Ashburner, Cambridge.
+!Uses:ENZYME v26.0, May 2000.
+!
+EC:1.1.1.1 > GO:alcohol dehydrogenase ; GO:0004022
+EC:1.1.1.1 > GO:alcohol dehydrogenase, iron-dependent ; GO:0004025
+EC:1.1.1.1 > GO:alcohol dehydrogenase, metal ion-independent ; GO:0004023
+EC:1.1.1.1 > GO:alcohol dehydrogenase, zinc-dependent ; GO:0004024
+EC:1.1.1.100 > GO:3-oxoacyl-[acyl-carrier protein] reductase ; GO:0004316
+EC:1.1.1.101 > GO:acylglycerone-phosphate reductase ; GO:0000140
+EC:1.1.1.105 > GO:retinol dehydrogenase ; GO:0004745
+EC:1.1.1.14 > GO:L-iditol 2-dehydrogenase ; GO:0003939
+EC:1.1.1.145 > GO:3-beta-hydroxy-delta(5)-steroid dehydrogenase ; GO:0003854
+EC:1.1.1.146 > GO:11-beta-hydroxysteroid dehydrogenase ; GO:0003845
+EC:1.1.1.153 > GO:sepiapterin reductase ; GO:0004757
+EC:1.1.1.184 > GO:carbonyl reductase (NADPH) ; GO:0004090
+EC:1.1.1.2 > GO:alcohol dehydrogenase (NADP+) ; GO:0008106
+EC:1.1.1.204 > GO:xanthine dehydrogenase ; GO:0004854
+EC:1.1.1.205 > GO:IMP dehydrogenase ; GO:0003938
+EC:1.1.1.21 > GO:aldehyde reductase ; GO:0004032
+EC:1.1.1.22 > GO:UDP-glucose 6-dehydrogenase ; GO:0003979
+EC:1.1.1.23 > GO:histidinol dehydrogenase ; GO:0004399
+EC:1.1.1.249 > GO:[eIF-5A]-deoxyhypusine synthase ; GO:0004171
+EC:1.1.1.25 > GO:shikimate 5-dehydrogenase ; GO:0004764
+EC:1.1.1.27 > GO:L-lactate dehydrogenase ; GO:0004459
+EC:1.1.1.29 > GO:glycerate dehydrogenase ; GO:0008465
+EC:1.1.1.3 > GO:homoserine dehydrogenase ; GO:0004412
+EC:1.1.1.30 > GO:3-hydroxybutyrate dehydrogenase ; GO:0003858
+EC:1.1.1.31 > GO:3-hydroxyisobutyrate dehydrogenase ; GO:0008442
+EC:1.1.1.34 > GO:hydroxymethylglutaryl-CoA reductase (NADPH) ; GO:0004420
+EC:1.1.1.35 > GO:3-hydroxyacyl-CoA dehydrogenase ; GO:0003857
+EC:1.1.1.37 > GO:malate dehydrogenase ; GO:0004470
+EC:1.1.1.38 > GO:malate dehydrogenase (oxaloacetate decarboxylating) ; GO:0004472
+EC:1.1.1.39 > GO:malate dehydrogenase (decarboxylating) ; GO:0004471
+EC:1.1.1.40 > GO:malate dehydrogenase (oxaloacetate decarboxylating) (NADP+) ; GO:0004473
+EC:1.1.1.41 > GO:isocitrate dehydrogenase (NAD+) ; GO:0004449
+EC:1.1.1.42 > GO:isocitrate dehydrogenase (NADP+) ; GO:0004450
+EC:1.1.1.43 > GO:6-phosphogluconate 2-dehydrogenase ; GO:0008114
+EC:1.1.1.44 > GO:phosphogluconate dehydrogenase (decarboxylating) ; GO:0004616
+EC:1.1.1.49 > GO:glucose-6-phosphate 1-dehydrogenase ; GO:0004345
+EC:1.1.1.62 > GO:estradiol 17 beta-dehydrogenase ; GO:0004303
+EC:1.1.1.73 > GO:octanol dehydrogenase ; GO:0004552
+EC:1.1.1.8 > GO:glycerol-3-phosphate dehydrogenase (NAD+) ; GO:0004367
+EC:1.1.1.85 > GO:3-isopropylmalate dehydrogenase ; GO:0003862
+EC:1.1.1.86 > GO:ketol-acid reductoisomerase ; GO:0004455
+EC:1.1.1.95 > GO:phosphoglycerate dehydrogenase ; GO:0004617
+EC:1.1.2.3 > GO:L-lactate dehydrogenase (cytochrome) ; GO:0004460
+EC:1.1.2.4 > GO:D-lactate dehydrogenase (cytochrome) ; GO:0004458
+EC:1.1.3.15 > GO:(S)-2-hydroxy-acid oxidase ; GO:0003973
+EC:1.1.3.21 > GO:glycerol-3-phosphate oxidase ; GO:0004369
+EC:1.1.3.22 > GO:xanthine oxidase ; GO:0004855
+EC:1.1.3.37 > GO:D-arabinono-1,4-lactone oxidase ; GO:0003885
+EC:1.1.99.10 > GO:glucose dehydrogenase (acceptor) ; GO:0004344
+EC:1.1.99.5 > GO:glycerol-3-phosphate dehydrogenase ; GO:0004368
+EC:1.10.2.2 > GO:ubiquinol-cytochrome-c reductase ; GO:0008121
+EC:1.10.3.1 > GO:catechol oxidase ; GO:0004097
+EC:1.10.3.2 > GO:laccase ; GO:0008471
+EC:1.10.3.3 > GO:L-ascorbate oxidase ; GO:0008447
+EC:1.11.1.5 > GO:cytochrome c peroxidase ; GO:0004130
+EC:1.11.1.6 > GO:catalase ; GO:0004096
+EC:1.11.1.7 > GO:peroxidase ; GO:0004601
+EC:1.11.1.8 > GO:iodide peroxidase ; GO:0004447
+EC:1.11.1.9 > GO:glutathione peroxidase ; GO:0004602
+EC:1.13.11.11 > GO:tryptophan 2,3 dioxygenase ; GO:0004833
+EC:1.13.11.21 > GO:beta-carotene 15,15'-dioxygenase ; GO:0003834
+EC:1.13.11.24 > GO:quercetin 2,3-dioxygenase ; GO:0008127
+EC:1.13.11.27 > GO:4-hydroxyphenylpyruvate dioxygenase ; GO:0003868
+EC:1.13.11.31 > GO:arachidonate 12-lipoxygenase ; GO:0004052
+EC:1.13.11.34 > GO:arachidonate 5-lipoxygenase ; GO:0004051
+EC:1.13.11.42 > GO:indoleamine-pyrrole 2,3-dioxygenase ; GO:0004426
+EC:1.13.11.5 > GO:homogentisate 1,2-dioxygenase ; GO:0004411
+EC:1.14.11.1 > GO:gamma-butyrobetaine,2-oxoglutarate dioxygenase ; GO:0008336
+EC:1.14.11.16 > GO:peptide-aspartate beta-dioxygenase ; GO:0004597
+EC:1.14.11.2 > GO:procollagen-proline,2-oxoglutarate-4-dioxygenase ; GO:0004656
+EC:1.14.11.4 > GO:procollagen-lysine 5-dioxygenase ; GO:0008475
+EC:1.14.13.13 > GO:calcidiol 1-monooxygenase ; GO:0004498
+EC:1.14.13.17 > GO:cholesterol 7-alpha-monooxygenase ; GO:0008123
+EC:1.14.13.39 > GO:nitric oxide synthase ; GO:0004517
+EC:1.14.13.8 > GO:dimethylaniline monooxygenase (N-oxide forming) ; GO:0004499
+EC:1.14.13.9 > GO:kynurenine 3-monooxygenase ; GO:0004502
+EC:1.14.14.1 > GO:cytochrome P450 ; GO:0005490
+EC:1.14.15.4 > GO:steroid 11-beta-monooxygenase ; GO:0004507
+EC:1.14.15.6 > GO:cholesterol monooxygenase (side-chain cleaving) ; GO:0008386
+EC:1.14.16.1 > GO:phenylalanine 4-monooxygenase ; GO:0004505
+EC:1.14.16.2 > GO:tyrosine 3-monooxygenase ; GO:0004511
+EC:1.14.16.4 > GO:tryptophan 5-monooxygenase ; GO:0004510
+EC:1.14.17.1 > GO:dopamine-beta-monooxygenase ; GO:0004500
+EC:1.14.17.3 > GO:peptidylglycine monooxygenase ; GO:0004504
+EC:1.14.18.1 > GO:monophenol monooxygenase ; GO:0004503
+EC:1.14.99.1 > GO:prostaglandin-endoperoxide synthase ; GO:0004666
+EC:1.14.99.10 > GO:steroid 21-monooxygenase ; GO:0004509
+EC:1.14.99.22 > GO:ecdysone 20-monooxygenase ; GO:0004501
+EC:1.14.99.3 > GO:heme oxygenase (decyclizing) ; GO:0004392
+EC:1.14.99.5 > GO:stearoyl-CoA 9-desaturase ; GO:0004768
+EC:1.14.99.7 > GO:squalene monooxygenase ; GO:0004506
+EC:1.14.99.9 > GO:steroid 17-alpha-monooxygenase ; GO:0004508
+EC:1.15.1.1 > GO:copper, zinc superoxide dismutase ; GO:0004785
+EC:1.15.1.1 > GO:iron superoxide dismutase ; GO:0008382 ; GO:0004786
+EC:1.15.1.1 > GO:manganese superoxide dismutase ; GO:0008383 ; GO:0004786
+EC:1.15.1.1 > GO:superoxide dismutase ; GO:0004784
+EC:1.16.3.1 > GO:ferroxidase ; GO:0004322
+EC:1.17.4.1 > GO:ribonucleoside-diphosphate reductase ; GO:0004748
+EC:1.18.1.2 > GO:ferredoxin--NADP(+) reductase ; GO:0004324
+EC:1.2.1.1 > GO:formaldehyde dehydrogenase (glutathione) ; GO:0004327
+EC:1.2.1.11 > GO:aspartate-semialdehyde dehydrogenase ; GO:0004073
+EC:1.2.1.12 > GO:glyceraldehyde 3-phosphate dehydrogenase (phosphorylating) ; GO:0004365
+EC:1.2.1.24 > GO:succinate-semialdehyde dehydrogenase ; GO:0004777
+EC:1.2.1.27 > GO:methylmalonate-semialdehyde dehydrogenase (acylating) ; GO:0004491
+EC:1.2.1.3 > GO:aldehyde dehydrogenase (NAD+) ; GO:0004029
+EC:1.2.1.31 > GO:aminoadipate-semialdehyde dehydrogenase ; GO:0004043
+EC:1.2.1.38 > GO:N-acetyl-gamma-glutamyl-phosphate reductase ; GO:0003942
+EC:1.2.1.41 > GO:glutamate-5-semialdehyde dehydrogenase ; GO:0004350
+EC:1.2.1.5 > GO:aldehyde dehydrogenase (NAD(P)+) ; GO:0004030
+EC:1.2.3.1 > GO:aldehyde oxidase ; GO:0004031
+EC:1.2.3.8 > GO:pyridoxal oxidase ; GO:0004732
+EC:1.2.4.1 > GO:pyruvate dehydrogenase (lipoamide) ; GO:0004739
+EC:1.2.4.2 > GO:oxoglutarate dehydrogenase (lipoamide) ; GO:0004591
+EC:1.2.4.4 > GO:3-methyl-2-oxobutanoate dehdyrogenase (lipoamide) ; GO:0003863
+EC:1.3.-.- > GO:C-5 sterol desaturase ; GO:0000248
+EC:1.3.1.1 > GO:dihydrouracil dehydrogenase (NAD+) ; GO:0004159
+EC:1.3.1.10 > GO:enoyl-[acyl-carrier protein] reductase (NADPH, B-specific) ; GO:0004319
+EC:1.3.1.13 > GO:prephenate dehydrogenase (NADP+) ; GO:0004665
+EC:1.3.1.14 > GO:orotate reductase (NADH) ; GO:0004589
+EC:1.3.1.24 > GO:biliverdin reductase ; GO:0004074
+EC:1.3.1.9 > GO:enoyl-[acyl-carrier protein] reductase (NADH) ; GO:0004318
+EC:1.3.3.1 > GO:dihydroorotate oxidase ; GO:0004158
+EC:1.3.3.3 > GO:coproporphyrinogen oxidase ; GO:0004109
+EC:1.3.3.4 > GO:protoporphyrinogen oxidase ; GO:0004729
+EC:1.3.3.6 > GO:acyl-CoA oxidase ; GO:0003997
+EC:1.3.5.1 > GO:succinate dehydrogenase-(ubiquinone) ; GO:0008177
+EC:1.3.99.1 > GO:succinate dehydrogenase ; GO:0000104
+EC:1.3.99.10 > GO:isovaleryl-CoA dehydrogenase ; GO:0008470
+EC:1.3.99.11 > GO:dihydroorotate dehydrogenase ; GO:0004152
+EC:1.3.99.12 > GO:2-methylacyl-CoA dehydrogenase ; GO:0003853
+EC:1.3.99.13 > GO:long-chain acyl-CoA dehydrogenase ; GO:0004466
+EC:1.3.99.2 > GO:butyryl-CoA dehydrogenase ; GO:0004085
+EC:1.3.99.3 > GO:acyl-CoA dehydrogenase ; GO:0003995
+EC:1.3.99.5 > GO:3-oxo-5-alpha-steroid 4-dehydrogenase ; GO:0003865
+EC:1.3.99.7 > GO:glutaryl-CoA dehydrogenase ; GO:0004361
+EC:1.4.1.13 > GO:glutamate synthase (NADPH) ; GO:0004355
+EC:1.4.1.2 > GO:glutamate dehydrogenase ; GO:0004352
+EC:1.4.1.3 > GO:glutamate dehydrogenase (NAD(P)+) ; GO:0004353
+EC:1.4.1.4 > GO:glutamate dehydrogenase (NADP+) ; GO:0004354
+EC:1.4.3.- > GO:amine oxidase ; GO:0008131
+EC:1.4.3.1 > GO:D-aspartate oxidase ; GO:0008445
+EC:1.4.3.13 > GO:protein-lysine 6-oxidase ; GO:0004720
+EC:1.4.3.3 > GO:D-amino-acid oxidase ; GO:0003884
+EC:1.4.3.4 > GO:amine oxidase (flavin-containing) ; GO:0004041
+EC:1.4.3.5 > GO:pyridoxamine-phosphate oxidase ; GO:0004733
+EC:1.4.3.6 > GO:amine oxidase (copper-containing) ; GO:0008122
+EC:1.4.4.2 > GO:glycine dehydrogenase (decarboxylating) ; GO:0004375
+EC:1.5.1.10 > GO:saccharopine dehydrogenase (NADP+, L-glutamate forming) ; GO:0004755
+EC:1.5.1.12 > GO:1-pyrroline-5-carboxylate dehydrogenase ; GO:0003842
+EC:1.5.1.15 > GO:methylenetetrahydrofolate dehydrogenase (NAD+) ; GO:0004487
+EC:1.5.1.2 > GO:pyrroline 5-carboxylate reductase ; GO:0004735
+EC:1.5.1.20 > GO:methylenetetrahydrofolate reductase (NADPH) ; GO:0004489
+EC:1.5.1.3 > GO:dihydrofolate reductase ; GO:0004146
+EC:1.5.1.5 > GO:methylenetetrahydrofolate dehydrogenase (NADP+) ; GO:0004488
+EC:1.5.1.7 > GO:saccharopine dehydrogenase (NAD+, L-lysine forming) ; GO:0004754
+EC:1.5.3.1 > GO:sarcosine oxidase ; GO:0008115
+EC:1.5.4.1 > GO:pyrimidodiazepine synthase ; GO:0004734
+EC:1.5.5.1 > GO:electron-transferring-flavoprotein dehydrogenase ; GO:0004174
+EC:1.5.99.1 > GO:sarcosine dehydrogenase ; GO:0008480
+EC:1.5.99.8 > GO:proline dehydrogenase ; GO:0004657
+EC:1.6.1.1 > GO:NAD(P)(+) transhydrogenase (B-specific) ; GO:0003957
+EC:1.6.2.2. > GO:cytochrome b5 reductase ; GO:0004128
+EC:1.6.2.4 > GO:NADPH--ferrihemoprotein reductase ; GO:0003958
+EC:1.6.4.2 > GO:glutathione reductase (NADPH) ; GO:0004362
+EC:1.6.4.5 > GO:thioredoxin reductase (NADPH) ; GO:0004791
+EC:1.6.5.3 > GO:NADH dehydrogenase (ubiquinone) ; GO:0008137
+EC:1.6.5.5 > GO:NADPH:quinone reductase ; GO:0003960
+EC:1.6.6.8 > GO:GMP reductase ; GO:0003920
+EC:1.6.99.1 > GO:NADPH dehydrogenase ; GO:0003959
+EC:1.6.99.2 > GO:NAD(P)H dehydrogenase (quinone) ; GO:0003955
+EC:1.6.99.3 > GO:NADH2 dehydrogenase ; GO:0003954
+EC:1.6.99.7 > GO:dihydropteridine reductase ; GO:0004155
+EC:1.7.3.3 > GO:urate oxidase ; GO:0004846
+EC:1.8.1.2 > GO:sulfite reductase (NADPH) ; GO:0004783
+EC:1.8.1.4 > GO:dihydrolipoamide dehydrogenase ; GO:0004148
+EC:1.8.3.1 > GO:sulfite oxidase ; GO:0008482
+EC:1.8.4.6 > GO:protein-methionine-S-oxide reductase ; GO:0008113
+EC:1.8.99.4 > GO:phosphoadenosine-phosphosulfate reductase ; GO:0004604
+EC:1.9.3.1 > GO:cytochrome-c oxidase ; GO:0004129
+EC:2.1.1.- > GO:protein methyltransferase ; GO:0008276
+EC:2.1.1.- > GO:rRNA (adenine-N6,N6-)-dimethyltransferase ; GO:0000179
+EC:2.1.1.- > GO:rRNA (uridine-2'-O-)-methyltransferase ; GO:0008650
+EC:2.1.1.- > GO:ubiquinone biosynthesis methyltransferase ; GO:0008425
+EC:2.1.1.1 > GO:nicotinamide N-methyltransferase ; GO:0008112
+EC:2.1.1.100 > GO:protein-S isoprenylcysteine O-methyltransferase ; GO:0004671
+EC:2.1.1.103 > GO:phosphoethanolamine N-methyltransferase ; GO:0000234
+EC:2.1.1.107 > GO:uroporphyrin-III C-methyltransferase ; GO:0004851
+EC:2.1.1.114 > GO:hexaprenyldihydroxybenzoate methyltransferase ; GO:0004395
+EC:2.1.1.125 > GO:histone-arginine N-methyltransferase ; GO:0008469
+EC:2.1.1.14 > GO:5-methyltetrahydropteroyltriglutamate--homocysteine S-methyltransferase ; GO:0003871
+EC:2.1.1.16 > GO:methylene-fatty-acyl-phospholipid synthase ; GO:0004481
+EC:2.1.1.17 > GO:phosphatidylethanolamine N-methyltransferase ; GO:0004608
+EC:2.1.1.28 > GO:phenylethanolamine N-methyltransferase ; GO:0004603
+EC:2.1.1.32 > GO:tRNA (guanine-N2-)-methyltransferase ; GO:0004809
+EC:2.1.1.33 > GO:tRNA (guanine-N7-)-methyltransferase ; GO:0008176
+EC:2.1.1.37 > GO:DNA (cytosine-5-)-methyltransferase ; GO:0003886
+EC:2.1.1.41 > GO:delta(24)-sterol C-methyltransferase ; GO:0003838
+EC:2.1.1.45 > GO:thymidylate synthase ; GO:0004799
+EC:2.1.1.56 > GO:mRNA (guanine-N7)-methyltransferase ; GO:0004482
+EC:2.1.1.61 > GO:tRNA (5-methylaminomethyl-2-thiouridylate)-methyltransferase ; GO:0004808
+EC:2.1.1.63 > GO:methylated-DNA--[protein]-cysteine S-methyltransferase ; GO:0003908
+EC:2.1.1.67 > GO:thiopurine S-methyltransferase ; GO:0008119
+EC:2.1.1.77 > GO:protein-L-isoaspartate (D-aspartate) O-methyltransferase ; GO:0004719
+EC:2.1.1.96 > GO:thioether S-methyltransferase ; GO:0004790
+EC:2.1.1.98 > GO:diphthine synthase ; GO:0004164
+EC:2.1.2.1 > GO:glycine hydroxymethyltransferase ; GO:0004372
+EC:2.1.2.10 > GO:aminomethyltransferase ; GO:0004047
+EC:2.1.2.11 > GO:3-methyl-2-oxobutanoate hydroxymethyltransferase ; GO:0003864
+EC:2.1.2.2 > GO:phosphoribosylglycinamide formyltransferase ; GO:0004644
+EC:2.1.2.3 > GO:phosphoribosylaminoimidazolecarboxamide formyltransferase ; GO:0004643
+EC:2.1.2.9 > GO:methionyl-tRNA formyltransferase ; GO:0004479
+EC:2.1.3.2 > GO:aspartate carbamoyltransferase ; GO:0004070
+EC:2.1.3.3 > GO:ornithine carbamoyltransferase ; GO:0004585
+EC:2.2.1.1 > GO:transketolase ; GO:0004802
+EC:2.2.1.2 > GO:transaldolase ; GO:0004801
+EC:2.29.13.1 > GO:succinate/fumarate antiporter ; GO:0005469
+EC:2.3.1.- > GO:dihydrolipoamide branched chain transacylase ; GO:0004147
+EC:2.3.1.1 > GO:amino-acid N-acetyltransferase ; GO:0004042
+EC:2.3.1.12 > GO:dihydrolipoamide S-acyltransferase ; GO:0004742
+EC:2.3.1.137 > GO:carnitine O-octanoyltransferase ; GO:0008458
+EC:2.3.1.139 > GO:ecdysone O-acyltransferase ; GO:0004173
+EC:2.3.1.15 > GO:glycerol-3-phosphate acyltransferase ; GO:0004366
+EC:2.3.1.16 > GO:acetyl-CoA C-acyltransferase ; GO:0003988
+EC:2.3.1.20 > GO:diacylglycerol O-acyltransferase ; GO:0004144
+EC:2.3.1.21 > GO:carnitine O-palmityltransferase ; GO:0004095
+EC:2.3.1.22 > GO:2-acylglycerol O-acyltransferase ; GO:0003846
+EC:2.3.1.26 > GO:sterol O-acyltransferase ; GO:0004772
+EC:2.3.1.31 > GO:homoserine O-acetyltransferase ; GO:0004414
+EC:2.3.1.32 > GO:lysine acetyltransferase ; GO:0004468
+EC:2.3.1.35 > GO:glutamate N-acetyltransferase ; GO:0004358
+EC:2.3.1.37 > GO:5-aminolevulinate synthase ; GO:0003870
+EC:2.3.1.38 > GO:[acyl-carrier protein] S-acetyltransferase ; GO:0004313
+EC:2.3.1.39 > GO:[acyl-carrier protein] S-malonyltransferase ; GO:0004314
+EC:2.3.1.4 > GO:glucosamine-phosphate N-acetyltransferase ; GO:0004343
+EC:2.3.1.41 > GO:3-oxoacyl-[acyl-carrier protein] synthase ; GO:0004315
+EC:2.3.1.43 > GO:phosphatidylcholine-sterol O-acyltransferase ; GO:0004607
+EC:2.3.1.48 > GO:histone acetyltransferase ; GO:0004402, GO:0004403, GO:0004404
+EC:2.3.1.5 > GO:arylamine N-acetyltransferase ; GO:0004060
+EC:2.3.1.50 > GO:serine C-palmitoyltransferase ; GO:0004758
+EC:2.3.1.51 > GO:1-acylglycerol-3-phosphate O-acyltransferase ; GO:0003841
+EC:2.3.1.57 > GO:diamine N-acetyltransferase ; GO:0004145
+EC:2.3.1.6 > GO:choline O-acetyltransferase ; GO:0004102
+EC:2.3.1.61 > GO:dihydrolipoamide S-succinyltransferase ; GO:0004149
+EC:2.3.1.7 > GO:carnitine O-acetyltransferase ; GO:0004092
+EC:2.3.1.84 > GO:alcohol O-acetyltransferase ; GO:0004026
+EC:2.3.1.85 > GO:fatty-acid synthase ; GO:0004312
+EC:2.3.1.86 > GO:fatty-acyl-CoA synthase ; GO:0004321
+EC:2.3.1.87 > GO:arylalkylamine N-acetyltransferase ; GO:0004059
+EC:2.3.1.88 > GO:peptide alpha-N-acetyltransferase ; GO:0004596
+EC:2.3.1.9 > GO:acetyl-CoA C-acetyltransferase ; GO:0003985
+EC:2.3.1.97 > GO:glycylpeptide N-tetradecanoylytansferase ; GO:0004379
+EC:2.3.2.12 > GO:peptidyltransferase ; GO:0000048
+EC:2.3.2.13 > GO:protein-glutamine gamma-glutamyltransferase ; GO:0003810
+EC:2.3.2.2 > GO:gamma-glutamyl transferase ; GO:0003840
+EC:2.3.2.4 > GO:gamma-glutamylcyclotransferase ; GO:0003839
+EC:2.3.2.8 > GO:arginyltransferase ; GO:0004057
+EC:2.4.1.- > GO:UDP-glucose:glycoprotein glucosyltransferase ; GO:0003980
+EC:2.4.1.- > GO:alpha-1,6-mannosyltransferase ; GO:0000009
+EC:2.4.1.- > GO:glycolipid mannosyl transferase ; GO:0004580
+EC:2.4.1.1 > GO:glycogen phosphorylase ; GO:0008184
+EC:2.4.1.1 > GO:phosphorylase ; GO:0004645
+EC:2.4.1.101 > GO:alpha-1,3-mannosyl-glycoprotein beta-1,2-N-acetylglucosaminyltransferase ; GO:0003827
+EC:2.4.1.102 > GO:beta-1,3-galactosyl-O-glycosyl-glycoprotein beta-1,6-N-acetylglucosaminyltransferase ; GO:0003829
+EC:2.4.1.109 > GO:dolichyl-phosphate-mannose--protein mannosyltransferase ; GO:0004169
+EC:2.4.1.11 > GO:glycogen (starch) synthase ; GO:0004373
+EC:2.4.1.117 > GO:dolichyl-phosphate beta-glucosyltransferase ; GO:0004581
+EC:2.4.1.119 > GO:dolichyl-diphosphooligosaccharide-protein glycosyltransferase ; GO:0004579
+EC:2.4.1.130 > GO:dolichyl-phosphate-mannose-glycolipid alpha-mannosyltransferase ; GO:0004584
+EC:2.4.1.131 > GO:glycolipid 2-alpha-mannosyltransferase ; GO:0004377
+EC:2.4.1.132 > GO:glycolipid 3-alpha-mannosyltransferase ; GO:0004378
+EC:2.4.1.141 > GO:N-acetylglucosaminyldiphosphodolichol N-acetylglucosaminyltransferase ; GO:0004577
+EC:2.4.1.142 > GO:chitobiosyldiphosphodolichol alpha-mannosyltransferase ; GO:0004578
+EC:2.4.1.143 > GO:alpha-1,6-mannosyl-glycoprotein beta-1,2-N-acetylglucosaminyltransferase ; GO:0008455
+EC:2.4.1.144 > GO:beta-1,4-mannosyl-glycoprotein beta-1,4-N-acetylglucosaminyltransferase ; GO:0003830
+EC:2.4.1.145 > GO:alpha-1,3-mannosyl-glycoprotein beta-1,4-N-acetylglucosaminyltransferase ; GO:0008454
+EC:2.4.1.149 > GO:N-acetyllactosaminide beta-1,3-N-acetylglucosaminyltransferase ; GO:0008532
+EC:2.4.1.15 > GO:alpha,alpha-trehalose-phosphate synthase (UDP-forming) ; GO:0003825
+EC:2.4.1.150 > GO:N-acetyllactosaminide beta-1,6-N-acetylglucosaminyltransferase ; GO:0008109
+EC:2.4.1.151 > GO:N-acetyllactosaminide alpha-1,3-galactosyltransferase ; GO:0003946
+EC:2.4.1.16 > GO:chitin synthase ; GO:0004100
+EC:2.4.1.163 > GO:beta-galactosyl-N-acetylglucosaminylgalactosyl-glucosylceramide beta-1,3-acetylglucosaminyltransferase ; GO:0008457
+EC:2.4.1.17 > GO:UDP-glucuronosyltransferase ; GO:0003981
+EC:2.4.1.18 > GO:1,4-alpha-glucan branching enzyme ; GO:0003844
+EC:2.4.1.22 > GO:lactose synthase ; GO:0004461
+EC:2.4.1.25 > GO:4-alpha-glucanotransferase ; GO:0004134
+EC:2.4.1.34 > GO:1,3-beta-glucan synthase ; GO:0003843
+EC:2.4.1.37 > GO:glycoprotein-fucosylgalactoside alpha-galactosyltransferase ; GO:0004381
+EC:2.4.1.38 > GO:beta-N-acetylglucosaminyl-glycopeptide beta-1,4-galactosyltransferase ; GO:0003831
+EC:2.4.1.40 > GO:glycoprotein-fucosylgalactoside alpha-N-acetylgalactosaminyltransferase ; GO:0004380
+EC:2.4.1.41 > GO:polypeptide N-acetylgalactosaminyltransferase ; GO:0004653
+EC:2.4.1.45 > GO:2-hydroxyacylsphingosine 1-beta-galactosyltransferase ; GO:0003851
+EC:2.4.1.68 > GO:glycoprotein 6-alpha-L-fucosyltransferase ; GO:0008424
+EC:2.4.1.69 > GO:galactoside 2-L-fucosyltransferase ; GO:0008107
+EC:2.4.1.80 > GO:ceramide glucosyltransferase ; GO:0008120
+EC:2.4.1.83 > GO:dolichyl-phosphate beta-D-mannosyltransferase ; GO:0004582
+EC:2.4.1.90 > GO:N-acetyllactosamine synthase ; GO:0003945
+EC:2.4.1.92 > GO:(N-acetylneuraminyl)-galactosylglucosylceramide ; GO:0003947
+EC:2.4.2.1 > GO:purine-nucleoside phosphorylase ; GO:0004731
+EC:2.4.2.10 > GO:orotate phosphoribosyltransferase ; GO:0004588
+EC:2.4.2.11 > GO:nicotinate phosphoribosyltransferase ; GO:0004516
+EC:2.4.2.14 > GO:amidophosphoribosyltransferase ; GO:0004044
+EC:2.4.2.17 > GO:ATP phosphoribosyltransferase ; GO:0003879
+EC:2.4.2.18 > GO:anthranilate phosphoribosyltransferase ; GO:0004048
+EC:2.4.2.19 > GO:nicotinate-nucleotide pyrophosphorylase (carboxylating) ; GO:0004514
+EC:2.4.2.29 > GO:queuine tRNA-ribosyltransferase ; GO:0008479
+EC:2.4.2.3 > GO:uridine phosphorylase ; GO:0004850
+EC:2.4.2.30 > GO:NAD(+) ADP-ribosyltransferase ; GO:0003950
+EC:2.4.2.31 > GO:NAD(P)(+)--arginine ADP-ribosyltransferase ; GO:0003956
+EC:2.4.2.7 > GO:adenine phosphoribosyltransferase ; GO:0003999
+EC:2.4.2.8 > GO:hypoxanthine phosphoribosyltransferase ; GO:0004422
+EC:2.4.2.9 > GO:uracil phosphoribosyltransferase ; GO:0004845
+EC:2.4.99.1 > GO:beta-galactosamide alpha-2,6-sialyltransferase ; GO:0003835
+EC:2.4.99.10 > GO:neolactotetraosylceramide alpha-2,3-sialyltransferase ; GO:0004513
+EC:2.4.99.4 > GO:beta-galactoside alpha-2,3-sialyltransferase ; GO:0003836
+EC:2.4.99.6 > GO:N-acetyllactosaminide alpha-2,3-sialyltransferase ; GO:0008118
+EC:2.4.99.8 > GO:alpha-N-acetyl-neuraminide alpha-2,8-sialyltransferase ; GO:0003828
+EC:2.5.1.- > GO:CAAX-protein geranylgeranyltransferase ; GO:0004662
+EC:2.5.1.- > GO:RAB-protein geranylgeranyltransferase ; GO:0004663
+EC:2.5.1.- > GO:protein farnesyltransferase ; GO:0004660
+EC:2.5.1.- > GO:protein geranylgeranyltransferase ; GO:0004661
+EC:2.5.1.- > GO:protoheme IX farnesyltransferase ; GO:0008495
+EC:2.5.1.1 > GO:dimethylallyltranstransferase ; GO:0004161
+EC:2.5.1.10 > GO:geranyltranstransferase ; GO:0004337
+EC:2.5.1.15 > GO:dihydropteroate synthase ; GO:0004156
+EC:2.5.1.16 > GO:spermidine synthase ; GO:0004766
+EC:2.5.1.18 > GO:glutathione transferase ; GO:0004364
+EC:2.5.1.19 > GO:3-phosphoshikimate 1-carboxyvinyltransferase ; GO:0003866
+EC:2.5.1.21 > GO:farnesyl-diphosphate farnesyl transferase ; GO:0004310
+EC:2.5.1.26 > GO:alkylglycerone-phosphate synthase ; GO:0008609
+EC:2.5.1.29 > GO:farnesyltranstransferase ; GO:0004311
+EC:2.5.1.3 > GO:thiamin-phosphate pyrophosphorylase ; GO:0004789
+EC:2.5.1.37 > GO:leukotriene-C4 synthase ; GO:0004464
+EC:2.5.1.6 > GO:methionine adenosyltransferase ; GO:0004478
+EC:2.5.1.8 > GO:tRNA isopentenyltransferase ; GO:0004811
+EC:2.5.1.9 > GO:riboflavin synthase ; GO:0004746
+EC:2.6.1.1 > GO:aspartate aminotransferase ; GO:0004069
+EC:2.6.1.11 > GO:acetylornithine aminotransferase ; GO:0003992
+EC:2.6.1.13 > GO:ornithine-oxo acid aminotransferase ; GO:0004587
+EC:2.6.1.16 > GO:glutamine-fructose-6-phosphate transaminase (isomerizing) ; GO:0004360
+EC:2.6.1.19 > GO:4-aminobutyrate aminotransferase ; GO:0003867
+EC:2.6.1.2 > GO:alanine aminotransferase ; GO:0004021
+EC:2.6.1.38 > GO:histidine aminotransferase ; GO:0008110
+EC:2.6.1.42 > GO:branched-chain amino-acid aminotransferase ; GO:0004084
+EC:2.6.1.44 > GO:alanine--glyoxylate aminotransferase ; GO:0008453
+EC:2.6.1.5 > GO:tyrosine aminotransferase ; GO:0004838
+EC:2.6.1.51 > GO:serine-pyruvate aminotransferase ; GO:0004760
+EC:2.6.1.51 > GO:serine-pyruvate aminotransferase, type 1 ; GO:0004761
+EC:2.6.1.51 > GO:serine-pyruvate aminotransferase, type 2A ; GO:0004762
+EC:2.6.1.51 > GO:serine-pyruvate aminotransferase, type 2B ; GO:0004763
+EC:2.6.1.52 > GO:phosphoserine aminotransferase ; GO:0004646
+EC:2.6.1.52 > GO:phosphoserine transaminase ; GO:0004648
+EC:2.6.1.62 > GO:adenosylmethionine--8-amino-7-oxononanoate aminotransferase ; GO:0004015
+EC:2.6.1.9 > GO:histidinol-phosphate aminotransferase ; GO:0004400
+EC:2.7.1.1 > GO:hexokinase ; GO:0004396
+EC:2.7.1.105 > GO:6-phosphofructo-2-kinase ; GO:0003873
+EC:2.7.1.107 > GO:diacylglycerol kinase ; GO:0004143
+EC:2.7.1.108 > GO:dolichol kinase ; GO:0004168
+EC:2.7.1.11 > GO:6-phosphofructokinase ; GO:0003872
+EC:2.7.1.112 > GO:protein tyrosine kinase ; GO:0004713
+EC:2.7.1.113 > GO:deoxyguanosine kinase ; GO:0004138
+EC:2.7.1.117 > GO:myosin light chain kinase ; GO:0004687
+EC:2.7.1.123 > GO:calcium/calmodulin-dependent protein kinase ; GO:0004685
+EC:2.7.1.123 > GO:calmodulin-dependent protein kinase I ; GO:0004684
+EC:2.7.1.127 > GO:1D-myo-inositol-trisphosphate 3-kinase ; GO:0008440
+EC:2.7.1.137 > GO:1-phosphatidylinositol 3-kinase ; GO:0004429
+EC:2.7.1.15 > GO:ribokinase ; GO:0004747
+EC:2.7.1.17 > GO:xylulokinase ; GO:0004856
+EC:2.7.1.2 > GO:glucokinase ; GO:0004340
+EC:2.7.1.20 > GO:adenosine kinase ; GO:0004001
+EC:2.7.1.21 > GO:thymidine kinase ; GO:0004797
+EC:2.7.1.23 > GO:NAD(+) kinase ; GO:0003951
+EC:2.7.1.24 > GO:dephospho-CoA kinase ; GO:0004140
+EC:2.7.1.25 > GO:adenylsulfate kinase ; GO:0004020
+EC:2.7.1.26 > GO:riboflavin kinase ; GO:0008531
+EC:2.7.1.29 > GO:glycerone kinase ; GO:0004371
+EC:2.7.1.3 > GO:ketohexokinase ; GO:0004454
+EC:2.7.1.30 > GO:glycerol kinase ; GO:0004370
+EC:2.7.1.32 > GO:choline kinase ; GO:0004103
+EC:2.7.1.33 > GO:pantothenate kinase ; GO:0004594
+EC:2.7.1.35 > GO:pyridoxal kinase ; GO:0008478
+EC:2.7.1.36 > GO:mevalonate kinase ; GO:0004496
+EC:2.7.1.37 > GO:protein serine/threonine kinase ; GO:0004674
+EC:2.7.1.38 > GO:phosphorylase kinase ; GO:0004689
+EC:2.7.1.39 > GO:homoserine kinase ; GO:0004413
+EC:2.7.1.40 > GO:pyruvate kinase ; GO:0004743
+EC:2.7.1.48 > GO:uridine kinase ; GO:0004849
+EC:2.7.1.50 > GO:hydroxyethylthiazole kinase ; GO:0004417
+EC:2.7.1.6 > GO:galactokinase ; GO:0004335
+EC:2.7.1.67 > GO:1-phosphatidylinositol 4-kinase ; GO:0004430
+EC:2.7.1.68 > GO:1-phosphatidylinositol-4-phosphate kinase ; GO:0004431
+EC:2.7.1.71 > GO:shikimate kinase ; GO:0004765
+EC:2.7.1.74 > GO:deoxycytidine kinase ; GO:0004137
+EC:2.7.1.75 > GO:deoxyadenosine kinase ; GO:0004136
+EC:2.7.1.82 > GO:ethanolamine kinase ; GO:0004305
+EC:2.7.1.91 > GO:sphinganine kinase ; GO:0008481
+EC:2.7.1.99 > GO:pyruvate dehydrogenase (lipoamide) kinase ; GO:0004740
+EC:2.7.2.11 > GO:glutamate 5-kinase ; GO:0004349
+EC:2.7.2.3 > GO:phosphoglycerate kinase ; GO:0004618
+EC:2.7.2.4 > GO:aspartate kinase ; GO:0004072
+EC:2.7.2.8 > GO:acetylglutamate kinase ; GO:0003991
+EC:2.7.3.11 > GO:protein histidine pros-kinase ; GO:0008256
+EC:2.7.3.12 > GO:protein histidine tele-kinase ; GO:0008257
+EC:2.7.3.2 > GO:creatine kinase ; GO:0004111
+EC:2.7.3.3 > GO:arginine kinase ; GO:0004054
+EC:2.7.4.14 > GO:cytidylate kinase ; GO:0004127
+EC:2.7.4.2 > GO:phosphomevalonate kinase ; GO:0004631
+EC:2.7.4.3 > GO:adenylate kinase ; GO:0004017
+EC:2.7.4.6 > GO:nucleoside-diphosphate kinase ; GO:0004550
+EC:2.7.4.8 > GO:guanylate kinase ; GO:0004385
+EC:2.7.4.9 > GO:thymidylate kinase ; GO:0004798
+EC:2.7.6.1 > GO:ribose-phosphate pyrophosphokinase ; GO:0004749
+EC:2.7.6.2 > GO:thiamin pyrophosphokinase ; GO:0004788
+EC:2.7.6.3 > GO:2-amino-4-hydroxy-6-hydroxymethyldihydropteridine pyrophosphokinase ; GO:0003848
+EC:2.7.7.- > GO:RNA guanylyltransferase ; GO:0008192
+EC:2.7.7.- > GO:tRNA guanylyltransferase ; GO:0008193
+EC:2.7.7.10 > GO:UTP--hexose-1-phosphate uridylyltransferase ; GO:0003982
+EC:2.7.7.12 > GO:UDP-glucose-hexose-1-phosphate uridylyltransferase ; GO:0008108
+EC:2.7.7.13 > GO:mannose-1-phosphate guanylyltransferase ; GO:0004475
+EC:2.7.7.14 > GO:ethanolamine-phosphate cytidylyltransferase ; GO:0004306
+EC:2.7.7.15 > GO:cholinephosphate cytidylyltransferase ; GO:0004105
+EC:2.7.7.18 > GO:nicotinate-nucleotide adenylyltransferase ; GO:0004515
+EC:2.7.7.19 > GO:polynucleotide adenylyltransferase ; GO:0004652
+EC:2.7.7.2 > GO:FMN adenylyltransferase ; GO:0003919
+EC:2.7.7.23 > GO:UDP-N-acetylglucosamine pyrophosphorylase ; GO:0003977
+EC:2.7.7.25 > GO:tRNA adenylyltransferase ; GO:0004810
+EC:2.7.7.3 > GO:pantotheine-phosphate adenylyltransferase ; GO:0004595
+EC:2.7.7.31 > GO:DNA nucleotidylexotransferase ; GO:0003912
+EC:2.7.7.4 > GO:sulfate adenylyltransferase (ATP) ; GO:0004781
+EC:2.7.7.41 > GO:phosphatidate cytidylyltransferase ; GO:0004605
+EC:2.7.7.48 > GO:RNA-directed RNA polymerase ; GO:0003968
+EC:2.7.7.49 > GO:RNA-directed DNA polymerase ; GO:0003964
+EC:2.7.7.49 > GO:RNA-directed DNA polymerase, group II intron encoded ; GO:0003967
+EC:2.7.7.49 > GO:RNA-directed DNA polymerase, transposon encoded ; GO:0003966
+EC:2.7.7.49 > GO:telomeric RNA reverse transcriptase ; GO:0003721
+EC:2.7.7.5 > GO:sulfate adenylyltransferase (ADP) ; GO:0004780
+EC:2.7.7.50 > GO:mRNA guanylyltransferase ; GO:0004484
+EC:2.7.7.53 > GO:ATP adenylyltransferase ; GO:0003877
+EC:2.7.7.6 > GO:DNA-directed RNA polymerase ; GO:0003899, GO:0000129
+EC:2.7.7.6 > GO:DNA-directed RNA polymerase I ; GO:0003900
+EC:2.7.7.6 > GO:DNA-directed RNA polymerase II ; GO:0003901
+EC:2.7.7.6 > GO:DNA-directed RNA polymerase III ; GO:0003902
+EC:2.7.7.7 > GO:DNA-directed DNA polymerase ; GO:0003887, GO:0003888
+EC:2.7.7.7 > GO:alpha DNA polymerase ; GO:0003889
+EC:2.7.7.7 > GO:beta DNA polymerase ; GO:0003890
+EC:2.7.7.7 > GO:delta DNA polymerase ; GO:0003891
+EC:2.7.7.7 > GO:epsilon DNA polymerase ; GO:0003893
+EC:2.7.7.7 > GO:gamma DNA-directed DNA polymerase ; GO:0003895
+EC:2.7.7.7 > GO:zeta DNA polymerase ; GO:0003894
+EC:2.7.7.8 > GO:polyribonucleotide nucleotidyltransferase ; GO:0004654
+EC:2.7.7.9 > GO:UTP--glucose-1-phosphate uridylyltransferase ; GO:0003983
+EC:2.7.8.1 > GO:ethanolaminephosphotransferase ; GO:0004307
+EC:2.7.8.11 > GO:CDP-diacylglycerol-inositol 3-phosphatidyltransferase ; GO:0003881
+EC:2.7.8.15 > GO:UDP-N-acetylglucosamine--dolichyl-phosphate N-acetylglucosamine-1-phosphate transferase ; GO:0003975
+EC:2.7.8.17 > GO:UDP-N-acetylglucosamine-lysosomal-enzyme N-acetylglucosaminephosphotransferase ; GO:0003976
+EC:2.7.8.2 > GO:diacylglycerol cholinephosphotransferase ; GO:0004142
+EC:2.7.8.5 > GO:CDP-diacylglycerol--glycerol-3-phosphate 3-phosphatidyltransferase ; GO:0008444
+EC:2.7.8.8 > GO:CDP-diacylglycerol-serine O-phosphatidyltransferase ; GO:0003882
+EC:2.7.9.3 > GO:selenide,water dikinase ; GO:0004756
+EC:2.8.1.1 > GO:thiosulfate sulfurtransferase ; GO:0004792
+EC:2.8.1.6 > GO:biotin synthase ; GO:0004076
+EC:2.8.2.1 > GO:aryl sulfotransferase ; GO:0004062
+EC:2.8.2.17 > GO:cholesterol transfechondroitin 6-sulfotransferase ; GO:0008459
+EC:2.8.2.2 > GO:alcohol sulfotransferase ; GO:0004027
+EC:2.8.2.20 > GO:protein-tyrosine sulfotransferase ; GO:0008476
+EC:2.8.2.23 > GO:heparin-glucosamine 3-O-sulfotransferase ; GO:0008467
+EC:2.8.2.4 > GO:estrone sulfotransferase ; GO:0004304
+EC:2.8.3.- > GO:CoA-transferase ; GO:0008410
+EC:2.8.3.5 > GO:3-oxoacid CoA-transferase ; GO:0008260
+EC:2.9.1.1 > GO:cysteinyl-tRNA(Ser) selenium transferase ; GO:0004125
+EC:3.-.-.- > GO:GPI-anchor transamidase ; GO:0003923
+EC:3.1.-.- > GO:endonuclease ; GO:0004519
+EC:3.1.1.- > GO:esterase, unknown substrate ; GO:0004302
+EC:3.1.1.1 > GO:carboxylesterase ; GO:0004091
+EC:3.1.1.13 > GO:sterol esterase ; GO:0004771
+EC:3.1.1.17 > GO:gluconolactonase ; GO:0004341
+EC:3.1.1.2 > GO:arylesterase ; GO:0004064
+EC:3.1.1.29 > GO:aminoacyl-tRNA hydrolase ; GO:0004045
+EC:3.1.1.3 > GO:triacylglycerol lipase ; GO:0004806
+EC:3.1.1.34 > GO:lipoprotein lipase ; GO:0004465
+EC:3.1.1.4 > GO:phospholipase A2 ; GO:0004623
+EC:3.1.1.47 > GO:2-acetyl-1-alkylglycerophosphocholine esterase ; GO:0003847
+EC:3.1.1.5 > GO:lysophospholipase ; GO:0004622
+EC:3.1.1.59 > GO:juvenile-hormone esterase ; GO:0004453
+EC:3.1.1.6 > GO:acetylesterase ; GO:0008126
+EC:3.1.1.69 > GO:N-acetylglucosaminylphosphatidylinositol deacetylase ; GO:0000225
+EC:3.1.1.7 > GO:acetylcholinesterase ; GO:0003990
+EC:3.1.1.8 > GO:cholinesterase ; GO:0004104
+EC:3.1.13.- > GO:3'-5' exoribonuclease ; GO:0000175
+EC:3.1.13.- > GO:5'-3' exoribonuclease ; GO:0004534
+EC:3.1.13.2 > GO:exoribonuclease H ; GO:0004533
+EC:3.1.13.4 > GO:poly(A)-specific ribonuclease ; GO:0004535
+EC:3.1.2.1 > GO:acetyl-CoA hydrolase ; GO:0003986
+EC:3.1.2.14 > GO:oleoyl-[acyl-carrier protein] hydrolase ; GO:0004320
+EC:3.1.2.15 > GO:ubiquitin thiolesterase ; GO:0004221
+EC:3.1.2.20 > GO:alpha-glucosidase II ; GO:0004562
+EC:3.1.2.22 > GO:palmitoyl-protein hydrolase ; GO:0008474
+EC:3.1.2.3 > GO:succinyl-CoA hydrolase ; GO:0004778
+EC:3.1.2.4 > GO:3-hydroxyisobutyryl-CoA hydrolase ; GO:0003860
+EC:3.1.2.6 > GO:hydroxyacylglutathione hydrolase ; GO:0004416
+EC:3.1.21.1 > GO:deoxyribonuclease I ; GO:0004530
+EC:3.1.22.1 > GO:deoxyribonuclease II ; GO:0004531
+EC:3.1.26.- > GO:endoribonuclease ; GO:0004521
+EC:3.1.26.3 > GO:ribonuclease III ; GO:0004525
+EC:3.1.26.4 > GO:ribonuclease H ; GO:0004523
+EC:3.1.26.4 > GO:ribonuclease H1 ; GO:0004524
+EC:3.1.26.5 > GO:ribonuclease P ; GO:0004526
+EC:3.1.27.5 > GO:pancreatic ribonuclease ; GO:0004522
+EC:3.1.27.9 > GO:tRNA-intron endonuclease ; GO:0000213
+EC:3.1.3.- > GO:JUN kinase phosphatase ; GO:0008579
+EC:3.1.3.- > GO:protein phosphatase ; GO:0004721
+EC:3.1.3.- > GO:protein tyrosine/serine/threonine phosphatase ; GO:0008138
+EC:3.1.3.- > GO:protein tyrosine/threonine phosphatase ; GO:0008330
+EC:3.1.3.1 > GO:alkaline phosphatase ; GO:0004035
+EC:3.1.3.11 > GO:fructose-bisphosphatase ; GO:0004331
+EC:3.1.3.12 > GO:trehalose phosphatase ; GO:0004805
+EC:3.1.3.13 > GO:bisphosphoglycerate phosphatase ; GO:0004083
+EC:3.1.3.15 > GO:histidinol-phosphatase ; GO:0004401
+EC:3.1.3.16 > GO:protein serine/threonine phosphatase ; GO:0004722
+EC:3.1.3.2 > GO:acid phosphatase ; GO:0003993
+EC:3.1.3.21 > GO:glycerol-1-phosphatase ; GO:0000121
+EC:3.1.3.3 > GO:phosphoserine phosphatase ; GO:0004647
+EC:3.1.3.33 > GO:polynucleotide 5'-phosphatase ; GO:0004651
+EC:3.1.3.36 > GO:phosphatidylinositol-bisphosphatase ; GO:0004439
+EC:3.1.3.4 > GO:phosphatidate phosphatase ; GO:0008195
+EC:3.1.3.41 > GO:4-nitrophenylphosphatase ; GO:0003869
+EC:3.1.3.43 > GO:pyruvate dehydrogenase (lipoamide) phosphatase ; GO:0004741
+EC:3.1.3.46 > GO:fructose-2,6-bisphosphate 2-phosphatase ; GO:0004330
+EC:3.1.3.48 > GO:prenylated protein tyrosine phosphatase ; GO:0004727
+EC:3.1.3.48 > GO:protein tyrosine phosphatase ; GO:0004725
+EC:3.1.3.5 > GO:5'-nucleotidase ; GO:0008253
+EC:3.1.3.56 > GO:inositol-1,4,5-triphosphate 5-phosphatase ; GO:0004445
+EC:3.1.3.57 > GO:inositol-1,4,-bisphosphate 1-phosphatase ; GO:0004441
+EC:3.1.3.6 > GO:3'-nucleotidase ; GO:0008254
+EC:3.1.3.61 > GO:inositol-1,4,5-triphosphate 1-phosphatase ; GO:0004444
+EC:3.1.3.62 > GO:inositol-1,3,4,5-tetrakiphosphate 3-phosphatase ; GO:0004446
+EC:3.1.3.64 > GO:phosphatidylinositol-3-phosphatase ; GO:0004438
+EC:3.1.3.65 > GO:inositol-1,4,-bisphosphate 3-phosphatase ; GO:0004442
+EC:3.1.3.66 > GO:inositol-1,4,-bisphosphate 4-phosphatase ; GO:0004443
+EC:3.1.3.67 > GO:phosphatidylinositol-3,4-bisphosphate 4-phosphatase ; GO:0004440
+EC:3.1.3.68 > GO:2-deoxyglucose-6-phosphatase ; GO:0003850
+EC:3.1.3.7 > GO:3'(2'),5'-bisphosphate nucleotidase ; GO:0008441
+EC:3.1.3.9 > GO:glucose-6-phosphatase ; GO:0004346
+EC:3.1.4.1 > GO:phosphodiesterase I ; GO:0004528
+EC:3.1.4.10 > GO:1-phosphatidylinositol phosphodiesterase ; GO:0004436
+EC:3.1.4.11 > GO:1-phosphatidylinositol-4,5-biphosphate phosphodiesterase ; GO:0004435
+EC:3.1.4.12 > GO:sphingomyelin phosphodiesterase ; GO:0004767
+EC:3.1.4.17 > GO:3',5'-cyclic-nucleotide phosphodiesterase ; GO:0004114
+EC:3.1.4.37 > GO:2',3'-cyclic nucleotide 3'-phosphodiesterase ; GO:0004113
+EC:3.1.4.4 > GO:phospholipase D ; GO:0004630
+EC:3.1.4.45 > GO:N-acetylglucosamine-1-phosphodiester alpha-N-acetylglucosaminidase ; GO:0003944
+EC:3.1.4.50 > GO:glycoprotein phospholipase D ; GO:0004621
+EC:3.1.6.1 > GO:arylsulfatase ; GO:0004065
+EC:3.1.6.12 > GO:N-acetylgalactosamine-4-sulfatase ; GO:0003943
+EC:3.1.6.13 > GO:iduronate-2-sulfatase ; GO:0004423
+EC:3.1.6.14 > GO:N-acetylglucosamine-6-sulfatase ; GO:0008449
+EC:3.1.6.2 > GO:steryl-sulfatase ; GO:0004773
+EC:3.1.6.8 > GO:cerebroside-sulfatase ; GO:0004098
+EC:3.1.8.1 > GO:aryldialkylphosphatase ; GO:0004063
+EC:3.2.1.1 > GO:alpha-amylase ; GO:0004556
+EC:3.2.1.10 > GO:oligo-1,6-glucosidase ; GO:0004574
+EC:3.2.1.106 > GO:mannosyl-oligosaccharide glucosidase (processing A-glucosidase I) ; GO:0004573
+EC:3.2.1.108 > GO:lactase ; GO:0000016
+EC:3.2.1.113 > GO:mannosyl-oligosaccharide 1,2-alpha-mannosidase ; GO:0004571
+EC:3.2.1.114 > GO:mannosyl-oligosaccharide 1,3-1,6-alpha-mannosidase ; GO:0004572
+EC:3.2.1.130 > GO:glycoprotein endo-alpha-1,2 mannosidase ; GO:0004569
+EC:3.2.1.14 > GO:chitinase ; GO:0004568
+EC:3.2.1.15 > GO:polygalacturonase ; GO:0004650
+EC:3.2.1.17 > GO:lysozyme ; GO:0003796
+EC:3.2.1.18 > GO:exo-alpha-sialidase ; GO:0004308
+EC:3.2.1.20 > GO:alpha-glucosidase ; GO:0004558
+EC:3.2.1.21 > GO:beta-glucosidase ; GO:0008422
+EC:3.2.1.22 > GO:alpha-galactosidase ; GO:0004557
+EC:3.2.1.23 > GO:beta-galactosidase ; GO:0004565
+EC:3.2.1.24 > GO:alpha-mannosidase ; GO:0004559
+EC:3.2.1.25 > GO:beta-mannosidase ; GO:0004567
+EC:3.2.1.26 > GO:beta-fructofuranosidase ; GO:0004564
+EC:3.2.1.28 > GO:alpha-alpha-trehalase ; GO:0004555
+EC:3.2.1.3 > GO:glucan 1,4-alpha-glucosidase ; GO:0004339
+EC:3.2.1.31 > GO:beta-glucuronidase ; GO:0004566
+EC:3.2.1.33 > GO:amylo-1,6-glucosidase ; GO:0004135
+EC:3.2.1.35 > GO:hyaluronoglucosaminidase ; GO:0004415
+EC:3.2.1.45 > GO:glucosylceramidase ; GO:0004348
+EC:3.2.1.46 > GO:galactosylceramidase ; GO:0004336
+EC:3.2.1.48 > GO:sucrose-alpha-glucosidase ; GO:0004575
+EC:3.2.1.49 > GO:alpha-N-acetylgalactosaminidase ; GO:0008456
+EC:3.2.1.50 > GO:alpha-N-acetylglucosaminidase ; GO:0004561
+EC:3.2.1.51 > GO:alpha-L-fucosidase ; GO:0004560
+EC:3.2.1.52 > GO:beta-N-acetylhexosaminidase ; GO:0004563
+EC:3.2.1.58 > GO:glucan 1,3-beta-glucosidase ; GO:0004338
+EC:3.2.1.76 > GO:L-iduronidase ; GO:0003940
+EC:3.2.2.- > GO:uracil-DNA glycosylase ; GO:0004844
+EC:3.2.2.1 > GO:purine nucleosidase ; GO:0008477
+EC:3.2.2.19 > GO:ADP-ribosylarginine hydrolase ; GO:0003875
+EC:3.2.2.21 > GO:DNA-3-methyladenine glycosidase II ; GO:0003905
+EC:3.2.2.23 > GO:formamidopyrimidine-DNA glycosylase ; GO:0003907
+EC:3.2.2.5 > GO:NAD(+) nucleosidase ; GO:0003953
+EC:3.3.1.1 > GO:adenosylhomocysteinase ; GO:0004013
+EC:3.3.2.3 > GO:epoxide hydrolase ; GO:0004301
+EC:3.3.2.6 > GO:leukotriene-A4 hydrolase ; GO:0004463
+EC:3.4.11.- > GO:aminopeptidase ; GO:0004177
+EC:3.4.11.1 > GO:leucyl aminopeptidase ; GO:0004178
+EC:3.4.11.18 > GO:methionyl aminopeptidase ; GO:0004239
+EC:3.4.11.2 > GO:membrane alanine aminopeptidase ; GO:0004179
+EC:3.4.11.22 > GO:vacuolar aminopeptidase I ; GO:0004250
+EC:3.4.11.7 > GO:glutamyl aminopeptidase ; GO:0004230
+EC:3.4.11.9 > GO:Xaa-Pro aminopeptidase ; GO:0008451
+EC:3.4.13.19 > GO:membrane dipeptidase ; GO:0004237
+EC:3.4.13.9 > GO:Xaa-Pro dipeptidase ; GO:0004251
+EC:3.4.14.1 > GO:dipeptidyl-peptidase I ; GO:0004214
+EC:3.4.14.10 > GO:tripeptidyl-peptidase II ; GO:0004294
+EC:3.4.14.5 > GO:dipeptidyl-peptidase IV ; GO:0004274
+EC:3.4.15.1 > GO:peptidyl-dipeptidase A ; GO:0004246
+EC:3.4.16.2 > GO:lysosomal pro-X carboxypeptidase ; GO:0004188
+EC:3.4.16.5 > GO:carboxypeptidase C ; GO:0004186
+EC:3.4.16.5 > GO:vacuolar carboxypeptidase Y ; GO:0004258
+EC:3.4.16.6 > GO:carboxypeptidase D ; GO:0004187
+EC:3.4.17.1 > GO:carboxypeptidase A ; GO:0004182
+EC:3.4.17.10 > GO:carboxypeptidase H ; GO:0004183
+EC:3.4.17.17 > GO:tubulinyl-tyr carboxypeptidase ; GO:0004189
+EC:3.4.17.22 > GO:metallocarboxypeptidase D ; GO:0008472
+EC:3.4.17.3 > GO:lysine (arginine) carboxypeptidase ; GO:0004184
+EC:3.4.17.4 > GO:gly-X carboxypeptidase ; GO:0004226
+EC:3.4.19.1 > GO:acylaminoacyl-peptidase ; GO:0004254
+EC:3.4.19.12 > GO:ubiquitinyl hydrolase 1 ; GO:0008577
+EC:3.4.19.3 > GO:pyroglutamyl-peptidase I ; GO:0004219
+EC:3.4.19.9 > GO:gamma-glutamyl hydrolase ; GO:0008464
+EC:3.4.21.- > GO:pancreatic elastase ; GO:0008132
+EC:3.4.21.- > GO:plasminogen activator ; GO:0008243
+EC:3.4.21.1 > GO:chymotrypsin ; GO:0004263
+EC:3.4.21.10 > GO:acrosin ; GO:0004284
+EC:3.4.21.20 > GO:cathepsin G ; GO:0004261
+EC:3.4.21.21 > GO:blood coagulation factor VII ; GO:0003802
+EC:3.4.21.22 > GO:blood coagulation factor IX ; GO:0003803
+EC:3.4.21.26 > GO:prolyl oligopeptidase ; GO:0004287
+EC:3.4.21.27 > GO:blood coagulation factor XI ; GO:0003805
+EC:3.4.21.34 > GO:plasma kallikrein ; GO:0003807
+EC:3.4.21.35 > GO:tissue kallikrein ; GO:0004293
+EC:3.4.21.36 > GO:pancreatic elastase I ; GO:0008125
+EC:3.4.21.38 > GO:blood coagulation factor XII ; GO:0003806
+EC:3.4.21.4 > GO:trypsin ; GO:0004295
+EC:3.4.21.41 > GO:complement component C1r ; GO:0003815
+EC:3.4.21.42 > GO:complement component C1s ; GO:0003816
+EC:3.4.21.43 > GO:classical-complement pathway C3/C5 convertase ; GO:0003813
+EC:3.4.21.45 > GO:complement factor I ; GO:0003818
+EC:3.4.21.46 > GO:complement factor D ; GO:0003817
+EC:3.4.21.47 > GO:alternative-complement pathway C3/C5 convertase ; GO:0003812
+EC:3.4.21.48 > GO:cerevisin ; GO:0004262
+EC:3.4.21.5 > GO:thrombin ; GO:0003809
+EC:3.4.21.54 > GO:gamma-renin ; GO:0004253
+EC:3.4.21.6 > GO:blood coagulation factor X ; GO:0003804
+EC:3.4.21.61 > GO:kexin ; GO:0004290
+EC:3.4.21.62 > GO:subtilisin ; GO:0004291
+EC:3.4.21.68 > GO:T-plasminogen activator ; GO:0004296
+EC:3.4.21.69 > GO:protein C (activated) ; GO:0003808
+EC:3.4.21.7 > GO:plasmin ; GO:0004283
+EC:3.4.21.71 > GO:pancreatic elastase II ; GO:0004281
+EC:3.4.21.73 > GO:U-plasminogen activator ; GO:0004297
+EC:3.4.21.75 > GO:furin ; GO:0004276
+EC:3.4.21.78 > GO:granzyme A ; GO:0004277
+EC:3.4.21.79 > GO:granzyme B ; GO:0004278
+EC:3.4.21.9 > GO:enteropeptidase ; GO:0004275
+EC:3.4.21.92 > GO:endopeptidase Clp ; GO:0008462
+EC:3.4.21.93 > GO:proprotein convertase 1 ; GO:0004285
+EC:3.4.21.94 > GO:proprotein convertase 2 ; GO:0004286
+EC:3.4.22.- > GO:caspase ; GO:0004199
+EC:3.4.22.1 > GO:cathepsin B ; GO:0004213
+EC:3.4.22.14 > GO:actinidain ; GO:0008129
+EC:3.4.22.15 > GO:cathepsin L ; GO:0004217
+EC:3.4.22.16 > GO:cathepsin H ; GO:0004215
+EC:3.4.22.17 > GO:calpain ; GO:0004198
+EC:3.4.22.27 > GO:cathepsin S ; GO:0004218
+EC:3.4.22.34 > GO:legumain ; GO:0001509
+EC:3.4.22.36 > GO:caspase-1 ; GO:0004201
+EC:3.4.22.38 > GO:cathepsin K ; GO:0004216
+EC:3.4.22.40 > GO:bleomycin hydrolase ; GO:0008423
+EC:3.4.23.1 > GO:pepsin A ; GO:0004194
+EC:3.4.23.15 > GO:renin ; GO:0004195
+EC:3.4.23.25 > GO:saccharopepsin ; GO:0004196
+EC:3.4.23.34 > GO:cathepsin E ; GO:0004193
+EC:3.4.23.35 > GO:barrierpepsin ; GO:0004191
+EC:3.4.23.5 > GO:cathepsin D ; GO:0004192
+EC:3.4.24 > GO:collagenase ; GO:0008133
+EC:3.4.24.- > GO:prenyl protein specific endopeptidase ; GO:0008319
+EC:3.4.24.- > GO:stromelysin 3 ; GO:0004249
+EC:3.4.24.11 > GO:neprilysin ; GO:0004245
+EC:3.4.24.17 > GO:stromelysin 1 ; GO:0004248
+EC:3.4.24.18 > GO:meprin A ; GO:0004238
+EC:3.4.24.21 > GO:astacin ; GO:0008533
+EC:3.4.24.23 > GO:matrilysin ; GO:0004235
+EC:3.4.24.24 > GO:gelatinase A ; GO:0004228
+EC:3.4.24.34 > GO:neutrophil collagenase ; GO:0008130
+EC:3.4.24.35 > GO:gelatinase B ; GO:0004229
+EC:3.4.24.37 > GO:saccharolysin ; GO:0004247
+EC:3.4.24.56 > GO:insulysin ; GO:0004231
+EC:3.4.24.57 > GO:O-sialoglycoprotein endopeptidase ; GO:0008450
+EC:3.4.24.59 > GO:mitochondrial intermediate peptidase ; GO:0004243
+EC:3.4.24.64 > GO:mitochondrial processing peptidase ; GO:0004240
+EC:3.4.24.65 > GO:macrophage elastase ; GO:0004234
+EC:3.4.24.7 > GO:interstitial collagenase ; GO:0004232
+EC:3.4.25.- > GO:threonine endopeptidase ; GO:0004298
+EC:3.4.25.1 > GO:multicatalytic endopeptidase ; GO:0004299
+EC:3.5.1.1 > GO:asparaginase ; GO:0004067
+EC:3.5.1.14 > GO:aminoacylase ; GO:0004046
+EC:3.5.1.2 > GO:glutaminase ; GO:0004359
+EC:3.5.1.22 > GO:pantothenase ; GO:0004593
+EC:3.5.1.25 > GO:N-acetylglucosamine-6-phosphate deacetylase ; GO:0008448
+EC:3.5.1.26 > GO:N4-(beta-N-acetylglucosaminyl)-L-asparaginase ; GO:0003948
+EC:3.5.1.31 > GO:formylmethionine deformylase ; GO:0008463
+EC:3.5.1.4 > GO:amidase ; GO:0004040
+EC:3.5.1.41 > GO:chitin deacetylase ; GO:0004099
+EC:3.5.1.49 > GO:formamidase ; GO:0004328
+EC:3.5.1.52 > GO:peptide-N4-(N-acetyl-beta-glucosaminyl)asparagine amidase ; GO:0000224
+EC:3.5.1.54 > GO:allophanate hydrolase ; GO:0004039
+EC:3.5.1.55 > GO:long-chain-fatty-acyl-glutamate deacylase ; GO:0008421
+EC:3.5.1.6 > GO:beta-ureidopropionase ; GO:0003837
+EC:3.5.1.9 > GO:arylformamidase ; GO:0004061
+EC:3.5.2.2 > GO:dihydropyrimidinase ; GO:0004157
+EC:3.5.2.3 > GO:dihydroorotase ; GO:0004151
+EC:3.5.2.5 > GO:allantoinase ; GO:0004038
+EC:3.5.3.1 > GO:arginase ; GO:0004053
+EC:3.5.3.15 > GO:protein-arginine deiminase ; GO:0004668
+EC:3.5.3.19 > GO:ureidoglycolate hydrolase ; GO:0004848
+EC:3.5.3.4 > GO:allantoicase ; GO:0004037
+EC:3.5.4.1 > GO:cytosine deaminase ; GO:0004131
+EC:3.5.4.10 > GO:IMP cyclohydyrolase ; GO:0003937
+EC:3.5.4.12 > GO:dCMP deaminase ; GO:0004132
+EC:3.5.4.16 > GO:GTP cyclohydrolase I ; GO:0003934
+EC:3.5.4.19 > GO:phosphoribosyl-AMP cyclohydrolase ; GO:0004635
+EC:3.5.4.2 > GO:adenine deaminase ; GO:0000034
+EC:3.5.4.25 > GO:GTP cyclohydrolase II ; GO:0003935
+EC:3.5.4.4 > GO:adenosine deaminase ; GO:0004000
+EC:3.5.4.5 > GO:cytidine deaminase ; GO:0004126
+EC:3.5.4.6 > GO:AMP deaminase ; GO:0003876
+EC:3.5.4.9 > GO:methenyltetrahydrofolate cyclohydrolase ; GO:0004477
+EC:3.6.1.1 > GO:inorganic diphosphatase ; GO:0004427
+EC:3.6.1.11 > GO:exopolyphosphatase ; GO:0004309
+EC:3.6.1.17 > GO:bis(5'-nucleosyl)-tetraphosphatase (asymmetrical) ; GO:0004081
+EC:3.6.1.22 > GO:NAD+ pyrophosphatase ; GO:0000210
+EC:3.6.1.23 > GO:dUTP pyrophosphatase ; GO:0004170
+EC:3.6.1.3 > GO:ATP dependent DNA helicase ; GO:0004003
+EC:3.6.1.3 > GO:ATP dependent helicase ; GO:0008026
+EC:3.6.1.3 > GO:DNA dependent adenosinetriphosphatase ; GO:0008094
+EC:3.6.1.3 > GO:RNA dependent adenosinetriphosphatase ; GO:0008186
+EC:3.6.1.3 > GO:adenosinetriphosphatase ; GO:0004002
+EC:3.6.1.31 > GO:phosphoribosyl-ATP pyrophosphatase ; GO:0004636
+EC:3.6.1.42 > GO:guanosine-diphosphatase ; GO:0004382
+EC:3.6.1.46 > GO:heterotrimeric G-protein GTPase ; GO:0003927
+EC:3.6.1.47 > GO:ARF small monomeric GTPase ; GO:0003926
+EC:3.6.1.47 > GO:RAB small monomeric GTPase ; GO:0003928
+EC:3.6.1.47 > GO:RAN small monomeric GTPase ; GO:0003929
+EC:3.6.1.47 > GO:RAS small monomeric GTPase ; GO:0003930
+EC:3.6.1.47 > GO:RHEB small monomeric GTPase ; GO:0008619
+EC:3.6.1.47 > GO:RHO small monomeric GTPase ; GO:0003931
+EC:3.6.1.47 > GO:SAR small monomeric GTPase ; GO:0003932
+EC:3.6.1.47 > GO:small monomeric GTPase ; GO:0003925
+EC:3.6.1.48 > GO:protein-synthesizing GTPase ; GO:0008547
+EC:3.6.1.49 > GO:signal-recognition-particle GTPase ; GO:0008548
+EC:3.6.1.5 > GO:apyrase ; GO:0004050
+EC:3.6.1.50 > GO:dynamin GTPase ; GO:0008549
+EC:3.6.1.51 > GO:tubulin GTPase ; GO:0008550
+EC:3.6.1.7 > GO:acylphosphatase ; GO:0003998
+EC:3.6.1.9 > GO:nucleotide pyrophosphatase ; GO:0004551
+EC:3.6.3.- > GO:ATP-binding cassette (ABC) transporter ; GO:0004009
+EC:3.6.3.1 > GO:magnesium-ATPase ; GO:0004012
+EC:3.6.3.10 > GO:hydrogen/potassium-exchanging ATPase ; GO:0005390
+EC:3.6.3.11 > GO:chloride-transporting ATPase ; GO:0008555
+EC:3.6.3.12 > GO:potassium-transporting ATPase ; GO:0008556
+EC:3.6.3.13 > GO:aminophospholipid-transporting ATPase ; GO:0008557
+EC:3.6.3.14 > GO:hydrogen-transporting two-sector ATPase ; GO:0003936
+EC:3.6.3.14 > GO:hydrogen-transporting two-sector ATPase ; GO:0003936 ; GO:0004006
+EC:3.6.3.37 > GO:guanine-transporting ATPase ; GO:0008558
+EC:3.6.3.44 > GO:xenobiotic-transporting ATPase ; GO:0008559
+EC:3.6.3.45 > GO:steroid-transporting ATPase ; GO:0008560
+EC:3.6.3.47 > GO:fatty-acyl-CoA-transporting ATPase ; GO:0008562
+EC:3.6.3.48 > GO:a-factor-transporting ATPase ; GO:0008563
+EC:3.6.3.49 > GO:channel-conductance-controlling ATPase ; GO:0005260
+EC:3.6.3.50 > GO:protein-secreting ATPase ; GO:0008564
+EC:3.6.3.51 > GO:mitochondrial protein-transporting ATPase ; GO:0008566
+EC:3.6.3.6 > GO:hydrogen-exporting ATPase ; GO:0008553
+EC:3.6.3.7 > GO:sodium-exporting ATPase ; GO:0008554
+EC:3.6.3.8 > GO:calcium-transporting ATPase ; GO:0005388 ; EC 3.6.3.8
+EC:3.6.3.9 > GO:sodium/potassium-exchanging ATPase ; GO:0005391
+EC:3.6.4.1 > GO:myosin ATPase ; GO:0008570
+EC:3.6.4.10 > GO:non-chaperonin molecular chaperone ATPase ; GO:0008571
+EC:3.6.4.11 > GO:nucleoplasmin ATPase ; GO:0008572
+EC:3.6.4.2 > GO:dynein ATPase ; GO:0008567
+EC:3.6.4.3 > GO:microtubule-severing ATPase ; GO:0008568
+EC:3.6.4.4 > GO:plus-end-directed kinesin ATPase ; GO:0008574
+EC:3.6.4.5 > GO:minus-end-directed kinesin ATPase ; GO:0008569
+EC:3.6.4.6 > GO:vesicle-fusing ATPase ; GO:0008576
+EC:3.6.4.7 > GO:peroxisome-assembly ATPase ; GO:0008573
+EC:3.6.4.8 > GO:proteasome ATPase ; GO:0008575
+EC:3.6.4.9 > GO:chaperonin ATPase ; GO:0003763, GO:0003764, GO:0003765, GO:0003766
+EC:3.7.1.2 > GO:fumarylacetoacetase ; GO:0004334
+EC:3.8.1.4 > GO:thyroxine deiodinase ; GO:0004800
+EC:4.1.1.1 > GO:pyruvate decarboxylase ; GO:0004737
+EC:4.1.1.11 > GO:aspartate 1-decarboxylase ; GO:0004068
+EC:4.1.1.15 > GO:glutamate decarboxylase ; GO:0004351
+EC:4.1.1.17 > GO:ornithine decarboxylase ; GO:0004586
+EC:4.1.1.21 > GO:phosphoribosylaminoimidazole carboxylase ; GO:0004638
+EC:4.1.1.22 > GO:histidine decarboxylase ; GO:0004398
+EC:4.1.1.23 > GO:orotidine-5'-phosphate decarboxylase ; GO:0004590
+EC:4.1.1.25 > GO:tyrosine decarboxylase ; GO:0004837
+EC:4.1.1.28 > GO:aromatic-L-amino-acid decarboxylase ; GO:0004058
+EC:4.1.1.29 > GO:sulfinoalanine decarboxylase ; GO:0004782
+EC:4.1.1.32 > GO:phosphoenolpyruvate carboxylase (GTP) ; GO:0004613
+EC:4.1.1.33 > GO:diphosphomevalonate decarboxylase ; GO:0004163
+EC:4.1.1.36 > GO:phosphopantothenoylcysteine decarboxylase ; GO:0004633
+EC:4.1.1.37 > GO:uroporphyrinogen decarboxylase ; GO:0004853
+EC:4.1.1.41 > GO:methylmalonyl-CoA decarboxylase ; GO:0004492
+EC:4.1.1.48 > GO:indole-3-glycerol-phosphate synthase ; GO:0004425
+EC:4.1.1.49 > GO:phosphoenolpyruvate carboxykinase (ATP) ; GO:0004612
+EC:4.1.1.50 > GO:adenosylmethionine decarboxylase ; GO:0004014
+EC:4.1.1.65 > GO:phosphatidylserine decarboxylase ; GO:0004609
+EC:4.1.2.13 > GO:fructose-bisphosphate aldolase ; GO:0004332
+EC:4.1.2.15 > GO:2-dehydro-3-deoxyphosphoheptonate aldolase ; GO:0003849
+EC:4.1.2.25 > GO:dihydroneopterin aldolase ; GO:0004150
+EC:4.1.2.27 > GO:sphinganine-1-phosphate aldolase ; GO:0008117
+EC:4.1.2.4 > GO:deoxyribose-phosphate aldolase ; GO:0004139
+EC:4.1.2.5 > GO:threonine aldolase ; GO:0004793
+EC:4.1.3.1 > GO:isocitrate lyase ; GO:0004451
+EC:4.1.3.12 > GO:2-isopropylmalate synthase ; GO:0003852
+EC:4.1.3.18 > GO:acetolactate synthase ; GO:0003984
+EC:4.1.3.2 > GO:malate synthase ; GO:0004474
+EC:4.1.3.21 > GO:homocitrate synthase ; GO:0004410
+EC:4.1.3.27 > GO:anthranilate synthase ; GO:0004049
+EC:4.1.3.4 > GO:hydroxymethylglutaryl-CoA lyase ; GO:0004419
+EC:4.1.3.5 > GO:hydroxymethylglutaryl-CoA synthase ; GO:0004421
+EC:4.1.3.7 > GO:citrate (SI)-synthase ; GO:0004108
+EC:4.1.3.8 > GO:ATP-citrate (pro-S)-lyase ; GO:0003878
+EC:4.1.99.3 > GO:deoxyribodipyrimidine photolyase ; GO:0003904
+EC:4.2.1.1 > GO:carbonate dehydratase ; GO:0004089
+EC:4.2.1.10 > GO:3-dehydroquinate dehydratase ; GO:0003855
+EC:4.2.1.11 > GO:phosphopyruvate hydratase ; GO:0004634
+EC:4.2.1.12 > GO:ketopantoaldase ; GO:0004456
+EC:4.2.1.13 > GO:L-serine dehydratase ; GO:0003941
+EC:4.2.1.16 > GO:threonine dehydratase ; GO:0004794
+EC:4.2.1.17 > GO:enoyl-CoA hydratase ; GO:0004300
+EC:4.2.1.18 > GO:methylglutaconyl-CoA hydratase ; GO:0004490
+EC:4.2.1.19 > GO:imidazoleglycerol-phosphate dehydratase ; GO:0004424
+EC:4.2.1.2 > GO:fumarate hydratase ; GO:0004333
+EC:4.2.1.20 > GO:tryptophan synthase ; GO:0004834
+EC:4.2.1.22 > GO:cystathione beta-synthase ; GO:0004122
+EC:4.2.1.24 > GO:porphobilinogen synthase ; GO:0004655
+EC:4.2.1.3 > GO:aconitate hydratase ; GO:0003994
+EC:4.2.1.33 > GO:3-isopropylmalate dehydratase ; GO:0003861
+EC:4.2.1.36 > GO:homoaconitate hydratase ; GO:0004409
+EC:4.2.1.46 > GO:dTDP-glucose 4,6-dehydratase ; GO:0008460
+EC:4.2.1.47 > GO:GDP-mannose 4,6-dehydratase ; GO:0008446
+EC:4.2.1.51 > GO:prephenate dehydratase ; GO:0004664
+EC:4.2.1.55 > GO:3-hydroxybutyryl-CoA dehydratase ; GO:0003859
+EC:4.2.1.61 > GO:3-hydroxypalmitoyl-[acyl-carrier protein] dehydratase ; GO:0004317
+EC:4.2.1.70 > GO:pseudouridylate synthase ; GO:0004730
+EC:4.2.1.75 > GO:uroporphyringonen-III synthase ; GO:0004852
+EC:4.2.1.9 > GO:dihyroxy-acid dehydratase ; GO:0004160
+EC:4.2.1.96 > GO:4a-hydroxytetrahydrobiopterin dehydratase ; GO:0008124
+EC:4.2.99.10 > GO:O-acetylhomoserine (thiol)-lyase ; GO:0003961
+EC:4.2.99.18 > GO:DNA-(apurinic or apyrimidinic site) lyase ; GO:0003906
+EC:4.2.99.2 > GO:threonine synthase ; GO:0004795
+EC:4.2.99.8 > GO:cysteine synthase ; GO:0004124
+EC:4.2.99.9 > GO:O-succinylhomoserine (thiol)-lyase ; GO:0003962
+EC:4.3.1.12 > GO:ornithine cyclodeaminase ; GO:0008473
+EC:4.3.1.3 > GO:histidine ammonia-lyase ; GO:0004397
+EC:4.3.1.8 > GO:hydroxymethylbilane synthase ; GO:0004418
+EC:4.3.2.1 > GO:argininosuccinate lyase ; GO:0004056
+EC:4.3.2.2 > GO:adenylosuccinate lyase ; GO:0004018
+EC:4.3.2.5 > GO:peptidylamidoglycolate lyase ; GO:0004598
+EC:4.4.1.1 > GO:cystathionine-gamma-lyase ; GO:0004123
+EC:4.4.1.17 > GO:holocytochrome c synthase ; GO:0004408
+EC:4.4.1.5 > GO:lactoylglutathione lyase ; GO:0004462
+EC:4.4.1.8 > GO:cystathionine beta-lyase ; GO:0004121
+EC:4.6.1.1 > GO:adenylate cyclase ; GO:0004016
+EC:4.6.1.1 > GO:calcium/calmodulin-responsive adenylate cyclase ; GO:0008294
+EC:4.6.1.10 > GO:6-pyruvoyl tetrahydropterin synthase ; GO:0003874
+EC:4.6.1.2 > GO:guanylate cyclase ; GO:0004383
+EC:4.6.1.2 > GO:receptor guanylate cyclase ; GO:0008075
+EC:4.6.1.3 > GO:3-dehydroquinate synthase ; GO:0003856
+EC:4.6.1.4 > GO:chorismate synthase ; GO:0004107
+EC:4.99.1.1 > GO:ferrochelatase ; GO:0004325
+EC:5.1.3.1 > GO:ribulose-phosphate 3-epimerase ; GO:0004750
+EC:5.1.3.2 > GO:UDP-glucose 4-epimerase ; GO:0003978
+EC:5.1.3.3 > GO:aldose 1-epimerase ; GO:0004034
+EC:5.1.3.7 > GO:UDP-N-acetylglucosamine 4-epimerase ; GO:0003974
+EC:5.1.99.1 > GO:methylmalonyl-CoA epimerase ; GO:0004493
+EC:5.1.99.4 > GO:alpha-methylacyl-CoA racemase ; GO:0008111
+EC:5.2.1.3 > GO:retinal isomerase ; GO:0004744
+EC:5.2.1.8 > GO:cyclophilin ; GO:0004600
+EC:5.2.1.8 > GO:peptidylprolyl isomerase ; GO:0003755
+EC:5.3.1.1 > GO:triosephosphate isomerase ; GO:0004807
+EC:5.3.1.10 > GO:glucosamine-6-phosphate isomerase ; GO:0004342
+EC:5.3.1.16 > GO:N-(5'-phospho-D-ribosylformimino)-5-amino-1-(5''-phosphoribosyl)-4-imidazole carboxamide isomerase ; GO:0003949
+EC:5.3.1.21 > GO:corticosteroid side-chain-isomerase ; GO:0004110
+EC:5.3.1.24 > GO:phosphoribosylanthranilate isomerase ; GO:0004640
+EC:5.3.1.6 > GO:ribose-5-phosphate isomerase ; GO:0004751
+EC:5.3.1.8 > GO:mannose-6-phosphate isomerase ; GO:0004476
+EC:5.3.1.9 > GO:glucose-6-phosphate isomerase ; GO:0004347
+EC:5.3.3.1 > GO:steroid delta-isomerase ; GO:0004769
+EC:5.3.3.12 > GO:dopachrome delta-isomerase ; GO:0004167
+EC:5.3.3.2 > GO:isopentenyl-diphosphate delta-isomerase ; GO:0004452
+EC:5.3.3.8 > GO:delta(3)-cis-delta(2)-trans-enoyl-CoA isomerase ; GO:0008461
+EC:5.3.3.8 > GO:dodecenoyl-CoA delta-isomerase ; GO:0004165
+EC:5.3.4.1 > GO:protein disulfide isomerase ; GO:0003756
+EC:5.3.99.2 > GO:prostaglandin-D synthase ; GO:0004667
+EC:5.3.99.4 > GO:prostaglandin-I synthase ; GO:0008116
+EC:5.3.99.5 > GO:thromboxane-A synthase ; GO:0004796 ; GO:0008400
+EC:5.4.2.1 > GO:phosphoglycerate mutase ; GO:0004619
+EC:5.4.2.2 > GO:phosphoglucomutase ; GO:0004614
+EC:5.4.2.3 > GO:phosphoacetylglucosamine mutase ; GO:0004610
+EC:5.4.2.4 > GO:bisphosphoglycerate mutase ; GO:0004082
+EC:5.4.2.8 > GO:phosphomannomutase ; GO:0004615
+EC:5.4.99.2 > GO:methylmalonyl-CoA mutase ; GO:0004494
+EC:5.4.99.5 > GO:chorismate mutase ; GO:0004106
+EC:5.4.99.7 > GO:lanosterol synthase ; GO:0000250
+EC:5.5.1.4 > GO:myo-inositol-1-phosphate synthase ; GO:0004512
+EC:5.99.1.2 > GO:DNA topoisomerase I ; GO:0003917
+EC:5.99.1.3 > GO:DNA topoisomerase (ATP-hydrolysing) ; GO:0003918
+EC:6.1.1.1 > GO:tyrosine--tRNA ligase ; GO:0004831
+EC:6.1.1.10 > GO:methionine--tRNA ligase ; GO:0004825
+EC:6.1.1.11 > GO:serine--tRNA ligase ; GO:0004828
+EC:6.1.1.12 > GO:aspartate--tRNA ligase ; GO:0004815
+EC:6.1.1.14 > GO:glycine--tRNA ligase ; GO:0004820
+EC:6.1.1.15 > GO:proline--tRNA ligase ; GO:0004827
+EC:6.1.1.16 > GO:cysteine--tRNA ligase ; GO:0004817
+EC:6.1.1.17 > GO:glutamate--tRNA ligase ; GO:0004818
+EC:6.1.1.18 > GO:glutamine--tRNA ligase ; GO:0004819
+EC:6.1.1.19 > GO:arginine--tRNA ligase ; GO:0004814
+EC:6.1.1.2 > GO:tryptophan--tRNA ligase ; GO:0004830
+EC:6.1.1.20 > GO:phenylalanine--tRNA ligase ; GO:0004826
+EC:6.1.1.21 > GO:histidine--tRNA ligase ; GO:0004821
+EC:6.1.1.22 > GO:asparagine--tRNA ligase ; GO:0004816
+EC:6.1.1.3 > GO:threonine--tRNA ligase ; GO:0004829
+EC:6.1.1.4 > GO:leucine--tRNA ligase ; GO:0004823
+EC:6.1.1.5 > GO:isoleucine--tRNA ligase ; GO:0004822
+EC:6.1.1.6 > GO:lysine--tRNA ligase ; GO:0004824
+EC:6.1.1.7 > GO:alanine--tRNA ligase ; GO:0004813
+EC:6.1.1.9 > GO:valine--tRNA ligase ; GO:0004832
+EC:6.2.1.- > GO:acyl-CoA ligase ; GO:0003996
+EC:6.2.1.1 > GO:acetate--CoA ligase ; GO:0003987
+EC:6.2.1.3 > GO:long-chain-fatty-acid-CoA-ligase ; GO:0004467
+EC:6.2.1.4 > GO:succinate--CoA ligase (GDP-forming) ; GO:0004776
+EC:6.2.1.5 > GO:succinate--CoA ligase (ADP-forming) ; GO:0004775
+EC:6.3.1.1 > GO:aspartate--ammonia ligase ; GO:0004071
+EC:6.3.1.2 > GO:glutamate--ammonia ligase ; GO:0004356
+EC:6.3.2.1 > GO:pantoate-beta-alanine ligase ; GO:0004592
+EC:6.3.2.17 > GO:folylpolyglutamate synthase ; GO:0004326
+EC:6.3.2.19 > GO:ubiquitin--protein ligase ; GO:0004842
+EC:6.3.2.2 > GO:glutamate--cysteine ligase ; GO:0004357
+EC:6.3.2.25 > GO:tubulin--tyrosine ligase ; GO:0004835
+EC:6.3.2.3 > GO:glutathione synthase ; GO:0004363
+EC:6.3.2.5 > GO:phosphopantothenate-cysteine ligase ; GO:0004632
+EC:6.3.2.6 > GO:phosphoribosylaminoimidazole-succinocarboxamide synthase ; GO:0004639
+EC:6.3.3.1 > GO:phosphoribosylformylglycinamide cyclo-ligase ; GO:0004641
+EC:6.3.3.3 > GO:dethiobiotin synthase ; GO:0004141
+EC:6.3.4.1 > GO:GMP synthase ; GO:0003921
+EC:6.3.4.10 > GO:biotin--[propionyl-CoA-carboxylase (ATP-hydrolysing)] ligase ; GO:0004080
+EC:6.3.4.11 > GO:biotin--[methylcrotonoyl-CoA-carboxylase] ligase ; GO:0004078
+EC:6.3.4.13 > GO:phosphoribosylamine--glycine ligase ; GO:0004637
+EC:6.3.4.14 > GO:biotin carboxylase ; GO:0004075
+EC:6.3.4.15 > GO:biotin--[acetyl-CoA-carboxylase] ligase ; GO:0004077
+EC:6.3.4.16 > GO:carbamoyl-phosphate synthase (ammonia) ; GO:0004087
+EC:6.3.4.2 > GO:CTP synthase ; GO:0003883
+EC:6.3.4.3 > GO:formate--tetrahydrofolate ligase ; GO:0004329
+EC:6.3.4.4 > GO:adenylosuccinate synthase ; GO:0004019
+EC:6.3.4.5 > GO:argininosuccinate synthase ; GO:0004055
+EC:6.3.4.6 > GO:urea carboxylase ; GO:0004847
+EC:6.3.4.9 > GO:biotin--[methylmalonyl-CoA-carboxyltransferase] ligase ; GO:0004079
+EC:6.3.5.1 > GO:NAD(+) synthase (glutamine-hydrolysing) ; GO:0003952
+EC:6.3.5.2 > GO:GMP synthase (glutamine hydrolysing) ; GO:0003922
+EC:6.3.5.3 > GO:phosphoribosylformylglycinamidine synthase ; GO:0004642
+EC:6.3.5.4 > GO:asparagine synthase (glutamine-hydrolysing) ; GO:0004066
+EC:6.3.5.5 > GO:carbamoyl-phosphate synthase (glutamine-hydrolysing) ; GO:0004088
+EC:6.4.1.1 > GO:pyruvate carboxylase ; GO:0004736
+EC:6.4.1.2 > GO:acetyl-CoA carboxylase ; GO:0003989
+EC:6.4.1.3 > GO:propionyl-CoA carboxylase ; GO:0004658
+EC:6.4.1.4 > GO:methylcrotonyl-CoA carboxylase ; GO:0004485
+EC:6.5.1.1 > GO:DNA ligase (ATP) ; GO:0003910
+EC:6.5.1.2 > GO:DNA ligase (NAD+) ; GO:0003911
+EC:6.5.1.3 > GO:RNA ligase (ATP) ; GO:0003972
+EC:6.5.1.4 > GO:RNA-3'-phosphate cyclase ; GO:0003963
+$

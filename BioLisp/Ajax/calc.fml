@@ -1,0 +1,37 @@
+(html
+ (head
+  (title "AJAX Calculator")
+  (meta http-equiv "Content-Script-Type" content "text/javascript")
+  (script type "text/javascript" src "queue.js")
+  (script type "text/javascript" src "ajax.js")
+  (script type "text/javascript" src "http.js")
+  (script type "text/javascript" src "calc.js")
+  ((body onload "startTransport();setup();" onunload "shutdownTransport()")
+   (input type button onclick "addOne()" value "+ 1")
+   (input type button onclick "subOne()" value "- 1")
+   (input type button onclick "mulOne()" value "* 2")
+   (input type button onclick "divOne()" value "/ 2")
+   (br)
+   (div
+    (input type text id "result"))
+   (div
+    (input type button onclick "handleOne()" value "1")
+    (input type button onclick "handleTwo()" value "2")
+    (input type button onclick "handleThree()" value "3"))
+   (div
+    (input type button onclick "handleFour()" value "4")
+    (input type button onclick "handleFive()" value "5")
+    (input type button onclick "handleSix()" value "6"))
+   (div
+    (input type button onclick "handleSeven()" value "7")
+    (input type button onclick "handleEight()" value "8")
+    (input type button onclick "handleNine()" value "9"))
+   (div
+    (input type button onclick "handleZero()" value "0")
+    (input type button onclick "handleClear()" value "c")
+    (input type button onclick "handleEquals()" value "="))
+   (div
+    (input type button onclick "handleAdd()" value "+")
+    (input type button onclick "handleSub()" value "-")
+    (input type button onclick "handleMul()" value "*")
+    (input type button onclick "handleDiv()" value "/")))))

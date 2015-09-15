@@ -1,0 +1,179 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :bbi)
+
+(DEFINE-FUNCTION ALL-ROLES-IN-SUBSYSTEM 
+  REQUIRED (SUBSYSTEM) 
+  FLAG display-off
+  MAP subsystem
+  INITIALIZE result = NIL
+  INITIALIZE role-table = NIL
+  INITIALIZE role-list = NIL
+  BODY
+   (ASSIGN role-table =
+      (FOR-EACH subsystem-info IN
+               (bbi-seed-query "select * from subsystem_index 
+                      where subsystem = ~S" (STRING-OF subsystem))
+           INITIALIZE roles = (NEW-TABLE '($))
+           AS role = (THIRD subsystem-info)
+           (INCREMENT (REF roles role))
+           FINALLY (RETURN roles)))
+   (ASSIGN role-list = (bbl::SORT (CONVERT role-table TO List)))
+   (ASSIGN result = (LABELS-OF role-table DIMENSION 1))
+   (UNLESS (OR (NOT result) display-off)
+      (DISPLAY-LINE *NEWLINE* "ROLES WITHIN " subsystem)
+      (DISPLAY-LIST EACH role-list))
+   result       
+) 
+
+(DEFINE-FUNCTION Genes-within-role 
+   REQUIRED role
+   KEYWORD in = *all-organisms*
+   FLAG Display-off
+   MAP role
+   INITIALIZE genes-info = NIL
+   INITIALIZE result = NIL
+   INITIALIZE search-space = (bbi::ENSURE-LIST in)
+   BODY
+    (ASSIGN genes-info = 
+      (bbi-seed-query "select * from subsystem_index 
+            where role = ~S" role))
+    (ASSIGN result =
+	  (BBI::REMOVE-DUPLICATES
+        (FOR-EACH gene-info IN genes-info
+             AS protein-ID = (FIRST gene-info)
+	  	 ;   AS protein-frame = (bio::SEED-ID->FRAME protein-ID)
+			 AS protein-frame = (FORWARD-FUNCALL 'bio::SEED-ID->FRAME protein-ID)
+		     WHEN (AND protein-frame 
+		               (OR (NOT search-space)
+			  		       (MEMBER (ORGANISM-OF protein-frame) search-space)
+				  		   (MEMBER (CONTIG-OF protein-frame) search-space)
+					  	  ))
+             COLLECT (LIST protein-frame (DESCRIPTION-OF protein-frame LENGTH 1000)))
+		:TEST 'EQUAL))
+   (UNLESS (OR (NOT result) display-off)
+      (DISPLAY-LINE *NEWLINE* "GENES WITHIN " role)
+      (DISPLAY-LIST EACH result))
+   (BBL::FIRST IN-EACH result)
+)
+
+(DEFINE-FUNCTION Genes-within-subsystem
+  REQUIRED subsystem
+    ; TYPE subsystem = (OR biolisp::Subsystem String)
+  KEYWORD in = *all-organisms*
+    TYPE in = (OR Organism Contiguous-sequence List)
+  FLAG display-off
+  MAP subsystem
+  INITIALIZE result = NIL
+  INITIALIZE genes-info = NIL
+  INITIALIZE search-space = (bbi::ENSURE-LIST in)
+  BODY
+   #|   
+   (UNLESS (OR (TYPEP subsystem 'Subsystem)
+               (TYPEP (FRAME-FNAMED subsystem) 'Subsystem))
+		   (ERROR "'~S' must be a subsystem (see Subsystem Menu)"
+			        subsystem))
+	|# 
+   (ASSIGN genes-info = 
+             (bbi-seed-query "select * from subsystem_index 
+                   where subsystem = ~S" (STRING-OF subsystem)))
+   (ASSIGN result =
+     (FOR-EACH gene-info IN genes-info
+          AS protein-ID = (FIRST gene-info)
+		  AS protein-frame = (FORWARD-FUNCALL 'bio::SEED-ID->FRAME protein-ID)
+          WHEN (AND protein-frame 
+		            (OR (NOT search-space)
+					    (MEMBER (ORGANISM-OF protein-frame) search-space)
+						(MEMBER (CONTIG-OF protein-frame) search-space)
+						))
+		     COLLECT (LIST protein-frame (DESCRIPTION-OF protein-frame LENGTH 1000))))
+   (ASSIGN result = (BBL::SORT result BY-POSITION 2 THEN-SORT-ASCENDING-BY 1))
+   (UNLESS (OR (NOT result) display-off)
+      (DISPLAY-LINE *NEWLINE* "GENES WITHIN " subsystem)
+      (DISPLAY-LIST EACH result))
+   (BBL::FIRST IN-EACH result)
+)
+
+(DEFUN Padding-for-link (link width)
+  (LET* ((link-width (LENGTH (STRING-OF link)))
+         (padding
+            (IF (> width link-width)
+                (MAKE STRING HOW-BIG (- width link-width)
+                   INITIAL-ELEMENT " ")
+                ""))
+        )
+    padding
+))
+
+(DEFINE-FUNCTION Subsystem-role-of
+   REQUIRED gene-or-protein
+     TYPE gene-or-protein = (OR Gene Protein)
+     CONVERT gene-or-protein FROM Protein To Gene
+   FLAG display-off
+   MAP gene-or-protein
+   INIT gid = NIL
+   INIT table-field = NIL
+   INIT result = NIL
+   BODY
+     (ASSIGN gid = (REF gene-or-protein #$seed-id))
+     (ASSIGN table-field 
+        = (bbi-SEED-QUERY "select * from assigned_functions where prot = ~S"
+                gid))
+     (ASSIGN result = (THIRD (FIRST table-field)))
+   (UNLESS (OR (NOT result) display-off)
+        (DISPLAY-LINE gene-or-protein (PADDING-FOR-LINK gene-or-protein 30) result))
+     result
+)
+
+(DEFINE-FUNCTION Subsystem/s-of
+   REQUIRED gene-or-protein
+     TYPE gene-or-protein = (OR Gene Protein)
+     CONVERT gene-or-protein FROM Protein To Gene
+   FLAG display-off
+   MAP gene-or-protein
+   INIT gid = NIL
+   INIT table-field = NIL
+   INIT result = NIL
+   BODY
+     (ASSIGN gid = (REF gene-or-protein #$seed-id))
+     (ASSIGN table-field 
+        = (bbi-SEED-QUERY "select * from subsystem_index where protein = ~S"
+                gid))
+     (ASSIGN result = (SECOND (FIRST table-field)))
+   (UNLESS (OR (NOT result) display-off)
+        (DISPLAY-LINE gene-or-protein (PADDING-FOR-LINK gene-or-protein 30) result))
+     result
+)
+
+(DEFINE-FUNCTION View-gene
+   REQUIRED (gene-or-protein)
+     TYPE gene-or-protein = (OR Gene Protein String)
+	 CONVERT gene-or-protein FROM protein TO gene
+   BODY
+     (forward-package-funcall :bio :annotate-seed-feature-aux gene-or-protein)
+)
+
+(DEFINE-FUNCTION Change-subsystem-role/s-of
+   REQUIRED (genes-or-proteins (TO) new-role)
+     TYPE genes-or-proteins = (OR Gene Protein List)
+     TYPE new-role = String
+   KEYWORD password = 0
+   BODY
+     (IF (NOT (= password 47))
+	     (ERROR "Sorry, a password is required to use this dangerous function"))
+     (ASSIGN genes-or-proteins =
+        (FOR-EACH gene IN (ENSURE-LIST genes-or-proteins)
+            COLLECT
+             (TYPECASE gene
+                (Gene gene)
+                (Protein (GENE-OF gene))
+                (OTHERWISE (ERROR "CHANGE-ROLES-OF works only on genes, not ~A"
+                              gene)))))
+     (CHANGE-SUBSYSTEM-ROLE new-role genes-or-proteins)
+     )
+	 
+(DEFINE-FUNCTION Host-of-phage
+  REQUIRED (phage)
+    TYPE phage = organism
+  BODY
+    (REF phage #$host))

@@ -1,0 +1,823 @@
+<title>BioBike: Lisp Functions</title>
+
+<p>
+
+<h2>
+BioBike: Lisp Macros -- How to Define Entirely New Languages in Lisp
+</h2>
+
+<p>
+<i>Copyright 2007 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+<p><hr><p>
+
+This is a very interesting lesson if you want to deeply understand
+Lisp, and some very deep things about programming, but it's also
+entirely optional; We suggest that you do through it, but not worry
+too much about understanding it in detail. If you get very deeply into
+programming, you'll find that Lisp macros are an amazing tool, but
+they are also somewhat mind-bending, and used rather rarely in simple
+programming. So, feel free to skip this lesson, or at least, if you do
+study it, let it flow over you, and maybe come back to it later on if
+you find yourself wanting to know more about some of the deep and
+subtle reaches of Lisp programming.
+
+<p>
+<hr>
+<p>
+
+<h2>Introduction to Macros: Why we sometimes need more than functions.</h2>
+
+<p>
+
+In a previous lesson we studied Lisp <i>functions</i>. Functions are
+the workhorses of programming: little pieces of code that do little
+things, like adding together numbers (the + function). You can create
+your own functions, and if you put together enough little pieces of
+functionality, you can do <i>big</i> things!
+
+<p>
+
+You might remember that one of the cool things about Lisp is that
+functions are "first class" -- meaning that they are, like numbers and
+symbols and strings, things that you can pass around and use in
+computations. (Don't remember? Maybe it's worth your time to go back
+and review that lesson....)
+
+<p>
+
+Although functions can do a lot of work for you, they can't do
+everything that you might want to do. Here are some things that you
+can't do with functions. (I borrowed this from Kent Pitman's 1980
+paper; there's a complete citation at the end of this lesson.)
+
+<p>
+<h2>Hiding Pointless Quotes</h2>
+<p>
+
+Remember that quote (') stops evaluation, but sometimes it's a pain to
+have to quote the arguments of a function. Here's an example: It turns
+out that you can add documentation to your Lisp functions. The way you
+do that is just by adding what's called a "doc string" right after the
+argument list. For example:
+
+<pre>
+>> (defun fliptree (tree)
+>>   "Reverse every level of a tree, all the way down to the leaves."
+>>   (cond ((atom tree) tree) ; This catches NIL also!
+>>         (t (reverse (loop for elt in tree
+>>                          if (listp elt)
+>>                          collect (fliptree elt)
+>>                          else collect elt)))))
+</pre>
+
+You can get the documentation for FLIPTREE like this:
+
+<pre>
+>> (documentation 'fliptree 'function)
+</pre>
+
+But that's somewhat painful. Suppose we want a function called DOC?
+that provides the documentation on a function like this instead:
+
+<pre>
+  (doc? fliptree)
+</pre>
+
+You could defun doc like this:
+
+<pre>
+>>  (defun doc? (fn)
+>>    (documentation fn 'function))
+</pre>
+
+And that would work fine, but then you'd always have to quote (') the
+function name. Compare:
+
+<pre>
+>> (doc? 'fliptree)
+</pre>
+with:
+<pre>
+>> (doc? fliptree)
+</pre>
+
+Why doesn't the second form do what we want?  What if you wanted to be
+able to call DOC? that way?
+
+<p>
+
+Hold on to that question!
+
+<p>
+<h2>Creating fancy syntax to make your code mode readable</h2>
+<p>
+
+There are several situations where you want to create fancy syntax to
+make things more readable. Suppose that there's something you do all
+the time, for example, instead of counting up by some number in a
+loop, you count down, for example:
+
+<pre>
+>>   (loop for n from 10 to 0 by -1
+>>         do (print n))
+</pre>
+
+It turns out that that doesn't work (try it!) because LOOP figures out
+right away that the first value of N (10) is bigger than the TO number
+(0), so it stops before it even starts! Instead you have to do
+something like this:
+
+<pre>
+>>  (loop with n = 10
+>>        until (= n 0)
+>>        do (print n)
+>>           (setf n (+ n -1)))
+</pre>
+
+But that's a mess! How about making up a new syntax for this kind of
+loop, something like:
+
+<pre>
+   (loopdown from 10 to 0 by -1
+      do (print n))
+</pre>
+
+Note that you can't just create a LOOPDOWN function with defun; Why?
+Recall from the DOC? example above: Just like we had to quote
+'fliptree when we called our DOC? function, we would have to do
+something here like:
+
+<pre>
+  (defun loopdown (from-word from-value to-word to-value 
+                   by-word by-value do-word thing-to-do)
+      ...)
+</pre>
+and then call is like this:
+<pre>
+  (loopdown 'from 10 'to 0 'by -1
+    'do '(print n))
+</pre>
+
+Not only is that ugly, it's not clear what we would actually do with
+the '(print n) part once we're inside our function!
+
+<p>
+
+Notice that this is a little like the DOC? problem above; we want
+to create a syntax where you don't have to quote things. Put another way
+(which you won't quite understand at this point) we want to transform the
+expression into a different one, and then evaluate it.
+
+<p>
+
+Again, hold on to this thought (that we know you don't quite entirely
+understand yet); soon we'll see how Lisp lets us do all of these
+things! But let's look at some more cases first.
+
+<p>
+<h2>Wrapping code around a form.</h2>
+<p>
+
+
+Another thing that's hard to do, but comes up a lot is the case where
+we want to do something -- a normal expression -- but we want to do it
+in a special context, with some setup before, and some cleanup after.
+The most obvious example of this is file I/O. Here's how you normally
+get to a file in Lisp:
+
+<pre>
+  (setf file-handle (open "myfile"))
+  (do whatever to file-handle)
+  (close file-handle)
+</pre>
+
+Or, if you want to be a little cleaner and not use a global variable:
+
+<pre>
+  (let ((file-handle (open "myfile")))
+    (do whatever to file-handle)
+    (close file-handle))
+</pre>
+
+Notice that you have to remember to close the file. If you forget, you
+might lose information.
+
+For safety's sake you might want to create a new syntax that looks
+like this:
+
+<pre>
+ (with-open-file (file-handle "myfile")
+    (do whatever to file-handle))
+</pre>
+
+and have the CLOSE implied by this special form.
+
+<p>
+
+Notice that this is a little like the two cases above: We want to
+transform this code:
+
+<pre>
+ (with-open-file (file-handle "myfile")
+    (do whatever to file-handle))
+</pre>
+into this code:
+<pre>
+  (let ((file-handle (open "myfile")))
+    (do whatever to file-handle)
+    (close file-handle))
+</pre>
+before we actually execute it.
+
+<p>
+
+Okay, only one more case and then we'll reveal the mystery of how Lisp 
+enables us to do all these things by what is nearly magic.
+
+<p>
+<h2>Making up your own control flow constructions</h2>
+<p>
+
+Control flow is the name for parts of the programming language that
+enable you to do different parts of the program under different
+circumstances (that is, in different conditions). We've seen lots of
+conditional evaluation before: COND, LOOP, XLOOP, and there's many
+more of these... But suppose that you wanted to make up one of your
+own, let's say, a special kind of weird non-deterministic conditional
+that did one or another expression randomly each time it was called.
+
+<p>
+
+You could easily program such a thing, like this:
+
+<pre>
+>> (loop for i from 1 to 10
+>>       do (case (random 3)
+>>             (0 (print "zero"))
+>>             (1 (print "one"))
+>>             (2 (print "two"))))
+</pre>
+
+Each time you evaluate that, you'll get a different random
+sequence. 
+
+<p>
+
+(The CASE, in case you can't figure it out, does whichever
+one of the choices is indicated by the first argument -- that is, in
+this case, (random 3). (Random 3) returns either 0, 1, or 2, and the
+case then chooses the right (print ...) based on that random number.)
+
+<p>
+
+Okay, but maybe you want to make up a special new syntax for that,
+something like this instead:
+
+<pre>
+  (loop for i from 1 to 10
+        do 
+         (do-randomly 
+             (print "zero")
+             (print "one")
+             (print "two")))
+</pre>
+      
+Here the DO-RANDOMLY special form has to know how many expressions
+there are, and has to select one at random.
+
+<p>
+
+Put in the same terms as above, DO-RANDOMLY has to transform this:
+<pre>
+  (do-randomly 
+    (print "zero")
+    (print "one")
+    (print "two"))
+</pre>
+to this:
+<pre>
+  (case (random 3)
+    (0 (print "zero"))
+    (1 (print "one"))
+    (2 (print "two")))
+</pre>
+
+Notice that in this case (and actually in the other cases as well,
+although it might not have been obvious) the form we create (here,
+DO-RANDOMLY) has to be able to accept an arbitrary number of
+arguments. That is, you might have said, instead:
+<pre>
+  (do-randomly 
+    (print "zero")
+    (print "one"))
+</pre>
+or:
+<pre>
+  (do-randomly 
+    (print "zero")
+    (print "one")
+    (print "two")
+    (print "three"))
+</pre>
+so we can't have fixed the (RANDOM 3) in the transformed code!
+
+<p>
+<hr>
+<p>
+<p>
+<h2>Macros Create New Syntax!</h2>
+<p>
+Okay, so how to we do all of those magical things with simple lisp
+function? The answer is: We don't! Lisp has another kind of thing
+called a <i>MACRO</i>. A macro's job is exactly to transform one piece
+of Lisp code into another before it gets evaluated. Put another way, a
+macro is a Lisp function that manipulates lisp expressions, and then
+offers them up for evaluation.
+
+<p>
+
+That's pretty hard to understand, so let's do some examples.
+
+
+<p>
+<h2>Hiding Pointless Quotes</h2>
+<p>
+
+Here's what a macro looks like that will turn this:
+
+<pre>
+  (doc? fliptree)
+</pre>
+into this:
+<pre>
+ (documentation 'fliptree 'function)
+</pre>
+
+<pre>
+>> (defmacro doc? (fn-name)
+>>   `(documentation ',fn-name 'function))
+</pre>
+
+Whoa! What's all <i>THAT</i> about?! Before we get into how it works,
+let's try it:
+
+<pre>
+>> (doc? fliptree) 
+</pre>
+
+We can actually see what it's transforming into before it evaluates,
+like this:
+
+<pre>
+>> (macroexpand-1 '(doc? fliptree))
+:: (DOCUMENTATION 'FLIPTREE 'FUNCTION)
+</pre>
+
+Note that (DOCUMENTATION 'FLIPTREE 'FUNCTION) is just what we wanted
+to get as a result of the transformation! 
+
+<p> 
+
+(MACROEXPAND-1 does one step of macro expansion. Later we'll sometimes
+use MACROEXPAND-1 and sometimes just MACROEXPAND, the latter keeps
+expanding the macros until nothing changes. Don't worry if you don't
+get this distinction at the moment.)
+
+<p>
+
+Okay, now let's take the macro apart piece by piece and see how it
+does this magic.
+
+<p>
+
+The first line looks pretty much like a function definition (except
+for using DEFMACRO instead of DEFUN). It has a name (DOC?) and an
+argument list with the one argument: FN-NAME. It's the second line
+that gets weird:
+
+<pre>
+   `(documentation ',fn-name 'function)
+</pre>
+
+Notice, first of all that this looks suspiciously like what we wanted
+to get out the end:
+
+<pre>
+   `(documentation ',fn-name 'function)
+    (DOCUMENTATION 'FLIPTREE 'FUNCTION)
+</pre>
+
+As you might imagine, this isn't a coincidence. The key here is this:
+<b>A MACRO IS A FUNCTION THAT CREATES AND RETURNS A FORM TO BE
+EVALUATED BY MANIPULATING ITS <i>UNEVALUATED</i> ARGUMENTS.</b> 
+
+<p>
+
+I'll say that again, just to be sure that you got it, even if you
+don't quite get it: A MACRO IS A FUNCTION THAT CREATES AND RETURNS A
+FORM TO BE EVALUATED BY MANIPULATING ITS <i>UNEVALUATED</i> ARGUMENTS.
+
+<p>
+
+I suggest that you read that to yourself three times and then close
+your eyes and let it roll over your tongue a few more times.
+
+<p>
+
+In service of this, macros can do <i>any sort of computing they
+want</i> on the arguments. Often, all they do is simple
+transformation. DOC? is a macro that does a simple transformation.
+(But, as well soon see, you can do not-so-simple transformations.)
+
+<p> 
+
+When the transformation is a simple one (as in DOC?) there's a handy
+Lisp shorthand that we used above, called "backquote" (`) On most
+keyboard this is the character below the tilde (~) -- <i>be careful
+not to confuse quote with backquote!</i> 
+
+<p>
+
+Backquote is a little like quote: It stops evaluation, but it has a
+special relationship with a couple of characters we don't use much in
+Lisp, the comma (,) and the at-sign (@). When a backquoted thing sees
+a comma, <i>evaluation resumes!</i> 
+
+<p>
+
+Yak! WHAT?!
+
+<p>
+
+Okay, let's see some examples without all the macro noise. In all of
+the below, be very careful to notice when we're using a backquote (`)
+versus a reqular quote ('):
+
+<pre>
+>> (setf a 1 s 2 d 3 f 4)
+
+>> `(a s d f)
+:: (A S D F)
+
+>> `(a ,s d ,f)
+:: (A 2 D 4)
+
+>> `('a ',s 'd ',f)
+:: ('A '2 'D '4)
+
+>> `(a ,(+ s d) ,f)
+:: (A 5 4)
+
+>> `(a ((,(+ s d)) ,f) f)
+:: (A ((5) 4) F)
+</pre>
+
+The important thing to notice here is that the backquote and comma
+enable us to form new forms out of old ones. Here's a more complex
+example, again, forget the part about macros:
+
+<pre>
+>> (setf xprs '((print "zero") (print "one") (print "two")))
+
+>> (length xprs)
+
+>> `(random ,(length xprs))
+:: (RANDOM 3)
+
+>> `(case (random ,(length xprs)) ,xprs)
+:: (CASE (RANDOM 3) ((PRINT "zero") (PRINT "one") (PRINT "two")))
+
+Hmmm. That's not quite the transformation we wanted. Here's what we're
+looking for (from DO-RANDOMLY, above):
+
+  (case (random 3)
+    (0 (print "zero"))
+    (1 (print "one"))
+    (2 (print "two")))
+
+What we got was this:
+
+  (CASE (RANDOM 3)
+    ((PRINT "zero") 
+     (PRINT "one")
+     (PRINT "two")))
+
+which is close, but missing the numbers.... hmmm. how about:
+
+>> `(case (random ,(length xprs)) 
+>>    ,(loop for xpr in xprs
+>>           as i from 0 by 1
+>>           collect `(,i ,xpr)))
+
+:: (CASE (RANDOM 3) ((0 (PRINT "zero")) (1 (PRINT "one")) (2 (PRINT "two"))))
+
+That's:
+
+  (CASE (RANDOM 3) 
+    ((0 (PRINT "zero")) 
+     (1 (PRINT "one"))
+     (2 (PRINT "two"))))
+
+which is closer, but there's a pesky extra parenthesis! (Look
+carefully and you'll see it!)
+
+Turns out what we need is the at-sign (@):
+
+>> `(case (random ,(length xprs)) 
+>>    ,@(loop for xpr in xprs
+>>           as i from 0 by 1
+>>           collect `(,i ,xpr)))
+
+:: (CASE (RANDOM 3) (0 (PRINT "zero")) (1 (PRINT "one")) (2 (PRINT "two")))
+
+</pre>
+
+The at-sign (@) does exactly the thing we needed: unpacks one level of
+parentheses in place. It turns out that this is very useful -- exactly
+in the setting we just saw it!
+
+<p>
+
+Now, backquotes and at-signs aside, the thing that you should be
+completely taken aback by at this point is that we just wrote a LOOP
+that operated on another piece of code. That is, our LOOP created new
+code!
+
+<p>
+
+Given all that, we're now read to write DO-RANDOMLY:
+
+<pre>
+>> (defmacro do-randomly (&rest xprs)
+>> `(case (random ,(length xprs)) 
+>>    ,@(loop for xpr in xprs
+>>           as i from 0 by 1
+>>           collect `(,i ,xpr)))
+>>   )
+</pre>
+
+The only new thing there is the &REST. All that that does is wraps up
+all the remaining arguments in the call to DO-RANDOMLY into the one
+variable (XPRS) in this case. 
+
+<p>
+
+Let's try it:
+
+<pre>
+>> (defmacro do-randomly (&rest xprs)
+>> `(case (random ,(length xprs)) 
+>>    ,@(loop for xpr in xprs
+>>           as i from 0 by 1
+>>           collect `(,i ,xpr)))
+>>   )
+
+>> (macroexpand-1
+>>   '(do-randomly 
+>>      (print "zero")
+>>      (print "one")
+>>      (print "two")
+>>      (print "three")))
+
+:: (CASE (RANDOM 4)
+::  (0 (PRINT "zero"))
+::   (1 (PRINT "one"))
+::   (2 (PRINT "two"))
+::   (3 (PRINT "three")))
+
+Looks good, so let's try out our loop!
+
+>>  (loop for i from 1 to 10
+>>        do 
+>>         (do-randomly 
+>>             (print "zero")
+>>             (print "one")
+>>             (print "two")))
+</pre>
+
+Did it work?
+
+<p>
+
+<h2>Macros are Tools for Abstraction and Modularity</h2>
+
+<p>
+
+All of the examples above are examples of <i>programming
+abstraction</i>: DOC? hides quoting and the 'function argument from
+us; The LOOPDOWN abstracts the details of how the counting down is
+done, and the WITH-OPEN-FILE abstracts the CLOSE -- we don't have to
+think about those things. Instead, we can just embed our code inside
+other pieces of code, for example, we just use DO-RANDOMLY without
+knowing the number of expressions!
+
+<p>
+
+Okay, so all of this said, it's very unlikely that you'll actually use
+macro in your day-to-day work, but if and when you do, you'll really
+appreciate their power!
+
+<p>
+<hr>
+<p>
+
+<h2>Sweet Mysteries of Lisp</h2>
+
+<p>
+
+Now that you have a taste of what macros can do, we can let you into a
+little Lisp secret: Almost all of the fancy stuff in Lisp is
+implemented in simpler Lisp using macros! Don't believe me? Try this:
+
+<pre>
+Remember our friend case?
+
+>> (CASE (RANDOM 4)
+>>   (0 (PRINT "zero"))
+>>   (1 (PRINT "one"))
+>>   (2 (PRINT "two"))
+>>   (3 (PRINT "three")))
+
+Let's use macroexapand on it:
+
+>> (macroexpand 
+>>   '(CASE (RANDOM 4)
+>>     (0 (PRINT "zero"))
+>>     (1 (PRINT "one"))
+>>     (2 (PRINT "two"))
+>>     (3 (PRINT "three"))))
+
+</pre>
+
+So, CASE is actually a macro implemented in terms of LET and
+COND. (Those funny looking #: things are temporary variables; that's a
+whole other long story for an advanced macro class!)
+
+<p>
+
+Let's try another. Remember that we couldn't use LOOP to count down,
+so we had to build our own... Let's find out why it didn't work:
+
+<pre>
+Here's a normal loop:
+
+>> (loop for i from 1 to 10 by 2
+>>       do (print i))
+
+Let's use macroexapand on it:
+
+>> (macroexpand 
+>>  '(loop for i from 1 to 10 by 2
+>>       do (print i)))
+
+Now, let's look at the reversed loop:
+
+>> (macroexpand 
+>>  '(loop for i from 10 to 1 by -1
+>>       do (print i)))
+</pre>
+
+Compare that code with the code generated above when we were counting
+<i>up</i>. What happened to the main part of the loop?! It's gone! Now
+we understand why when you eval: 
+
+<pre>
+>> (loop for i from 10 to 1 by -1
+>>       do (print i))
+</pre>
+
+You get nothing! The LOOP macro generated no code! Looks to me like a
+bug in the LOOP macro, but, oh well, fixing it is someone else's
+problem...
+
+<p>
+
+We didn't actually end up programming the new LOOPDOWN macro, but we
+could havevery easily, just given what you already know! Instead of
+that rather simple exercise, let's look at something more complex.
+
+<p>
+
+You might have noticed throughout these lessons that we sometimes use
+LOOP and sometimes XLOOP. XLOOP is a simplified form of LOOP available
+only in BioBike. XLOOP resolves some of the problem that beginning
+users find in using LOOP. (Truth be told, highly experienced Lisp
+programmers sometimes even have trouble with the real LOOP!) For
+example, a common thing that people forget to do in using LOOP is to
+include the require word DO. Watch:
+
+<pre>
+>> (loop for i from 1 to 10
+>>     (print i))
+</pre>
+
+XLOOP does care:
+
+<pre>
+>> (xloop for i from 1 to 10
+>>     (print i))
+</pre>
+
+So, how does XLOOP work? By this point you can probably guess that
+XLOOP is a rather complex macro, and you'd be right! Here's a part of
+the XLOOP code:
+
+<pre>
+ (defmacro xloop (&rest args) 
+   (parse-loop `(loop ,@args)))
+</pre>
+
+Um ... that's not very interesting, or at least it doesn't appear to
+be. But wait! Actually, it could be quite interesting! What this does
+is to take all the arguments (ARGS), decorate them slightly with (LOOP
+... the args), and pass that into the function PARSE-LOOP. And because
+XLOOP is a macro, whatever PARSE-LOOP comes back with will get
+evaluated. So PARSE-LOOP could do a great deal of complex work! 
+
+<p>
+
+As indeed it does; watch:
+
+<pre>
+>> (macroexpand-1 
+>>   '(xloop for i from 1 to 10
+>>     (print i)))
+
+(LET* ((BIOUTILS::*CURRENT-LOOP-FORM*
+        "(LOOP FOR I FROM 1 TO 10 (PRINT I))")
+       (BIOUTILS::*CURRENT-LOOP-KEY* :INITIALIZATIONS)
+       (BIOUTILS::*CURRENT-LOOP-CLAUSE* NIL)
+       (#:COUNTER-49844 0)
+       (I NIL))
+  (DECLARE (FIXNUM #:COUNTER-49844))
+  (DECLARE (IGNORABLE I))
+  (BLOCK NIL
+    (HANDLER-CASE
+        (LET (# # #)
+          (DECLARE #)
+          (LOOP BIOUTILS::NAMED #:LOOP-TAG-49840 DO # # # #))
+      (BIOUTILS::LOOP-RUNTIME-ERROR (BIOUTILS::C) (ERROR BIOUTILS::C))
+      (ERROR (BIOUTILS::C) (ERROR #)))))
+
+</pre>
+
+WHOA! And that's not even full expanded! (The pound signs, like: # #
+#, indicate parts of the expression that are so deeply nested that the
+printer isn't bothering to show them to you!)
+
+<p>
+
+We won't go into who PARSE-LOOP works, but just to give you a sense of
+how complex this can get, here's a piece of PARSE-LOOP that does the
+transformation from XLOOP to the mess above:
+
+<pre>
+(defun parse-loop (loop-form &key (error-limit 3) (debug? *loop-debug*))
+...
+  (let* ((*current-loop-form* loop-form)
+         (*loop-clauses* nil)
+         (*loop-semantics* nil)
+         (*loop-debug* debug?)
+         )
+...
+     (setq *loop-clauses* (parse-loop-into-clauses (cdr loop-form)))
+     (verify-clause-constraints *loop-clauses*)
+     (analyze-loop-clauses *loop-clauses*)
+...
+     (generate-loop-code *loop-semantics* loop-form)
+...
+      )))
+</pre>
+
+Without trying to worry about what that does -- mostly calls a morass
+of other even more complex functions where the real work gets done
+(PARSE-LOOP-INTO-CLAUSES, ANALYZE-LOOP-CLAUSES, and
+GENERATE-LOOP-CODE). 
+
+<p>
+
+The only point to get here is that macros allow you to write Lisp
+programs that modify Lisp forms -- programs writing programs -- and so
+allow you to invent entirely new Lisp syntax, and completely reinvent
+the language if you set your mind to it.
+
+<p>
+
+I don't know about you, but before I set my mind to anything else
+today, I need an aspirin and a nap!
+
+<p>
+<hr>
+<p>
+
+References: 
+
+<p>
+
+<a target=_blank
+href=http://www.nhplace.com/kent/Papers/Special-Forms.html> Pitman,
+K. (1980) Special Forms in Lisp.  In the Conference Record of the 1980
+Lisp Conference, Stanford University, August 25-27, 1980. </a>
+

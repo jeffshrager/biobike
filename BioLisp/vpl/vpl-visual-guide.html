@@ -1,0 +1,240 @@
+<html>
+  <head>
+    <title>VPL</title>
+    <style type='text/css'>
+<!-- 
+body > div
+{
+padding: 12pt;
+margin: 3pt;
+height: 28.75%;
+border: solid thin black;
+text-align: center;
+vertical-align: middle;
+}
+body > div > p
+{
+margin-top: 0pt;
+}
+#debugging
+{
+text-align: left;
+font-family: courier;
+color: #550000;
+font-style: normal;
+font-variant: normal;
+font-size: small;
+height: auto;
+border: solid thick red;
+}
+#palette
+{
+padding: 0pt;
+background: #ffffff;
+position: relative;
+height: 107px;
+text-align: left;
+line-height: 200%;
+}
+#workarea
+{
+background: #ccff99;
+height: 57.5%;
+position: relative;
+overflow: auto;
+}
+#results
+{
+background: #e2e2ff;
+position: relative;
+bottom: 0px;
+left: 0px;
+height: 10%;
+z-index: 100;
+overflow: auto;
+}
+#exec-icon
+{
+float: left;
+top: 0px;
+left: 0px;
+}
+#close-icon
+{
+float: right;
+}
+#go-icon
+{
+float: right;
+}
+#menu-icon
+{
+float: left;
+top: 0px;
+left: 0px;
+}
+span
+{
+padding: 1pt;
+margin: 2pt;
+}
+div.labeled-hole
+{
+padding: 3pt;
+text-align: left;
+}
+.cursor
+{
+}
+.list
+{
+float: left;
+font-family: courier;
+text-align: left;
+}
+.symbol
+{
+float: left;
+font-family: courier;
+font-weight: bold;
+}
+div.value
+{
+float: left;
+}
+.value
+{
+}
+.result
+{
+float: left;
+padding: 3pt;
+margin: 3pt;
+background: #ffffdd;
+border: solid thin;
+}
+.main-label
+{
+vertical-align: middle;
+font-family: courier;
+float: left;
+padding: 3pt;
+}
+.label
+{
+float: left;
+font-family: times-roman;
+font-size: 10pt;
+}
+div.hole
+{
+float: left;
+}
+div.mhole
+{
+float: left;
+}
+.hole
+{
+padding: 3pt;
+margin: 3pt;
+border: solid thin;
+}
+.mhole
+{
+padding: 3pt;
+margin: 3pt;
+border: solid thin;
+}
+.helper
+{
+padding: 3pt;
+float: left;
+margin: -4pt 1pt 1pt -4pt;
+border: solid thin black;
+background: yellow;
+}
+.helper-show
+{
+padding: 3pt;
+border: solid thin black;
+background: yellow;
+float: left;
+margin: -4pt 1pt 1pt -4pt;
+}
+.palette-item
+{
+border: solid thin black;
+padding: 3pt;
+background: #ddddff;
+}
+.inserted-item
+{
+float: left;
+font-family: courier;
+text-align: left;
+padding: 3pt;
+margin: 4pt;
+background: #ffddff;
+border: solid thin;
+}
+.show
+{
+z-index: 10;
+visibility: visible;
+}
+.hide
+{
+z-index: -10;
+visibility: hidden;
+}
+.popup
+{
+background: lightcyan;
+position: absolute;
+top: 10;
+left: 10;
+padding: 1px;
+border: solid thin red;
+}
+.menu-selected
+{
+color: blue;
+background: cyan;
+cursor: pointer;
+}
+.menu-unselected
+{
+color: black;
+background: lightcyan;
+}
+
+ -->
+    </style>
+    <link rel='stylesheet' type='text/css' href='DropDownMenuX.css'>
+
+  </head>
+  <body  style='overflow-y:hidden'>
+    <div id='palette'>
+     <div align="right">
+      <img src="Bike.gif" alt="" height="107" width="122" border="0">
+     </div>
+    </div>
+    <div id='workarea'>
+     <div align="left">
+      <IMG src="vpl-quick-visual.gif" alt="">
+     </div>
+    </div>
+    <div id='results'>
+     <CENTER>
+      <FONT size=+2>
+      Use the browser back arrow to return to BioBIKE
+      </FONT>
+     </CENTER>
+    <div id='resultsmsg'>
+    </div>
+   </div>
+  </body>
+</html>
+
+

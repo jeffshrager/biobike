@@ -1,0 +1,1084 @@
+<title>BioBike: Representing and Searching Graphs</title>
+<p>
+
+<h2>
+BioBike Tutorial: Representing and Searching Graphs
+</h2>
+
+<p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>
+
+The purpose of this tutorial is to discuss the representation and
+analysis of graphs in BioLisp. I want to warn you up front that this
+is probably the hardest tutorial in the whole set. You probably will
+<i>not</i> be able to deeply understand it without some guidance from
+someone who understands it. That's okay, just let it flow over you.
+
+<p>
+
+First off, what's a graph? Graphs are networks of "nodes" (also
+sometimes called "vertices") connected by "arcs" (also called
+"edges"). Here's a graph from <a
+href=http://www.pnas.org/cgi/content/abstract/0305937101v1
+target=_blank>a paper by Li, et al. (2004) entitled: "The yeast
+cell-cycle network is robustly designed."</a> It was published in the
+Proceedings of the National Academy of Sciences (PNAS) in 2004:
+
+<p>
+<img src=/livetutorial-files/graphsearch/jssymbiolietalfig1b.jpg>
+<p>
+
+Most of the nodes in this graph represent proteins (except for the one
+called "cell size"), and the arcs represent activation (green) or
+inhibition relationships (red) between the proteins.
+
+<p>
+
+We'll work quite a lot with this graph in later tutorials, but for the
+moment, we're just going to talk about how to represent it, and do
+some simple computing on it.
+
+<p>
+
+The first thing that we need to do is to create some way of
+representing the graph so that we can analyze it. There are a number
+of ways that a graph can be represented. First, notice that the arcs
+in the graph just go between the nodes.  Each arc connects two
+proteins, and indicates, as I said above, either an activation (green)
+or inhibition relationships (red) between them. Notice that the arcs
+are "directional" -- that is, they are arrows. So this is called a
+"directional" graph. (Graphs don't have to be directional, but most of
+the ones we'll deal with in symbolic biocomputing are directional.) We
+can represent a single arc by giving the protein it starts at, the
+protein it ends at, and whether the arc is an activation or inhibition
+arc. These could appear in any order we like as long as we're
+consistent about it. Let's make it be:
+
+<pre>
+         (from-protein arc-type to-protein)
+</pre>
+
+And we'll use a + or - instead of having to write out "activation" and
+"inhibition".
+
+<p>
+
+Given that, here are the arcs in the graph:
+
+<pre>
+>> (setf *model-graph* 
+>>   '((size + cln3)
+>>     (cln3 + mbf)
+>>     (cln3 + sbf)
+>>     (sbf + cln12)
+>>     (cln12 - sic1)
+>>     (cln12 - cdh1)
+>>     (sic1 - clb56)
+>>     (sic1 - clb12)
+>>     (mbf + clb56)
+>>     (clb56 + mcm1/sff) ; weird yellow/green in the paper
+>>     (clb56 - sic1)
+>>     (clb56 + clb12) ; weird yellow/green in the paper
+>>     (clb56 - cdh1)
+>>     (cdh1 - clb12)
+>>     (clb12 - cdh1)
+>>     (clb12 + mcm1/sff)
+>>     (clb12 + cdc20&14)
+>>     (clb12 - sic1)
+>>     (clb12 - swi5)
+>>     (clb12 - mbf)
+>>     (clb12 - sbf)
+>>     (mcm1/sff + cdc20&14)
+>>     (mcm1/sff + swi5)
+>>     (mcm1/sff + clb12)
+>>     (cdc20&14 + swi5)
+>>     (cdc20&14 + cdh1)
+>>     (cdc20&14 - clb12)
+>>     (cdc20&14 + sic1)
+>>     (cdc20&14 - clb56)
+>>     (swi5 + sic1)
+>>     ))
+</pre>
+
+Can you see how each entry in the list above matches on arc in the
+graph? (Many of the problems one has in developing graph programs
+are just caused by simple errors in representing the graph itself!)
+
+<p>
+
+BioBike gives us a way to visualize graphs represented in this way:
+
+<pre>
+>> (seegraph *model-graph*)
+</pre>
+
+Let's write some really simple programs that just ask questions about
+the graph (or any graph represented in this way). What kind of things
+might we want to know about the graph? Here's a short list:
+
+<pre>
+  What are the proteins in the model?
+  What proteins directly control a given protein?
+  What proteins indirectly control a given protein?
+  What are the paths (the lists of arcs) that you have 
+       to cross to go from one protein to another?
+</pre>
+
+There's another whole set of questions having to do with simulating the
+system represented by the model, which is dealt with in another
+tutorial; for now, we're just going to analyze the model, not try to
+simulate it.
+
+<p>
+
+So, let's get to it:
+
+<p>
+
+<b> What are the proteins in the model?</b>
+
+<p>
+
+We can get this list directly from the graph. All we need to do is to
+loop over each arc and collect the proteins at the ends of the arc,
+and return them.
+
+<pre>
+>> (xloop for (from +- to) in *model-graph*
+>>        collect (list from to))
+:: ((SIZE CLN3) (CLN3 MBF) (CLN3 SBF) (SBF CLN12) ...
+</pre>
+
+Well, that's sort of what we want -- that's the from and to proteins
+of every arc, but we want them in one long list. Turns out that XLoop
+has a tricky way to do that:
+
+<pre>
+>> (xloop for (from +- to) in *model-graph*
+>>        APPEND (list from to))
+:: (SIZE CLN3 CLN3 MBF CLN3 SBF SBF CLN12 CLN12 SIC1 CLN12 ...
+</pre>
+
+Looks good! [You don't have to UPPERCASE the APPEND, I just did that
+so you could see the difference in the examples!]
+
+<p>
+
+But there's a problem; the list is very redundant; every protein
+appears many times. No problem, Lisp has a special function just for
+this occasion:
+
+<pre>
+>> (remove-duplicates *)
+</pre>
+
+So here's our whole function:
+
+<pre>
+>> (defun graph-proteins (graph)
+>>   (remove-duplicates 
+>>     (xloop for (from +- to) in graph
+>>            append (list from to))))
+
+Let's try it:
+
+>> (graph-proteins *model-graph*)
+:: (SIZE CLN3 CLN12 MBF SBF MCM1/SFF CDH1 CLB12 CDC20&14 CLB56 SWI5 SIC1)
+</pre>
+
+Tada!  Okay, next question:
+
+<p>
+<b>What proteins directly control a given protein?</b>
+<p>
+
+In other words, we're going to give the name of a protein, and we want
+to get back the list of proteins that have an arc directly connected
+to it -- that is, where the given protein appears as the TO (third)
+part of the arc [remember: (FROM +- TO)]
+
+<p>
+
+This too is just a simple loop, very similar to the previous one, but
+this time we only need certain arcs -- the ones going TO our target
+protein. We'll just copy and very slightly modify the previous
+function. Let's call it "proteins-directly-controlling" because it
+finds the proteins that directly control a given protein for a given
+graph. (Note that we'll have to give both the target TO protein
+<i>and</i> the graph!)
+
+<pre>
+>> (defun proteins-directly-controlling (desired-to-protein graph)
+>>   (remove-duplicates 
+>>     (xloop for (from-protein +- to-protein) in graph
+>>            WHEN (EQUAL to-protein desired-to-protein)
+>>            collect from-protein)))
+
+Let's try it:
+
+>> (proteins-directly-controlling 'sbf *model-graph*)
+:: (CLN3 CLB12)
+</pre>
+
+You should verify that this is the right answer, and try a few others
+while you're at it.
+
+<p>
+
+[Quiz: Why did we have to quote the 'sbf -- try doing the same thing
+without the single quote and see what happens.]
+
+<p>
+
+Okay, so far, so easy; Next question!
+
+<p>
+
+<b>What are the proteins that indirectly control a given protein?</b>
+
+<p>
+
+This is going to take some thought. Let's look back at the graph
+picture way above:
+
+<p>
+<img src=/livetutorial-files/graphsearch/jssymbiolietalfig1b.jpg>
+<p>
+
+Our proteins-directly-controlling function figured out that clb12 and
+cln3 are directly controlling sbf by reading it right off the graph,
+but you can't read the <i>indirectly</i> controlling proteins right
+off the graph, you have to <i>walk backwards in the graph</i> to do
+that. For example, to ask what proteins are <i>indirectly</i>
+controlling, say, sbf, we start with the ones that are directly
+controlling it (okay, we know how to do that already), and then go back
+<i>from each of those</i> to the ones directly controlling
+<i>those</i>, and so on. That doesn't sound so hard. Let's try it by
+eye for one path:
+
+<pre>
+clb12 directly controls sbf
+  clb56 directly controls clb12
+    mbf directly controls clb56
+      cln3 directly controls mbf
+        cell size directly controls cln3
+          nothing directly controls cell size...
+...so we're done!
+</pre>
+
+There's a special name given to this sort of procedure:
+<i>recursion</i> -- we "recursed" (or "recurred" if you prefer) back
+from clb12 by the direct control concept (function) until we hit
+something with no direct controls.
+
+<p>
+
+There's one big complex in this. [Can you see it before I tell you?] 
+
+<p>
+
+Let's follow a different path from sbf that starts out the same way:
+
+<pre>
+clb12 directly controls sbf
+  clb56 directly controls clb12
+    sic1 directly controls clb56
+      clb12 directly controls sic1
+        clb56 directly controls clb12
+          sic1 directly controls clb56
+            clb12 directly controls sic1
+              clb56 directly controls clb12
+                sic1 directly controls clb56
+                  clb12 directly controls sic1
+                    clb56 directly controls clb12
+                      sic1 directly controls clb56
+                        clb12 directly controls sic1...
+... Hey wait a minute!!!
+</pre>
+
+Got it? You can follow this series of arcs forever and never find the
+beginning because <i>its a loop!</i> We'll have to watch out for those
+in our program.
+
+<p>
+
+Doing this right is really the heart of graph processing. I'm going to
+give you the function that does this, and then carefully go through
+how it works, because it's quite subtle.
+
+<pre>
+>> (defun graph-walker (to-prot graph &optional seen)
+>>   (let ((direct-controllers (proteins-directly-controlling to-prot graph)))
+>>     (cond ((null direct-controllers) (list to-prot))
+>>           (t (xloop for prot in direct-controllers
+>>                     unless (member prot seen)
+>>                     collect (cons to-prot 
+>>                                   (graph-walker prot graph 
+>>                                                (cons prot seen))))))))
+</pre>
+
+(You might have gotten a compiler warning, something like: "Warning:
+While compiling these undefined functions were referenced:
+GRAPH-WALKER." when you did that just now.  That's because
+GRAPH-WALKER recurses -- calls itself, which is very slightly
+confusing to the compiler, so it's just warning you that you're
+calling a function that doesn't exist yet. (Of course it doesn't,
+we're creating it now!) So don't worry about this. :-)
+
+<p>
+
+Okay, let's try it out on something simple:
+
+<pre>
+>> (graph-walker 'cln3 *model-graph*)
+:: ((CLN3 SIZE))
+</pre>
+
+Okay, that looks right: Only cell size controls cln3 -- so there's one
+path: 
+
+<pre>
+cell size directly controls cln3
+  nothing directly controls cell size...
+...so we're done!
+</pre>
+
+Now the more complex question:
+
+<pre>
+>> (graph-walker 'sbf *model-graph*)
+:: 
+((SBF (CLN3 SIZE))
+ (SBF
+  (CLB12 (SIC1 (CLN12 (SBF (CLN3 SIZE))))
+   (SIC1 (CLB56 (MBF (CLN3 SIZE))) (CLB56 (CDC20&14)))
+   (SIC1 (CDC20&14 (MCM1/SFF (CLB56 (MBF (CLN3 SIZE))))))
+   (SIC1 (SWI5 (MCM1/SFF (CLB56 (MBF (CLN3 SIZE))) (CLB56)))
+    (SWI5 (CDC20&14 (MCM1/SFF (CLB56 (MBF (CLN3 SIZE))))))))
+  (CLB12
+   (CLB56 (SIC1 (CLN12 (SBF (CLN3 SIZE)))) (SIC1 (CDC20&14))
+    (SIC1 (SWI5) (SWI5 (CDC20&14))))
+   (CLB56 (MBF (CLN3 SIZE))) (CLB56 (CDC20&14)))
+  (CLB12 (CDH1 (CLN12 (SBF (CLN3 SIZE))))
+   (CDH1
+    (CLB56 (SIC1 (CLN12 (SBF (CLN3 SIZE)))) (SIC1 (CDC20&14))
+     (SIC1 (SWI5) (SWI5 (CDC20&14))))
+    (CLB56 (MBF (CLN3 SIZE))) (CLB56 (CDC20&14)))
+   (CDH1
+    (CDC20&14
+     (MCM1/SFF (CLB56 (SIC1 (CLN12 (SBF (CLN3 SIZE)))) (SIC1))
+      (CLB56 (MBF (CLN3 SIZE)))))))
+  (CLB12
+   (MCM1/SFF
+    (CLB56 (SIC1 (CLN12 (SBF (CLN3 SIZE)))) (SIC1) (SIC1 (SWI5)))
+    (CLB56 (MBF (CLN3 SIZE))) (CLB56)))
+  (CLB12
+   (CDC20&14
+    (MCM1/SFF (CLB56 (SIC1 (CLN12 (SBF (CLN3 SIZE)))) (SIC1))
+     (CLB56 (MBF (CLN3 SIZE))))))))
+</pre>
+
+(If it doesn't look like this, you might have to "pretty print" it, by doing (pprint *).)
+
+<p>
+
+
+<i>OMG!</i> What the <i>heck</i> is that?!
+
+<p>
+
+It takes a little getting used to read things like that. Let's do a
+simpler example that will be a lot easier to figure out, then we can
+go back to this one. 
+
+<p>
+
+Let's make a nice easy graph:
+
+<pre>
+
+       +----------<---+
+       |              |
+       v              |
+  A -> B -> C -> D -> E
+            ^         |
+            |         |
+            +-----<---+
+
+
+>> (setf *simple-graph* 
+>>   '((a + b)
+>>     (b + c)
+>>     (c + d)
+>>     (d + e)
+>>     (e + c)
+>>     (e + b)))
+
+Let's see it, just to be sure that it looks like what we want:
+
+>> (seegraph *simple-graph*)
+</pre>
+
+And we'll try our graph walker on it:
+
+<pre>
+>> (graph-walker 'd *simple-graph*)
+:: ((D (C (B A) (B (E))) (C (E))))
+
+Here's another way to see the same thing that slightly
+ easier to read::
+
+   ((D 
+      (C 
+        (B
+          A) 
+	(B 
+	  (E)))
+      (C 
+        (E))))
+</pre>
+
+<i>Easier to read?!</i> Well, here it's in the same form as we had up
+above:
+
+<pre>
+d is directly controlled by c 
+  c is directly controlled by b 
+    b is directly controlled by a 
+      a is directly controlled by nothing 
+...so we're done!
+</pre>
+
+But it goes on:
+
+<pre>
+d is directly controlled by c 
+  c is directly controlled by b 
+    b is directly controlled by a 
+      a is directly controlled by nothing 
+           ...so we're done <i>that path</i>!
+    [back to b]
+    b is also directly controlled by e 
+      [e is directly controlled by d, but we've seen d before...
+           ...so we're done <i>that path</i> too!
+  [back to c:]
+  c is also directly controlled by e 
+    [as above: e is directly controlled by d, but we've seen d before...
+                 ...so we're done <i>that path</i> too!
+
+We've explored every part -- we're completely done!
+</pre>
+
+So you see, with a little paren work you can read off the paths from
+this result. 
+
+<p>
+
+If you go back to the gigantic mess returned by our graph walk of the
+model graph from sbf, you'll actually be able to find all the control
+paths to sbf, but let's not go there just yet.  There are also various
+ways to watch the graph walker in action, and we'll get to those in a
+moment, but let's go back to the function and pick apart how it works.
+
+<p>
+
+Here's the graph walker function again, this time with line numbers so
+that we can talk about them::
+
+<pre>
+1: (defun graph-walker (to-prot graph &optional seen)
+2:   (let ((direct-controllers (proteins-directly-controlling to-prot graph)))
+3:     (cond ((null direct-controllers) (list to-prot))
+4:           (t (xloop for prot in direct-controllers
+5:                     unless (member prot seen)
+6:                     collect (cons to-prot 
+7:                                   (graph-walker prot graph 
+8:                                                (cons prot seen))))))))
+</pre>
+
+The most important thing about this function is that it calls itself!
+Huh? Look at lines 7 and 8:
+
+<pre>
+7:                                   (<font color=red>graph-walker</font> prot graph 
+8:                                                (cons prot seen))))))))
+</pre>
+
+This is a call to the graph-walker function <i>from inside the
+graph-walker function!!</i> Remember "recursion", well, here it is, in
+the flesh!
+
+<p>
+
+Let's look at a simpler case of recursion, and then we'll get back to
+the graph walker. Let's write a program to compute the factorial of a
+number. The factorial of 5 is 5 times 4 times 3 times 2 times 1. (This
+comes out to 120.) 
+
+<p>
+
+Notice that the factorial of 1 is just 1. The <i>recursive</i> way to
+think about this is just that the factorial of any number is the
+number (5) times the factorial of the number minus 1, until you get to
+1, where the factorial is 1. In other words, (fact 5) = (* 5 (fact
+4)), and (fact 4) = (* 4 (fact 3)) ...etc...
+
+<p>
+
+Here's how we can write that in Lisp:
+
+<pre>
+>> (defun fact (n)
+>>   (cond ((= n 1) 1)
+>>         (t (* n (fact (- n 1))))))
+
+Let's try it:
+
+>> (fact 5)
+:: 120
+
+Great. How about a bigger one:
+
+>> (fact 10)
+:: 3628800
+
+Okay, whatever.
+</pre>
+
+It turns out that there's a way to watch the recursion taking place:
+
+<pre>
+>> (trace fact)
+
+>> (fact 5)
+
+ 0[4]: (FACT 5)
+   1[4]: (FACT 4)
+     2[4]: (FACT 3)
+       3[4]: (FACT 2)
+         4[4]: (FACT 1)
+         4[4]: returned 1
+       3[4]: returned 2
+     2[4]: returned 6
+   1[4]: returned 24
+ 0[4]: returned 120
+
+:: 120
+
+</pre>
+
+Moving left it counting down, and moving right it's multiplying back
+up. <i>This is critical to understanding recursion: <b>What goes down,
+must come up!</b></i>
+
+<p>
+
+FACT is a really good example of a recursive program. It's simple, and
+has the major components:
+
+<pre>
+1: (defun fact (n)
+2:   (cond ((= n 1) 1)
+3:         (t (* n (fact (- n 1))))))
+</pre>
+
+First, FACT <i>tests for completion</i>. That's line 2: If N = 1, then
+don't call again, just stop, and return the right result for this case
+(Factorial of 1 is 1, so when N=1, return 1). This is called the
+"termination condition".
+
+<p>
+
+Second, FACT <i>combines</i> the current value (N) with the result
+of the recursion (FACT (- n 1)). The combination, in this case, is by
+multiplication. <i>This</i> is the key component of recursion:
+<i>Combining simpler and simpler cases together until you get to the
+simplest case.</i> This is called the recursive step.
+
+<p>
+
+You could write the template of a recursive function this way:
+
+<pre>
+1: To make a recursive function, on an argument,
+2:   If this is the simplest case, return the simplest answer,
+3:   Otherwise, combine the current argument value with 
+                a recursive call on a simpler argument.
+
+Here's fact again:
+
+1: (defun fact (n)
+2:   (cond ((= n 1) 1)
+3:         (t (* n (fact (- n 1))))))
+</pre>
+
+Written out in English, this might read: <font color=green><i>To take
+the factorial of a number, test of the number is 1. If it is, the
+factorial is 1, and we're done. Otherwise, multiply the number by the
+factorial of the number minus 1.</i></font> Can you see how that reads into
+the function?
+
+<p>
+
+Before going back to the graph walker, I want to go through another
+couple of types of recursive functions. The first is just a list
+walker. The list walker take a list, like '(A BEE SEE DEE EEE ELEPHANT
+GEE! ACH EYE JAY KAY AN EEL IS NOT A SNAKE) [you remember those?!],
+and does something to each element, and then reforms the whole list.
+
+<p>
+
+We don't need recursion to do that, you can just do a loop:
+
+<pre>
+>> (setf letters '(A BEE SEE DEE EEE ELEPHANT GEE! ACH EYE JAY KAY EEL 
+>>       EMU EN OH! PEE QUE ARE ES TEA EWE VEE DOUBLE-EWE EX WHY? ZEEEEEEEE))
+
+>> (xloop for letter in letters
+>>        as reverse-letter in (reverse letters)
+>>        collect (list letter reverse-letter))
+:: 
+((A ZEEEEEEEE) (BEE WHY?) (SEE EX) (DEE DOUBLE-EWE) (EEE VEE)
+ (ELEPHANT EWE) (GEE! TEA) (ACH ES) (EYE ARE) (JAY QUE) (KAY PEE)
+ (EEL OH!) (EMU EN) (EN EMU) (OH! EEL) (PEE KAY) (QUE JAY) (ARE EYE)
+ (ES ACH) (TEA GEE!) (EWE ELEPHANT) (VEE EEE) (DOUBLE-EWE DEE) (EX SEE)
+ (WHY? BEE) (ZEEEEEEEE A))
+</pre>
+
+That's sort weird and simplistic, and here's a recursive function that
+does the same thing:
+
+<pre>
+>> (defun reverse-pairs (letters reverse-letters)
+>>    (cond ((null letters) nil)
+>>          (t (cons (list (car letters)
+>>                         (car reverse-letters))
+>>                   (reverse-pairs (cdr letters)
+>>                                  (cdr reverse-letters))))))
+
+Let's try it to make sure it does the same thing:
+
+>> (reverse-pairs letters (reverse letters))
+:: 
+((A ZEEEEEEEE) (BEE WHY?) (SEE EX) (DEE DOUBLE-EWE) (EEE VEE)
+ (ELEPHANT EWE) (GEE! TEA) (ACH ES) (EYE ARE) (JAY QUE) (KAY PEE)
+ (EEL OH!) (EMU EN) (EN EMU) (OH! EEL) (PEE KAY) (QUE JAY) (ARE EYE)
+ (ES ACH) (TEA GEE!) (EWE ELEPHANT) (VEE EEE) (DOUBLE-EWE DEE) (EX SEE)
+ (WHY? BEE) (ZEEEEEEEE A))
+</pre>
+
+Can you see how that works? Identify the termination
+condition. Identify the recursive step. Figure out how the recursive
+step combines the current head (car) of the letters and the current
+head (car) of the reversed-letters with the results of the
+recursion. Identify how the arguments to the recursion are simplified
+(by cdr'ing each of them!)
+
+<p>
+
+Okay, now let's go back to our graph walker and see if we can identify
+the recursive features we've just talked about:
+
+<pre>
+1: (defun graph-walker (to-prot graph &optional seen)
+2:   (let ((direct-controllers (proteins-directly-controlling to-prot graph)))
+3:     (cond ((null direct-controllers) (list to-prot))
+4:           (t (xloop for prot in direct-controllers
+5:                     unless (member prot seen)
+6:                     collect (cons to-prot 
+7:                                   (graph-walker prot graph 
+8:                                                (cons prot seen))))))))
+</pre>
+
+Let's go back to our two principles of recursive functions:
+
+<p>
+
+First, graph-walker <i>tests for completion</i>. That's line 3: If
+there are no direct controllers of the to-prot then don't call again,
+just stop, and return the right result for this case: the to-prot
+itself. (The LIST is just a convenience for how the results are
+combined, which we'll discuss next.)
+
+<p>
+
+Second, graph-walker <i>combines</i> the current value (to-prot) with
+the result of the recursion. The combination, in this case, is much
+more complex than multiplication, but the concept is the same. This
+all happens in lines 4-8, let's look at this recursive step in some
+detail:
+
+<pre>
+4:           (t (xloop for prot in direct-controllers
+5:                     unless (member prot seen)
+6:                     collect (cons to-prot 
+7:                                   (graph-walker prot graph 
+8:                                                (cons prot seen))))))))
+</pre>
+
+This is kind of complex for a recursive step. It has the same general
+structure as the fact recursive step:
+
+<pre>
+2:       (cond (...)
+3:             (t (* n (fact (- n 1)))))
+</pre>
+
+The t just tells cond that this is the default case. (In other words,
+if all the above tests fail, this one will happen; it's a test that
+always returns true (t) -- because it <i>is</i> true (t)!)
+
+<p>
+
+So, ignoring the t part, here the recursion:
+
+<pre>
+4:              (xloop for prot in direct-controllers
+5:                     unless (member prot seen)
+6:                     collect (cons to-prot 
+7:                                   (graph-walker prot graph 
+8:                                                (cons prot seen))))))
+</pre>
+
+In English this says: Consider each direct controller of the current
+to-prot (call each of these "prot" as you go through the loop...
+
+<pre>
+4:              (xloop for prot in direct-controllers
+</pre>
+
+Unless this protein has already been seen (or, put another way: if
+this protein has <i>not</i> already been seen...
+
+<pre>
+5:                     unless (member prot seen)
+</pre>
+
+Gather up a path, beginning with the current to-prot...
+
+<pre>
+6:                     collect (cons to-prot 
+</pre>
+
+And ending with the recursive call to graph walker starting at the current
+controlling protein...
+
+<pre>
+7:                                   (graph-walker prot graph 
+</pre>
+
+Adding the current controlling protein to the "seen" list each time
+through:
+
+<pre>
+8:                                                (cons prot seen))))))
+</pre>
+
+This last part ensures that the "seen" list is updated so that if we
+come across the same protein again, we stop (care of the UNLESS clause
+above).
+
+<p>
+
+Let's see how this works for the simple graph:
+
+<pre>
+>> (trace graph-walker)
+
+>> (graph-walker 'd *simple-graph*)
+
+::  
+0[3]: (GRAPH-WALKER D
+                     ((A + B) (B + C) (C + D) (D + E) (E + C) (E + B)))
+   1[3]: (GRAPH-WALKER C
+                       ((A + B) (B + C) (C + D) (D + E) (E + C)
+                        (E + B))
+                       (C))
+     2[3]: (GRAPH-WALKER B
+                         ((A + B) (B + C) (C + D) (D + E) (E + C)
+                          (E + B))
+                         (B C))
+       3[3]: (GRAPH-WALKER A
+                           ((A + B) (B + C) (C + D) (D + E) (E + C)
+                            (E + B))
+                           (A B C))
+       3[3]: returned (A)
+       3[3]: (GRAPH-WALKER E
+                           ((A + B) (B + C) (C + D) (D + E) (E + C)
+                            (E + B))
+                           (E B C))
+         4[3]: (GRAPH-WALKER D
+                             ((A + B) (B + C) (C + D) (D + E) (E + C)
+                              (E + B))
+                             (D E B C))
+         4[3]: returned NIL
+       3[3]: returned ((E))
+     2[3]: returned ((B A) (B (E)))
+     2[3]: (GRAPH-WALKER E
+                         ((A + B) (B + C) (C + D) (D + E) (E + C)
+                          (E + B))
+                         (E C))
+       3[3]: (GRAPH-WALKER D
+                           ((A + B) (B + C) (C + D) (D + E) (E + C)
+                            (E + B))
+                           (D E C))
+       3[3]: returned NIL
+     2[3]: returned ((E))
+   1[3]: returned ((C (B A) (B (E))) (C (E)))
+ 0[3]: returned ((D (C (B A) (B (E))) (C (E))))
+
+> ((D (C (B A) (B (E))) (C (E))))
+</pre>
+
+First, notice that the graph itself is passed along every time through
+the recursion. (Identify this in the above, it's always the second
+argument to the function.) Let's take that out of the trace output,
+which will simplify our understanding it. I'll replace it with
+"---":
+
+<pre>
+0[3]: (GRAPH-WALKER D ---)
+   1[3]: (GRAPH-WALKER C --- (C))
+     2[3]: (GRAPH-WALKER B --- (B C))
+       3[3]: (GRAPH-WALKER A --- (A B C))
+       3[3]: returned (A)
+       3[3]: (GRAPH-WALKER E --- (E B C))
+         4[3]: (GRAPH-WALKER D --- (D E B C))
+         4[3]: returned NIL
+       3[3]: returned ((E))
+     2[3]: returned ((B A) (B (E)))
+     2[3]: (GRAPH-WALKER E --- (E C))
+       3[3]: (GRAPH-WALKER D --- (D E C))
+       3[3]: returned NIL
+     2[3]: returned ((E))
+   1[3]: returned ((C (B A) (B (E))) (C (E)))
+ 0[3]: returned ((D (C (B A) (B (E))) (C (E))))
+</pre>
+
+Now, let's begin by identifying the calls versus the returns. The
+returns are labeled, and the calls are the rest. Let's mark them with
+"->" for calls, and "&lt;-" for returns:
+
+<pre>
+-> 0[3]: (GRAPH-WALKER D ---)
+->   1[3]: (GRAPH-WALKER C --- (C))
+->     2[3]: (GRAPH-WALKER B --- (B C))
+->       3[3]: (GRAPH-WALKER A --- (A B C))
+&lt;-       3[3]: returned (A)
+->       3[3]: (GRAPH-WALKER E --- (E B C))
+->         4[3]: (GRAPH-WALKER D --- (D E B C))
+&lt;-         4[3]: returned NIL
+&lt;-       3[3]: returned ((E))
+&lt;-     2[3]: returned ((B A) (B (E)))
+->     2[3]: (GRAPH-WALKER E --- (E C))
+->       3[3]: (GRAPH-WALKER D --- (D E C))
+&lt;-       3[3]: returned NIL
+&lt;-     2[3]: returned ((E))
+&lt;-   1[3]: returned ((C (B A) (B (E))) (C (E)))
+&lt;- 0[3]: returned ((D (C (B A) (B (E))) (C (E))))
+</pre>
+
+Next, let's identify all the arguments to the function in the
+calls. We've already identified and simplified the graph which never
+changes, and we replaced that with "---". But the other arguments:
+TO-PROT and SEEN <i>do</i> change in each call! I've marked them here
+in red (for the TO-PROT) and blue (for SEEN):
+
+<pre>
+-> 0[3]: (GRAPH-WALKER <font color=red>D</font> ---)
+->   1[3]: (GRAPH-WALKER <font color=red>C</font> --- <font color=blue>(C)</font>)
+->     2[3]: (GRAPH-WALKER <font color=red>B</font> --- <font color=blue>(B C)</font>)
+->       3[3]: (GRAPH-WALKER <font color=red>A</font> --- <font color=blue>(A B C)</font>)
+&lt;-       3[3]: returned (A)
+->       3[3]: (GRAPH-WALKER <font color=red>E</font> --- <font color=blue>(E B C)</font>)
+->         4[3]: (GRAPH-WALKER <font color=red>D</font> --- <font color=blue>(D E B C)</font>)
+&lt;-         4[3]: returned NIL
+&lt;-       3[3]: returned ((E))
+&lt;-     2[3]: returned ((B A) (B (E)))
+->     2[3]: (GRAPH-WALKER <font color=red>E</font> --- <font color=blue>(E C)</font>)
+->       3[3]: (GRAPH-WALKER <font color=red>D</font> --- <font color=blue>(D E C)</font>)
+&lt;-       3[3]: returned NIL
+&lt;-     2[3]: returned ((E))
+&lt;-   1[3]: returned ((C (B A) (B (E))) (C (E)))
+&lt;- 0[3]: returned ((D (C (B A) (B (E))) (C (E))))
+</pre>
+
+Okay, so now we're ready to watch the recursion happening: We go from
+<font color=red>D</font> to <font color=red>C</font> to <font
+color=red>B</font> to <font color=red>A</font>, and as we're doing
+that, we go from having no SEEN list, to <font color=blue>(C)</font>
+on the seen list, to <font color=blue>(B C)</font> on the seen list,
+to <font color=blue>(A B C)</font> on the seen list... and since <font
+color=red>A</font> has no controlling proteins, that path is done, and
+we return (A). Notice now that we're back only to the <font
+color=red>B</font> level, and <font color=red>B</font> is also
+controlled by E, so next we go down to <font color=red>E</font>, and
+the seen list is <font color=blue>(E B C)</font>. E is controlled by
+D, so we next try <font color=red>D</font> with seen=<font
+color=blue>(D E B C)</font> and the controllers of D is C... <i>but
+<font color=red>C</font> is already on the SEEN list!</i>, so we break
+out of this path (return NIL)... and so on. Each time we come back up
+along the path we've gone down, the CONS in line 6 adds the current
+protein to the head of the list we're building. 
+
+<p>
+
+Don't worry if you're slightly lost. This whole thing is very hard to envision,
+and pretty hard to explain too! It's something that you just have to
+get used to envisioning. It's like, the function is taking things
+apart on the way down, and putting them back together on the way back
+up from the recursion.
+
+
+<p><hr></p>
+<p><hr></p>
+
+<a name=exer>
+<h2>Exercises</h2>
+
+<p><hr></p>
+
+1. Use the graph representation that we used above for our simple
+graph, to write a function that takes two graphs and figures out
+whether one graph (the first argument to our function) is a subset of
+the graph represented by the second argument. (You decide whether you
+want "subset" to include the graphs begin equal.) You may expect the
+nodes of each graph to be the same (although, obviously, a subset
+graph may have fewer of them), but the edges may appear in a different
+order in each. [Hint: This is a lot simpler than it seems!  Trying
+finding a simple solution before doing anything complex.]
+
+<p>
+
+Now do the exact same thing as above, but permit the names of the
+nodes to be different. [Hint: This one's a lot HARDER than it seems!
+You might try first just testing graphs for being exactly equal,
+although with possibly different node names and the edges appearing in
+possibly different order, and then consider what it means for one to
+be a subset of the other. If you can't get this to work, just provide
+a detailed explanation of the solution in words and/or pseudocode.]
+
+<p><hr><p>
+
+2. This has a number of parts that eventually come together.
+
+<p>
+
+First write a function that takes two numbers and computes their
+difference. As:
+
+<pre>
+ (compare-numbers 10 15) => 5
+ (compare-numbers 15 10) => 5
+</pre>
+
+(The ABS function will help!)
+
+<p>
+
+Next, use that function to take an ordered list of numbers, and select
+the first "most related" set (by your COMPARE-NUMBERS
+function). You'll have to give a cutoff to this function to tell what
+"most related" means.
+
+<p>
+
+For example:
+
+<pre>
+ (top-set 5 '(1 4 7 10 15 21 23 35 50 51 60 70))
+ => (1 4 7 10 15)
+
+The difference between 15 and 21 is more than 5, so it stopped there.
+
+Another example:
+
+ (top-set 1000 '(1 4 7 10 15 21 23 35 50 51 60 70))
+ => (1 4 7 10 15 21 27 35 50 51 60 70)
+
+ (top-set 0 '(1 4 7 10 15 21 23 35 50 51 60 70))
+ => (1)
+</pre>
+
+With a high enough cutoff of you should get back the whole set, and at a
+low enough cutoff you should get back just the first element.
+
+<p>
+
+Here's the outline of a solution to this part of the problem, with
+some of the recursive step left out. Fill in the ?????? and test the
+function.
+
+<pre>
+ (defun top-set (n l)
+  (cond ((null (rest l)) l)
+        ((<= (compare-numbers (first l) (second l)) n)
+	 (cons (first l) (top-set n ?????????)))
+        (t (list (first l)))))
+</pre>
+
+[Note, you can also create a perfectly fine non-recursive solution to
+this part.]
+
+<p>
+
+Next -- and here's the hard one: Use your TOP-SET to write a recursive
+function which, given the same list of strings, does successive set
+differences until the set runs out, and gives you back the result as a
+set of top sets from each successive cut.
+
+<p>
+
+Examples:
+
+<pre>
+ (break-up 5 '(1 4 7 10 15 21 23 35 50 51 60 70))
+ => ((1 4 7 10 15) (21 23) (35) (50 51) (60) (70))
+</pre>
+
+Again, here the outline of a solution with the recursion missing
+(hint: it uses SUBSEQ and LENGTH). Replace the ????? and test this:
+
+<pre>
+(defun break-up (n l)
+ (let ((top-set (top-set n l)))
+   (if top-set
+       (cons top-set
+	     (break-up n ???????????????????????????))
+       l)))
+</pre>
+
+<p>
+
+Okay, now, here comes the good part: Remember from the BioBike tour
+the function SCORE-ALIGNMENT, which scored the alignment between a
+pair of genes. Go back and make sure you understand how that worked.
+
+<p>
+
+Good, now replace your COMPARE-NUMBERS above with SCORE-ALIGNMENT,
+making changes either to SCORE-ALIGNMENT or to other code here, as
+needed. The goal is to be able to pass in a set of genes, and an
+alignment difference cutoff, and <i>cluster</i> the genes into sets of
+pairs of genes with similar alignment scores. Use cutoffs of a few %
+and find a level that groups the genes (from the Tour) into a few
+groups.
+
+<p>
+
+[Hint: This isn't as hard as it sounds. It's very nearly just a matter
+of passing the sorted output of SCORE-ALIGNMENT -- that is, the sorted
+list of cross-alignments -- into the thing you've just written above!]
+
+<p><hr></p>
+
+3. What aspects of this tutorial could be improved? Does it fit well with
+the previous tutorials? Does it need something introduced before hand
+that we failed to introduce? Any typos or confusing parts? Were the
+exercises useful? Any other feedback?
+
+<p><hr><p>
+<p><hr><p>
+<i>Copyright 2006 by The BioBike Team (contact <a href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>)</i>
+<p><p>

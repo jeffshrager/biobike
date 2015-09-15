@@ -1,0 +1,2736 @@
+;;;; -*- mode: Lisp; Syntax: Common-Lisp; Package: bbi; -*-
+
+(IN-PACKAGE :bbi)
+
+; ========= LEVEL II ===========
+
+;;; Some of the code that used to be in this file is now in 
+;;; level-2-aux.lisp -- JP
+
+; ******* EXPORTED FUNCTIONS *******
+
+;;; ================ TYPE CONVERSIONS AND CHECKS ==================
+
+(DEFINE-MACRO Convert
+   SUMMARY "Converts from one form to another"
+   REQUIRED ((EACH) entity (TO) type)
+   FLAG if-possible
+   PUBLIC
+   BODY
+   `(convert-aux ,entity ',type ,each ,if-possible)
+   )
+
+
+(DEFINE-FUNCTION (Is-DNA-sequence? Is-DNA-sequence)
+  SUMMARY "Determines whether arguments are legal DNA sequences"
+  REQUIRED string
+    TYPE string = (or labeled-sequence String)
+  FLAG Extended
+; FLAGS (Extended Extended-alphabet) = NIL 
+  RETURNS Boolean
+  MAP string
+  PUBLIC
+  BODY
+  (when (typep string 'bbi::labeled-sequence)
+    (setf string (labeled-sequence-sequence string)))
+  (SYMBOL= 'DNA (BB-SEQUENCE-TYPE-OF string extended)))
+
+(DEFINE-FUNCTION (Is-list? Is-list)
+  SUMMARY "Determines whether arguments are lists"
+  REQUIRED ((EACH) list?)
+  FLAG NIL-OK
+  RETURNS (OR Boolean List)
+  PUBLIC
+  BODY
+  (is-list?-aux each list? nil-ok))
+
+(DEFINE-FUNCTION Is-NIL?
+  REQUIRED ((EACH) entity)
+  BODY
+    (COND
+       ((AND each (IS-NON-NIL-LIST? entity))
+          (MAPCAR 'NULL entity))
+       (each
+          (ERROR "EACH specified in IS-NIL?, but '~A' is not a list"
+             entity))
+       (T (NULL entity)))
+ )
+       
+
+(DEFINE-FUNCTION (Is-number? Is-number)
+  SUMMARY "Determines whether arguments are numbers"
+  REQUIRED number?
+  RETURNS Boolean
+  PUBLIC
+  BODY
+    (NUMBERP number?))
+
+(DEFINE-FUNCTION 
+ (Is-protein-sequence? Is-protein-sequence 
+                       Is-amino-acid-sequence? Is-amino-acid-sequence)
+ SUMMARY "Determines whether arguments are legal protein sequences"
+ REQUIRED string
+ TYPE string = (or labeled-sequence String)
+ FLAG Extended
+; FLAGS (Extended Extended-alphabet) = NIL 
+ RETURNS Boolean
+ MAP string
+ PUBLIC
+ BODY
+ (when (typep string 'bbi::labeled-sequence)
+   (setf string (labeled-sequence-sequence string)))
+ (SYMBOL= 'PROTEIN (BB-SEQUENCE-TYPE-OF string extended)))
+
+(DEFINE-FUNCTION (Is-RNA-sequence? Is-RNA-sequence)
+  SUMMARY "Determines whether arguments are legal RNA sequences"
+  REQUIRED string
+    TYPE string = (or labeled-sequence String)
+  FLAG Extended
+; FLAGS (Extended Extended-alphabet) = NIL 
+  RETURNS Boolean
+  MAP string
+  PUBLIC
+  BODY
+  (when (typep string 'bbi::labeled-sequence)
+    (setf string (labeled-sequence-sequence string)))
+  (SYMBOL= 'RNA (BB-SEQUENCE-TYPE-OF string extended)))
+
+(DEFINE-FUNCTION (Is-string? Is-string)
+  SUMMARY "Determines whether arguments are strings"
+  REQUIRED ((EACH) string?)
+  RETURNS (OR Boolean List)
+  PUBLIC
+  BODY
+  (when (typep string? 'bbi::labeled-sequence)
+    (setf string? (labeled-sequence-sequence string?)))
+  (without-code-walker
+    (IF each 
+        (Is-X-map 'STRINGP string?)  ; string? must be a list
+      (STRINGP string?))))
+
+(DEFINE-FUNCTION (Is-table? Is-table)
+  SUMMARY "Determines whether arguments are tables"
+  REQUIRED table?
+  RETURNS Boolean
+  PUBLIC
+  BODY
+  (TYPEP table? 'utilities::garray))
+
+; ================ TIME-SPACE-USAGE ===================
+(DEFINE-MACRO TIME-SPACE-USAGE
+   SUMMARY "Displays report on time and space used during execution of given form"
+   REQUIRED form
+   BODY
+    `(TIME (LET ((result ,form))
+       (DISPLAY-LINE *newline* *newline*
+          "===== Execution Time, Space Allocation Report ====="
+          *newline* "gc = garbage collection"
+          *newline* "cons cells = bytes used by lists"
+          *newline* "---------")
+       result
+        ))
+)
+
+; ================ RAISE-ERROR ===================
+(DEFINE-FUNCTION Raise-error
+  SUMMARY "Displays error message and stops execution"
+  REQUIRED error-message
+    TYPE error-message = String
+  BODY
+    (ERROR error-message)
+)
+
+; ================ ^ (Exponentiation) ================
+
+(DEFINE-DF-SYNTACTIC-TOKENS ^ to-the)
+
+(DEFINE-FUNCTION ^ 
+  SUMMARY "Raises a number to the given exponent"
+  REQUIRED (base (TO-THE) exponent)
+  TYPE (base exponent) = Number
+  BODY
+  (EXPT base exponent))
+
+; ================ ! (Factorial) =====================
+
+(DEFINE-FUNCTION ! 
+  SUMMARY "Factorial of given number"
+  REQUIRED n
+  TYPE n = Nonnegative-Number
+  CONVERT n FROM Number TO Integer
+  RETURN  Integer
+  BODY 
+  (without-code-walker
+    (reduce '* (loop for i from 2 to n collect i))
+    #+oops
+    (APPLY '* (APPEND f (LOOP FOR i FROM 2 TO n COLLECT i)))
+    ))
+
+;=============== TRIM-BLANKS ==================
+
+(DEFINE-FUNCTION Trim-blanks
+   SUMMARY "Removes spaces from left and/or right"
+   REQUIRED string
+      TYPE string = (or labeled-sequence String)
+   FLAG left
+   FLAG right
+   MAP string
+   BODY
+   (when (typep string 'bbi::labeled-sequence)
+     (setf string (labeled-sequence-sequence string)))
+   (BB-TRIM-BLANKS string :LEFT left :RIGHT right))
+
+; ================ TRIM =====================
+
+(DEFINE-FUNCTION Trim
+  SUMMARY "Removes spaces (or other characters) from left and/or right"
+  ;; could be made faster by conditionally calling TRIM-BLANKS
+  REQUIRED string
+  TYPE string = (or labeled-sequence String)
+  KEYWORD cutting
+  TYPE cutting = (OR NULL String)
+  FLAG left
+  FLAG right
+  MAP string
+  INITIALIZE pattern = " "
+  BODY
+  (trim-aux string cutting left right pattern)
+  )
+
+; ================ ADD-SET ==============
+
+(DEFINE-DF-SYNTACTIC-TOKENS Add-set and)
+
+(DEFINE-FUNCTION (Add-set Add-sets)
+  SUMMARY "Add elements to a set"
+  REQUIRED (set (AND BY TO) set-or-item)
+  TYPE set = List
+  FLAG case-sensitive
+  RETURNS List
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE by to and)
+    (UNION set (ENSURE-LIST set-or-item)
+           :TEST (LAMBDA (x y) 
+                   (BB-SAME x y :CASE-SENSITIVE case-sensitive)))))
+
+; ================ Permutations and Combinations ==============
+
+; ============ PERMUTATIONS-OF =============
+(DEFINE-FUNCTION Permutations-of
+  SUMMARY "Generates all permutations of a given alphabet or list of an optionally specified length"
+  REQUIRED (list-or-string)
+    TYPE list-or-string = (OR string list labeled-sequence)
+    CONVERT list-or-string FROM labeled-sequence TO string
+  FLAG AS-STRING
+  FLAG AS-LIST
+  FLAG I-mean-it
+ ;FLAG alphabetized
+  FLAG with-repetition
+  KEYWORD choosing
+    TYPE choosing = (OR Positive-number NULL)
+    CONVERT choosing FROM number to integer
+  INITIALIZE result = NIL
+  INITIALIZE alphabet-length = (LENGTH list-or-string)
+  INITIALIZE bytes-per-item = (/ (BYTE-COUNT-OF list-or-string) alphabet-length)
+  INITIALIZE byte-count = -1
+  PUBLIC
+  BODY
+    (ERROR-IF-MORE-THAN-ONE as-list as-string)
+    (SETF choosing (OR choosing alphabet-length))
+    (IF (> choosing alphabet-length)
+        (ERR+ 
+           problem "The value for CHOOSING (~A) cannot exceed the length of the argument (~A)."
+           help~a
+           format-args choosing alphabet-length 'PERMUTATIONS-OF))
+    (SETF byte-count (* bytes-per-item 
+                       (PERMUTATION-COUNT-OF-aux alphabet-length choosing with-repetition)))
+    (CHECK-BYTE-LIMIT byte-count I-mean-it 'PERMUTATIONS-OF)
+    (SETF result
+      (IF (LISTP list-or-string)
+          (PERMUTE-LIST list-or-string choosing with-repetition)
+          (PERMUTE-STRING list-or-string choosing with-repetition)))
+    (COND
+      ((AND AS-LIST (NOT (LISTP list-or-string)))
+            (MAPCAR (LAMBDA (x)(BB-SPLIT x)) result))
+      ((AND AS-STRING (LISTP list-or-string))
+            (MAPCAR (LAMBDA (x) (STRING+-JOIN x "")) result))
+      (T result))
+)
+
+; ============ COMBINATIONS-OF =============
+(DEFINE-DF-SYNTACTIC-TOKENS BBL:Combinations-of choosing)
+(DEFINE-FUNCTION BBL:Combinations-of
+  SUMMARY "Generates all combinations of a given alphabet or list of a specified length"
+  REQUIRED (list-or-string (CHOOSING) length)
+    TYPE list-or-string = (OR string list labeled-sequence)
+    CONVERT list-or-string FROM labeled-sequence TO string
+   ;TYPE length = (OR Nonnegative-number NULL)
+   ;CONVERT length FROM number to integer
+      ;For some mysterious reason, keeping this type check prevents lists
+      ;from being entered in VPL, even though MAP length is present
+  FLAG AS-STRING
+  FLAG AS-LIST
+  FLAG I-mean-it
+ ;FLAG alphabetized
+ ;FLAG with-repetition
+  MAP length
+  INITIALIZE result = NIL
+  INITIALIZE alphabet-length = (LENGTH list-or-string)
+  INITIALIZE bytes-per-item = (/ (BYTE-COUNT-OF list-or-string) alphabet-length)
+  INITIALIZE byte-count = -1
+  PUBLIC
+  BODY
+    (ERROR-IF-MORE-THAN-ONE as-list as-string)
+    ; Delete next two forms if TYPE/MAP incompatibility is ever resolved
+    (IF (NOT (IS-NONNEGATIVE? length))
+        (ERR+
+           problem "length (~A) must be a number greater or equal to 0"
+           help~a
+           format-args length 'COMBINATIONS-OF)
+    (SETF length (ROUND length)))
+    (IF (> length alphabet-length)
+        (ERR+ 
+           problem "The value of CHOOSING (~A) cannot exceed the length of the argument (~A)."
+           help~a
+           format-args length alphabet-length 'COMBINATIONS-OF))
+    (SETF byte-count (* bytes-per-item 
+                       (UTIL::COMBINATIONS-OF alphabet-length length)))
+    (CHECK-BYTE-LIMIT byte-count I-mean-it 'COMBINATIONS-OF)
+    (SETF result
+      (IF (LISTP list-or-string)
+          (COMBINE-LIST list-or-string length)
+          (COMBINE-STRING list-or-string length)))
+    (COND
+      ((AND AS-LIST (NOT (LISTP list-or-string)))
+            (MAPCAR (LAMBDA (x)(BB-SPLIT x)) result))
+      ((AND AS-STRING (LISTP list-or-string))
+            (MAPCAR (LAMBDA (x) (STRING+-JOIN x "")) result))
+      (T result))
+)
+
+; ============ COMBINATION-COUNTS-OF =============
+(DEFINE-DF-SYNTACTIC-TOKENS Combination-counts-of choosing)
+(DEFINE-FUNCTION Combination-counts-of 
+  SUMMARY "Counts all combinations of a given alphabet or list of a specified length"
+  REQUIRED (n (CHOOSING) k)
+    TYPE n = Positive-integer
+   ;TYPE k = Nonnegative-integer
+      ;For some mysterious reason, keeping this type check prevents lists
+      ;from being entered in VPL, even though MAP k is present
+   ;FLAG with-repetition
+  MAP k
+  PUBLIC
+  BODY
+    ; Delete next two forms if TYPE/MAP incompatibility is ever resolved
+    (IF (NOT (IS-NONNEGATIVE? k))
+        (ERR+
+           problem "k (~A) must be a number greater or equal to 0"
+           help~a
+           format-args k 'COMBINATION-COUNTS-OF)
+    (SETF k (ROUND k)))
+    (IF (> k n)
+        (ERR+ 
+           problem "k (~A) cannot exceed n (~A)."
+           help~a
+           format-args k n 'COMBINATION-COUNTS-OF))
+    (utils::COMBINATIONS-OF n k)
+)
+
+; ============ PERMUTATION-COUNTS-OF =============
+(DEFINE-DF-SYNTACTIC-TOKENS Permutation-counts-of choosing)
+(DEFINE-FUNCTION Permutation-counts-of 
+  SUMMARY "Counts all combinations of a given alphabet or list of a specified length"
+  REQUIRED (n)
+    TYPE n = Positive-integer
+  KEYWORD choosing = n
+    TYPE choosing = (OR Positive-number NULL)
+    CONVERT choosing FROM number to integer
+  FLAG with-repetition
+  PUBLIC
+  BODY
+   ; (SETF choosing (OR choosing n))
+    (IF (> choosing n)
+        (ERR+ 
+           problem "The value of CHOOSING (~A) cannot exceed n (~A)."
+           help~a
+           format-args choosing n 'PERMUTATION-COUNTS-OF))
+    (PERMUTATION-COUNT-OF-aux n choosing with-repetition)
+)    
+
+; ================ ALL-STRINGS / DNA-SEQUENCES / PROTEIN-SEQUENCES ==============
+
+(DEFINE-DF-SYNTACTIC-TOKENS All-strings of-length using)
+(DEFINE-FUNCTION All-strings
+  SUMMARY "Generates all strings of a specified length given an alphabet"
+  REQUIRED ((OF-LENGTH) length (USING) alphabet)
+    ; TYPE length = Positive-number
+    ; CONVERT length FROM number to integer
+    TYPE alphabet = String
+  FLAG I-mean-it
+  MAP length
+  PUBLIC
+  INITIALIZE byte-count = 0
+  PUBLIC
+  BODY
+    (IF (NOT (IS-NONNEGATIVE? length))
+        (ERR+
+           problem "length (~A) must be a number greater or equal to 0"
+           help~a
+           format-args length 'COMBINATIONS-OF)
+    (SETF length (ROUND length)))
+    (SETF byte-count (EXPT (LENGTH alphabet) length))
+    (CHECK-BYTE-LIMIT byte-count I-mean-it 'ALL-DNA-SEQUENCES)
+    (ALL-STRINGS-OF-LENGTH alphabet length :AS-ODOMETER T)
+)
+
+; ================ ALL-DNA/PROTEIN-SEQUENCES ==============
+
+(DEFINE-DF-SYNTACTIC-TOKENS All-DNA-sequences of-length)
+(DEFINE-FUNCTION All-DNA-sequences
+  SUMMARY "Generates all oligomeric DNA sequences of a specified length"
+  REQUIRED ((OF-LENGTH) length)
+    TYPE length = Positive-number
+    CONVERT length FROM number to integer
+  FLAG I-mean-it
+  MAP length
+  PUBLIC
+  INITIALIZE alphabet = (STRING-JOIN *nucleotides* "")
+  INITIALIZE byte-count = (EXPT (LENGTH alphabet) length)
+  PUBLIC
+  BODY
+    (CHECK-BYTE-LIMIT byte-count I-mean-it 'ALL-DNA-SEQUENCES)
+    (ALL-STRINGS-OF-LENGTH alphabet length :AS-ODOMETER T)
+)
+
+(DEFINE-DF-SYNTACTIC-TOKENS All-protein-sequences of-length)
+(DEFINE-FUNCTION All-protein-sequences
+  SUMMARY "Generates all oligomeric protein sequences of a specified length"
+  REQUIRED ((OF-LENGTH) length)
+    TYPE length = Positive-number
+    CONVERT length FROM number to integer
+  FLAG I-mean-it
+  MAP length
+  PUBLIC
+  INITIALIZE alphabet = (STRING-JOIN *amino-acids* "")
+  INITIALIZE byte-count = (EXPT (LENGTH alphabet) length)
+  BODY
+    (CHECK-BYTE-LIMIT byte-count I-mean-it 'ALL-PROTEIN-SEQUENCES)
+    (ALL-STRINGS-OF-LENGTH alphabet length :AS-ODOMETER T)
+)
+
+; ================== NEW-TABLE ===================
+
+(DEFINE-FUNCTION New-table
+  SUMMARY "Creates a table according to your specifications"
+  REQUIRED specs
+  TYPE specs = List
+  KEYWORD (Initialize Init Initialized Initialize-to) = NIL
+  KEYWORD Labeled = nil 
+  TYPE Labeled = (or symbol string) 
+  FLAG Not-adjustable
+  RETURNS UTILITIES::GArray
+  PUBLIC
+  BODY
+  (without-code-walker
+    (let ((table (new-table-aux specs Initialize not-adjustable)))
+      (when labeled (setf (utils::garray-named table) (string labeled)))
+      table
+      )))
+
+(DEFMACRO Table-format (&REST arguments)
+   `(NEW-TABLE ,@arguments))
+
+;; ====================== ALL-SAME ====================
+
+(DEFINE-FUNCTION All-same 
+   SUMMARY "Returns true if all elements in the list have the same value"
+   REQUIRED thing
+     TYPE thing = (or labeled-sequence List)
+   FLAG case-sensitive
+   INITIALIZE first = (FIRST thing)
+   BODY
+   (all-same-aux thing case-sensitive first)
+   )
+
+;; ====================== ALL-TRUE ====================
+
+(DEFINE-FUNCTION (All-True None-false None-NIL)
+  SUMMARY "Returns TRUE (T) if all of the arguments are true; otherwise returns FALSE (NIL) "
+  REQUIRED arguments
+    TYPE arguments = (or labeled-sequence List)
+  FLAG in-complex-list
+  RETURNS (OR T Null)
+  BODY
+  (when (typep arguments 'bbi::labeled-sequence)
+     (setf arguments (bbi::labeled-sequence-sequence arguments)))
+  (without-code-walker
+    (ALL-TRUE-aux arguments :IN-COMPLEX-LIST in-complex-list)
+))
+
+;; ===================== ALL-FALSE ===================
+
+(DEFINE-FUNCTION (All-False All-NIL None-true)
+  SUMMARY "Returns TRUE (T) if all of the arguments are NIL; otherwise returns FALSE (NIL) "
+  REQUIRED arguments
+    TYPE arguments = (or labeled-sequence List) 
+  FLAG in-complex-list
+  RETURNS (OR T Null)
+  BODY
+  (when (typep arguments 'bbi::labeled-sequence)
+     (setf arguments (bbi::labeled-sequence-sequence arguments)))
+  (without-code-walker
+    (ALL-FALSE-aux arguments :IN-COMPLEX-LIST in-complex-list)
+))
+  
+;; ===================== ANY-FALSE ===================
+
+(DEFINE-FUNCTION (Any-False Any-NIL)
+  SUMMARY "Returns TRUE (T) if at least one of the arguments is NIL; otherwise returns FALSE (NIL) "
+  REQUIRED arguments
+    TYPE arguments = (or labeled-sequence List)
+  FLAG in-complex-list
+  RETURNS (OR T Null)
+  BODY
+  (when (typep arguments 'bbi::labeled-sequence)
+     (setf arguments (bbi::labeled-sequence-sequence arguments)))
+  (without-code-walker
+    (ANY-FALSE-aux arguments :IN-COMPLEX-LIST in-complex-list)
+))
+    
+;; ================ ANY-TRUE ===========================
+
+(DEFINE-FUNCTION Any-true 
+  SUMMARY "Returns TRUE (T) if at least one of the arguments is T; otherwise returns FALSE (NIL) "
+  REQUIRED arguments
+    TYPE arguments = (or labeled-sequence List)
+  FLAG in-complex-list
+  RETURNS (OR T Null)
+  BODY
+  (when (typep arguments 'bbi::labeled-sequence)
+     (setf arguments (bbi::labeled-sequence-sequence arguments)))
+  (without-code-walker
+    (ANY-TRUE-aux arguments :IN-COMPLEX-LIST in-complex-list)
+))
+
+; ============= ALPHABET-OF ====================
+
+(DEFINE-FUNCTION Alphabet-of
+  SUMMARY "Returns minimal string of characters contained in input."
+  REQUIRED string-or-list
+  TYPE string-or-list = (OR String List labeled-sequence)
+  RETURNS String
+  BODY
+  (when (typep string-or-list 'bbi::labeled-sequence)
+    (setf string-or-list (bbi::labeled-sequence-sequence string-or-list)))
+  (without-code-walker
+    (let ((hash (make-hash-table :test 'eql)))
+      (loop for sequence in (ensure-list string-or-list)
+            do 
+            (map nil (lambda (elem) (setf (gethash elem hash) t)) sequence))
+      (string-join (mapcar 'string (hash-table-keys hash)) "")
+      )))
+                 
+; ============= REPEAT-FUNCTION ====================
+
+(DEFINE-MACRO Repeat-function
+  SUMMARY 
+  "Applies a function a given number of times and returns a list of results"
+  REQUIRED (function iterations (TIMES))
+    TYPE iterations = Nonnegative-number
+    CONVERT iterations FROM Number TO Integer
+  BODY
+    (IF (AND (SYMBOLP function) (FBOUNDP function))
+       `(BBL::LOOP FOR i FROM 1 TO ,iterations
+              COLLECT (FUNCALL (LAMBDA () (,function))))
+       `(BBL::LOOP FOR i FROM 1 TO ,iterations
+              COLLECT ,function)))
+
+; ============= APPLY-FUNCTION ====================
+
+(DEFMACRO Apply-function (function replacing variables with &REST lists)
+   (DECLARE (IGNORE replacing with))
+  "Applies a function to each element of a list and returns a list of results"
+  ;; force each argument to be a list
+  (LET* ((+display (POSITION '+DISPLAY lists :TEST 'SYMBOL=))
+         (-display (POSITION '-DISPLAY lists :TEST 'SYMBOL=))
+         (result (GENSYM))
+         (display (GENSYM))
+         (code
+           `(LET* ((*bbl-level* (1- (INCREMENT-BBL-LEVEL)))
+                   (,display 
+                       (IF ,+display T
+                          (IF (NOT ,-display)
+                             (BBL-TOPLEVEL?))))
+                   (,result X))
+               (IF ,display (FORWARD-FUNCALL 'DISPLAY-LIST-aux 
+			                  'EACH ,result NIL 3 NIL NIL NIL NIL))
+               ,result))               
+        )
+    (ERROR-IF-MORE-THAN-ONE +display -display)
+    (IF +display
+        (SETF (REF lists (1+ +display)) *unprovided-string*))
+    (IF -display
+        (SETF (REF lists (1+ -display)) *unprovided-string*))
+    (SETF lists (REMOVE *unprovided-string* lists :TEST 'EQUAL))
+    (SETQ lists (mapcar (lambda (list) `(ensure-list ,list)) lists))
+    (COND 
+       ((NOT (LISTP function))
+         (SUBST 
+            `(MAPCAR (LAMBDA (no-variable) (,function no-variable)) ,@lists)
+            'X code :TEST 'SYMBOL=))
+       ((NULL variables)
+         (SUBST 
+            `(MAPCAR (LAMBDA (no-variable) (declare (ignore no-variable)) ,function)
+                         ,@lists)
+            'X code :TEST 'SYMBOL=))
+       ((LISTP variables)
+         (SUBST 
+            `(MAPCAR (LAMBDA (,@variables) ,function) ,@lists)
+            'X code :TEST 'SYMBOL=))
+       (T (SUBST 
+            `(MAPCAR (LAMBDA (,variables) ,function) ,@lists)
+            'X code :TEST 'SYMBOL=)))
+))
+
+; ============= APPLY-FUNCTION-OF ====================
+; deprecated and replaced by APPLY-FUNCTION
+
+(DEFMACRO Apply-function-of (variables eql function to &REST lists)
+   (DECLARE (IGNORE eql to))
+  "Applies a function to each element of a list and returns a list of results"
+    (COND 
+       ((NOT (LISTP function))
+         `(MAPCAR (LAMBDA (no-variable) (,function no-variable)) ,@lists))
+       ((NULL variables)
+         `(MAPCAR (LAMBDA (no-variable) ,function) ,@lists))
+       (T
+         `(MAPCAR (LAMBDA (,@variables) ,function) ,@lists))))
+
+; ============= BBL-VERSION ====================
+
+(DEFINE-FUNCTION (BBL-Version version)
+  SUMMARY "Gives the date of the version of BBL in use"
+  BODY
+   *bbl-time-stamp*)
+
+; ================= BREAK-STRING ==================
+
+(DEFINE-FUNCTION Break-string 
+  SUMMARY "Breaks up a long string into smaller parts"
+  REQUIRED string
+    TYPE string = (or labeled-sequence String)
+  KEYWORD at = 90
+  FLAG exact
+  MAP string
+  PUBLIC
+  BODY
+  (when (typep string 'bbi::labeled-sequence)
+    (setf string (labeled-sequence-sequence string)))
+   (BB-BREAK-STRING string at exact))
+
+;; =================== CODING-GENES-OF ====================
+
+(DEFINE-FUNCTION Coding-Genes-of
+  SUMMARY "Returns those genes that encode proteins" 
+  REQUIRED entity
+  TYPE entity = (OR Gene Protein Contiguous-sequence Organism Null)
+  CONVERT entity FROM protein TO gene
+  MAPTREE entity
+  RETURNS (OR Gene List Null)
+  BODY
+  (without-code-walker
+    (TYPECASE entity
+      (Null NIL)
+      (Gene
+       (IF-TRUE (SLOTV entity #$ENCODES-PROTEIN)
+                THEN entity
+                ELSE nil))
+      (Protein (SLOTV entity #$GENES)) 
+      (Contiguous-sequence
+       (LOOP FOR gene IN (ARRAY-TO-LIST (SLOTV entity #$GENES-SORTED-BY-POSITION))
+             WHEN (SLOTV gene #$ENCODES-PROTEIN)
+             COLLECT gene))
+      (Organism
+       (LOOP FOR gene IN (SLOTV entity #$GENES)
+             WHEN (SLOTV gene #$ENCODES-PROTEIN)
+             COLLECT gene))
+      ;; (Gene-part
+      ;;     (LET ((gene (SLOTV entity #$GENE)))
+      ;;       (IF-TRUE (SLOTV gene #$ENCODES-PROTEIN)
+      ;;           THEN gene
+      ;;           ELSE nil)))
+      )))
+;=================== COG-ID-OF ============
+
+(DEFINE-FUNCTION (cog-id/s-of Cog-ID-of Cog-IDs-of)
+ SUMMARY "Returns the COG ID (if it exists) of given gene or protein"
+ REQUIRED gene-or-protein
+   TYPE gene-or-protein = (OR Gene Protein Null)  
+   CONVERT gene-or-protein FROM protein TO gene
+   MAPTREE gene-or-protein
+ RETURNS (OR String Null)
+ BODY
+   (SLOTV gene-or-protein #$COG-ID))
+        
+;====================== COMMON-ORTHOLOGS-OF ==================
+
+(DEFINE-FUNCTION Common-Orthologs-of
+  SUMMARY "Returns orthologs common to all organisms in the given list"
+  REQUIRED organisms
+  TYPE organisms = Organism-List
+  KEYWORD primary 
+  TYPE primary = (OR Organism NULL)
+  KEYWORD not-in
+  TYPE not-in = (OR Organism-List Organism)
+  FLAG no-display
+  RETURNS List
+  body
+  (common-orthlogs-of-aux organisms primary not-in no-display)
+  )
+
+;; ========== ELEMENT/S-OF ==============
+
+(DEFINE-FUNCTION Element/s-of
+  REQUIRED ((THE-ENTITY EACH) entity item/s)
+    TYPE entity = (OR List Table Frame String labeled-sequence)
+  FLAG -display
+  FLAG +display
+  FLAG +label-entities
+  FLAG +label-items
+  FLAG %%expandable%%
+  INITIALIZE display = NIL
+  INITIALIZE result = NIL
+  BODY
+    (ERROR-IF-MORE-THAN-ONE +display -display)
+    (IF (AND each (NOT (LISTP entity)))
+        (ERR+ problem "EACH option requires that entity is a list"
+              advice "Clear the EACH option or provide a list"))
+     
+    (SETF result
+       (IF each
+           (LOOP FOR sub-entity IN entity
+                 AS items = (ELEMENT/S-OF-turntable sub-entity 
+                                item/s +label-items)
+                 AS entity-label =
+                    (COND
+                       ((NOT +label-entities))
+                       (+label-items (LIST :Entity sub-entity))
+                       (T sub-entity))
+                 DO (IF +label-entities
+                        (SETF items (CONS entity-label items)))
+                 COLLECT items)
+           (LET ((entity-label 
+                    (COND
+                       ((NOT +label-entities))
+                       (+label-items (LIST :Entity entity))
+                       (T entity)))
+                 (items (ELEMENT/S-OF-turntable entity item/s +label-items))
+                 )
+              (IF +label-entities
+                  (CONS entity-label items)
+                  items))))
+    (SETF display
+       (COND
+          (-display NIL)
+          (+display T)
+          ((AND (bbl-toplevel?) (LISTP result)
+                (OR (NOT (IS-SIMPLE-LIST? result))
+                    (> (LENGTH result) 10)))
+                T)
+          (T NIL)))
+     
+    (IF display 
+       (IF each
+           (FOR-EACH sub-result IN result
+               (FORWARD-FUNCALL 'DISPLAY-LIST-aux 
+		           'EACH sub-result NIL 3 NIL NIL NIL NIL)
+               (FORWARD-FUNCALL 'DISPLAY *newline*))
+           (FORWARD-FUNCALL 'DISPLAY-LIST-aux 
+		      'EACH result NIL 3 NIL NIL NIL NIL)))
+    (IF (OR (NOT (LISTP item/s))
+            (AND (IS-SIMPLE-LIST? item/s)
+                 (= (LENGTH result) 1)
+                 (NOT (POSITION '@ item/s :TEST 'SYMBOL=))
+                 (NOT (POSITION @ item/s :TEST 'EQUAL))))
+        (FIRST result) 
+        result)
+)
+
+;; ========== ENCODES-PROTEIN ==============
+
+(DEFINE-FUNCTION (Encodes-protein? Encodes-protein Encode-protein? Encode-protein)
+  SUMMARY "Returns true if the given gene is annotated as encoding a protein"
+  REQUIRED gene
+  TYPE gene = Gene
+  MAP gene
+  RETURNS boolean
+  BODY 
+  (IF gene[.Encodes-protein] T NIL))
+
+; ============= ENTER ====================
+
+(DEFINE-MACRO Enter
+  SUMMARY "Makes available a package of resources related to a tutorial"
+  REQUIRED package
+  PUBLIC
+  BODY
+    (LET* ((package-symbol package)
+           (package-string
+             (TYPECASE package 
+                (String 
+                   (SETF package-symbol (MAKE-SYMBOL package))
+                   (INTERN (STRING-UPCASE package)))                 
+                (Symbol (STRING-DOWNCASE (SYMBOL-NAME package)))
+                (T (ERROR "Package name must be a symbol or a string, not ~A"
+                         package))))
+           (file-name (CONCATENATE 'STRING "BIOL:bike/Tutorials/" 
+                           package-string)))
+     `(PROGN
+        (FORMAT T "~&Entering ~A...~&" ,package-string)
+        (READ-FILE-ENTER-FUNCTIONS ,file-name ',package-symbol)
+        (FORMAT T "~& ~&")
+        (USE-MODULE ',package-symbol))))
+
+; ================ EVERYONES ===================
+
+(DEFINE-MACRO Everyones
+  REQUIRED var
+  FLAG labeled
+  FLAG simplify
+  BODY
+  (LET ((function (IF simplify 'FLATTEN 'IDENTITY)))
+    `(EVERYONES-aux ',var ',function ,labeled)
+  ))
+
+
+; =============== FIT ====================
+(DEFINE-DF-SYNTACTIC-TOKENS Fit into to)
+
+(DEFINE-FUNCTION Fit 
+  SUMMARY "Fits a thing into a prescribed number of columns"
+  RETURNS String
+  REQUIRED (pre-string (INTO TO) columns)
+  KEYWORD With  = " "
+  TYPE with = String
+  KEYWORD If-too-big = NIL
+  TYPE if-too-big = (OR String Null)
+  FLAG Center
+  FLAG Centered
+  FLAG Flush-right
+  FLAG Flush-left
+  INITIALIZE center? = (OR center centered)
+  MAP pre-string
+  PUBLIC
+  BODY
+  (fit-aux pre-string columns with if-too-big center centered
+           flush-right flush-left center?
+           ))
+
+; ============== FORGET ==================
+
+(DEFINE-MACRO Forget
+  ;; Add ability later to forget every symbol
+  ;; Add ability to handle (FORGET {x y z} )
+  SUMMARY "Removes variables or functions"
+  REQUIRED ((EACH-IN) variable-or-function)
+  FLAG the-variable
+  FLAG the-function
+  BODY
+    (COND
+       (each-in
+          `(FORGET-aux  ,variable-or-function T ,the-variable ,the-function))
+       ((LISTP variable-or-function)
+          `(LIST
+                ,@(LOOP FOR vf IN variable-or-function
+                        WHEN (NOT (SYMBOL= vf '%CURLY-LIST%))
+                          COLLECT `(FORGET-aux ',vf NIL 
+                                      ,the-variable ,the-function))))
+       (T `(FORGET-aux ',variable-or-function NIL ,the-variable ,the-function))))
+
+; ============== FORGET-ALL ==================
+
+#+calls-non-existant-function
+(DEFINE-FUNCTION Forget-all
+  SUMMARY "Removes all variables and/or functions"
+  FLAG variables-only
+  FLAG functions-only
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE variables-only functions-only)
+    (COND
+     (variables-only 
+      (FORGET EACH-IN (MY-VARIABLES-OR-FUNCTIONS :VARIABLES? T)))
+     (functions-only 
+      (FORGET EACH-IN (MY-VARIABLES-OR-FUNCTIONS :FUNCTIONS? T)))
+     (T (FORGET EACH-IN (MY-VARIABLES-OR-FUNCTIONS 
+                         :VARIABLES? T :FUNCTIONS? T))))))
+
+; =============== FROM ===================
+(DEFINE-DF-SYNTACTIC-TOKENS From to)
+
+(DEFINE-FUNCTION From
+  SUMMARY "Returns a list of numbers from one value to another"
+  REQUIRED (start (TO) end)
+    TYPE start = (OR Number String Character)
+    TYPE end = (OR Number String Character)
+  KEYWORD By = 1
+    TYPE by = number
+  KEYWORD limit = 10000
+    TYPE limit = Positive-number
+  RETURNS list
+  PUBLIC
+  BODY
+  (from-pre-aux start end by limit)
+  )
+
+;;====================GENE-UPSTREAM-OF========================
+
+(DEFINE-FUNCTION (gene/s-upstream-of GENE-UPSTREAM-OF GENES-UPSTREAM-OF)
+  SUMMARY "Returns gene upstream of given gene"
+  REQUIRED entity
+  TYPE entity = (OR Gene Protein Null)
+  CONVERT entity FROM protein TO gene
+  MAPTREE entity
+  RETURNS (OR Gene Null)
+  BODY
+  (without-code-walker
+   (ETYPECASE entity
+     (Gene (GENE-UPSTREAM-FROM entity))
+     (Null NIL)
+     )))
+
+;;=====================GENE-DOWNSTREAM-OF=====================
+
+(DEFINE-FUNCTION (gene/s-downstream-of GENE-DOWNSTREAM-OF GENES-DOWNSTREAM-OF)
+  SUMMARY "Returns gene downstream of given gene"
+  REQUIRED entity
+  TYPE entity = (OR Gene Protein Null)
+  CONVERT entity FROM Protein TO Gene
+  MAPTREE entity
+  RETURNS (OR Gene Null)
+  BODY
+  (without-code-walker
+    (ETYPECASE entity 
+      (Gene (GENE-DOWNSTREAM-FROM entity))
+      (Null NIL)
+      )))
+
+;;*********************
+
+(DEFINE-FUNCTION (gene/s-left-of GENE-LEFT-OF GENES-LEFT-OF)
+  SUMMARY "Returns gene to left of given gene or coordinate on genetic map"
+  REQUIRED entity
+    TYPE entity = (OR Gene Protein Number Null)
+    CONVERT entity FROM Protein TO Gene
+  MAPTREE entity
+  KEYWORD in
+  TYPE in = (OR Organism Contiguous-Sequence Null)
+  RETURNS (OR Gene Null)
+  PUBLIC
+  INITIALIZE replicon = in
+  BODY
+    (GENE-LEFT-OR-RIGHT-OF entity replicon 'GENE-LEFT-OF))
+
+;;**********************
+
+(DEFINE-FUNCTION (gene/s-right-of GENE-RIGHT-OF GENES-RIGHT-OF)
+  SUMMARY "Returns gene to right of given gene or coordinate on genetic map"
+  REQUIRED entity
+    TYPE entity = (OR Gene Protein Number Null)
+    CONVERT entity FROM Protein TO Gene
+  MAPTREE entity
+  KEYWORD in
+    TYPE in = (OR Organism Contiguous-Sequence Null)
+  RETURNS (OR Gene Null)
+  PUBLIC
+  INITIALIZE replicon = in  
+  BODY
+    (GENE-LEFT-OR-RIGHT-OF entity replicon 'GENE-RIGHT-OF))
+
+
+;; ======================== GENE-OF ======================
+
+(DEFINE-FUNCTION (gene/s-of GENE-OF GENES-OF)
+  SUMMARY "Returns the gene of given organism, replicon, gene, protein"
+  REQUIRED entity
+  TYPE entity = (OR string Gene Protein Organism Contiguous-sequence Null)
+  CONVERT entity FROM Protein TO Gene
+  convert entity from string to frame using string-to-biological-entity
+  MAPTREE entity 
+  KEYWORD from = *unprovided+*
+  KEYWORD to = *unprovided+*
+  KEYWORD length = *unprovided+*
+  TYPE (from to length) = integer
+  CONVERT (from to length) FROM Number TO Integer
+ ; KEYWORD in 
+ ;   TYPE in = (OR Organism Contiguous-sequence null)
+  FLAG wrap
+  FLAG truncate
+  FLAG exclude-overlaps 
+  RETURNS (OR Gene List)
+  PUBLIC
+  body
+  (genes-of-aux entity from to length wrap truncate exclude-overlaps)
+  )
+
+;;================  GENE/S-NAMED  ==================
+
+(DEFINE-FUNCTION (Gene/s-named Gene-named Genes-named)
+  ;; Will not warn if multiple genes with same name!
+  ;; Helpless if annotation is no good!
+   SUMMARY "Converts string name or short name into gene frame"
+   REQUIRED gene-name
+     TYPE gene-name = (OR String Symbol Gene Protein)
+     CONVERT gene-name FROM Symbol TO String
+     ;; changed to make :sframes work.  
+     ;; added *unprovided-list* in bbi-definitions
+   KEYWORD in = *unprovided-list*
+     TYPE in = (OR Organism List)
+   MAP gene-name
+   INITIALIZE search-space 
+     = (UNLESS-PROVIDED in *all-organisms*)
+   INITIALIZE organism-provided = (UNLESS-PROVIDED in NIL)
+   INITIALIZE result = NIL
+   BODY
+   (without-code-walker
+     (COND
+        ((IsFrame? gene-name)
+           (SETF result 
+              (COND
+                 ((TYPEP gene-name 'Gene) gene-name)
+                 ((TYPEP gene-name 'Protein) 
+                     (SLOTV gene-name #$gene ))))
+           (IF (AND result
+                    (MEMBER (SLOTV result #$Organism)
+                            (ENSURE-LIST search-space)))
+               result))
+        ((LISTP search-space)
+           (SETF result
+             (FLATTEN
+               (LOOP FOR organism IN search-space
+                     COLLECT (IF (< (LENGTH search-space) 50)
+					             (BB-GENE-NAMED-GENERAL gene-name organism)
+								 (BB-GENE-NAMED gene-name organism)))))
+           (IF (OR organism-provided (> (LENGTH result) 1))
+               result
+               (FIRST result)))
+        (T (BB-GENE-NAMED-GENERAL gene-name search-space)))))
+
+(define-function (chromosome-named contig-named replicon-named)
+  summary "Returns the contiguous sequence frame from a string or symbol"
+  required contig-name      
+  type contig-name = (or string symbol)
+  convert contig-name from symbol to string  
+  body
+  (lisp:loop named big
+             for organism in bio::*loaded-organisms*
+             as prefix = (#^organism-prefix organism)
+             as fullname = (utils::s+ prefix contig-name)
+             as contigs = (#^contiguous-sequences organism)
+             do
+             (lisp:loop for c in contigs
+                        as fname = (#^fname c)
+                        when (or (lisp:string-equal fname contig-name)
+                                 (lisp:string-equal fname fullname))
+                        do
+                        (return-from big c)
+                        )))
+
+; =============== GREATER-THAN  LESS-THAN ====================
+
+(DEFINE-DF-SYNTACTIC-TOKENS Greater-than vs)
+
+(DEFINE-FUNCTION Greater-than 
+  SUMMARY "Returns true if x is greater than y, for strings or numbers"
+  REQUIRED ((EACH) x (VS) y)
+  FLAG case-sensitive
+  FLAG give-position
+  INITIALIZE x-is-list = (AND x (LISTP x))
+  INITIALIZE y-is-list = (AND y (LISTP y))
+  BODY 
+  (without-code-walker
+    (COND
+     ((AND each x-is-list y-is-list)
+      (LOOP FOR x1 IN x
+            FOR y1 IN y
+            COLLECT (BB-GREATER-THAN x1 y1 :CASE-SENSITIVE? case-sensitive 
+                                     :POSITION? give-position)))
+     ((AND each x-is-list)
+      (LOOP FOR x1 IN x
+            COLLECT (BB-GREATER-THAN x1 y :CASE-SENSITIVE? case-sensitive
+                                     :POSITION? give-position)))
+     ((AND each y-is-list)
+      (LOOP FOR y1 IN y
+            COLLECT (BB-GREATER-THAN x y1 :CASE-SENSITIVE? case-sensitive 
+                                     :POSITION? give-position)))
+     (each (ERROR "EACH option requires that one of the arguments is a list"))
+     (T (BB-GREATER-THAN x y :CASE-SENSITIVE? case-sensitive
+                         :POSITION? give-position)))))
+
+(DEFINE-DF-SYNTACTIC-TOKENS Less-than Vs)
+
+(DEFINE-FUNCTION Less-than 
+  SUMMARY "Returns true if x is less than y, for strings or numbers"
+  REQUIRED ((EACH) x (VS) y)
+  FLAG case-sensitive
+  FLAG give-position
+  INITIALIZE x-is-list = (AND x (LISTP x))
+  INITIALIZE y-is-list = (AND y (LISTP y))
+  BODY 
+  (without-code-walker
+    (COND
+     ((AND each x-is-list y-is-list)
+      (LOOP FOR x1 IN x
+            FOR y1 IN y
+            COLLECT (BB-LESS-THAN x1 y1 :CASE-SENSITIVE? case-sensitive 
+                                  :POSITION? give-position)))
+     ((AND each x-is-list)
+      (LOOP FOR x1 IN x
+            COLLECT (BB-LESS-THAN x1 y :CASE-SENSITIVE? case-sensitive
+                                  :POSITION? give-position)))
+     ((AND each y-is-list)
+      (LOOP FOR y1 IN y
+            COLLECT (BB-LESS-THAN x y1 :CASE-SENSITIVE? case-sensitive 
+                                  :POSITION? give-position)))
+     (each (ERROR "EACH option requires that one of the arguments is a list"))
+     (T (BB-LESS-THAN x y :CASE-SENSITIVE? case-sensitive
+                      :POSITION? give-position)))))
+
+; =============== INTERSECTION-OF UNION-OF ====================
+
+(DEFMACRO Intersection-of (&REST arguments)
+  "Returns intersection of given lists"
+  (setf 
+   arguments 
+   (loop for arg in arguments 
+     collect
+     (if (typep arg 'bbi::labeled-sequence)
+         (bbi::labeled-sequence-sequence arg)
+       arg
+       )))
+  `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	 (*SET-OPERATION-OF 'INTERSECTION (LIST ,@arguments))))
+
+(DEFMACRO Union-of (&REST arguments)
+  "Returns union of given lists"
+  (setf 
+   arguments 
+   (loop for arg in arguments 
+     collect
+     (if (typep arg 'bbi::labeled-sequence)
+         (bbi::labeled-sequence-sequence arg)
+       arg
+       )))
+  `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	 (*SET-OPERATION-OF 'UNION (LIST ,@arguments))))
+
+; =============== INVERSION-OF ====================
+
+;; The documentation for this function says it only complements
+;; A, C, G, and T, not any extended alphabetic characters
+
+(DEFINE-FUNCTION (Inversion-of Inversions-of
+                   opposite-strand/s-of Opposite-Strand-of Opposite-Strands-of)
+  SUMMARY "Reverse and complement sequence"
+  REQUIRED entity
+  TYPE entity = (OR String Symbol Gene Protein Contiguous-sequence 
+                    Organism labeled-sequence Null labeled-sequence)
+  CONVERT entity FROM protein TO gene 
+  MAPTREE entity
+  BODY
+  (when (typep entity 'bbi::labeled-sequence)
+   (setf entity (labeled-sequence-sequence entity)))
+  (without-code-walker
+    (LET* ((sequence
+            (TYPECASE entity
+              (String entity)
+              (Symbol (SYMBOL-NAME entity))
+              ((OR Gene Contiguous-sequence)
+               (EXTRACT-SEQUENCE entity))
+              (Labeled-sequence (LABELED-SEQUENCE-SEQUENCE entity))
+              (Protein (EXTRACT-SEQUENCE (SLOTV #$Gene entity)))
+              (Organism 
+               (LOOP FOR replicon IN (SLOTV entity #$Contiguous-sequences)
+                     COLLECT (EXTRACT-SEQUENCE replicon)))
+              (T NIL)))
+           (inversion 
+            (bioutils::NCOMPLEMENT-BASE-PAIRS (COPY-SEQ sequence))))
+      (IF-FALSE (TYPEP entity 'labeled-sequence)
+                THEN inversion
+                ELSE (LET* ((label (LABELED-SEQUENCE-LABEL entity))
+                            (inv-label (S+ label "-R")))
+                       (MAKE-LABELED-SEQUENCE 
+                        :LABEL inv-label :SEQUENCE inversion))))))
+
+; =============== IS-SUBSET-OF? ====================
+#|
+(DEFINE-FUNCTION IS-SUBSET? 
+  REQUIRED (set1 set2)
+    TYPE (set1 set2) = (OR LIST STRING)
+  FLAG case-insensitive
+  BODY
+   (BB-IS-SUBSET? set1 set2 :CASE-INSENSITIVE case-insensitive)
+)
+|#
+; =============== JOIN ====================
+
+(DEFUN BB-Join (given-items &KEY by as-string as-list nil-ok)
+  (setf 
+   given-items
+   (loop for arg in given-items
+         collect
+         (if (typep arg 'bbi::labeled-sequence)
+             (bbi::labeled-sequence-sequence arg)
+           arg
+           )))
+  (without-code-walker
+    (LET* ((items 
+            (IF (AND (LISTP given-items[1]) (= (LENGTH given-items) 1))
+                (FIRST given-items)
+              given-items))
+           (string? 
+            (COND
+             (as-list NIL)
+             (as-string T)
+             ;; Cannot mapcar using a BBL function defined with define-function! 
+             (T (ALL-FALSE (MAPCAR (lambda (x) (IS-LIST? x)) items))))))
+      
+      (COND
+       ((NULL items) NIL)
+       ((AND string? by)
+        (STRING-JOIN+  ; *** WHY IS THIS NECESSARY? WHY NOT JUST (STRING-JOIN+ (FLAT items) by)?
+               (LOOP FOR item IN (FLAT items) ; (FLATTEN items)
+                     FOR i FROM 1
+                     WHEN (= i 1)
+                     APPEND {item}
+                     WHEN (> i 1)
+                     APPEND {by item})
+               ""
+               )) 
+       (string? (STRING-JOIN+ (FLAT items) "")) ; (((FLATTEN items) ""))
+       (by (LOOP FOR pre-item IN items
+                 FOR i FROM 1
+				 AS item = (OR pre-item (IF nil-ok '(NIL)))
+                 WHEN (= i 1)
+                 APPEND (ENSURE-LIST item)
+                 WHEN (> i 1)
+                 APPEND (APPEND {by} (ENSURE-LIST item))))
+       (T (LOOP FOR pre-item IN items
+                AS item = (OR pre-item (IF nil-ok '(NIL)))
+                APPEND (ENSURE-LIST item)))))))
+
+;;;; #+obsolete
+;;;; ;; moved to 1level.lisp near the bottom.
+;;;; (DEFMACRO Join (&REST args)
+;;;;   "Joins strings or lists together"
+;;;;   (LET* ((length (LENGTH args))
+;;;;          (by-value NIL)
+;;;;          (by-position (POSITION 'BY args :TEST 'SYMBOL=))
+;;;;          (as-string-position (POSITION 'AS-STRING args :TEST 'SYMBOL=))
+;;;;          (as-list-position (POSITION 'AS-LIST args :TEST 'SYMBOL=))
+;;;; 		 (nil-ok-position (POSITION 'NIL-OK args :TEST 'SYMBOL=))
+;;;;          (as-list) (as-string) (nil-ok))
+
+;;;;     (IF-TRUE as-string-position
+;;;;         THEN (SETF as-string T)
+;;;;              (SETF args[(1+ as-string-position)] *unprovided-string*))
+;;;;     (IF-TRUE as-list-position
+;;;;         THEN (SETF as-list T)
+;;;;              (SETF args[(1+ as-list-position)] *unprovided-string*))
+;;;;     (IF-TRUE nil-ok-position
+;;;;         THEN (SETF nil-ok T)
+;;;;              (SETF args[(1+ nil-ok-position)] *unprovided-string*))
+;;;;     (ERROR-IF-MORE-THAN-ONE as-string as-list)
+;;;;     (IF-TRUE (AND by-position (< (1+ by-position) length))
+;;;;         THEN (SETF by-value args[(+ by-position 2)])
+;;;;              (SETF args[(+ by-position 1)(+ by-position 2)]
+;;;;                 {*unprovided-string* *unprovided-string*}))
+;;;;     (SETF args (REMOVE *unprovided-string* args :TEST 'EQUAL))
+;;;;    `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+;;;; 	 (BB-JOIN (LIST ,@args) :BY ,by-value :AS-STRING ,as-string 
+;;;; 	      :AS-LIST ,as-list :NIL-OK ,nil-ok))))
+
+
+;===================== LABELED-SEQUENCE-OF ==============
+
+(DEFINE-DF-SYNTACTIC-TOKENS Labeled-sequence-from Sequence Labeled)
+(DEFINE-FUNCTION Labeled-sequence-from
+  SUMMARY "Creates a labeled sequence, given a sequence and a label"
+  REQUIRED ((SEQUENCE) sequence-string (LABELED) label-string)
+  TYPE sequence-string = (OR String Gene Protein Contiguous-sequence)
+  TYPE label-string = String
+  MAP (sequence-string label-string)
+  BODY
+  (without-code-walker
+    (TYPECASE sequence-string
+      (String NIL)
+      ((OR Gene Protein Contiguous-sequence)
+       (SETF sequence-string (EXTRACT-SEQUENCE sequence-string))))
+    (MAKE-LABELED-SEQUENCE :SEQUENCE sequence-string :LABEL label-string)))
+
+;===================== LABELS-OF ==============
+
+(DEFINE-FUNCTION Labels-of 
+  SUMMARY "Returns list of labels used by a table"
+  REQUIRED table
+    TYPE table = Table
+  KEYWORD dimension = *unprovided+*
+    TYPE dimension = Positive-integer
+  MAP table
+  BODY
+  (without-code-walker
+    (LET* ((rank (GARRAY-RANK table))
+           (labels1 (SORT (GARRAY-COMPONENT-INDICES table) 'BB-LESS-THAN))
+           (labels2 
+            (IF (> rank 1) 
+                (SORT (LOOP FOR label IN labels1
+                            WITH list = NIL
+                            DO
+                            (SETF list 
+                                  (UNION list 
+                                         (GARRAY-COMPONENT-INDICES table label)
+                                         :TEST 'EQUAL))
+                            FINALLY (RETURN list))
+                      'BB-LESS-THAN))))
+      (COND
+       ((UNPROVIDED dimension)
+        (LIST labels1 labels2))
+       ((= dimension 1) labels1)
+       ((= dimension 2) labels2)
+       (T (ERROR "Doesn't work yet with dimensions greater than 2, sorry."))))))
+
+; ================ Log10 =====================
+
+(DEFINE-FUNCTION Log10
+ SUMMARY "Returns log base 10 of given number "
+ REQUIRED number
+   TYPE number = (OR Number Null)
+   MAPTREE number
+ RETURNS Number
+ BODY
+  (without-code-walker
+    (LET ((function 'LOG10))
+      (IF (NOT (> number 0))
+          (ERR+ problem "The value '~A' is not valid with '~A'."
+                advice  "The argument's value of '~A' must be"
+                indent  "a positive number."
+                help~A
+                format-args number function function *df-name*)
+        (LOG number 10)))))
+
+; ================ Log2 =====================
+
+(DEFINE-FUNCTION Log2
+  SUMMARY "Returns log base 2 of given number "
+  REQUIRED number
+  TYPE number = (OR Number Null)
+  MAPTREE number
+  RETURNS Number
+  BODY
+  (without-code-walker
+    (LET ((function 'LOG2))
+      (IF (NOT (> number 0))
+          (ERR+ problem "The value '~A' is not valid with '~A'."
+                advice  "The argument's value of '~A' must be"
+                indent  "a positive number."
+                help~A
+                format-args number function function *df-name*)
+        (LOG number 2)))))
+      
+;=============== MW-OF ============= 
+
+(DEFINE-FUNCTION (mw/s-of MW-of MWs-of)
+  SUMMARY "Calculates molecular weight of amino acid sequence"
+  REQUIRED entity
+    TYPE entity = (OR Gene Protein String Labeled-sequence Null)
+  MAP entity
+  FLAG nowarnings
+  FLAG sequence
+  FLAG amino-acid
+  FLAG No-sequence->error
+  FLAG No-sequence->0
+  FLAG No-sequence->ignore
+  FLAG labeled
+  INITIALIZE label = NIL
+  RETURNS  (OR Number Null list)
+  BODY
+  (mw-of-aux
+   entity nowarnings sequence amino-acid No-sequence->error 
+   No-sequence->0 No-sequence->ignore labeled label)
+  )
+
+
+
+; ================ MY-FUNCTIONS =====================
+
+(DEFINE-FUNCTION My-functions
+  SUMMARY "Returns a list of all user-defined functions"
+  BODY
+  (my-functions-aux))
+
+; ================= MY-SESSION ======================
+
+(DEFINE-FUNCTION My-session
+  SUMMARY "Gives information about user's session"
+  INITIALIZE width = 25
+  INITIALIZE raw-start 
+    =  (bbi::make-timestamp-string  :universal-time
+               wb::*system-startup-time* :mode :STDFULL) ; :yyyymmddhhmm)
+  INITIALIZE start = 
+    (JOIN raw-start[1 -> 4] "-" raw-start[5 6] "-"
+          raw-start[7 8] " " raw-start [9 10] ":"
+          raw-start[11 12])
+  BODY
+    (MAPCAR (LAMBDA (x) (FORMAT T "~A" x))
+      (LIST
+       (FIT "Your user ID:" INTO width FLUSH-RIGHT) "  "
+            *username* *newline*
+       (FIT "Your session ID:" INTO width FLUSH-RIGHT) "  "
+            *sessionid* *newline*
+       (FIT "Your active sessions:" INTO width FLUSH-RIGHT) "  "
+            (LENGTH (wb::USER-SESSION-INFO *username*)) *newline*
+       (FIT "Active users:" INTO width FLUSH-RIGHT) "  "
+            (- (LENGTH wb::*logins*) 2) *newline*
+       (FIT "Users in last hour:" INTO width FLUSH-RIGHT) "  "
+            (FOR-EACH user IN wb::*logins*
+                 INITIALIZE now = (GET-UNIVERSAL-TIME)
+                 INITIALIZE recent = 3600
+                 AS last = (wb::LAST-EXECUTION-TIME user)      
+                 WHEN (< (- now last) recent)
+                   COUNT user)
+            *newline*
+       (FIT "System started:" INTO width FLUSH-RIGHT) "  "
+            start *newline*
+       (FIT "BBL version:" INTO width FLUSH-RIGHT) "  "
+            *bbl-time-stamp* *newline*
+       (FIT "VPL version:" INTO width FLUSH-RIGHT) "  "
+            cl-user::*vpl-version* 
+      ))
+  NIL)
+
+; ================ NAME-OF =====================
+
+(DEFINE-FUNCTION (Name-of Names-of)
+  SUMMARY "Provides simple name of entity"
+  REQUIRED entity
+  TYPE entity = (OR gene protein contiguous-sequence 
+                    organism labeled-sequence string)
+  FLAG short
+  MAP entity
+  RETURNS String
+  PUBLIC
+  BODY
+  (name-of-aux entity short)
+  )
+
+; ================ NICKNAMES-OF =====================
+
+(DEFINE-FUNCTION Nicknames-of
+  SUMMARY "Returns nicknames of given organism"
+  REQUIRED entity
+    TYPE entity = (OR Organism Null)
+    MAPTREE entity
+  RETURNS  (OR List Null)
+  BODY
+    (SLOTV entity #$NICKNAMES))
+              
+; =============== NONCODING-GENES-OF ===============
+
+(DEFINE-FUNCTION Noncoding-Genes-of
+  SUMMARY "Returns those genes that do not encode proteins"
+  REQUIRED entity
+  TYPE entity = (OR Gene Contiguous-sequence Organism Null)
+  MAPTREE entity 
+  RETURNS (OR Gene List Null) 
+  BODY
+  (without-code-walker
+    (TYPECASE entity
+      (Null NIL)
+      (Gene
+       (IF-TRUE (SLOTV entity #$ENCODES-PROTEIN)
+                THEN NIL
+                ELSE entity))
+      (Contiguous-sequence
+       (LOOP FOR gene IN (ARRAY-TO-LIST (SLOTV entity #$GENES-SORTED-BY-POSITION))
+             WHEN (NOT (SLOTV gene #$ENCODES-PROTEIN))
+             COLLECT gene))
+      (Organism
+       (SLOTV entity #$NONCODING-GENES)))))
+
+;; ================ NUCLEOTIDE-DISTANCE ==============
+
+(DEFINE-DF-SYNTACTIC-TOKENS Nucleotide-distance from to in)
+
+(DEFINE-FUNCTION 
+ Nucleotide-distance 
+ SUMMARY
+ "Calculates number of nucleotides between coordinates of a possibly circular sequence"
+ REQUIRED ((FROM) start (TO) end (IN) contig)
+ TYPE start = number
+ CONVERT start FROM number TO integer
+ TYPE end = number
+ CONVERT end FROM number TO integer
+ TYPE contig = (OR contiguous-sequence organism)
+ FLAG Truncate
+ FLAG Wrap
+ RETURNS integer
+ PUBLIC
+ BODY
+ (nucleotide-distance-aux start end contig truncate wrap)
+ )
+
+;; ========================= OFFICIAL-PREFIX ===============
+
+(DEFINE-FUNCTION Official-Prefix
+  SUMMARY "Returns the official prefix of organism"
+  REQUIRED organism
+    TYPE organism = Organism
+    MAPTREE organism
+  RETURN String
+  BODY
+  (LET* ((prefix organism[.Organism-prefix])
+         (length (LENGTH prefix)))
+           prefix[1 -> (- length 1)]))
+
+		   
+; ================= ORGANISM-OF ====================
+
+(DEFINE-FUNCTION (Organism/s-of Organism-of Organisms-of)
+  SUMMARY "Returns organism's frame"
+  REQUIRED entity
+  TYPE entity = (OR Contiguous-sequence Organism Gene Protein Null)
+  CONVERT entity FROM Protein TO Gene
+  MAPTREE entity
+  FLAG short
+  RETURNS (OR Organism List String Null)
+  INITIALIZE long-organism = NIL
+  BODY
+  (without-code-walker
+    (SETQ long-organism
+          (ETYPECASE entity
+            (Null NIL)
+            (Gene
+             (SLOTV entity #$ORGANISM))
+            (Contiguous-sequence
+             (SLOTV entity #$ORGANISM))
+            (Organism
+             entity)))
+    (IF short
+        (NAME-OF long-organism SHORT)
+      long-organism)))
+
+;     (Gene-part
+;         (LET ((gene (SLOTV entity #$GENE)))
+;            (SLOTV gene #$ORGANISM)))
+
+; ================= ORGANISM/S-NAMED ====================
+
+(DEFINE-FUNCTION (Organism/s-named Organism-named Organisms-named) 
+  SUMMARY "Finds organisms with name or name-part" 
+  REQUIRED name 
+  FLAGS (in-part exact-only phage-only bacteria-only no-aliases display-off)
+  MAP name
+  BODY
+  (ERROR-IF-MORE-THAN-ONE in-part exact-only)
+  (ERROR-IF-MORE-THAN-ONE phage-only bacteria-only)
+  (ORGANISM-NAMED-aux name in-part exact-only phage-only bacteria-only no-aliases
+       display-off)
+  )
+
+
+; ================= ORTHOLOG-OF ====================
+
+(DEFUN Ortholog-of-aux (gene-or-protein organism per cutoff)
+  "Used by ORTHOLOG-OF"
+  (LET ((organisms-with-orthologs 
+          (INTERSECTION (CROSSBLAST-ORGANISMS) *all-organisms*)))
+   (COND
+      ((AND (EQUAL per 'BBI::TWO-WAY-ORTHOLOG-OF)
+            (OR (NOT (MEMBER (ORGANISM-OF gene-or-protein) organisms-with-orthologs))
+                (NOT (MEMBER organism organisms-with-orthologs))))
+         (WARN "BioBIKE does not know any orthologs within ~A, the organism of ~A" 
+               (ORGANISM-OF gene-or-protein) gene-or-protein))
+      ((AND (NOT per)
+            (MEMBER (ORGANISM-OF gene-or-protein) organisms-with-orthologs)
+            (MEMBER organism organisms-with-orthologs))
+         (SETF per 'bbi::Two-way-ortholog-of))
+      ((NOT per)
+         (SETF per 'bbi::bidirectional-best-hit)))
+  (COND
+   ((TYPEP gene-or-protein 'Protein)
+    (FUNCALL per gene-or-protein organism cutoff))
+   ((AND (TYPEP gene-or-protein 'Gene) gene-or-protein[.Encodes-protein])
+    (LET ((ortholog 
+            (IF (EQUAL per 'BBI::TWO-WAY-ORTHOLOG-OF)
+                (TWO-WAY-ORTHOLOG-OF gene-or-protein organism cutoff :USING-BIT T)
+                (FUNCALL per gene-or-protein organism cutoff))))
+      (IF-TRUE ortholog
+               THEN ortholog[.GENE]
+               ELSE NIL)))
+   ((AND (TYPEP gene-or-protein 'Gene) 
+         (EQUAL per 'BBI::TWO-WAY-ORTHOLOG-OF)) ;; noncoding gene
+    (IF (MEMBER organism
+                (GARRAY-COMPONENT-INDICES *RNA-ORTHOLOG-TABLE*  
+                                          gene-or-protein)
+                :TEST 'EQUAL)
+        (GREF *RNA-ortholog-table* gene-or-protein organism)))
+   (T (FUNCALL per gene-or-protein organism cutoff)))
+))
+
+(DEFINE-FUNCTION (ortholog/s-of Ortholog-of Orthologs-of)
+  SUMMARY "Returns ortholog (per definition) of gene or protein in given organism"
+  REQUIRED gene-or-protein
+    TYPE gene-or-protein = (OR Gene Protein)
+  KEYWORD in = NIL
+    TYPE in = (OR Organism Organism-list) 
+  KEYWORD per = NIL
+  ; TYPE per = Function
+  ; TYPE per = Symbol
+  KEYWORD cutoff = 1e-6
+    TYPE CUTOFF = Positive-number
+  FLAG +neg-results
+  FLAG Lookup-only 
+  FLAG Bypass-lookup
+  MAP gene-or-protein
+  INITIALIZE result = NIL
+  INITIALIZE in-seed = (EQUAL cl-user::*blast-lookup-database* :SEED)
+  INITIALIZE organism = in
+ ;INITIALIZE organisms-with-orthologs 
+ ;     = (INTERSECTION (CROSSBLAST-ORGANISMS) *all-organisms*)
+  INITIALIZE function = NIL
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE bypass-lookup lookup-only per)
+    (IF lookup-only (SETF function 'BBI::TWO-WAY-ORTHOLOG-OF))
+    (IF bypass-lookup (SETF function 'BBI::BIDIRECTIONAL-BEST-HIT))
+    (IF (AND per (NOT (IS-FUNCTION? function)))
+      (ERROR "'~A' in PER clause must be a function" function))
+    (COND 
+	 (in-seed
+         (SETF result (FORWARD-FUNCALL 'SEED-ORTHOLOG gene-or-protein in))
+         (IF +neg-results
+             result
+             (FLATTEN result)))
+     ((LISTP organism)
+      (LET* ((organism-list-pre (OR organism *all-organisms*
+                    #| organisms-with-orthologs |# ))
+	         (organism-list
+			    (LET ((primary-org (ORGANISM-OF gene-or-protein)))
+			      (IF (AND (NOT +neg-results)
+				         (MEMBER primary-org organism-list-pre))
+                      (JOIN primary-org (REMOVE primary-org organism-list-pre) AS-LIST)
+				 	  organism-list-pre)))
+             (result
+              (LOOP FOR org IN organism-list
+                    AS proteins? = (#^proteins org)
+                    DO (IF (NOT proteins?)
+                           (WARN "Removing ~A because it lacks proteins" org))
+                    WHEN proteins?
+                      COLLECT (ORTHOLOG-OF-aux gene-or-protein org function cutoff))))
+        (IF (OR (NULL in) (NOT +neg-results))
+		    (FLATTEN result) result)))
+     (T (ORTHOLOG-OF-aux gene-or-protein organism function cutoff)))))
+
+
+(DEFUN Ortholog-of-aux-tmp (per gene-or-protein organism cutoff min-similarity)
+  "Used by ORTHOLOG-OF"
+  (COND
+   ((TYPEP gene-or-protein 'Protein)
+    (bio::FUNCALL per gene-or-protein organism cutoff min-similarity))
+  ((TYPEP gene-or-protein 'Gene)
+    (LET ((ortholog (bio::FUNCALL per gene-or-protein organism cutoff min-similarity)))
+      (IF-TRUE ortholog
+          THEN ortholog ;        THEN ortholog[.GENE]
+               ELSE NIL)))))
+
+
+(DEFINE-FUNCTION
+ (Ortholog-of* Orthologs-of*)
+ SUMMARY "Returns ortholog (per definition) of gene or protein in given organism"
+ REQUIRED gene-or-protein
+   TYPE gene-or-protein = (OR Gene Protein String)
+ KEYWORD in = NIL
+   TYPE in = (OR Organism Organism-list)
+ KEYWORD per = 'biolisp::two-way-best-blast-ortholog-of-tmp
+  ; TYPE per = Function
+  ; TYPE per = Symbol
+ KEYWORD cutoff = 1e-6
+   TYPE CUTOFF = Positive-number
+ KEYWORD min-identity = 25
+   TYPE min-identity = Positive-number
+ FLAG (best-best forward-best reverse-best kegg-best-best kegg-forward-best)
+ FLAG values
+ KEYWORD number-of-hits = 5
+ MAP gene-or-protein
+ INITIALIZE organism = in
+ INITIALIZE organisms-with-orthologs
+ = (INTERSECTION (CROSSBLAST-ORGANISMS) *all-organisms*)
+ BODY
+ (SETF gene-or-protein
+       (IF (OR
+            (TYPEP gene-or-protein 'protein)
+            (NOT gene-or-protein[.Encodes-protein])) 
+           gene-or-protein
+         (CONVERT gene-or-protein TO protein)))
+ (COND 
+  (kegg-forward-best 
+   (SETF gene-or-protein (GENE-OF gene-or-protein))
+   (IF values
+       (bio::FORWARD-FUNCALL 'bbi::kegg-neighbors-of-aux "best" gene-or-protein 1 number-of-hits T T T T T T T T T T T T T T T T T T)
+     (bio::FORWARD-FUNCALL 'bbi::kegg-neighbors-of-aux "best" gene-or-protein 1 number-of-hits T NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL )))
+  (kegg-best-best
+   (SETF gene-or-protein (GENE-OF gene-or-protein))
+   (IF values
+       (bio::FORWARD-FUNCALL 'bbi::kegg-neighbors-of-aux "best-best" gene-or-protein 1 number-of-hits T T T T T T T T T T T T T T T T T T)
+     (bio::FORWARD-FUNCALL 'bbi::kegg-neighbors-of-aux "best-best" gene-or-protein 1 number-of-hits T NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL NIL )))
+  (T
+   (bbi::without-code-walker
+    (UNLESS (bbi::IS-FUNCTION? per)
+      (ERROR "'~A' in PER clause must be a function" per))
+    (SETQ 
+     per
+     (COND
+      (forward-best 'biolisp::forward-best-blast-ortholog-of-tmp)
+      (reverse-best 'biolisp::reverse-best-blast-ortholog-of-tmp)
+      (best-best    'biolisp::two-way-best-blast-ortholog-of-tmp)
+      (per           per)
+      (T            'biolisp::two-way-best-blast-ortholog-of-tmp)))
+    (COND
+     ((LISTP organism)
+      (LET* ((organism-list (OR organism organisms-with-orthologs))
+             (result
+              (LOOP
+                FOR org IN organism-list
+                AS ortho =
+                (Ortholog-of-aux-tmp
+                 per gene-or-protein org cutoff min-identity)
+                DO (IF (NOT (MEMBER org organisms-with-orthologs))
+                       (WARN "BioBIKE does not know any orthologs within ~A" org))
+                COLLECT
+                (IF values
+                    ortho
+                  (IF ortho (FIRST ortho) NIL) )
+                )))
+        (IF (NULL in) (bio::REMOVE NIL result) result)))
+     ((NOT (MEMBER organism organisms-with-orthologs))
+      (WARN "BioBIKE does not know any orthologs within ~A" organism))
+     (T (LET* ((ortho (Ortholog-of-aux-tmp per gene-or-protein organism cutoff min-identity)))
+          (IF values
+              ortho
+            (IF (= (LENGTH (bio::ENSURE-LIST organism)) 1)
+                (WHEN ortho (FIRST ortho))
+              #+obsolete
+              (APPLY-FUNCTION-OF (n) = (FIRST n) TO ortho)
+              (apply-function (first n) replacing (n) with ortho)
+              ))))
+     )))))
+
+
+(DEFUN homolog-of-aux-tmp (per gene-or-protein organism cutoff min-similarity)
+  "Used by ORTHOLOG-OF"
+  (COND
+   ((TYPEP gene-or-protein 'Protein)
+    (bio::FUNCALL per gene-or-protein cutoff min-similarity :other-organism organism))
+  ((TYPEP gene-or-protein 'Gene)
+    (LET ((ortholog (bio::FUNCALL per gene-or-protein cutoff min-similarity :other-organism organism)))
+      (IF-TRUE ortholog
+          THEN ortholog ;        THEN ortholog[.GENE]
+               ELSE NIL)))))
+
+
+
+(DEFINE-FUNCTION (Homolog-of* Homologs-of*)
+  SUMMARY "Returns ortholog (per definition) of gene or protein in given organism"
+  REQUIRED gene-or-protein
+  TYPE gene-or-protein = (OR Gene Protein String)
+  KEYWORD in = NIL
+  TYPE in = (OR Organism Organism-list)
+  FLAG (forward reverse)
+  KEYWORD per = 'biolisp::forward-blast-orthologs-of-tmp
+  ; TYPE per = Function
+  ; TYPE per = Symbol
+  KEYWORD cutoff = 1e-6
+  TYPE CUTOFF = Positive-number
+  KEYWORD min-identity = 20
+  TYPE min-identity = Positive-number
+  FLAG values
+  MAP gene-or-protein
+  INITIALIZE organism = in
+  INITIALIZE organisms-with-orthologs = *all-organisms*
+  BODY
+(SETF gene-or-protein
+(IF (OR (TYPEP gene-or-protein 'protein) (NOT gene-or-protein[.Encodes-protein])) 
+    gene-or-protein
+    (CONVERT gene-or-protein TO protein)))
+
+    (UNLESS (bbi::IS-FUNCTION? per)
+      (ERROR "'~A' in PER clause must be a function" per))
+    (SETQ per (COND (forward 'biolisp::forward-blast-orthologs-of-tmp)
+                    (reverse 'biolisp::reverse-blast-orthologs-of-tmp)
+                    (per      per)
+                    (T       'biolisp::forward-blast-ortholog-of-tmp)))
+  (bbi::without-code-walker
+    (UNLESS (bbi::IS-FUNCTION? per)
+      (ERROR "'~A' in PER clause must be a function" per))
+    (COND
+      ((LISTP organism)
+       (LET* ((organism-list (OR organism organisms-with-orthologs))
+              (result
+                (LOOP FOR org IN organism-list
+                      AS ortho = (Homolog-of-aux-tmp per gene-or-protein org cutoff min-identity)
+                      DO (IF (NOT (MEMBER org organisms-with-orthologs))
+                             (WARN "BioBIKE does not know any orthologs within ~A" org))
+                      COLLECT
+                      (IF 
+                          values
+                          ortho
+                        (IF ortho 
+                            #+obsolete
+                            (APPLY-FUNCTION-OF (n) = (FIRST n) TO ortho)
+                            (apply-function 
+                             (first n) replacing (n) with ortho)
+                          NIL) )
+                      )))
+         (IF (NULL in) (bio::REMOVE NIL result) result)))
+      ((NOT (MEMBER organism organisms-with-orthologs))
+       (WARN "BioBIKE does not know any orthologs within ~A" organism))
+      (T
+        (IF values
+            (Homolog-of-aux-tmp per gene-or-protein organism cutoff min-identity)
+            (IF (= (LENGTH (bio::ENSURE-LIST organism)) 1)
+                #+obsolete
+                (APPLY-FUNCTION-OF (n) = (FIRST n) TO (Homolog-of-aux-tmp per gene-or-protein organism cutoff min-identity))
+                (apply-function 
+                 (FIRST n) replacing (n) with
+                 (Homolog-of-aux-tmp per gene-or-protein organism cutoff min-identity))
+(FOR-EACH i IN  (Homolog-of-aux-tmp per gene-or-protein organism cutoff min-identity)
+  AS r = (FOR-EACH j IN i
+	AS s = (first j)
+	COLLECT s)
+    COLLECT r)
+        ))))))
+
+
+
+
+
+
+;; =================== PREVIOUS-RESULT ===================
+
+(DEFINE-MACRO Previous-result
+  SUMMARY "Returns result of last operation"
+  BODY
+  `*)
+
+;; =================== PROTEIN-OF ===================
+
+; ******************************** PROTEIN-OF-AUX *************************
+
+(DEFUN Protein-of-aux 
+       (entity from-coord to-coord wrap truncate exclude-overlaps) 
+  (without-code-walker
+    (IF-TRUE (LISTP entity)
+             THEN
+             (LOOP FOR i IN entity
+                   AS  i-entity =
+                   (FORWARD-FUNCALL
+                    'Protein-of-aux
+                    i from-coord to-coord wrap truncate exclude-overlaps)
+                   WHEN (NOT (EQUAL i-entity NIL))
+                   COLLECT i-entity)
+             ELSE
+             (IF-TRUE from-coord
+                      THEN 
+                      (FLATTEN 
+                       (CONVERT EACH
+                         (GENES-OF-ONE-SEGMENT
+                          entity from-coord to-coord 
+                          wrap truncate exclude-overlaps)
+                         TO Protein)) 
+                      ELSE 
+                      (TYPECASE entity
+                        (Protein entity)
+                        (Gene (CONVERT entity TO Protein)) 
+               
+                        (Contiguous-sequence
+                         (FLATTEN 
+                          (LOOP FOR gene IN (ARRAY-TO-LIST (SLOTV entity #$GENES-SORTED-BY-POSITION)) 
+                                COLLECT (SLOTV gene #$PROTEINS))))
+                        (Organism 
+                         (PROTEINS-OF-ORGANISM entity))
+                        (Null NIL)
+                        ))))) 
+
+; ******************************** PROTEIN-OF ********************************* 
+
+(DEFINE-FUNCTION (protein/s-of Protein-of Proteins-of)
+  SUMMARY "Returns proteins' frames"
+  REQUIRED entity
+    TYPE entity = (OR Gene Protein Organism Contiguous-sequence List Null)
+  KEYWORD from = *unprovided+*
+  KEYWORD to = *unprovided+*
+  KEYWORD length = *unprovided+*
+    TYPE (from to length) = number
+    CONVERT (from to length) FROM Number TO Integer
+  FLAG wrap
+  FLAG truncate
+  FLAG exclude-overlaps
+  FLAG combined
+  RETURNS (OR Protein List)
+  PUBLIC
+  INITIALIZE result = NIL
+  INITIALIZE from-coord = (PROVIDED from)
+  INITIALIZE to-coord = 
+  (without-code-walker 
+    (COND      
+     ((ERROR-IF-MORE-THAN-ONE to length) (PRINT "ERROR")) 
+     ((PROVIDED to) to)
+     ((PROVIDED length) 
+      (IF-TRUE from-coord
+               THEN (+ from-coord length -1)
+               ELSE 
+               (ERR+ problem "Invalid use of the keyword 'LENGTH'."
+                     advice  "The keyword 'LENGTH' can only be used if a coordinate"
+                     indent  "is provided to the keyword 'FROM', for example:"
+                     indent  "(PROTEINS-OF pnpe FROM 12345 LENGTH 3000)."
+                     help~A
+                     format-args *df-name*)
+               )) 
+     (T NIL)))
+  BODY 
+   (SETF result
+    (Protein-of-aux entity from-coord to-coord wrap truncate exclude-overlaps))
+   (IF combined (FLATTEN result) result)
+)
+
+; ================= PROTEIN-NAMED ====================
+
+(DEFINE-FUNCTION (protein/s-named Protein-named Proteins-named)
+  SUMMARY "Converts string name into protein frame"
+  REQUIRED protein-name
+  TYPE protein-name = (OR String Symbol Gene Protein)
+  CONVERT protein-name FROM Symbol TO String
+  MAP protein-name
+  BODY
+  (without-code-walker
+    (COND
+     ((NOT (STRINGP protein-name))
+      (PROTEIN-OF protein-name))
+     ((FIND #\. protein-name)
+      (LET ((frame (FRAME-FNAMED protein-name NIL)))
+        (COND 
+         ((AND frame (IS-PROTEIN? frame)) frame)
+         ((AND frame (IS-GENE? frame)) 
+          (FIRST (SLOTV frame #$proteins )))
+         (T NIL))))
+     (T (LOOP FOR organism IN *all-organisms*
+              AS prefix = (SLOTV organism #$Organism-prefix )
+              AS frame = (FRAME-FNAMED (S+ prefix protein-name))
+              WHEN (AND frame (IS-PROTEIN? frame))
+              DO (RETURN frame)
+              WHEN (AND frame (IS-GENE? frame))
+              DO (RETURN (FIRST (SLOTV frame #$proteins))))))))
+
+; ================== READ-FASTA-FILE ===============
+
+(DEFINE-FUNCTION Read-FastA-file
+  SUMMARY "Reads text file in FastA format"
+  REQUIRED path
+  TYPE path = String
+  FLAG Shared
+  RETURNS (OR List Labeled-sequence)
+  PUBLIC
+  BODY
+  #+obsolete
+  (utils::forward-funcall 'read-fasta-file-aux path shared)
+  (read-fasta-file-aux path shared)
+  )
+
+; ================== ROUND ===============
+
+;;  note that bbl:: precedes instances of to-nearest
+(DEFINE-FUNCTION bbl::Round
+  ;; At present, to-nearest may not effectively be less
+  ;; than single-float-epsilon = 5.960465e-8
+  SUMMARY "Rounds a number up or down"
+  REQUIRED number
+  TYPE number = Number
+  KEYWORD (to-nearest to) = 1
+    ; TYPE to-nearest = Positive-number
+  FLAG down
+  FLAG up
+  MAP number
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE up down)
+    (LET* ((n (IF (= to-nearest 1)
+                  (FLOOR number)
+                (* to-nearest (FLOOR (/ number to-nearest)))))
+           (residual (- number n))
+           (answer 
+            (COND
+             (up (IF (= residual 0) n (+ n to-nearest)))
+             (down n)
+             (T (IF (> residual (/ to-nearest 2))
+                    (+ n to-nearest)
+                  n)))))
+      (IF (>= to-nearest 1)
+          answer
+        (LET* 
+            ((n-string (FORMAT NIL "~,20F" to-nearest))
+             (last-sig-digit (POSITION-IF-NOT (LAMBDA (p) (EQUAL p #\0))
+                                              n-string :FROM-END T))
+             (digits (- last-sig-digit 1))
+             (F-string 
+              (IF (< (EXPT 10 (- digits)) single-float-epsilon)
+                  (FORMAT NIL "~~,~AFd0" digits)
+                (FORMAT NIL "~~,~AFe0" digits)))
+             (number-string (FORMAT NIL F-string answer))
+             (revised-answer (READ-FROM-STRING number-string)))
+          revised-answer)))))
+
+; ==================== WHO-IS-HERE? ======================
+
+(DEFINE-FUNCTION (WHO-IS-HERE? WHO-IS-HERE)
+  SUMMARY "Print the User Names logged onto the server and their last activity"
+  REQUIRED NIL
+  RETURNS NIL
+  BODY
+    (USERS))
+    
+; ==================== REPEAT ======================
+
+(DEFINE-FUNCTION repeat
+  SUMMARY "Repeats a given string a specified number of times or to a specified length"
+  REQUIRED ((each) string-or-item (times until-length) number)
+    TYPE number = Nonnegative-number
+    CONVERT number FROM Number TO Integer
+  FLAG as-list
+  FLAG as-string
+  FLAG as-unit
+  BODY
+  (repeat-pre-aux each string-or-item times until-length 
+                  number as-list as-string as-unit)
+  )
+
+; ============= REPLICON-OF ===============
+
+(DEFINE-FUNCTION (replicon/s-of Replicon-of Replicons-of contig/s-of Contig-of Contigs-of)
+  SUMMARY "Returns chromosome, replicon (plasmid) or contig's frame"
+  REQUIRED entity
+  TYPE entity = (OR Contiguous-sequence Organism Gene Protein Null)
+  CONVERT entity FROM Protein TO Gene
+  MAPTREE entity
+  RETURNS (OR Contiguous-sequence List Null)
+  BODY
+  (without-code-walker
+    (TYPECASE entity
+      (Null NIL)
+      (Gene
+       (SLOTV entity #$CONTIGUOUS-SEQUENCE))
+      (Contiguous-sequence
+       entity)
+      (Organism
+       (SLOTV entity #$CONTIGUOUS-SEQUENCES))
+     ;(Gene-part
+     ;    (LET ((gene (SLOTV entity #$GENE)))
+     ;       (SLOTV gene #$CONTIGUOUS-SEQUENCE)))
+      )))
+
+; =================== RUN-FILE =====================
+
+#+obsolete
+(DEFINE-FUNCTION Run-file
+   SUMMARY "Loads and run commands from a file"
+ ;; PROBE-FILE first and solve for extension problems
+ ;; Check extension. If .txt, read; if .bike or .lisp, load.
+   REQUIRED file-name
+     TYPE file-name = (OR String Pathname)
+   FLAG shared
+   INITIALIZE path
+     = (IF shared (S+ "../shared-files/" file-name) file-name)
+   BODY
+     (BBLOAD path))
+
+(DEFINE-FUNCTION Run-file
+   SUMMARY "Loads and run commands from a file"
+ ;; PROBE-FILE first and solve for extension problems
+ ;; Check extension. If .txt, read; if .bike or .lisp, load.
+   REQUIRED file-name
+     TYPE file-name = (OR String Pathname bbl::frame)
+   FLAG shared
+   body 
+   (when (typep file-name 'bbl::frame)
+;     (setq file-name (frames::fname file-name)))
+     (setq file-name (STRING-DOWNCASE (frames::fname file-name))))
+   (bbload (IF shared (S+ "../shared-files/" file-name) file-name))
+   )
+
+; =================== SAME =====================
+
+;; The default for SAME is case-INsensitive!  That is, case-sensitive
+;; is by default NIL.
+
+
+(DEFINE-DF-SYNTACTIC-TOKENS Same AS)
+
+(DEFINE-FUNCTION Same
+  SUMMARY "Compares two items that may or may not be of the same type"
+  REQUIRED (x (AS) y)
+  FLAG case-sensitive
+  FLAG case-insensitive
+  RETURNS Boolean
+  PUBLIC
+  BODY
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE case-sensitive case-insensitive)
+    (BB-SAME x y :CASE-SENSITIVE case-sensitive)))
+
+; ============== SEQUENCE-DOWNSTREAM-OF ==============
+
+(DEFINE-FUNCTION (Sequence-downstream-of Sequences-downstream-of)
+  SUMMARY "Returns nucleotide sequence downstream from given gene"
+  REQUIRED gene
+    TYPE gene = Gene
+    CONVERT gene FROM Protein TO Gene
+  KEYWORD length = *unprovided+*
+    TYPE length = number
+    CONVERT length FROM number TO Positive-Integer
+  KEYWORD with-label = NIL
+    TYPE with-label = (OR string Null)
+  FLAG labeled
+  RETURN (OR String Labeled-sequence Null)
+  MAP gene
+  BODY
+  (without-code-walker
+    (SETF length (UNLESS-PROVIDED length NIL))
+    (COND
+     ((NULL gene) NIL)
+     (T (MAYBE-LABELED-SEQUENCE
+           (OR (SEQUENCE-DOWNSTREAM-FROM gene length) "")
+           (OR with-label (NAME-OF gene SHORT))
+		 ; (OR with-label gene) 
+		   (OR with-label labeled))))))
+
+
+; ============== SEQUENCE-LEFT-OF ==============
+
+(DEFINE-FUNCTION (Sequence-left-of Sequences-left-of)
+  SUMMARY "Returns nucleotide sequence left of given gene"
+  REQUIRED gene
+    TYPE gene = Gene
+    CONVERT gene FROM Protein TO Gene
+  KEYWORD length = *unprovided+*
+    TYPE length = number
+    CONVERT length FROM number TO Positive-Integer
+  KEYWORD with-label = NIL
+    TYPE with-label = (OR string Null)
+  FLAG labeled
+  RETURN (OR String Labeled-sequence Null)
+  MAP gene
+  BODY
+  (without-code-walker
+    (SETF length (UNLESS-PROVIDED length NIL))
+    (COND
+     ((NULL gene) NIL)
+     ((EQUAL (SLOTV gene #$DIRECTION) :F)
+      (MAYBE-LABELED-SEQUENCE
+           (SEQUENCE-UPSTREAM-FROM gene length)
+           (OR with-label (NAME-OF gene SHORT)) 
+		   (OR with-label labeled)))
+     (T (MAYBE-LABELED-SEQUENCE
+           (OR (bioutils::ncomplement-base-pairs
+              (COPY-SEQ (SEQUENCE-DOWNSTREAM-FROM gene length))
+              :extended-alphabet? t) "")
+           (OR with-label (NAME-OF gene SHORT))
+		 ; (OR with-label gene) 
+		   (OR with-label labeled))))))
+
+
+; ============== SEQUENCE-RIGHT-OF ==============
+
+(DEFINE-FUNCTION (Sequence-right-of Sequences-right-of)
+  SUMMARY "Returns nucleotide sequence right of given gene"
+  REQUIRED gene
+    TYPE gene = Gene
+    CONVERT gene FROM Protein TO Gene
+  KEYWORD length = *unprovided+*
+    TYPE length = number
+    CONVERT length FROM number TO Positive-Integer
+  KEYWORD with-label = NIL
+    TYPE with-label = (OR string Null)
+  FLAG labeled
+  RETURN (OR String Labeled-sequence Null)
+  MAP gene
+  BODY
+  (without-code-walker
+    (SETF length (UNLESS-PROVIDED length NIL))
+    (COND
+     ((NULL gene) NIL)
+     ((EQUAL (SLOTV gene #$DIRECTION) :F)
+      (MAYBE-LABELED-SEQUENCE
+           (OR (SEQUENCE-DOWNSTREAM-FROM gene length) "")
+           (OR with-label (NAME-OF gene SHORT)) 
+		   (OR with-label labeled)))
+     (T (MAYBE-LABELED-SEQUENCE
+           (OR (bioutils::ncomplement-base-pairs
+              (COPY-SEQ (SEQUENCE-UPSTREAM-FROM gene length))
+              :extended-alphabet? t) "")
+		   (OR with-label (NAME-OF gene SHORT))
+		 ; (OR with-label gene) 
+		   (OR with-label labeled))))))
+
+; ============== SEQUENCE-TYPE-OF ==============
+
+(DEFINE-FUNCTION (Sequence-type-of Sequence-types-of)
+   SUMMARY "Determines whether a sequence is DNA, RNA, or protein"
+   REQUIRED sequence
+     TYPE sequence = String
+     CONVERT sequence FROM Labeled-sequence TO String
+   FLAG extended
+   MAP sequence
+   RETURN (OR Symbol NIL)
+   PUBLIC
+   BODY
+     (BB-SEQUENCE-TYPE-OF sequence extended))
+
+
+; ============== SEQUENCE-UPSTREAM-OF ==============
+
+(DEFINE-FUNCTION (Sequence-upstream-of Sequences-upstream-of)
+  SUMMARY "Returns nucleotide sequence upstream from given gene"
+  REQUIRED gene
+    TYPE gene = Gene
+    CONVERT gene FROM Protein TO Gene
+  KEYWORD length = *unprovided+*
+    TYPE length = number
+    CONVERT length FROM number TO Positive-Integer
+  KEYWORD with-label = NIL
+    TYPE with-label = (OR string Null)
+  FLAG labeled
+  RETURN (OR String Labeled-sequence Null)
+  MAP gene
+  BODY
+  (without-code-walker
+    (SETF length (UNLESS-PROVIDED length NIL))
+    (COND
+     ((NULL gene) NIL)
+     (T (MAYBE-LABELED-SEQUENCE
+           (OR (SEQUENCE-UPSTREAM-FROM gene length) "")
+		   (OR with-label (NAME-OF gene SHORT))
+		 ; (OR with-label gene) 
+		   (OR with-label labeled))))))
+
+; ============= SIMPLIFY-LIST ===================
+
+(DEFINE-FUNCTION  Simplify-list
+ SUMMARY "Removes sublist structure or NILs or duplicates from a list"
+ REQUIRED list
+   TYPE list = List
+   FLAG no-nils
+   FLAG no-duplicates
+   FLAG case-sensitive
+ INITIALIZE result = list
+ BODY
+ (IF (AND case-sensitive (NOT no-duplicates))
+     (ERR+
+      PROBLEM "CASE-SENSITIVE is pertinent only when NO-DUPLICATES is specified"
+      ADVICE
+      "Perhaps you intended to specify NO-DUPLICATES. Otherwise, remove CASE-SENSITIVE.")
+     )
+ (WITHOUT-CODE-WALKER
+    (WHEN result
+      (SETF result (FLAT result))
+      (IF no-nils (SETF result (REMOVE nil result)))
+      (IF no-duplicates 
+          (SETF result 
+            (REMOVE-DUPLICATES result 
+               :TEST (IF case-sensitive 'EQUAL 'BB-SAME)))))
+    result
+  ))
+
+
+; ============= SLOTS-OF ===================
+
+(DEFINE-FUNCTION Slots-of
+  SUMMARY "Returns all slots of a given frame"
+  REQUIRED frame
+    TYPE frame = Frame
+  FLAG Display
+  FLAG With-values
+  RETURN List
+  MAP frame
+  BODY
+  ;; shut compiler up
+  (progn display with-values)
+  ;;; Needs lots of help!
+  (FRAME-SLOTS-OF frame)    
+  )
+
+
+; ---------------- VPL version of SORT --------------
+
+(DEFINE-FUNCTION Sort-VPL
+  ;; Add check for validity of positions: 
+  ;;    e.g. 0 < position <= (MIN-OF (LENGTHS-OF EACH list))
+  SUMMARY "Non-exported VPL version of SORT"
+  REQUIRED list-or-table
+   KEYWORD by-position = *unprovided+*
+  KEYWORD then-sort-ascending-by = *unprovided+*
+  KEYWORD then-sort-descending-by = *unprovided+*
+  TYPE (by-position
+        then-sort-ascending-by
+        then-sort-descending-by) = Positive-number
+  CONVERT (by-position
+           then-sort-ascending-by
+           then-sort-descending-by) FROM Number TO Integer
+  CONVERT list-or-table FROM Table TO List		   
+  FLAG ascending
+  FLAG descending
+  FLAG case-sensitive
+  BODY
+   (IF (AND (LISTP list-or-table) (< (LENGTH list-or-table) 2))
+       (WARN "List ~A lacks at least two elements to sort!"
+          (LIMITED-VERSION-OF (BB-STRING-OF list-or-table) :LIMIT 25)))
+   (sort-vpl-aux list-or-table by-position then-sort-ascending-by then-sort-descending-by 
+                ascending descending case-sensitive)
+ )
+
+; ---------------- BBL version of SORT --------------
+
+#||
+
+First, any symbols in the argument list named THEN-SORT-ASCENDING-BY
+or THEN-SORT-DESCENDING-BY and their immediately following neighbors
+get replaced by BY-POSITION <neighbor> ASCENDING and BY-POSITIION <neighbor>
+DESCENDING, respectively.
+
+Then for the syntax which must be parsed, we have, using BNF:
+
+null ::= 
+case ::= case-sensitive | case-insensitive | null
+order ::= ascending | descending | symbol-or-lambda | null
+posspec ::= [ position | by-position ] any
+
+sortspec ::= posspec order case | posspec case order
+sortspecs ::= sortspec | sortspec sortspecs
+
+sort-bbl-syntax ::= 
+  sort-bbl any |
+  sort-bbl any case |
+  sort-bbl any order |
+  sort-bbl any case order |
+  sort-bbl any order case |
+  sort-bbl any sortspecs
+
+Examples:
+
+(sort-bbl x)
+(sort-bbl x case-sensitive)
+(sort-bbl x descending)
+(sort-bbl x case-sensitive descending)
+(sort-bbl x case-insensitive ascending)
+
+(sort-bbl my-list by-position 2 case-sensitive my-sort-function
+          position 3 ascending case-insensitive by-position 5 your-sort-function)
+
+Note that semantically, if you specify your own sort function, also specifying
+CASE-SENSITIVE or CASE-INSENSITIVE has no effect.  This could be flagged in
+desired or ignored as it is now.
+
+Processing:
+
+If there are any sortspecs:
+
+  -- Each SORTSPEC gets converted into a three-element sort specification list:
+
+  (test-function case-sensitive? key-extraction-function)
+
+  -- All these sort specification lists get fed to MAKE-SORT-CONDITION
+which returns the appropriate sort function, and code using this sort
+function with LISP:SORT is generated.
+
+If there are no sortspecs a simpler call to LISP:SORT is generated.
+
+I don't understand the point of special casing ORDER being GREATER-THAN
+and LESS-THAN when CASE-SENSITIVE is true as it is done.  Why not
+map GREATER-THAN to BB-GREATER-THAN and LESS-THAN to BB-LESS-THAN and
+then always generate
+
+(LAMBDA (x y) (,test x y :CASE-SENSITIVE? T))
+
+when case-sensitive and (member test internal-tests :test 'symbol=)
+
+Works either way but the current way makes the code hard to understand.
+
+||#
+
+
+(defun hack-specs-for-sort-vpl-keywords (specs)
+  (without-code-walker
+  (let ((pa (position :then-sort-ascending-by specs :test 'symbol=))
+        (pd (position :then-sort-descending-by specs :test 'symbol=))
+        (len (length specs)))
+    (if (and (null pa) (null pd))
+        specs
+      (flet ((splice (pos vpl-keyword bbl-keyword)
+               (unless (> len (1+ pos))
+                 (error "No position specified after ~A" vpl-keyword))
+               (setq 
+                specs
+                (append 
+                 (subseq specs 0 pos)
+                 (list :position (elt specs (1+ pos)) bbl-keyword)
+                 (subseq specs (+ pos 2))
+                 ))))
+        (IF pa (splice pa :then-sort-ascending-by :ascending)
+            (IF pd (splice pd :then-sort-descending-by :descending)))
+        (hack-specs-for-sort-vpl-keywords specs)
+        )))))
+
+(DEFMACRO Sort-BBL (&REST specs)
+  ; Add code to see whether given test is a legitimate function/macro
+  (IF (NOT specs)
+      (ERROR "SORT requires a list to sort!"))
+  (setq specs (hack-specs-for-sort-vpl-keywords specs))
+  (LET* ((list (POP specs))
+         (test-default 'BBI::BB-LESS-THAN)
+         (criteria)
+         (position '(POSITION BY-POSITION))
+         (ascending '(ASCENDING UP))
+         (descending '(DESCENDING dOWN))
+         (external-tests `(GREATER-THAN LESS-THAN))
+         (internal-tests `(BB-GREATER-THAN BB-LESS-THAN))
+         )
+    (COND
+     ((AND (< (LENGTH specs) 3) (NOT (SYM-MEMBER (first specs) position)))
+      (LET* ((case-sensitive NIL)
+             (test test-default))
+        (LOOP UNTIL (= (LENGTH specs) 0) 
+              AS extra-key = (POP specs)
+              DO (COND
+                  ((SYM-MEMBER extra-key ascending))
+                  ((SYM-MEMBER extra-key descending)
+                   (SETQ test 'BBI::BB-GREATER-THAN))
+                  ((SYMBOL= extra-key 'CASE-SENSITIVE)
+                   (SETQ case-sensitive T))
+                  ((SYMBOL= extra-key 'CASE-INSENSITIVE))
+                  ((NOT (EQL test test-default))
+                   (ERROR "Unknown keyword '~A' in SORT" extra-key))
+                  (T (SETQ test extra-key))))
+        (COND
+         ((AND case-sensitive (SYM-MEMBER test external-tests))
+          `(SORT (COPY-LIST ,list) 
+                 (LAMBDA (x y) (,test x y CASE-SENSITIVE))))
+         ((AND case-sensitive (SYM-MEMBER test internal-tests))
+          `(BBI::SORT (COPY-LIST ,list) 
+                      (LAMBDA (x y) (,test x y :CASE-SENSITIVE? T))))
+         (T `(BBI::SORT (COPY-LIST ,list) (LAMBDA (x y) (,test x y)))))))
+
+     (T 
+      (SETQ 
+       criteria 
+       (LOOP WHILE specs
+             AS keyword = (POP specs)
+             AS key = (POP specs)
+             AS test = test-default
+             AS case-sensitive = NIL
+             DO (IF (NOT (SYM-MEMBER keyword position))
+                    (ERROR (S+ "If you provide a sorting criterion, it must be "
+                               "preceded by BY-POSITION.")))
+             (IF (NOT key)
+                 (ERROR "No sorting criteria after keyword ~A!" keyword))
+                 ;  (IF (INTEGERP key)
+                  ;     (SETQ key `(LAMBDA (x) (Nth (1- ,key) x))))
+             (SETQ key `(LAMBDA (x) (Nth (1- ,key) x)))
+             (LOOP UNTIL (OR (= (LENGTH specs) 0) 
+                             (SYM-MEMBER (FIRST specs) position))
+                   AS extra-key = (POP specs)
+                   DO (COND
+                       ((SYM-MEMBER extra-key ascending))
+                       ((SYM-MEMBER extra-key descending)
+                        (SETQ test 'BBI::BB-GREATER-THAN))
+                       ((SYMBOL= extra-key 'CASE-SENSITIVE)
+                        (SETQ case-sensitive T))
+                       ((SYMBOL= extra-key 'CASE-INSENSITIVE))
+                       ((NOT (EQL test test-default))
+                        (ERROR "Unknown keyword '~A' in SORT" extra-key))
+                       (T (SETQ test extra-key))))
+             COLLECT (LIST `,test  case-sensitive key)))
+        `(SORT (COPY-LIST ,list) 
+               (LAMBDA (x y)
+                 ,(BBI::MAKE-SORT-CONDITION `,criteria)))))))
+
+; ---------------- MAIN SORT PROGRAM --------------
+
+(defmacro bbl::sort (&rest specs)
+  (if wb::*vpl-executing?*
+    `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	   (sort-vpl ,@specs))
+    `(LET ((*bbl-level* (INCREMENT-BBL-LEVEL)))
+	   (sort-bbl ,@specs))
+    ))
+
+; ================ SPLIT =============
+
+(DEFINE-FUNCTION Split
+  SUMMARY "Breaks up a string into a list"
+  REQUIRED string
+    TYPE string = (or labeled-sequence String)
+  KEYWORD AT = *unprovided+*
+    TYPE at = (OR nonnegative-number string Character list)
+    CONVERT at FROM Character TO String
+  KEYWORD every = *unprovided+*
+    TYPE every = (OR nonnegative-number string list)
+    CONVERT every FROM Character TO String
+  FLAG Between-words
+  FLAG No-compress
+  FLAG before
+  FLAG after
+  MAP string
+  RETURNS List
+  PUBLIC
+  BODY
+  (when (typep string 'bbi::labeled-sequence)
+    (setf string (bbi::labeled-sequence-sequence string)))
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE at every)
+    (ERROR-IF-MORE-THAN-ONE before after)
+    (IF (AND between-words 
+             (OR (AND (STRINGP at) (NOT (EQUAL at " ")))
+                 (AND (STRINGP every) (NOT (EQUAL every " ")))))
+        (ERR+
+         problem "The flag 'BETWEEN-WORDS' cannot be used in combination with "
+         indent  "the keyword 'AT' or 'EVERY' followed by a string such as '~A'."
+         advice  "BETWEEN-WORDS is used to split strings at spaces," 
+         indent  "AT and EVERY are used to split strings at a given string."
+         indent  "You must choose between both options."
+         help~A
+         format-args
+         (ONE-FROM (at every)) *df-name*)
+      )
+    (SETF at (PROVIDED at))
+    (SETF every (PROVIDED every))
+
+    (BB-SPLIT string :AT at :EVERY every :BETWEEN-WORDS between-words 
+       :NO-COMPRESS no-compress :before before :after after)))
+
+
+; ===================== STRING-OF ==========================
+
+
+(DEFINE-FUNCTION (string/s-of String-of Strings-of) 
+  SUMMARY "Converts (almost) anything to a string"
+  REQUIRED entity
+  FLAG lower-case
+  FLAG upper-case
+  MAP entity
+  RETURNS String
+  PUBLIC
+  BODY
+    (BB-STRING-OF entity :UPPER-CASE upper-case :LOWER-CASE lower-case))
+
+; ======================== SHUFFLE =====================
+
+(DEFINE-FUNCTION Shuffle
+  SUMMARY "Returns characters of a given string or elements (atoms or sublists) of a given list in a random order"
+  REQUIRED sequence
+  TYPE sequence = (OR Array List String labeled-sequence)
+  RETURNS  (OR Array List String)
+  FLAG In-place
+  BODY
+  (when (typep sequence 'bbi::labeled-sequence)
+    (setf sequence (bbi::labeled-sequence-sequence sequence)))
+  (without-code-walker
+    (IF-TRUE In-place 
+             THEN (SHUFFLE-AUX sequence :In-place? T)
+             ELSE (SHUFFLE-AUX sequence :In-place? nil))))
+
+
+; ==================== SUBTRACT-SET ===============================
+
+(DEFINE-FUNCTION Subtract-set
+  SUMMARY "Remove elements from a set"
+  REQUIRED set
+  TYPE set = List
+  KEYWORD by = *unprovided-string*
+  KEYWORD from = {*unprovided-string*}
+  TYPE from = List
+  FLAG case-sensitive
+  RETURNS List
+  INITIALIZE by-provided = (NOT (EQUAL by *unprovided-string*))
+  BODY
+  (without-code-walker
+    (IF (AND by-provided (NOT (EQUAL from {*unprovided-string*})))
+        (ERR+ problem "You may only choose one of these options:"
+              indent  "~{ ~A~}.~&"
+              format-args {'by 'from})
+      )
+    (COND
+     ((NOT (EQUAL from {*unprovided-string*}))
+      (SET-DIFFERENCE from set
+                      :TEST (LAMBDA (x y) 
+                              (BB-SAME x y :CASE-SENSITIVE case-sensitive))))
+     ((AND by-provided (IS-LIST? by))
+      (SET-DIFFERENCE set by 
+                      :TEST (LAMBDA (x y) 
+                              (BB-SAME x y :CASE-SENSITIVE case-sensitive))))
+     (by-provided
+      (REMOVE by set 
+              :TEST (LAMBDA (x y) 
+                      (BB-SAME x y :CASE-SENSITIVE case-sensitive))))
+     (T (ERROR "SUBTRACT-SET requires a FROM or BY clause")))))
+
+; ==================== SWAP ===============================
+
+(DEFINE-DF-SYNTACTIC-TOKENS Swap with and)
+
+(DEFINE-MACRO Swap
+   SUMMARY "Gives x's value to y and y's value to x"
+   REQUIRED (x (WITH AND) y)
+   BODY
+     `(LET ((z ,x))
+         (SETF ,x ,y)
+         (SETF ,y z)))
+
+; ============= TABLE ===================
+
+(DEFINE-FUNCTION Table
+  SUMMARY "Creates a table according to your specifications"
+; FLAG %%EXPANDABLE%%
+  FLAG numeric-indices
+  FLAG alphanumeric-indices
+  FLAG not-adjustable
+  FLAG embedded-labels
+  KEYWORD dimension/s = *unprovided+*
+    TYPE dimension/s = Positive-integer
+  KEYWORD default-value
+  KEYWORD initialize-to
+    TYPE initialize-to = List
+  KEYWORD labeled-with = *unprovided-string*
+    TYPE labeled-with = String
+  KEYWORD specs
+    TYPE specs = (OR positive-integer list)
+  RETURNS Utilities::GArray
+  BODY 
+  (without-code-walker
+    (ERROR-IF-MORE-THAN-ONE numeric-indices 
+          alphanumeric-indices)
+    (IF (AND specs (OR numeric-indices alphanumeric-indices))
+        (WARN (S+ "Index type (~A) is ignored when "
+                  "specifications are provided explicitly.")
+              (IF numeric-indices "NUMERIC-INDICES" 
+                    "ALPHANUMERIC-INDICES")))
+    (IF (AND (PROVIDED dimension/s) specs)
+        (WARN (S+ "Value for DIMENSIONS ignored when "
+                  "specifications are provided explicitly.")))
+    (SETF dimension/s (OR (PROVIDED dimension/s) 1))
+    (IF (NOT specs)
+        (SETF specs
+           (IF numeric-indices 
+              (MAKE-LIST dimension/s :INITIAL-ELEMENT 1)
+              (MAKE-LIST dimension/s :INITIAL-ELEMENT '$))))
+    
+    (LET ((table (new-table-aux (ENSURE-LIST specs) default-value not-adjustable)))
+      (WHEN (PROVIDED labeled-with)
+         (SETF (utils::GARRAY-NAMED table) (STRING labeled-with)))
+      (WHEN initialize-to
+         (SETF table
+            (LIST-TO-TABLE-aux initialize-to :EXISTING-TABLE table 
+                  :EMBEDDED-LABELS embedded-labels)))
+      table
+      ))
+)
+
+;=============== TRANSPOSE-LIST ==================
+
+(DEFINE-FUNCTION Transpose-List
+  SUMMARY "Transposes elements (atoms) of sublists within a list"
+  REQUIRED list
+  TYPE list = (or labeled-sequence List)
+  RETURNS list
+  BODY
+  (when (typep list 'bbi::labeled-sequence)
+    (setf list (bbi::labeled-sequence-sequence list)))
+  (without-code-walker
+    (IF (NOT (EVERY 'IDENTITY (MAPCAR 'LISTP list)))
+        (ERR+ problem "The argument '~A' is not valid."
+              indent  "~A requires a list of lists as an argument."
+              advice  "Use a list with at least two sublists as an argument."
+              help~A
+              format-args
+              list *df-name* *df-name*)
+      (LET ((depth (reduce 'MAX 
+                          (MAPCAR #'Length  
+                                  (MAPCAR #'ENSURE-LIST list)))))
+        (LOOP FOR pos FROM 0 BELOW depth
+              COLLECT (LOOP FOR item IN list
+                            COLLECT (Nth pos item)))))))
+
+;============== NUMBER-LIST======================
+
+#|*********** DELETE
+(define-function number-list
+  summary "Takes two numbers and returns the range inclusive, as a list."
+  required (num1 num2)
+  type num1 = number
+  type num2 = number
+  keyword limit = nil
+  keyword by = 1
+  returns t
+  public
+  body
+  (without-code-walker
+    (unless (plusp by) 
+      (error "The BY keyword must be a positive number!"))
+    (if (<= num1 num2)
+        (loop for x from num1 to num2 by by
+              for count from 0
+              until (when limit (= count limit))
+              collect x
+              )
+      (loop for x from num1 downto num2 by by
+            for count from 0
+            until (when limit (= count limit))
+            collect x
+            ))))
+************|#
+
+; Maybe change function name to NUMBERS
+
+(DEFINE-DF-SYNTACTIC-TOKENS Number-list FROM TO)
+(DEFINE-FUNCTION Number-list
+  SUMMARY "Returns a list of numbers from one value to another"
+  REQUIRED ((FROM) start (TO) end)
+    TYPE start = Number
+    TYPE end = Number
+  KEYWORD by = 1
+    TYPE by = Number
+  KEYWORD limit = 1000
+    TYPE limit = (OR Nonnegative-number Null)
+   ; limit was typed as a number rather than an integer so that
+   ;    it may be calculated without fear of rounding error
+   ;    producing a near non-integer (e.g. 1.9999999).
+  RETURNS List
+  PUBLIC
+  BODY
+  (WITHOUT-CODE-WALKER
+   (SETQ by (ABS by))
+   (SETQ limit (CONVERT (OR limit *big-number*) TO Integer))
+   (COND
+     ((= by 0)
+        (ERR+ problem "The value of 'BY' cannot be zero."
+                  advice  "If the value is calculated, check the calculation."
+                  indent  "Otherwise, replace the value with a non-zero integer."
+            ))
+     ((<= start end)
+      (LOOP FOR j FROM start TO end BY by
+            FOR c FROM 1 TO limit
+            COLLECT j))
+     (T
+      (LOOP FOR j FROM start DOWNTO end BY by
+            FOR c FROM 1 TO limit
+            COLLECT j))
+    )))
+

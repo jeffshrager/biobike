@@ -1,0 +1,217 @@
+
+                   
+                 HELP, Documentation objects, and SEE-ALSO links
+
+
+
+I. Introduction.
+
+Creating internal help for the BioBike system basically consists of
+creating documentation objects.  Documentation objects currently are either:
+
+  -- modules (lists of available functions)
+  -- tutorials 
+  -- glossary entries 
+  -- topics 
+  -- descriptions of documentation files 
+  -- documentation for symbols using DOCUMENT-FUNCTION
+
+Most documentation objects are identified uniquely by a name, which is
+case-insensitive.  Documentation objects describing symbols are
+uniquely defined by the symbol itself and so are case-sensitive.
+
+Documentation objects can be made to point to other documentation
+objects along with links to external URLs.  If a documenation object A
+points to a documentation object B, then at the end of the system load
+a 'Referred to by' backlink is created from B to A.  In this way the
+suite of documentation objects is 'threaded' together.  
+
+
+II. Creating documentation objects.
+
+Each of these documentation objects is created using a defining macro.
+Most of these macros have similar syntax, best described by example;
+some are holdovers from the old documentation system and have slightly
+different syntax.  The defining macros for each kind of documentation
+object are:
+
+  -- Modules. DEFINE-MODULE (old style), DEF-MODULE (new style).
+Currently all the modules are defined using old style DEFINE-MODULE.
+
+  -- Tutorials.  CREATE-NEW-LIVE-TUTORIALS (old style),
+def-live-tutorial (new style).  CREATE-NEW-LIVE-TUTORIALS creates an
+entire set of tutorials while def-live-tutorial creates a single
+tutorial.  All the existing old style definitions have been converted
+to new style (DEF-LIVE-TUTORIAL), and the old style definitions will
+no longer work.  Examples of the new style format can be found in
+.../doc/standard-tutorials.lisp at the bottom.
+
+  -- Glossary entries.  DEF-GLOSSARY-ENTRY (new style).  There is no
+old style.  Examples of glossary entries can be found in
+.../Doc/standard-glossary.lisp
+
+  -- Topics.  DEF-TOPIC (new style).  There is no old style.  Examples
+of topic definitions can be found in .../Doc/standard-topics.lisp
+
+  -- Descriptions of documentation files.  DEF-DOCUMENTATION-FILE (new
+style).  There is no old style.  Examples of documentation file
+descriptions can be found in .../Doc/standard-docfiles.lisp.
+
+You may wonder why documentation files have their doc objects, as
+opposed to simply pointing to the documentation file itself.  This is
+because you may want to annotate a documentation file with such things
+as keywords, author, and/or a summary or description, for purposes of
+searching.
+
+  -- Documentation for symbols.  DOCUMENT-FUNCTION (new style).  The
+new style is the same as the old style.  Enormous numbers of examples
+of DOCUMENT-FUNCTION forms can be found in .../Doc/webdf/*.lisp,
+.../Doc/bbldf/*.lisp, .../Doc/biodf/*.lisp, etc.
+
+Documentation objects also exist for certain symbols that are not
+documented using DOCUMENT-FUNCTION.  These include all external Common
+Lisp symbols and many other external symbols of the BioBike system.
+By creating these documentation objects it becomes possible to link to
+them via the SEE-ALSO slot of a documentation object, and also to link
+to them directly.
+
+
+III. Linking directly to documentation objects.
+
+Each documentation object has an associated function which creates a
+URL to that documentation object.  When the link for this URL is
+clicked on, a page describing the documentation object appears.  The
+functions for each documentation object and their arguments are:
+
+  -- Modules.  MAKE-HELP-MODULE-URL (name).  
+  -- Tutorials.  MAKE-HELP-TUTORIAL-URL (name).  
+  -- Glossary entries.  MAKE-HELP-GLOSSARY-ENTRY-URL (name).  
+  -- Topics.  MAKE-HELP-TOPIC-URL (name).
+  -- Descriptions of documentation files.  
+	MAKE-HELP-DOCUMENTATION-FILE-URL (name label).
+  -- Documentation for symbols using DOCUMENT-FUNCTION.  
+	MAKE-HELP-FUNCTION-DOCUMENTATION-URL (name package)
+  -- Documentation for symbols not defined with DOCUMENT-FUNCTION.
+	MAKE-HELP-SYMBOL-DOC-URL (name package type).
+
+Links to documentation objects can be embedded in other documentation
+objects only within the DESCRIPTION or TEXT (these are synonymous)
+fields of the objects.  The TEXT field is run through a program
+(called FOO) which generates HTML.  None of the other fields of a
+documentation object are processed in this way, and therefore links
+cannot be embedded in the text of other fields (it is possible to
+embed links in the SEE-ALSO field, but that is done another way -- see
+below).
+
+In order to embed a link in the TEXT field, use the following example,
+or other examples you may find in existing documenation object
+creation forms:
+
+(def-topic
+ "Contiguous Sequences"
+ (:summary "A strand of DNA on which genes are located.")
+ (:text
+  (:p 
+   #.(one-string-sp
+      "An organism may consist of one or more contiguous sequences."
+      "(A contiguous sequence is otherwise known as a chromosome)."
+      "A contiguous sequence is either CIRCULAR or LINEAR. If CIRCULAR,"
+      "an arbitrary starting point and direction are chosen for numbering"
+      "the base positions. If LINEAR only an arbitrary direction is determined."
+      "Genes on the contiguous sequence are then located relative to this"
+      "indexing scheme.  DNA which is not within any of the genes is known as "
+      )
+   ((:a :href 
+     (:print (help:make-help-topic-url :name "Upstream/Downstream Sequences")))
+    "Upstream or Downstream")
+   " DNA."
+   ))
+ (:see-also 
+  (topic "Upstream/Downstream Sequences")
+  (df bio::extract-sequence) 
+  (df bio::extract-contig-sequence)
+  ))
+
+
+IV. Linking to documentation objects and other references via SEE-ALSO.
+
+A special, easy to type and use, syntax is used to enter links in the 
+SEE-ALSO field of a documentation object.  
+
+The general syntax is:
+
+(<name-of-documentation-object-type-or-abbr> name &rest args)
+
+E.g., 
+
+(glossary "operating system")
+
+(lisp "car")
+
+(symbol "one-string" :utils :function) 
+
+(df "utils:one-string-nl")
+
+
+There are a number of special cases for ease of entry:
+ 
+  -- a stand-alone symbol, taken as a reference to that symbol.  (If
+the symbol has a function definition, the reference is to that
+definition.  If it only has a value, the reference is to the variable,
+not the nonexistent function.  If it has neither a function definition
+nor a value, it may still have a type definition, in which case the
+reference is to that.)
+
+  -- a stand-alone frame, taken as a reference to the frame.  (A frame
+is not a documentation object, but you are allowed to reference it in
+the SEE-ALSO list.)
+
+  -- a string beginning with "http://", which is taken as a reference 
+to an external URL.  
+
+  -- a list of the form (url <url-path> <label>), where both the URL
+path and the label are strings.  url-path is the actual url, and label
+is the text that is highlighted in normal browser fashion.
+
+Here are a number of examples of SEE-ALSO links:
+
+(def-glossary-entry 
+ "ortholog"
+ (:summary "Two genes or proteins similar to one another.")
+ (:text 
+  (:p
+   #.(one-string-sp
+      "A gene or protein in one organism which is similar in sequence"
+      "to a gene or protein in another organism.  The pair are referred"
+      "to as orthologs or each other.  Sometimes orthology is measured"
+      "not by sequence similarity but by functional similarity, but"
+      "the ortholog functions in BioBike measure by sequence similarity."
+      "(sequence similarity is measured using a program called BLAST.)")))
+ (:keywords "Blast" "Similarity" "Sequence")
+ (:see-also 
+  lisp:multiple-value-bind
+  utils:one-string 
+  utils:cl
+  bio:*loaded-organisms*
+  "http://www.google.com"
+  "this is a random string."
+  #$go.molecular_function
+  ("http://www.google.com" "google link")
+  (module "hash-utils")
+  (topic "Contiguous Sequences")
+  (glossary "operating system")
+  (tutorial "orthologs") 
+  (df utils:s+) 
+  (tutorial "Functions")
+  (df "utils:one-string-nl")
+  (url #.(s+ wb::*doc-directory-url* "index.html") "main docs")
+  (docfile "bbl-description.html" "BBL semantics")
+  (:symbol "bio:two-way-ortholog-of")
+  (:lisp "CAR")
+  (:frame "go.molecular_function")
+
+  ))
+
+
+
+

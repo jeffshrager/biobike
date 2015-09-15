@@ -1,0 +1,184 @@
+<!--
+;;; +=========================================================================+
+;;; | Copyright (c) 2002, 2003, 2004 JP Massar, Jeff Shrager, Mike Travers    |
+;;; |                                                                         |
+;;; | Permission is hereby granted, free of charge, to any person obtaining   |
+;;; | a copy of this software and associated documentation files (the         |
+;;; | "Software"), to deal in the Software without restriction, including     |
+;;; | without limitation the rights to use, copy, modify, merge, publish,     |
+;;; | distribute, sublicense, and/or sell copies of the Software, and to      |
+;;; | permit persons to whom the Software is furnished to do so, subject to   |
+;;; | the following conditions:                                               |
+;;; |                                                                         |
+;;; | The above copyright notice and this permission notice shall be included |
+;;; | in all copies or substantial portions of the Software.                  |
+;;; |                                                                         |
+;;; | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,         |
+;;; | EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF      |
+;;; | MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  |
+;;; | IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY    |
+;;; | CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,    |
+;;; | TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE       |
+;;; | SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                  |
+;;; +=========================================================================+
+-->
+
+<Html><head><title>The BioBike Vision</title></head>
+<body><center>
+
+</b><p>
+<h2><b>The BioBike Vision</h2>
+</b></p><p>
+</p></center>
+
+<p align="right">Copyright (c) 2003-2004 by The BioBike Team (contact <a
+href="http://nostoc.stanford.edu/jeff/personal/index.html">Jeff
+Shrager</a> for more information)</p>
+
+<p>
+
+<h4>The Gap Between Biologists and Biocomputation</h4>
+
+<p>
+
+There are a huge number of biological knowledge and data bases.  Some,
+like TAIR, are dedicated to collecting everything about a single
+organism, and some, like KEGG or the NCBI, are dedicated to gathering
+knowledge about a broad range of organisms.  Although these are
+generally useful and useable for the limited set of explorations that
+they are preprogrammed to do, few have "open functionality."  Open
+functionality is what programming languages have: You can write any
+program you want (given some persistence and know-how).  Open
+functionality is important for computational biology because biology
+is a living science; Biologists (and computational biologists) are
+always thinking up new questions that they would like answered, but
+which are not yet addresed by existing data and knowledge bases.  Even
+if the data or knowledge is already easily available, it usually takes
+a skilled programmer, and significant effort, to implement a new
+computation.  In part this is just the time required for engineering,
+but also when one is putting together your own algorithms, one has to
+get together all the data, reformat it to work with one's program, and
+install a bunch of tools, not to mention having to know some arcane
+programming language!  As a result, nearly every lab depends upon
+software engineers, who are usually not biologists, and who spend huge
+amounts of time putting together programs to answer specific
+biological questions.  As a result, although biologists are swimming
+in data, we usually need programmers in order to ask novel
+questions of it.
+
+<p>
+<h4>BioBike: A Tool for Biological Thought.</h4>
+<p>
+
+BioBike is an approach to reducing the distance between biologists
+and biocomputation by providing an integrated, on-line, programmable
+biological knowledge base.  In many other scientific areas, students
+use programmable tools to address complex questions.  For example,
+most undergraduate engineers are trained to use matlab, a matrix-based
+programming language, as a tool for thought in engineering.  But
+biologists don't have a tool of that sort, and certainly nothing like
+that is integrated into their training.  BioBike is a sort of matlab
+for biological knowledge, where instead of matrices you have a
+knowledge base which integrates biological knowledge about particular
+organisms, their genomes and proteomes, and which provides tools to
+conveniently operate on that knowledge.
+
+<p>
+
+BioBike itself is a very simple, very efficient biology-specific
+programming language embedded in an integrated biological
+knowledge-base, and accessible through the web.  In the best case,
+biologists themselves would be able to log into the system and write
+their own simple programs to ask novel biological questions without
+the help of (or with very little help from) software engineers.
+
+<p>
+<h4>This Multi-Cyano BioBike Web Listener</h4>
+<p>
+
+The CIW/NASA Multi-Cyano BioBike server is a first try at
+implementing the complete BioBike vision.  The knowledge base will
+eventually contain integrated knowledge about <i>all</i> of the fully
+sequenced cyanobacterial strains. (Currently we have 13 in the set,
+and expect to include perhaps 20 in the next year as their sequences
+are published.)  The BioBike Web Listener (hosted at The Carnegie
+Inst. of Washington) currently implements a nearly complete core of
+the BioBike language, and has on-board an extensive array of tools
+for both sequence and microarray data analysis.  The knowledge base
+for each cyanobacterium is linked into a Gene Ontology backbone, and
+the knowledge base includes the precomputed "cross blast" and
+orthology of every gene against every other gene in every other
+organism.
+
+<p>
+
+Most importantly, the core BioBike language itself -- including a
+very efficient compiler to make complex analyses run fast -- is
+completely implemented, and available for immediate use.
+Cyanobacteriologists can log onto the server TODAY and begin to ask
+biological questions about these organisms, including importing and
+integrating their own data into the system.
+
+<p>
+<h4>The BioBike Vision and the Knowledge Operating System.</h4>
+<p>
+
+We want to make BioBike as simple and flexible a tool for working
+with biological knowledge as Excel is for working with tables.  Even
+beyond this, we are trying to make BioBike into a complete
+<a target=_blank href=KnowOS.html>Knowledge Operating System</a>; Whereas Unix and Windows are
+operating systems for ASCII strings and files, and there are operating
+systems for tables (such as Oracle), we envision BioBike, and its
+more general spinoffs, as operating systems for knowledge!  The
+current BioBike implementation actually has many of the facilities
+of an operating system, including an integrated file system and
+multi-processing, but the representational basis for BioBike is
+knowledge, not files or tables.  To reach the vision of an operating
+system for knowledge will take more work than our small, mostly
+volunteeer team has in us, but it's something to strive for.
+
+<p>
+<h4>How to try out BioBike, and help develop The BioBike Vision</h4>
+<p>
+
+The BioBike Vision is of biologist-driven open functionality ranging
+over integrated knowledge and data bases.  The CIW/NASA Multi-Cyano
+server is just the first experimental implementation of this vision.
+As we interact with more and more biologists and computational
+biologists, we expect that the vision will grow and evolve.  
+
+<p>
+
+You can experiment with the demo version of the CIW/NASA Multi-Cyano
+BioBike server by accessing the <a href=index.html>BioBike
+documentation core</a>, and clicking through to the demo server.  If
+you'd like to help us reach the vision, please let Jeff Shrager (<a
+href=mailto:jshrager@stanford.edu>jshrager@stanford.edu</a>), the
+project director.
+
+<p><hr><p>
+
+<h3>Acknowledgments</h3><p>
+
+The biologists, students, and engineers who have contributed to this
+project so far include: <a target="_blank"
+href="http://nostoc.stanford.edu/jeff/personal/index.html"> Jeff
+Shrager</a> (PI), JP Massar (core engineering lead), Mike Travers
+(knowledge framework and interface engineering lead), Jeff Elhai, Julian Brooke, Devaki Bhaya,
+Arthur Grossman, Bob Haxo, Monica Jain, Ashvin Kumar, Pat
+Langley, Andrew Pohorille, Marc Santoro, Karl Schweighofer, Dan Siroker, Colin Smith, Serdar
+Uckun, and Sumudu Watugala.
+
+<p>
+
+Thanks to <a target=_blank href=http://www.franz.com>Franz Inc.</a>
+and <a target=_blank href=http://www.lispworks.com>LispWorks</a> for
+contributions supporting both BioLisp and the BioBike server, which runs
+on Franz's ACL engine and AllegroServe.
+
+<p>
+
+This work was supported, in part, by NASA's program in Astrobiology and
+Fundamental Biology through a Biological Science Research Program
+grant.
+

@@ -1,0 +1,145 @@
+.ddmx {
+    font: 11px tahoma;
+}
+
+
+.ddmx .item1,
+.ddmx .item1:hover,
+.ddmx .item1-active,
+.ddmx .item1-active:hover {
+    padding: 3px 10px 3px 10px;
+    margin: 0px 3px 3px 0px;
+
+    font: 12px arial;
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+}
+
+
+.ddmx.boxmenu .item1,
+.ddmx.boxmenu .item1:hover,
+.ddmx.boxmenu .item1-active,
+.ddmx.boxmenu .item1-active:hover {
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+
+    font: 8px arial;
+    color: #888888;
+    font-weight: normal;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+}
+
+.ddmx.black .item1,
+.ddmx.black .item1:hover,
+.ddmx.black .item1-active,
+.ddmx.black .item1-active:hover {
+    padding: 3px 10px 3px 10px;
+    margin: 0px 3px 3px 0px;
+    background: #000000;
+    font: 12px arial;
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+}
+
+.ddmx.redincludesmargin { 
+background: #FF0000;
+ }
+
+.ddmx.green .item1,
+.ddmx.green .item1:hover,
+.ddmx.green .item1-active,
+.ddmx.green .item1-active:hover {
+    padding: 3px 10px 3px 10px;
+    margin: 0px 3px 3px 0px;
+    background: #33AA55;
+    font: 12px arial;
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+}
+.ddmx.blue .item1,
+.ddmx.blue .item1:hover,
+.ddmx.blue .item1-active,
+.ddmx.blue .item1-active:hover {
+    padding: 3px 10px 3px 10px;
+    margin: 0px 3px 3px 0px;
+    background: #3333AA;
+    font: 12px arial;
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+}
+.ddmx.red .item1,
+.ddmx.red .item1:hover,
+.ddmx.red .item1-active,
+.ddmx.red .item1-active:hover {
+    padding: 3px 10px 3px 10px;
+    margin: 0px 3px 3px 0px;
+    background: #AA3333;
+    font: 12px arial;
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+}
+
+.ddmx .item2,
+.ddmx .item2:hover,
+.ddmx .item2-active,
+.ddmx .item2-active:hover {
+    padding: 3px 8px 4px 8px;
+    font: 11px tahoma;
+    color: #000000;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    position: relative;
+    z-index: 500;
+}
+.ddmx .item2 {
+    background: #f3f3ff;
+}
+.ddmx .item2:hover,
+.ddmx .item2-active,
+.ddmx .item2-active:hover {
+    background: #ffffff;
+}
+.ddmx .arrow,
+.ddmx .arrow:hover {
+    padding: 3px 16px 4px 8px;
+}
+.ddmx .item2 img,
+.ddmx .item2-active img{
+    position: absolute;
+    top: 4px;
+    right: 1px;
+    border: 0;
+}
+.ddmx .section {
+    border: 2px solid #7f7fff;
+    position: absolute;
+    visibility: hidden;
+    z-index: -1;
+}
+
+* html .ddmx td { position: relative; } /* ie 5.0 fix */

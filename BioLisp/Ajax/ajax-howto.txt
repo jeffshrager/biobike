@@ -1,0 +1,153 @@
+
+--- AJAX HOWTO ---
+
+BioBike has a new module to enable AJAX-style web interaction via a
+third-party http messaging library.  A good way to imagine how this
+works is to think of AJAX messages as being similar to UI events in a
+web browser.  In order to receive these events, you must register a
+handler.  After that, mouse movements and key presses trigger calls to
+your javascript event handlers.  Much the same way, the BioBike AJAX
+interface requires you to setup handlers for the messages your
+application expects, and then to register these handlers with the
+system.  In this case, the system is a remote server rather than the
+local browser.  A big difference as well is that you, the programmer,
+generate the events, rather than the browser.  The AJAX library we use
+allows several different applications to talk to the server at once.
+It does this through named message handlers and channels.
+
+Suppose you want to write an application that will accept a word from
+the user and send it to the server, where it will be reversed and then
+returned and displayed on the page.  The first thing you can do is
+write the lisp code to do the work.  Then you need a function which
+will server as the message handler, or interface, to the web browser
+client.  This function takes 2 arguments: a channel, and the message.
+The channel is a unique identifier to use when you respond to the
+message.  The message itself can be set up any way you like.  When you
+have finished performing the operations called for by the message, you
+can return a result by sending to the channel a list of the app
+identifier and message response.  The last thing you need to do in the
+code is register our message handler using the app identifier and the
+name of the function to handle the messages.
+
+On the browser side, you need an html page and the lispscript to send
+and receive the data.  Add a function to collect the data and send it
+through the AJAX message channel for the application.  The message
+being sent needs to be labeled with the application name.  And
+'make-simple-message-for-app' does this.  Like the lisp side, you also
+need a handler to receive a message, and a call to register this
+function.
+
+Once these steps are completed, you need to load the ajax and biobike
+libraries and start the server.  The "load-ajax-demos.lisp" file will
+do this for you.
+
+Here is a list of steps to follow for a simple application:
+
+0.  Create a file called reverser.lisp and put as the first line:
+
+    (in-package :com.biobike.ajax)
+
+1.  Write the lisp for the logic you want to execute.
+
+    ;; Any functions we want to provide as an interface need to be 
+    ;; in this package.
+
+    (in-package :com.biobike.ajax)
+
+    (defun reverse-a-string (string)
+      "Here is the 'business logic' for our application."
+      (reverse string))
+
+2.  Write a lisp message handler and register it.
+
+    (defun reverser (channel message)
+      "This function is the message handler for our application.
+    The message was sent to us from the browser.
+    The channel is a unique identifier to use in responding."
+      (send channel (list :reverser (reverse-a-string (second message)))))
+
+    (register-message-handler :reverser 'reverser)
+
+3.  Create a file reverser.html as your html page with input and
+output fields:
+
+<html>
+  <head>
+    <title>Word Reverser</title>
+    <meta http-equiv='Content-Script-Type' content='text/javascript' />
+    <script type='text/javascript' src='queue.js'></script>
+    <script type='text/javascript' src='ajax.js'></script>
+    <script type='text/javascript' src='http.js'></script>
+    <script type='text/javascript' src='reverser.js'></script>
+    <body onload='startTransport();' onunload='shutdownTransport()'>
+      <input type='TEXT' id='word' />
+      <input type='BUTTON' onclick='reverseWord()' value='Reverse!' />
+      <input type='TEXT' id='reversed' />
+    </body>
+  </head>
+</html>
+
+4.  Include the following javascript files as noted above, which
+    contain the core of the client-side AJAX:
+    	    queue.js
+	    ajax.js
+	    http.js
+
+5.  In the 'onload' event handler for the page, call
+    'startTransport()' to initialize the asynchronous communication.
+    In the 'onunload' event handler, call 'shutdownTransport()'.
+
+6.  Create a file reverser.ls, and include this file in the list of
+files loaded in step 4.
+
+    Add an event handler or some other function to collect and
+    prepare the data you want to send. 
+
+    (defun reverse-word ()
+      (let ((word (@ (.get-element-by-id document "word") value)))
+        (.send channel (make-reverser-message word))))
+
+    (defun make-reverser-message (msg)
+      (make-simple-message-for-app "REVERSER" msg))
+
+    NOTE: the 'channel' variable is a global that is defined in
+    'http.js'.  It is a local instance of the Channel class, and
+    contains a unique identifier so that every 'channel' variable on
+    every client can be sure of being unique.  Just understand that
+    you can use it any point to send messages back to the server.
+
+7.  Add a lispscript message handler to receive the ajax response from
+the server.
+
+    (defun reverser-on-message (msg)
+      (update-result (@ msg textContent)))
+
+    (.register-message-handler channel "reverser" reverser-on-message)
+
+8.  Parse the 'textContent' property of the returned message for the
+    response, and update the html/DOM accordingly.
+
+    (defun update-result (text)
+      (let ((result (.get-element-by-id document "reversed")))
+        (set (@ result value) text)))
+
+9.  Place your lisp, lispscript, and html files in the BioLisp/Ajax
+directory, or put them in another directory, say, foo, but ensure that
+the Ajax server can find them.  You do this as follows:
+
+    (push <full-pathname-for-foo-directory>
+          com.gigamonkeys.ajax::*ajax-directories*)
+
+10. Start up a fresh Lisp and load "load-ajax-demos.lisp" and point
+your browser at
+
+          http://localhost:2002/ajax/reverser.html,
+
+    Note: In the future the value of the port (now '2002') will be
+    changeable by the user.
+
+    Note: The load file is found in .../Biolisp/load-ajax-demos.lisp
+
+    Question:  What happens if you do all this in a Lisp with a running
+    Weblistener?
+
